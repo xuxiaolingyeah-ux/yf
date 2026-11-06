@@ -12,11 +12,12 @@
     sys: '<circle cx="12" cy="12" r="3.2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/>'
   };
 
-  /* 一级 → 二级 → 页面。左侧导航只渲染到二级，三级页面由页面内按钮进入。 */
+  /* 一级 → 二级 → 页面。左侧导航只渲染到二级，三级页面由页面内按钮进入。
+     roles: ["center"] 表示仅中心药房可见；省略或写三角色表示全员可见。 */
   var NAV = [
     { name: "首页", icon: "home", href: "home.html", files: ["home.html"] },
     { name: "药品管理", icon: "drug", items: [
-      { name: "药品目录管理", href: "drug-catalog.html", files: ["drug-catalog.html", "drug-create.html"] },
+      { name: "药品目录管理", href: "drug-catalog.html", files: ["drug-catalog.html", "drug-create.html"], roles: ["center"] },
       { name: "机构药品目录", href: "org-drug-catalog.html", files: ["org-drug-catalog.html", "org-drug-select.html"] },
       { name: "药品目录遴选", href: "drug-selection.html", files: ["drug-selection.html", "drug-selection-create.html", "drug-selection-detail.html"] }
     ] },
@@ -31,8 +32,8 @@
       { name: "库存盘点", href: "stock-check.html", files: ["stock-check.html", "stock-check-count.html", "stock-check-detail.html"] }
     ] },
     { name: "物价管理", icon: "price", items: [
-      { name: "药品调价", href: "price-adjust.html", files: ["price-adjust.html", "price-adjust-create.html", "price-adjust-detail.html"] }
-    ] },
+      { name: "药品调价", href: "price-adjust.html", files: ["price-adjust.html", "price-adjust-create.html", "price-adjust-detail.html"], roles: ["center"] }
+    ], roles: ["center"] },
     { name: "预警管理", icon: "alert", items: [
       { name: "药品效期预警", href: "drug-expiry-warning.html", files: ["drug-expiry-warning.html"] },
       { name: "药品高低储设置", href: "stock-level.html", files: ["stock-level.html"] },
@@ -51,11 +52,11 @@
       { name: "药品消耗明细", href: "drug-consumption.html", files: ["drug-consumption.html"] }
     ] },
     { name: "系统维护", icon: "sys", items: [
-      { name: "企业管理", href: "manufacturer-manage.html", files: ["manufacturer-manage.html", "blacklist-manage.html"] },
-      { name: "供应商分配", href: "supplier-allocation.html", files: ["supplier-allocation.html"] },
-      { name: "医保对码", href: "medical-insurance-mapping.html", files: ["medical-insurance-mapping.html"] },
+      { name: "企业管理", href: "manufacturer-manage.html", files: ["manufacturer-manage.html", "blacklist-manage.html"], roles: ["center"] },
+      { name: "供应商分配", href: "supplier-allocation.html", files: ["supplier-allocation.html"], roles: ["center"] },
+      { name: "医保对码", href: "medical-insurance-mapping.html", files: ["medical-insurance-mapping.html"], roles: ["center"] },
       { name: "库位维护", href: "pharmacy-maintenance.html", files: ["pharmacy-maintenance.html"] },
-      { name: "特殊参数设置", href: "param-settings.html", files: ["param-settings.html"] }
+      { name: "特殊参数设置", href: "param-settings.html", files: ["param-settings.html"], roles: ["center"] }
     ] }
   ];
 
@@ -77,13 +78,23 @@
     return -1;
   }
 
+  function hasRole(roles, role) {
+    if (!roles) return true;
+    return roles.indexOf(role) >= 0;
+  }
+
   function render() {
     var side = document.getElementById("appSide") || document.querySelector(".app-side");
     if (!side) return;
+    var me = currentUser();
+    var role = me.role || "center";
     var g = activeGroup();
     var html = "";
 
     NAV.forEach(function (group, gi) {
+      /* 一级菜单权限 */
+      if (!hasRole(group.roles, role)) return;
+
       if (group.href) {
         var homeActive = group.files.indexOf(current) >= 0;
         html += '<div class="nav-group"><div class="nav-item' + (homeActive ? " nav-home-active" : "") +
@@ -91,13 +102,19 @@
           '<span class="nav-label">' + group.name + "</span></div></div>";
         return;
       }
+      /* 过滤二级子项 */
+      var visibleItems = (group.items || []).filter(function (item) {
+        return hasRole(item.roles, role);
+      });
+      if (!visibleItems.length) return;
+
       var open = gi === g;
       html += '<div class="nav-group' + (open ? " open" : "") + '">' +
         '<div class="nav-item nav-toggle">' + svg(ICO[group.icon] || ICO.home) +
         '<span class="nav-label">' + group.name + "</span>" +
         svg('<path d="M9 6l6 6-6 6"/>', "nav-arrow") + "</div>" +
         '<div class="nav-sub">' +
-        group.items.map(function (item) {
+        visibleItems.map(function (item) {
           var itemActive = item.files.indexOf(current) >= 0;
           return '<div class="nav-sub-item' + (itemActive ? " active" : "") + '" data-href="' + item.href + '">' +
             item.name + "</div>";

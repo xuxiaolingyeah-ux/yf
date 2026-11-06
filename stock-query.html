@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>库存查询 · 中心药房</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+/* ===== 库存查询 局部样式 ===== */
+.sq-page { background: var(--bg-page); }
+.sq-card {
+  flex: 1; min-height: 0;
+  display: flex; flex-direction: column;
+  background: var(--bg-white);
+  margin: 12px;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 1px 2px rgba(0,0,0,.04);
+  overflow: hidden;
+}
+.sq-filter {
+  display: flex; align-items: center; flex-wrap: wrap;
+  gap: 10px 18px;
+  padding: 16px 16px 14px;
+  border-bottom: 1px solid var(--border);
+}
+.sq-fi { display: flex; align-items: center; gap: 8px; }
+.sq-fi > .lbl { font-size: 12px; color: var(--text-tertiary); white-space: nowrap; }
+.sq-fi .input, .sq-fi .select { width: 160px; }
+.sq-fi .sq-name-input { width: 220px; }
+.sq-filter-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+
+/* 统计方式胶囊（复用 page-tabs，在筛选区里内联） */
+.sq-tabs {
+  display: inline-flex; align-items: center; gap: 2px;
+  padding: 3px;
+  background: var(--bg-page);
+  border-radius: 6px;
+}
+.sq-tab {
+  height: 26px; padding: 0 14px;
+  display: inline-flex; align-items: center;
+  font-size: 12px; color: var(--text-secondary);
+  border-radius: 4px; cursor: pointer;
+  user-select: none;
+  transition: background .15s, color .15s;
+}
+.sq-tab:hover { color: var(--primary-dark); }
+.sq-tab.active {
+  background: var(--bg-white); color: var(--primary-dark); font-weight: 500;
+  box-shadow: 0 1px 2px rgba(0,0,0,.06);
+}
+
+/* 表格 */
+.sq-table-wrap { flex: 1; overflow: auto; min-height: 0; }
+.sq-table {
+  width: 100%; border-collapse: separate; border-spacing: 0;
+  font-size: 13px; table-layout: fixed;
+}
+.sq-table thead th {
+  position: sticky; top: 0; z-index: 3;
+  background: var(--table-head);
+  height: 40px;
+  padding: 0 12px;
+  text-align: left; font-weight: 500; color: var(--text-secondary);
+  white-space: nowrap;
+  border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  cursor: default;
+}
+.sq-table thead th.sortable { cursor: pointer; user-select: none; }
+.sq-table thead th.sortable:hover { color: var(--primary-dark); }
+.sq-table thead th .sq-sort {
+  display: inline-flex; flex-direction: column; vertical-align: middle;
+  margin-left: 4px; line-height: 8px; font-size: 7px; color: var(--text-placeholder);
+}
+.sq-table thead th.is-asc .sq-sort { color: var(--primary-dark); }
+.sq-table thead th.is-desc .sq-sort { color: var(--primary-dark); }
+.sq-table tbody td {
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  color: var(--text-primary); vertical-align: middle;
+  white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis;
+}
+.sq-table tbody tr:nth-child(even) { background: var(--table-even); }
+.sq-table tbody tr:hover td { background: var(--table-hover); }
+.sq-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.sq-table .col-left-fixed {
+  position: sticky; left: 0; z-index: 2;
+  background: var(--bg-white);
+  box-shadow: 2px 0 4px -2px rgba(0,0,0,.12);
+}
+.sq-table thead th.col-left-fixed { z-index: 4; background: var(--table-head); }
+.sq-table tbody tr:nth-child(even) td.col-left-fixed { background: var(--table-even); }
+.sq-table tbody tr:hover td.col-left-fixed { background: var(--table-hover); }
+.sq-table tbody tr:last-child td { border-bottom: none; }
+.sq-table td:last-child, .sq-table th:last-child { border-right: none; }
+
+/* 零库存/停用 背景提示 */
+.sq-table tr.is-disabled td { color: var(--text-tertiary); }
+
+/* 空表 */
+.sq-empty { padding: 64px 0; text-align: center; color: var(--text-placeholder); font-size: 13px; }
+
+/* 数量拆零展示 */
+.cell-qty { display: inline-flex; align-items: baseline; gap: 2px; }
+.cell-qty .qty-main { color: var(--text-primary); }
+.cell-qty .qty-zero { color: var(--text-secondary); margin-left: 4px; }
+.cell-stop { color: var(--text-primary); }
+.cell-unit { color: var(--text-tertiary); margin-left: 2px; font-size: 12px; }
+
+/* 布尔/等级标签 */
+.cell-mark--yes { color: var(--text-primary); }
+.cell-mark--no { color: var(--text-tertiary); }
+
+/* 分页 */
+.sq-pager {
+  flex: none; height: 44px;
+  border-top: 1px solid var(--border);
+  padding: 0 12px;
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 12px; color: var(--text-secondary);
+}
+.sq-pager .sq-pager-left { display: flex; align-items: center; gap: 6px; }
+.sq-pager .sq-pager-left b { font-weight: 400; color: var(--text-primary); }
+.sq-pager .sq-pager-right { display: flex; align-items: center; gap: 6px; }
+.sq-pager .select { height: 28px; width: 84px; }
+.sq-pager .pager-btn {
+  width: 24px; height: 24px; border: 1px solid var(--border);
+  background: var(--bg-white); border-radius: var(--radius);
+  display: grid; place-items: center; color: var(--text-secondary); padding: 0;
+}
+.sq-pager .pager-btn:hover:not(:disabled) { border-color: var(--primary); color: var(--primary-dark); }
+.sq-pager .pager-btn:disabled { color: var(--text-placeholder); border-color: var(--border); cursor: not-allowed; }
+.sq-pager .pager-num { min-width: 24px; height: 24px; display: grid; place-items: center; }
+.sq-pager .pager-num.is-cur {
+  background: var(--primary); border-radius: var(--radius); color: #fff; font-weight: 500;
+}
+.sq-pager .jump-input {
+  width: 48px; height: 28px; padding: 0 4px; text-align: center;
+  border: 1px solid var(--border-input); border-radius: var(--radius);
+  font-size: 12px;
+}
+.sq-pager .jump-input:focus { outline: none; border-color: var(--primary-dark); box-shadow: 0 0 0 2px rgba(43,127,255,.12); }
+</style>
+</head>
+<body class="sq-page">
+
+<!-- ========== 顶部导航 ========== -->
+<header class="app-header">
+  <div class="header-left">
+    <div class="header-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z"/></svg>
+    </div>
+    <div class="header-title">区域药房协同管理系统</div>
+  </div>
+  <div class="header-right">
+    <div class="header-user">
+      <div class="header-avatar">赵</div>
+      <div class="header-user-name">赵敏 · 中心药房</div>
+    </div>
+  </div>
+</header>
+
+<!-- ========== 主体 ========== -->
+<div class="app-body">
+
+  <!-- 左侧导航 -->
+  <aside class="app-side" id="appSide"></aside>
+<!-- 主区 -->
+  <main class="app-main">
+    <div class="tabbar">
+      <div class="tab" onclick="location.href='drug-catalog.html'">首页</div>
+      <div class="tab active">
+        库存查询
+        <button class="tab-close" title="关闭" onclick="location.href='drug-catalog.html'">
+          <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 5l14 14M19 5L5 19"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="sq-card">
+
+      <!-- ========== 筛选区 ========== -->
+      <div class="sq-filter">
+        <div class="sq-fi">
+          <span class="lbl">机构：</span>
+          <select class="select" id="fOrg"></select>
+        </div>
+        <div class="sq-fi">
+          <span class="lbl">药房：</span>
+          <select class="select" id="fPharmacy"><option value="">全部</option></select>
+        </div>
+        <div class="sq-fi">
+          <span class="lbl">库位：</span>
+          <select class="select" id="fLocation"><option value="">全部</option></select>
+        </div>
+        <div class="sq-fi">
+          <span class="lbl">药品名称：</span>
+          <input class="input sq-name-input" id="fName" placeholder="名称 / 编码 / 拼音码" autocomplete="off">
+        </div>
+        <div class="sq-fi">
+          <span class="lbl">药品种类：</span>
+          <select class="select" id="fKind"><option value="">全部</option></select>
+        </div>
+        <div class="sq-fi">
+          <span class="lbl">药品分类：</span>
+          <select class="select" id="fClass"><option value="">全部</option></select>
+        </div>
+        <div class="sq-fi">
+          <span class="lbl">统计方式：</span>
+          <div class="sq-tabs" id="fMode">
+            <div class="sq-tab active" data-mode="batch">批次</div>
+            <div class="sq-tab" data-mode="spec">品规</div>
+          </div>
+        </div>
+        <div class="sq-fi">
+          <span class="lbl">库存数量：</span>
+          <select class="select" id="fStock">
+            <option value="">全部</option>
+            <option value="gt">大于零</option>
+            <option value="eq">等于零</option>
+          </select>
+        </div>
+
+        <div class="sq-filter-actions">
+          <button class="btn btn-sm" id="btnReset">重置</button>
+          <button class="btn btn-sm btn-primary" id="btnSearch">查询</button>
+        </div>
+      </div>
+
+      <!-- ========== 表格 ========== -->
+      <div class="sq-table-wrap">
+        <table class="sq-table" id="sqTable">
+          <thead id="sqThead"></thead>
+          <tbody id="sqTbody"></tbody>
+        </table>
+      </div>
+
+      <!-- ========== 分页 ========== -->
+      <div class="sq-pager">
+        <div class="sq-pager-left">
+          共 <b id="sqTotal">0</b> 条
+        </div>
+        <div class="sq-pager-right">
+          <select class="select" id="sqPageSize">
+            <option value="10">10条/页</option>
+            <option value="20" selected>20条/页</option>
+            <option value="30">30条/页</option>
+            <option value="50">50条/页</option>
+          </select>
+          <button class="pager-btn" id="sqPrev">‹</button>
+          <div id="sqNums"></div>
+          <button class="pager-btn" id="sqNext">›</button>
+          <span>跳至第</span>
+          <input class="jump-input" id="sqJump" value="1">
+          <span>页</span>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="mock.js"></script>
+<script>
+/* =============================================================================
+   库存查询 · 内联脚本
+   ============================================================================= */
+(function(){
+  // ---- 工具 ----
+  function $(id){ return document.getElementById(id); }
+  function esc(s){ if(s===null||s===undefined) return ''; return String(s).replace(/[&<>"']/g,function(c){ return { "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;" }[c]; }); }
+  /** "化学药品 / 抗微生物药 / 青霉素类" → "青霉素类"；路径只有一级时原样返回 */
+  function leafOfPath(path){
+    if (!path) return "";
+    var parts = String(path).split(/\s*[\/,]\s*/);
+    return parts[parts.length - 1] || "";
+  }
+
+  // ---- 状态 ----
+  var ST = {
+    user: { id:"u3", role:"center", orgId:"org-c" },  // 默认赵敏·中心药房
+    mode: "batch",       // batch | spec
+    sortField: "",       // 默认按编码/品规编码
+    sortOrder: "asc",
+    filtered: [],        // 批次模式直接行 或 品规模式聚合后的行
+    page: 1, pageSize: 20
+  };
+
+  // ---- 机构范围 ----
+  function visibleOrgs(){
+    var orgs = MOCK.orgs.slice();
+    // center 看全部 + village + member 虚拟机构
+    if (ST.user.role === "center") return orgs.concat([
+      { id:"village-1", name:"青河村卫生室（村室）", current:false },
+      { id:"member-1", name:"城东社区卫生服务中心（成员）", current:false }
+    ]);
+    // member 看自己 + 关联村室（简化）
+    return [ { id: ST.user.orgId, name:"我的机构", current:true } ];
+  }
+
+  // ---- 填充机构下拉 ----
+  function fillOrgs(){
+    var sel = $("fOrg");
+    sel.innerHTML = "";
+    var firstId = null;
+    visibleOrgs().forEach(function(o){
+      var opt = document.createElement("option");
+      opt.value = o.id; opt.textContent = o.name;
+      sel.appendChild(opt);
+      if (!firstId) firstId = o.id;
+    });
+    // 默认选当前机构（center 默认 org-c）
+    var cur = ST.user.role === "center" ? "org-c" : ST.user.orgId;
+    if (cur) sel.value = cur;
+    fillPharmacies();
+  }
+
+  // ---- 机构→药房 ----
+  function fillPharmacies(){
+    var orgId = $("fOrg").value;
+    var sel = $("fPharmacy");
+    sel.innerHTML = '<option value="">全部</option>';
+    var phs = MOCK.pharmacies[orgId] || [];
+    phs.forEach(function(p){
+      var o = document.createElement("option");
+      o.value = p.id; o.textContent = p.name;
+      sel.appendChild(o);
+    });
+    fillLocations();
+  }
+
+  // ---- 药房→库位 ----
+  function fillLocations(){
+    var phId = $("fPharmacy").value;
+    var sel = $("fLocation");
+    sel.innerHTML = '<option value="">全部</option>';
+    if (!phId) return;
+    var locs = MOCK.locations[phId] || [];
+    locs.forEach(function(l){
+      var o = document.createElement("option");
+      o.value = l.id; o.textContent = l.name;
+      sel.appendChild(o);
+    });
+  }
+
+  // ---- 筛选项字典 ----
+  function initDictSelects(){
+    // 药品种类
+    var kinds = ["全部"].concat(MOCK.drugKinds || []);
+    kinds.forEach(function(k,i){
+      if (i===0) { $("fKind").innerHTML = '<option value="">全部</option>'; return; }
+      var o = document.createElement("option"); o.value=k; o.textContent=k; $("fKind").appendChild(o);
+    });
+    // 药品分类（取 classTree 叶子）
+    var leaves = [];
+    function walk(nodes){ nodes.forEach(function(n){ if(!n.children||n.children.length===0) leaves.push(n.name); else walk(n.children); }); }
+    walk(MOCK.classTree || []);
+    leaves.forEach(function(c){ var o = document.createElement("option"); o.value=c; o.textContent=c; $("fClass").appendChild(o); });
+  }
+
+  // =====================================================================
+  // 数据源 · 过滤 & 聚合
+  // =====================================================================
+
+  /**
+   * 取过滤后的批次行（批次模式用）
+   * 每行附带 drug/spec 关联对象，方便渲染
+   */
+  function getFilteredBatches(){
+    var orgId = $("fOrg").value;
+    var phId = $("fPharmacy").value;
+    var locId = $("fLocation").value;
+    var nameQ = $("fName").value.trim().toLowerCase();
+    var kind = $("fKind").value;
+    var cls  = $("fClass").value;
+    var stockOp = $("fStock").value;
+
+    return MOCK.stockBatches.filter(function(b){
+      // 机构权限
+      if (ST.user.role === "center") {
+        if (orgId && b.orgId !== orgId) return false;
+      } else {
+        if (b.orgId !== ST.user.orgId) return false;
+      }
+      // 药房
+      if (phId && b.pharmacyId !== phId) return false;
+      // 库位（可为空，也可筛选空）
+      if (locId) {
+        if (b.locationId !== locId) return false;
+      }
+      // 药品过滤
+      var ds = MOCK.findDrugSpec(b.drugId, b.si);
+      if (!ds) return false;
+      var d = ds.drug, s = ds.spec;
+      if (kind && d.kind !== kind) return false;
+      if (cls && leafOfPath(d.category) !== cls) return false;
+      if (nameQ) {
+        var hit = (d.name && d.name.toLowerCase().indexOf(nameQ)>=0)
+               || (d.code && d.code.toLowerCase().indexOf(nameQ)>=0)
+               || (d.py && d.py.toLowerCase().indexOf(nameQ)>=0);
+        if (!hit) return false;
+      }
+      // 库存数量筛选（批次口径）
+      var avail = b.stock - b.stopQty - b.preQty;
+      if (stockOp === "eq" && b.stock !== 0) return false;
+      if (stockOp === "gt" && b.stock === 0) return false;
+
+      // 附加关联对象（浅拷贝）
+      b._drug = d; b._spec = s;
+      return true;
+    });
+  }
+
+  /**
+   * 品规聚合：按 drugId + si 分组 SUM
+   * 每行 = { drugId, si, drug, spec, 各 SUM, 标志冲突取最严 }
+   */
+  function getAggregatedSpecs(batches){
+    var groups = {};
+    batches.forEach(function(b){
+      var key = b.drugId + "_" + b.si;
+      if (!groups[key]) {
+        groups[key] = {
+          key: key,
+          drugId: b.drugId, si: b.si,
+          drug: b._drug, spec: b._spec,
+          stock:0, stopQty:0, preQty:0
+        };
+      }
+      var g = groups[key];
+      g.stock += b.stock;
+      g.stopQty += b.stopQty;
+      g.preQty  += b.preQty;
+    });
+    return Object.keys(groups).map(function(k){ return groups[k]; });
+  }
+
+  // =====================================================================
+  // 数量展示函数
+  // =====================================================================
+
+  /**
+   * 拆零展示：312粒 (minFactor=24, pkgUnit=盒, prepUnit=粒) → "13盒24粒"
+   * 86粒 → "3盒14粒"；0 → "0"；24 → "1盒"；5 → "5粒"
+   * 返回一个对象 { big, bigUnit, small, smallUnit, hasSmall } 供渲染时分别上色
+   */
+  function fmtQtyParts(qty, minFactor, pkgUnit, prepUnit){
+    qty = Math.max(0, Math.round(qty));
+    var mf = Math.max(1, parseInt(minFactor||"1",10));
+    if (qty === 0) return { isZero:true, text:"0" };
+    var big = Math.floor(qty / mf);
+    var small = qty - big * mf;
+    var parts = [];
+    if (big > 0) parts.push(big + pkgUnit);
+    if (small > 0) parts.push(small + prepUnit);
+    return { isZero:false, text: parts.join(""), big:big, bigUnit:pkgUnit, small:small, smallUnit:prepUnit };
+  }
+
+  /** 停用数量永远是整数大包装（存储本身就是 minFactor 的倍数） */
+  function fmtStopQty(qty, minFactor, pkgUnit){
+    qty = Math.max(0, Math.round(qty));
+    var mf = Math.max(1, parseInt(minFactor||"1",10));
+    var boxes = Math.floor(qty / mf);
+    return boxes + pkgUnit;
+  }
+
+  /** 可用库存制剂数 */
+  function availQty(b){ return Math.max(0, b.stock - b.stopQty - b.preQty); }
+
+  // =====================================================================
+  // 渲染
+  // =====================================================================
+
+  // 批次模式表头
+  var BATCH_COLS = [
+    { key:"name", label:"药品名称", width:200, fixed:"left" },
+    { key:"drugCode", label:"药品编码", width:110 },
+    { key:"specTitle", label:"药品规格", width:140 },
+    { key:"pkgSpec", label:"药品包装", width:110 },
+    { key:"minFactor", label:"最小换算系数", width:100, num:true },
+    { key:"batchNo", label:"批次号", width:110, sortable:true, sortField:"batchNo" },
+    { key:"stock", label:"库存数量", width:130 },
+    { key:"stockBig", label:"库存数量(大包装)", width:110, num:true },
+    { key:"stopQty", label:"停用数量", width:110 },
+    { key:"preQty", label:"预减数量", width:130 },
+    { key:"avail", label:"可用库存", width:130, sortable:true, sortField:"availQty" },
+    { key:"expDate", label:"有效期", width:110, sortable:true, sortField:"expDate" },
+    { key:"purchase", label:"进货价", width:90, num:true },
+    { key:"retail", label:"零售价", width:90, num:true },
+    { key:"vendor", label:"生产企业", width:180 },
+    { key:"kind", label:"药品种类", width:80 },
+    { key:"category", label:"药品分类", width:160 },
+    { key:"form", label:"剂型", width:80 },
+    { key:"essential", label:"基药标志", width:70 },
+    { key:"toxic", label:"毒性药品", width:80 },
+    { key:"narcotic", label:"麻醉药品", width:80 },
+    { key:"spirit", label:"精神标志", width:110 },
+    { key:"antibiotic", label:"抗生素级别", width:130 }
+  ];
+
+  // 品规模式表头（砍掉批次号/有效期/进货价/零售价/生产企业，药品编码→品规编码）
+  var SPEC_COLS = [
+    { key:"name", label:"药品名称", width:200, fixed:"left" },
+    { key:"specCode", label:"品规编码", width:110 },
+    { key:"specTitle", label:"药品规格", width:140 },
+    { key:"pkgSpec", label:"药品包装", width:110 },
+    { key:"minFactor", label:"最小换算系数", width:100, num:true },
+    { key:"stock", label:"库存数量", width:130, sortable:true, sortField:"stock" },
+    { key:"stockBig", label:"库存数量(大包装)", width:110, num:true },
+    { key:"stopQty", label:"停用数量", width:110 },
+    { key:"preQty", label:"预减数量", width:130 },
+    { key:"avail", label:"可用库存", width:130, sortable:true, sortField:"avail" },
+    { key:"kind", label:"药品种类", width:80 },
+    { key:"category", label:"药品分类", width:160 },
+    { key:"form", label:"剂型", width:80 },
+    { key:"essential", label:"基药标志", width:70 },
+    { key:"toxic", label:"毒性药品", width:80 },
+    { key:"narcotic", label:"麻醉药品", width:80 },
+    { key:"spirit", label:"精神标志", width:110 },
+    { key:"antibiotic", label:"抗生素级别", width:130 }
+  ];
+
+  function currentCols(){ return ST.mode === "batch" ? BATCH_COLS : SPEC_COLS; }
+
+  function renderThead(){
+    var cols = currentCols();
+    var html = "<tr>";
+    cols.forEach(function(c){
+      var fixedCls = c.fixed === "left" ? " col-left-fixed" : "";
+      var sortCls = c.sortable ? " sortable" : "";
+      var ascCls  = ST.sortField === c.sortField && ST.sortOrder === "asc" ? " is-asc" : "";
+      var descCls = ST.sortField === c.sortField && ST.sortOrder === "desc" ? " is-desc" : "";
+      var sortHtml = "";
+      if (c.sortable) sortHtml = '<span class="sq-sort"><span>▲</span><span>▼</span></span>';
+      html += '<th data-sort="' + (c.sortField||"") + '" class="' + fixedCls + sortCls + ascCls + descCls + '" style="width:'+c.width+'px">';
+      html += esc(c.label) + sortHtml + '</th>';
+    });
+    html += "</tr>";
+    $("sqThead").innerHTML = html;
+
+    // 点击排序
+    $("sqThead").onclick = function(e){
+      var th = e.target.closest("th[data-sort]");
+      if (!th || !th.getAttribute("data-sort")) return;
+      var sf = th.getAttribute("data-sort");
+      if (ST.sortField === sf) {
+        ST.sortOrder = ST.sortOrder === "asc" ? "desc" : "asc";
+      } else {
+        ST.sortField = sf;
+        ST.sortOrder = "asc";
+      }
+      ST.page = 1;
+      doFilter();
+    };
+  }
+
+  function renderTable(){
+    var cols = currentCols();
+    var rows = ST.filtered;
+
+    // 排序
+    if (!ST.sortField) {
+      // 默认：批次模式=药品编码升序；品规模式=品规编码升序
+      ST.sortField = ST.mode === "batch" ? "drugCode" : "specCode";
+      ST.sortOrder = "asc";
+    }
+    rows = rows.slice().sort(function(a,b){
+      var va = cellVal(a, ST.sortField), vb = cellVal(b, ST.sortField);
+      return ST.sortOrder === "asc" ? cmp(va, vb) : cmp(vb, va);
+    });
+
+    // 分页
+    var ps = ST.pageSize;
+    var start = (ST.page-1) * ps;
+    var pageRows = rows.slice(start, start+ps);
+    $("sqTotal").textContent = rows.length;
+
+    // 渲染行
+    var tbody = $("sqTbody");
+    if (pageRows.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="'+cols.length+'"><div class="sq-empty">暂无数据</div></td></tr>';
+    } else {
+      tbody.innerHTML = pageRows.map(function(r){
+        var trCls = (r.stock === 0 && r.stopQty > 0) ? ' class="is-disabled"' : '';
+        return "<tr" + trCls + ">" + cols.map(function(c){
+          return "<td class='" + (c.num?"num":"") + (c.fixed==="left"?" col-left-fixed":"") + "'>" + renderCell(r, c) + "</td>";
+        }).join("") + "</tr>";
+      }).join("");
+    }
+    renderPager(rows.length);
+  }
+
+  function cmp(a,b){
+    if (a === b) return 0;
+    if (a === null || a === undefined || a === "") return -1;
+    if (b === null || b === undefined || b === "") return 1;
+    if (typeof a === "number" && typeof b === "number") return a - b;
+    return String(a).localeCompare(String(b), "zh-CN");
+  }
+
+  /** 行对象上的字段，批次 vs 品规结构不同 */
+  function cellVal(r, key){
+    // 批次模式 r 有 stock, stopQty, preQty, availQty 等直接字段
+    // 品规模式 r 有同样的聚合字段，但没有 vendor, purchase, retail, expDate, batchNo 等
+    var d = r._drug || r.drug, s = r._spec || r.spec;
+    if (!d) return "";
+    var mf = parseInt(s.minFactor||"1",10);
+    var pkgUnit = s.pkgUnit || "盒";
+    var prepUnit = s.prepUnit || "片";
+    var marks = d.marks || {};
+
+    switch(key){
+      case "name": return d.name || "";
+      case "drugCode": return d.code || "";
+      case "specCode": return s.code || "";
+      case "specTitle": return s.title || "";
+      case "pkgSpec": return s.pkgSpec || "";
+      case "minFactor": return mf;
+      case "batchNo": return r.batchNo || "";
+      case "expDate": return r.expDate || "";
+      case "stock": return r.stock;
+      case "stopQty": return r.stopQty;
+      case "preQty": return r.preQty;
+      case "availQty":
+      case "avail": return availQty(r);
+      case "stockBig": return Math.floor(r.stock / mf);
+      case "purchase": return r.purchase || 0;
+      case "retail": return r.retail || 0;
+      case "vendor": return r.vendor || "";
+      case "kind": return d.kind || "";
+      case "category": return leafOfPath(d.category);
+      case "form": return d.form || "";
+      case "essential": return marks.essential ? "是" : "否";
+      case "toxic": return marks.toxic ? "是" : "否";
+      case "narcotic": return marks.narcotic ? "是" : "否";
+      case "spirit": return marks.spirit || "否";
+      case "antibiotic": return marks.antibiotic || "否";
+      default: return r[key];
+    }
+  }
+
+  /** 单元格 HTML */
+  function renderCell(r, col){
+    var d = r._drug || r.drug, s = r._spec || r.spec;
+    if (!d) return "";
+    var mf = parseInt(s.minFactor||"1",10);
+    var pkgUnit = s.pkgUnit || "盒";
+    var prepUnit = s.prepUnit || "片";
+    var marks = d.marks || {};
+
+    switch(col.key){
+      case "name": return '<div title="'+esc(d.name)+'">'+esc(d.name)+'</div>';
+      case "drugCode": return esc(d.code);
+      case "specCode": return esc(s.code);
+      case "specTitle": return esc(s.title);
+      case "pkgSpec": return esc(s.pkgSpec);
+      case "minFactor": return mf;
+      case "batchNo": return esc(r.batchNo);
+
+      case "stock": {
+        var p = fmtQtyParts(r.stock, mf, pkgUnit, prepUnit);
+        if (p.isZero) return '<span class="qty-main">0</span>';
+        return renderQtyHtml(p, pkgUnit, prepUnit);
+      }
+      case "stopQty": {
+        var box = fmtStopQty(r.stopQty, mf, pkgUnit);
+        return '<span class="cell-stop">'+box+'</span>';
+      }
+      case "preQty": {
+        var p = fmtQtyParts(r.preQty, mf, pkgUnit, prepUnit);
+        if (p.isZero) return '<span class="qty-main">0</span>';
+        return renderQtyHtml(p, pkgUnit, prepUnit);
+      }
+      case "avail": {
+        var a = availQty(r);
+        var p = fmtQtyParts(a, mf, pkgUnit, prepUnit);
+        if (p.isZero) return '<span class="qty-main">0</span>';
+        return renderQtyHtml(p, pkgUnit, prepUnit);
+      }
+      case "stockBig": return Math.floor(r.stock / mf);
+
+      case "purchase": return (r.purchase||0).toFixed(2);
+      case "retail":   return (r.retail||0).toFixed(2);
+      case "expDate":  return esc(r.expDate);
+      case "vendor":   return '<div title="'+esc(r.vendor)+'">'+esc(r.vendor)+'</div>';
+
+      case "kind":     return esc(d.kind);
+      case "category": return '<div title="'+esc(d.category)+'">'+esc(leafOfPath(d.category))+'</div>';
+      case "form":     return esc(d.form);
+      case "essential": return marks.essential ? '<span class="cell-mark--yes">是</span>' : '<span class="cell-mark--no">否</span>';
+      case "toxic":     return marks.toxic ? '<span class="cell-mark--yes">是</span>' : '<span class="cell-mark--no">否</span>';
+      case "narcotic":  return marks.narcotic ? '<span class="cell-mark--yes">是</span>' : '<span class="cell-mark--no">否</span>';
+      case "spirit":    { var v = marks.spirit || "否"; return v === "否" ? '<span class="cell-mark--no">否</span>' : esc(v); }
+      case "antibiotic": { var v = marks.antibiotic || "否"; return v === "否" ? '<span class="cell-mark--no">否</span>' : esc(v); }
+      default: return "";
+    }
+  }
+
+  /** 拆零数量渲染：大包装数 + 单位 主色，零头 + 单位 次色 */
+  function renderQtyHtml(parts, pkgUnit, prepUnit){
+    var html = '<span class="cell-qty">';
+    if (parts.big > 0) {
+      html += '<span class="qty-main">'+parts.big+'</span><span class="cell-unit">'+pkgUnit+'</span>';
+    }
+    if (parts.small > 0) {
+      html += '<span class="qty-zero">'+parts.small+'</span><span class="cell-unit">'+prepUnit+'</span>';
+    }
+    html += '</span>';
+    return html;
+  }
+
+  function renderPager(total){
+    var pageCount = Math.max(1, Math.ceil(total / ST.pageSize));
+    if (ST.page > pageCount) ST.page = pageCount;
+    var nums = $("sqNums");
+    var cur = ST.page;
+    var html = "";
+    // 简单：1 ... 最后，中间不省略（数据量不大）
+    for (var i = 1; i <= pageCount; i++) {
+      html += '<span class="pager-num'+ (i===cur?' is-cur':'') +'" data-p="'+i+'" style="cursor:pointer">'+i+'</span>';
+    }
+    nums.innerHTML = html;
+    $("sqPrev").disabled = cur <= 1;
+    $("sqNext").disabled = cur >= pageCount;
+  }
+
+  // =====================================================================
+  // 事件绑定
+  // =====================================================================
+  function doFilter(){
+    // 统计方式切换 → 改默认排序字段
+    if (ST.mode === "batch") ST.sortField = "drugCode";
+    else ST.sortField = "specCode";
+    var raw = getFilteredBatches();
+    if (ST.mode === "spec") {
+      ST.filtered = getAggregatedSpecs(raw);
+    } else {
+      ST.filtered = raw;
+    }
+    renderThead();
+    renderTable();
+  }
+
+  function resetFilter(){
+    $("fName").value = "";
+    $("fKind").value = "";
+    $("fClass").value = "";
+    $("fStock").value = "";
+    ST.page = 1;
+    // 统计方式回批次
+    switchMode("batch");
+    // 机构保持当前，药房/库位重置到首项
+    fillPharmacies();
+    // 药房重置（选第一项有效药房）
+    setTimeout(function(){
+      var ph = $("fPharmacy");
+      for (var i=1; i<ph.options.length; i++) { if (ph.options[i].value) { ph.value = ph.options[i].value; break; } }
+      fillLocations();
+      var loc = $("fLocation");
+      for (var i=1; i<loc.options.length; i++) { if (loc.options[i].value) { loc.value = loc.options[i].value; break; } }
+      doFilter();
+    }, 0);
+  }
+
+  function switchMode(mode){
+    ST.mode = mode;
+    var tabs = document.querySelectorAll("#fMode .sq-tab");
+    tabs.forEach(function(t){ t.classList.toggle("active", t.getAttribute("data-mode") === mode); });
+    ST.page = 1;
+    doFilter();
+  }
+
+  function bindEvents(){
+    // 统计方式胶囊
+    document.querySelectorAll("#fMode .sq-tab").forEach(function(t){
+      t.onclick = function(){ switchMode(t.getAttribute("data-mode")); };
+    });
+    // 级联
+    $("fOrg").onchange = function(){ fillPharmacies(); };
+    $("fPharmacy").onchange = function(){ fillLocations(); };
+
+    // 查询/重置
+    $("btnSearch").onclick = function(){ ST.page = 1; doFilter(); };
+    $("btnReset").onclick = resetFilter;
+    // 回车
+    document.addEventListener("keydown", function(e){
+      if (e.key === "Enter") {
+        if (e.target && (e.target.id === "fName" || e.target.id === "fOrg" || e.target.id === "fPharmacy" || e.target.id === "fLocation" || e.target.id === "sqJump")) {
+          if (e.target.id === "sqJump") {
+            var n = parseInt($("sqJump").value, 10);
+            if (!isNaN(n) && n > 0) { ST.page = n; doFilter(); }
+            return;
+          }
+          ST.page = 1; doFilter();
+        }
+      }
+    });
+
+    // 分页
+    $("sqPageSize").onchange = function(){
+      ST.pageSize = parseInt(this.value, 10);
+      ST.page = 1; doFilter();
+    };
+    $("sqPrev").onclick = function(){ if (ST.page > 1) { ST.page--; doFilter(); } };
+    $("sqNext").onclick = function(){ ST.page++; doFilter(); };
+    document.getElementById("sqNums").addEventListener("click", function(e){
+      var t = e.target.closest(".pager-num");
+      if (!t) return;
+      var p = parseInt(t.getAttribute("data-p"), 10);
+      if (p) { ST.page = p; doFilter(); }
+    });
+  }
+
+  // =====================================================================
+  // Init
+  // =====================================================================
+  initDictSelects();
+  fillOrgs();
+  bindEvents();
+  doFilter();
+
+})();
+</script>
+  <script src="nav.js"></script>
+</body>
+</html>

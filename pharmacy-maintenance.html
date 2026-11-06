@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>库位维护 · 中心药房</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ========== 顶部导航 ========== -->
+<header class="app-header">
+  <div class="header-left">
+    <div class="header-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3.2" y="9.4" width="17.6" height="5.2" rx="2.6" transform="rotate(-45 12 12)"></rect>
+        <path d="M8.4 15.6L15.6 8.4"></path>
+      </svg>
+    </div>
+    <div class="header-title">区域药房协同管理系统</div>
+  </div>
+  <div class="header-right">
+    <div class="header-user">
+      <div class="header-avatar">张</div>
+      <span class="header-user-name">张明远</span>
+    </div>
+  </div>
+</header>
+
+<div class="app-body">
+  <!-- ========== 左侧导航 ========== -->
+  <aside class="app-side" id="appSide"></aside>
+<!-- ========== 主区域 ========== -->
+  <main class="app-main">
+    <div class="tabbar">
+      <div class="tab" onclick="location.href='drug-catalog.html'">首页</div>
+      <div class="tab active">
+        库位维护
+        <button class="tab-close" title="关闭" onclick="location.href='drug-catalog.html'">
+          <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+            <path d="M5 5l14 14M19 5L5 19"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="page">
+      <div class="page-head">
+        <div class="page-head-left">
+          <h1 class="page-title">库位维护</h1>
+        </div>
+        <div class="page-acts">
+          <button class="btn btn-primary" id="btnAdd">新增库位</button>
+        </div>
+      </div>
+
+      <div class="sel-card">
+        <div class="filter-bar mf-filter" id="filterBar">
+          <div class="mf-fi">
+            <span class="lbl">机构：</span>
+            <select class="select" id="fltOrg"></select>
+          </div>
+          <div class="mf-fi">
+            <span class="lbl">库位名称：</span>
+            <input class="input" id="fltName" placeholder="请输入库位名称" autocomplete="off">
+          </div>
+          <div class="mf-fi">
+            <span class="lbl">状态：</span>
+            <div class="mf-radios">
+              <label class="mf-radio"><input type="radio" name="fltStatus" value="all" checked>全部</label>
+              <label class="mf-radio"><input type="radio" name="fltStatus" value="on">启用</label>
+              <label class="mf-radio"><input type="radio" name="fltStatus" value="off">停用</label>
+            </div>
+          </div>
+          <div class="filter-acts">
+            <button class="btn btn-sm" id="btnReset">重置</button>
+            <button class="btn btn-sm btn-primary" id="btnSearch">查询</button>
+          </div>
+        </div>
+
+        <div class="mf-table-wrap" style="padding:0 16px;">
+          <table class="data-table ph-table">
+            <colgroup>
+              <col style="width:56px"><col style="width:180px"><col style="width:110px"><col style="width:180px">
+              <col style="width:200px"><col style="width:140px"><col style="width:150px">
+            </colgroup>
+            <thead>
+              <tr>
+                <th>序号</th><th>所属机构</th><th>库位编码</th>
+                <th>库位名称</th><th>药品分类</th><th>状态</th><th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="listBody"></tbody>
+          </table>
+        </div>
+
+        <div class="mf-pager">
+          <span>共 <b id="totalNum">0</b> 条</span>
+          <div class="ctrl">
+            <button class="pager-btn" id="pagePrev">‹</button>
+            <span id="pageNums"></span>
+            <button class="pager-btn" id="pageNext">›</button>
+            <select class="select mf-size" id="pageSize">
+              <option value="15">15条/页</option>
+              <option value="30">30条/页</option>
+              <option value="50">50条/页</option>
+            </select>
+            <span>跳至第</span>
+            <input class="input mf-jump" id="pageJump" value="1">
+            <span>页</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ========== 通用弹窗（新增/编辑/查看库位） ========== -->
+<div class="modal-mask" id="modalMask"></div>
+
+<!-- ========== Toast ========== -->
+<div class="toast" id="toast">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M20 6L9 17l-5-5"></path>
+  </svg>
+  <span id="toastText"></span>
+</div>
+
+<script src="mock.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  function $(id) { return document.getElementById(id); }
+  function esc(s) {
+    return String(s === null || s === undefined ? "" : s)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+
+  /* ================= Mock 选项 ================= */
+  var M = window.MOCK || {};
+  var ORGS = M.pharmacyOrgs || [];
+  var CATS = M.slotCategories || ["西药", "藏药", "中成药", "疫苗", "配方颗粒", "中药饮片", "中药直服饮片"];
+  var TREE = M.addressTree || [];
+
+  /* 从 M.orgs 中取当前机构名称 */
+  var CURRENT_ORG = "";
+  if (M.orgs) {
+    for (var i = 0; i < M.orgs.length; i++) {
+      if (M.orgs[i].current) { CURRENT_ORG = M.orgs[i].name; break; }
+    }
+  }
+
+  /* ================= 数据 ================= */
+  var DATA_KEY = "KW_DATA_V1";
+  var DATA = [];
+
+  /* 把 pharmacy mock 数据转换为扁平的库位数据 */
+  function convertMockPharmacies(list) {
+    var out = [];
+    list.forEach(function (p) {
+      var base = {
+        code: "", org: p.org || "", name: p.name || "",
+        province: p.province || "", city: p.city || "", district: p.district || "", town: p.town || "",
+        address: p.address || "", contact: p.contact || "", phone: p.phone || "",
+        enabled: p.enabled !== false,
+        cats: []
+      };
+      if (p.slots && p.slots.length) {
+        p.slots.forEach(function (s) {
+          var row = JSON.parse(JSON.stringify(base));
+          row.code = p.code ? p.code.replace(/^YF/, "KW") : "";
+          row.name = s.name || p.name;
+          row.cats = (s.cats || []).slice();
+          out.push(row);
+        });
+      } else {
+        base.code = p.code ? p.code.replace(/^YF/, "KW") : "";
+        out.push(base);
+      }
+    });
+    return out;
+  }
+
+  function loadData() {
+    try {
+      var raw = sessionStorage.getItem(DATA_KEY);
+      if (raw) { DATA = JSON.parse(raw); return; }
+    } catch (e) { /* ignore */ }
+    DATA = convertMockPharmacies(M.pharmacyFacilities || []);
+  }
+  function saveData() {
+    try { sessionStorage.setItem(DATA_KEY, JSON.stringify(DATA)); } catch (e) { /* ignore */ }
+  }
+  function findItem(code) {
+    return DATA.filter(function (p) { return p.code === code; })[0] || null;
+  }
+  function nextCode() {
+    var max = 0;
+    DATA.forEach(function (p) {
+      var m = /KW(\d+)/.exec(p.code || "");
+      if (m) max = Math.max(max, parseInt(m[1], 10));
+    });
+    return "KW" + ("0000" + (max + 1)).slice(-4);
+  }
+
+  /* ================= 区域位置（省/市/区/镇） ================= */
+  function findNode(list, name) {
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].name === name) return list[i];
+    }
+    return null;
+  }
+  function childrenOf(list, name) {
+    var n = findNode(list, name);
+    return n && n.children ? n.children : [];
+  }
+  function options(list, val, ph) {
+    return '<option value="">' + esc(ph) + "</option>" + list.map(function (o) {
+      return '<option value="' + esc(o.name) + '"' + (val === o.name ? " selected" : "") + ">" + esc(o.name) + "</option>";
+    }).join("");
+  }
+  function plainOptions(list, val, ph) {
+    return '<option value="">' + esc(ph) + "</option>" + list.map(function (o) {
+      return '<option value="' + esc(o) + '"' + (val === o ? " selected" : "") + ">" + esc(o) + "</option>";
+    }).join("");
+  }
+
+  /* ================= 状态 ================= */
+  var ST = {
+    filters: { org: "", kw: "", status: "all" },
+    page: 1,
+    size: 15,
+    modal: null
+  };
+
+  function filtered() {
+    var f = ST.filters;
+    return DATA.filter(function (p) {
+      if (f.org && p.org !== f.org) return false;
+      if (f.kw) {
+        var kw = f.kw.toLowerCase();
+        var hay = [p.name, p.code, p.contact].join("|").toLowerCase();
+        if (hay.indexOf(kw) < 0) return false;
+      }
+      if (f.status === "on" && !p.enabled) return false;
+      if (f.status === "off" && p.enabled) return false;
+      return true;
+    });
+  }
+
+  /* ================= 列表 ================= */
+  function statusCell(p) {
+    return '<div class="ph-switch-cell">'
+      + '<label class="switch"><input type="checkbox" data-act="toggle" data-id="' + esc(p.code) + '"' + (p.enabled ? " checked" : "") + '><span class="track"></span></label>'
+      + '<span class="ph-switch-txt' + (p.enabled ? "" : " is-off") + '">' + (p.enabled ? "启用中" : "已停用") + "</span>"
+      + "</div>";
+  }
+  function catsCell(cats) {
+    if (!cats || !cats.length) return '<span style="color:#bbb">—</span>';
+    return cats.map(function (c) {
+      return '<span class="tag-capsule">' + esc(c) + '</span>';
+    }).join("");
+  }
+
+  function renderList() {
+    var rows = filtered();
+    var total = rows.length;
+    var pages = Math.max(1, Math.ceil(total / ST.size));
+    if (ST.page > pages) ST.page = pages;
+    if (ST.page < 1) ST.page = 1;
+
+    var start = (ST.page - 1) * ST.size;
+    var pageRows = rows.slice(start, start + ST.size);
+    var body = $("listBody");
+
+    if (!pageRows.length) {
+      body.innerHTML = '<tr><td colspan="7" class="table-empty">暂无数据</td></tr>';
+    } else {
+      body.innerHTML = pageRows.map(function (p, i) {
+        return "<tr>"
+          + "<td>" + (start + i + 1) + "</td>"
+          + '<td title="' + esc(p.org) + '">' + (p.org ? esc(p.org) : "—") + "</td>"
+          + '<td class="ph-code">' + (p.code ? esc(p.code) : "—") + "</td>"
+          + '<td title="' + esc(p.name) + '">' + (p.name ? esc(p.name) : "—") + "</td>"
+          + "<td>" + catsCell(p.cats || []) + "</td>"
+          + "<td>" + statusCell(p) + "</td>"
+          + '<td><div class="mf-acts">'
+          + '<button class="link-btn" data-act="view" data-id="' + esc(p.code) + '">查看</button>'
+          + '<button class="link-btn" data-act="edit" data-id="' + esc(p.code) + '">编辑</button>'
+          + '<button class="link-btn is-danger" data-act="del" data-id="' + esc(p.code) + '">删除</button>'
+          + "</div></td>"
+          + "</tr>";
+      }).join("");
+    }
+
+    $("totalNum").textContent = total;
+    var nums = "";
+    var from = 1, to = pages;
+    if (pages > 7) {
+      from = Math.max(1, ST.page - 2);
+      to = Math.min(pages, from + 4);
+      from = Math.max(1, to - 4);
+    }
+    for (var p = from; p <= to; p++) {
+      nums += '<button class="pager-num' + (p === ST.page ? " is-cur" : "") + '" data-page="' + p + '">' + p + "</button>";
+    }
+    if (from > 1) nums = '<button class="pager-num" data-page="1">1</button><span>…</span>' + nums;
+    if (to < pages) nums = nums + "<span>…</span>" + '<button class="pager-num" data-page="' + pages + '">' + pages + "</button>";
+    $("pageNums").innerHTML = nums;
+
+    $("pagePrev").disabled = ST.page <= 1;
+    $("pageNext").disabled = ST.page >= pages;
+    $("pageJump").value = ST.page;
+  }
+
+  /* ================= 弹窗（新增/编辑/查看） ================= */
+  function blankItem() {
+    return {
+      code: "", org: CURRENT_ORG, name: "",
+      province: "", city: "", district: "", town: "", address: "",
+      contact: "", phone: "", enabled: true, cats: []
+    };
+  }
+
+  function openModal(mode, code) {
+    var src = code ? findItem(code) : null;
+    if (mode !== "create" && !src) return;
+    var draft = mode === "create" ? blankItem() : JSON.parse(JSON.stringify(src));
+    ST.modal = { mode: mode, code: code || null, draft: draft, dirty: false };
+    renderModal();
+    $("modalMask").classList.add("show");
+  }
+
+  function closeModal() {
+    if (!ST.modal) return;
+    if (ST.modal.dirty && ST.modal.mode !== "view") {
+      confirmDialog("提示", "确认关闭？未保存的内容将丢失。", "确定", function () {
+        $("modalMask").classList.remove("show");
+        $("modalMask").innerHTML = "";
+        ST.modal = null;
+      });
+      return;
+    }
+    $("modalMask").classList.remove("show");
+    $("modalMask").innerHTML = "";
+    ST.modal = null;
+  }
+
+  function modalTitle() {
+    if (!ST.modal) return "";
+    if (ST.modal.mode === "create") return "新增库位";
+    if (ST.modal.mode === "edit") return "编辑库位";
+    return "库位详情";
+  }
+
+  /* 药品分类多选下拉 */
+  function buildCatsPanel(selCats) {
+    return CATS.map(function (c) {
+      var on = selCats.indexOf(c) >= 0;
+      return '<label class="ph-ms-opt"><input type="checkbox" data-cat="' + esc(c) + '"' + (on ? " checked" : "") + '><span>' + esc(c) + "</span></label>";
+    }).join("");
+  }
+  function catsLabelText(cats) {
+    return cats.length ? cats.join("、") : "请选择药品分类";
+  }
+
+  /* 地址级联 */
+  function addrLists(d) {
+    var cityList = d.province ? childrenOf(TREE, d.province) : [];
+    var distList = d.city ? childrenOf(cityList, d.city) : [];
+    var townList = d.district ? childrenOf(distList, d.district) : [];
+    return { city: cityList, district: distList, town: townList };
+  }
+
+  function renderModal() {
+    if (!ST.modal) return;
+    var d = ST.modal.draft;
+    var mode = ST.modal.mode;
+    var isView = mode === "view";
+    var isCreate = mode === "create";
+    var L = addrLists(d);
+
+    var orgField = "";
+    if (isCreate) {
+      /* 新增：所属机构只读显示当前机构 */
+      orgField =
+        '<div class="eg-field"><span class="eg-label"><span class="req">*</span>所属机构</span>'
+        + '<input class="input" value="' + esc(d.org || CURRENT_ORG) + '" readonly style="background:#f5f5f5;color:#888"></div>';
+    } else {
+      /* 编辑/查看：下拉选择，查看时 disabled */
+      orgField =
+        '<div class="eg-field"><span class="eg-label"><span class="req">*</span>所属机构</span>'
+        + '<select class="select" data-k="org"' + (isView ? " disabled" : "") + '>'
+        + plainOptions(ORGS, d.org, "请选择所属机构") + "</select></div>";
+    }
+
+    var catsField =
+      '<div class="eg-field"><span class="eg-label"><span class="req">*</span>药品分类</span>'
+      + '<div class="ph-ms" id="catsMs">'
+      +   '<div class="ph-ms-trigger" data-cats-trigger>'
+      +     '<span class="ph-ms-val' + (d.cats.length ? "" : " is-empty") + '">' + esc(catsLabelText(d.cats)) + "</span>"
+      +     '<svg class="ph-ms-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg>'
+      +   "</div>"
+      +   '<div class="ph-ms-panel">' + buildCatsPanel(d.cats) + "</div>"
+      + "</div></div>";
+
+    var region = [d.province, d.city, d.district, d.town].filter(function (x) { return !!x; }).join(" / ");
+    var fullAddr = [region, d.address].filter(function (x) { return !!x; }).join(" ");
+
+    var bodyHtml = "";
+    if (isView) {
+      /* 查看模式：纯展示 */
+      bodyHtml =
+        '<div class="eg-grid ph-detail">'
+        +   '<div class="eg-field"><span class="eg-label">库位编码</span><span class="ph-detail-val">' + esc(d.code || "—") + "</span></div>"
+        +   '<div class="eg-field"><span class="eg-label">库位名称</span><span class="ph-detail-val">' + esc(d.name || "—") + "</span></div>"
+        +   '<div class="eg-field"><span class="eg-label">所属机构</span><span class="ph-detail-val">' + esc(d.org || "—") + "</span></div>"
+        +   '<div class="eg-field"><span class="eg-label">联系人姓名</span><span class="ph-detail-val">' + esc(d.contact || "—") + "</span></div>"
+        +   '<div class="eg-field"><span class="eg-label">联系电话</span><span class="ph-detail-val">' + esc(d.phone || "—") + "</span></div>"
+        +   '<div class="eg-field"><span class="eg-label">状态</span><span class="ph-detail-val">' + (d.enabled ? "启用中" : "已停用") + "</span></div>"
+        +   '<div class="eg-field span-3"><span class="eg-label">区域位置</span><span class="ph-detail-val">' + esc(fullAddr || "—") + "</span></div>"
+        +   '<div class="eg-field span-3"><span class="eg-label">药品分类</span><span class="ph-detail-val">' + (d.cats && d.cats.length ? d.cats.join("、") : "—") + "</span></div>"
+        + "</div>";
+    } else {
+      /* 新增/编辑：表单 —— 3列栅格 */
+      var nameField =
+        '<div class="eg-field"><span class="eg-label"><span class="req">*</span>库位名称</span>'
+        + '<input class="input" data-k="name" value="' + esc(d.name) + '" placeholder="请输入库位名称" autocomplete="off"></div>';
+
+      var contactField =
+        '<div class="eg-field"><span class="eg-label">联系人姓名</span>'
+        + '<input class="input" data-k="contact" value="' + esc(d.contact) + '" placeholder="请输入联系人姓名" autocomplete="off"></div>';
+
+      var phoneField =
+        '<div class="eg-field"><span class="eg-label">联系电话</span>'
+        + '<input class="input" data-k="phone" value="' + esc(d.phone) + '" placeholder="请输入联系电话" autocomplete="off"></div>';
+
+      var regionPath = [d.province, d.city, d.district, d.town].filter(function (x) { return !!x; });
+      var regionField =
+        '<div class="eg-field span-3" style="align-items:flex-start">'
+        + '<span class="eg-label" style="line-height:32px">区域位置</span>'
+        + '<div class="ph-addr" style="gap:8px">'
+        +   '<div class="ph-cascade' + (regionPath.length ? " has-value" : "") + '" id="cascadeAddr">'
+        +     '<div class="ph-cascade-trigger" data-c-trigger>'
+        +       '<span class="ph-cascade-val' + (regionPath.length ? "" : " is-empty") + '" id="cascadeVal">' + esc(regionPath.length ? regionPath.join(" / ") : "请选择省 / 市 / 区 / 镇") + "</span>"
+        +       '<span class="ph-cascade-clear" data-c-clear title="清除">×</span>'
+        +       '<svg class="ph-cascade-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg>'
+        +     '</div>'
+        +     '<div class="ph-cascade-panel" id="cascadePanel"></div>'
+        +   "</div>"
+        +   '<input class="input" data-k="address" value="' + esc(d.address) + '" placeholder="请输入详细地址，如街道、门牌号等" autocomplete="off" style="flex:1;min-width:240px">'
+        + "</div></div>";
+
+      bodyHtml =
+        '<div class="eg-grid">'
+        +   nameField    /* Row1 col1: *库位名称 */
+        +   orgField     /* Row1 col2: *所属机构 */
+        +   catsField    /* Row1 col3: *药品分类 */
+        +   contactField /* Row2 col1:   联系人姓名 */
+        +   phoneField   /* Row2 col2:   联系电话 */
+        +   regionField  /* Row3 span-3: 区域位置（省/市/区/镇 + 详细地址，同一行） */
+        + "</div>";
+    }
+
+    var footHtml = "";
+    if (isView) {
+      footHtml = '<button class="btn" data-m-close="1">关闭</button>';
+    } else {
+      footHtml = '<button class="btn" data-m-cancel="1">取消</button>'
+        + '<button class="btn btn-primary" data-m-save="1">保存</button>';
+    }
+
+    var html =
+      '<div class="modal modal-lg">'
+      +   '<div class="modal-head">'
+      +     '<span class="modal-title">' + esc(modalTitle()) + "</span>"
+      +     '<button class="drawer-close" data-m-close="1">'
+      +       '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>'
+      +     "</button>"
+      +   "</div>"
+      +   '<div class="modal-body">' + bodyHtml + "</div>"
+      +   '<div class="modal-foot">' + footHtml + "</div>"
+      + "</div>";
+
+    $("modalMask").innerHTML = html;
+
+    /* 初始化级联选择器面板 */
+    if (!isView) renderCascadePanel();
+  }
+
+  /* ================= 级联选择器（省/市/区/镇） ================= */
+  function cascadePath() {
+    var d = ST.modal ? ST.modal.draft : {};
+    return [d.province, d.city, d.district, d.town].filter(function (x) { return !!x; });
+  }
+
+  function renderCascadePanel() {
+    var panel = document.getElementById("cascadePanel");
+    if (!panel) return;
+    var path = cascadePath();
+    var columns = [];
+    var currentLevel = TREE.slice(); /* 第0级：省 */
+
+    /* 根据 path 逐级渲染 */
+    var colIdx = 0;
+    while (colIdx < 4) {
+      var items = (colIdx === 0 ? TREE : currentLevel);
+      if (!items.length) break;
+      var selectedName = path[colIdx] || null;
+
+      var colHtml = '<div class="ph-cascade-col" data-c-col="' + colIdx + '">';
+      if (!items.length) {
+        colHtml += '<div class="ph-cascade-col-empty">无数据</div>';
+      } else {
+        items.forEach(function (node) {
+          var hasChildren = !!(node.children && node.children.length);
+          var isActive = node.name === selectedName;
+          colHtml += '<div class="ph-cascade-opt' + (isActive ? " is-active" : "") + '" data-c-opt="' + colIdx + '" data-c-name="' + esc(node.name) + '">'
+            + esc(node.name)
+            + (hasChildren ? '<span class="ph-cascade-right">›</span>' : "")
+            + "</div>";
+        });
+      }
+      colHtml += "</div>";
+      columns.push(colHtml);
+
+      /* 下一级 */
+      if (selectedName) {
+        currentLevel = childrenOf(items, selectedName);
+      } else {
+        break; /* 当前级未选中，不再展开后续级 */
+      }
+      colIdx++;
+    }
+    panel.innerHTML = columns.join("");
+  }
+
+  function updateCascadeLabel() {
+    var d = ST.modal ? ST.modal.draft : {};
+    var box = document.getElementById("cascadeAddr");
+    var valEl = document.getElementById("cascadeVal");
+    if (!box || !valEl) return;
+    var path = [d.province, d.city, d.district, d.town].filter(function (x) { return !!x; });
+    if (path.length) {
+      valEl.textContent = path.join(" / ");
+      valEl.classList.remove("is-empty");
+      box.classList.add("has-value");
+    } else {
+      valEl.textContent = "请选择省 / 市 / 区 / 镇";
+      valEl.classList.add("is-empty");
+      box.classList.remove("has-value");
+    }
+  }
+
+  function closeCascade() {
+    var box = document.getElementById("cascadeAddr");
+    if (box) box.classList.remove("is-open");
+  }
+  function toggleCascade() {
+    var box = document.getElementById("cascadeAddr");
+    if (!box) return;
+    box.classList.toggle("is-open");
+    if (box.classList.contains("is-open")) renderCascadePanel();
+  }
+
+  /* ================= 校验与保存 ================= */
+  function validate() {
+    var d = ST.modal.draft;
+    var miss = [];
+    if (!String(d.name || "").trim()) { miss.push("库位名称"); markInvalid("name"); }
+    if (!d.org) { miss.push("所属机构"); markInvalid("org"); }
+    if (!d.cats || !d.cats.length) { miss.push("药品分类"); markCatsInvalid(); }
+    return miss;
+  }
+  function markInvalid(key) {
+    var el = document.querySelector('#modalMask [data-k="' + key + '"]');
+    if (el) el.classList.add("is-invalid");
+  }
+  function markCatsInvalid() {
+    var box = document.getElementById("catsMs");
+    if (box) box.classList.add("is-invalid");
+  }
+
+  function saveModal() {
+    var d = ST.modal.draft;
+    var miss = validate();
+    if (miss.length) { toast("请完善：" + miss.join("、")); return; }
+
+    if (ST.modal.mode === "create") {
+      d.code = nextCode();
+      d.enabled = true;
+      DATA.unshift(JSON.parse(JSON.stringify(d)));
+      toast("已新增：" + d.name + "（" + d.code + "）");
+    } else {
+      var idx = DATA.findIndex(function (x) { return x.code === ST.modal.code; });
+      if (idx >= 0) {
+        DATA[idx] = JSON.parse(JSON.stringify(d));
+        toast("已保存：" + d.name);
+      }
+    }
+    saveData();
+    $("modalMask").classList.remove("show");
+    $("modalMask").innerHTML = "";
+    ST.modal = null;
+    ST.page = 1;
+    renderList();
+  }
+
+  /* ================= 弹窗公共工具 ================= */
+  function openConfirm(html) {
+    $("modalMask").classList.add("show");
+    $("modalMask").innerHTML = '<div class="modal">' + html + "</div>";
+  }
+  function confirmDialog(title, text, okText, onOk) {
+    openConfirm(
+      '<div class="modal-head"><span class="modal-title">' + esc(title) + "</span>"
+      + '<button class="drawer-close" data-c-close="1">'
+      + '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>'
+      + "</button></div>"
+      + '<div class="modal-body"><p class="modal-text">' + esc(text) + "</p></div>"
+      + '<div class="modal-foot"><button class="btn" data-c-close="1">取消</button>'
+      + '<button class="btn btn-primary" data-c-ok="1">' + esc(okText || "确定") + "</button></div>"
+    );
+    $("modalMask").querySelector("[data-c-ok]").addEventListener("click", function () {
+      closeAllModal();
+      if (onOk) onOk();
+    });
+  }
+  function closeAllModal() {
+    $("modalMask").classList.remove("show");
+    $("modalMask").innerHTML = "";
+    ST.modal = null;
+  }
+
+  var toastTimer = null;
+  function toast(msg) {
+    $("toastText").textContent = msg;
+    $("toast").classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { $("toast").classList.remove("show"); }, 2200);
+  }
+
+  /* ================= 查询 / 重置 ================= */
+  function applyFilters() {
+    ST.filters.org = $("fltOrg").value;
+    ST.filters.kw = $("fltName").value.trim();
+    var rd = document.querySelector('input[name="fltStatus"]:checked');
+    ST.filters.status = rd ? rd.value : "all";
+    ST.page = 1;
+    renderList();
+  }
+  function resetFilters() {
+    $("fltOrg").value = "";
+    $("fltName").value = "";
+    document.querySelector('input[name="fltStatus"][value="all"]').checked = true;
+    ST.filters = { org: "", kw: "", status: "all" };
+    ST.page = 1;
+    renderList();
+  }
+
+  /* ================= 事件绑定 ================= */
+  function bindEvents() {
+    $("btnAdd").addEventListener("click", function () { openModal("create"); });
+    $("btnSearch").addEventListener("click", applyFilters);
+    $("btnReset").addEventListener("click", resetFilters);
+    $("fltName").addEventListener("keydown", function (e) { if (e.key === "Enter") applyFilters(); });
+
+    // 列表：状态开关 / 查看 / 编辑 / 删除
+    $("listBody").addEventListener("change", function (e) {
+      var el = e.target;
+      if (!el.hasAttribute("data-act")) return;
+      var p = findItem(el.getAttribute("data-id"));
+      if (!p) return;
+      if (p.enabled) {
+        p.enabled = false;
+        saveData();
+        renderList();
+        toast("已停用：" + p.name);
+      } else {
+        p.enabled = true;
+        saveData();
+        renderList();
+        toast("已启用：" + p.name);
+      }
+    });
+    $("listBody").addEventListener("click", function (e) {
+      var btn = e.target.closest("button[data-act]");
+      if (!btn) return;
+      var act = btn.getAttribute("data-act");
+      var code = btn.getAttribute("data-id");
+      var p = findItem(code);
+      if (!p) return;
+      if (act === "view") openModal("view", code);
+      else if (act === "edit") openModal("edit", code);
+      else if (act === "del") {
+        confirmDialog("提示", "确认删除库位「" + (p.name || p.code) + "」？", "删除", function () {
+          DATA = DATA.filter(function (x) { return x.code !== code; });
+          saveData();
+          renderList();
+          toast("已删除：" + (p.name || p.code));
+        });
+      }
+    });
+
+    // 分页
+    $("pagePrev").addEventListener("click", function () { if (ST.page > 1) { ST.page--; renderList(); } });
+    $("pageNext").addEventListener("click", function () {
+      var pages = Math.max(1, Math.ceil(filtered().length / ST.size));
+      if (ST.page < pages) { ST.page++; renderList(); }
+    });
+    $("pageNums").addEventListener("click", function (e) {
+      var b = e.target.closest("button[data-page]");
+      if (!b) return;
+      ST.page = parseInt(b.getAttribute("data-page"), 10);
+      renderList();
+    });
+    $("pageSize").addEventListener("change", function () {
+      ST.size = parseInt(this.value, 10);
+      ST.page = 1;
+      renderList();
+    });
+    $("pageJump").addEventListener("keydown", function (e) {
+      if (e.key !== "Enter") return;
+      var n = parseInt(this.value, 10);
+      var pages = Math.max(1, Math.ceil(filtered().length / ST.size));
+      if (isNaN(n)) n = 1;
+      ST.page = Math.min(pages, Math.max(1, n));
+      renderList();
+    });
+
+    // 弹窗内事件：关闭、取消、保存
+    $("modalMask").addEventListener("click", function (e) {
+      // 优先处理确认对话框
+      if (e.target.closest("[data-c-close]")) { closeAllModal(); return; }
+      // 主弹窗关闭
+      if (e.target.closest("[data-m-close]")) { closeModal(); return; }
+      if (e.target.closest("[data-m-cancel]")) { closeModal(); return; }
+      if (e.target.closest("[data-m-save]")) { saveModal(); return; }
+      // 点击遮罩关闭
+      if (e.target === this && $("modalMask").querySelector("[data-c-ok]")) { closeAllModal(); return; }
+      if (e.target === this) { closeModal(); return; }
+    });
+
+    // 弹窗内：药品分类多选
+    $("modalMask").addEventListener("click", function (e) {
+      var trg = e.target.closest("[data-cats-trigger]");
+      if (trg) {
+        var box = trg.closest(".ph-ms");
+        box.classList.toggle("is-open");
+        return;
+      }
+
+      /* 级联选择器：trigger 点击 */
+      var cTrg = e.target.closest("[data-c-trigger]");
+      if (cTrg) { toggleCascade(); return; }
+
+      /* 级联选择器：清除按钮 */
+      var cClear = e.target.closest("[data-c-clear]");
+      if (cClear) {
+        e.stopPropagation();
+        var d = ST.modal.draft;
+        d.province = ""; d.city = ""; d.district = ""; d.town = "";
+        ST.modal.dirty = true;
+        updateCascadeLabel();
+        renderCascadePanel();
+        return;
+      }
+
+      /* 级联选择器：面板内选项点击 */
+      var cOpt = e.target.closest("[data-c-opt]");
+      if (cOpt) {
+        var colIdx = parseInt(cOpt.getAttribute("data-c-opt"), 10);
+        var optName = cOpt.getAttribute("data-c-name");
+        var d = ST.modal.draft;
+        /* 设置当前级，清空后续级 */
+        var pathKeys = ["province", "city", "district", "town"];
+        for (var i = 0; i < 4; i++) {
+          if (i === colIdx) d[pathKeys[i]] = optName;
+          else if (i > colIdx) d[pathKeys[i]] = "";
+        }
+        ST.modal.dirty = true;
+        updateCascadeLabel();
+        renderCascadePanel();
+        /* 选到末级（town）后自动关闭 */
+        if (colIdx === 3) { closeCascade(); }
+        return;
+      }
+    });
+    // 关闭下拉（点击外部）
+    document.addEventListener("click", function (e) {
+      if (!e.target.closest(".ph-ms")) {
+        var open = $("modalMask").querySelector(".ph-ms.is-open");
+        if (open) open.classList.remove("is-open");
+      }
+      if (!e.target.closest(".ph-cascade")) {
+        closeCascade();
+      }
+    });
+
+    // 弹窗内：input / select 变更
+    $("modalMask").addEventListener("input", function (e) {
+      if (!ST.modal) return;
+      var el = e.target;
+      ST.modal.dirty = true;
+      if (el.hasAttribute("data-k")) {
+        var k = el.getAttribute("data-k");
+        ST.modal.draft[k] = el.value;
+        el.classList.remove("is-invalid");
+      }
+    });
+    $("modalMask").addEventListener("change", function (e) {
+      if (!ST.modal) return;
+      var el = e.target;
+      ST.modal.dirty = true;
+
+      // 药品分类 checkbox
+      if (el.hasAttribute("data-cat")) {
+        var cat = el.getAttribute("data-cat");
+        var at = ST.modal.draft.cats.indexOf(cat);
+        if (el.checked && at < 0) ST.modal.draft.cats.push(cat);
+        if (!el.checked && at >= 0) ST.modal.draft.cats.splice(at, 1);
+        // 更新 label 显示
+        var box = document.getElementById("catsMs");
+        if (box) {
+          var val = box.querySelector(".ph-ms-val");
+          val.textContent = catsLabelText(ST.modal.draft.cats);
+          val.classList.toggle("is-empty", !ST.modal.draft.cats.length);
+          box.classList.remove("is-invalid");
+        }
+        return;
+      }
+
+      if (el.hasAttribute("data-k")) {
+        var k = el.getAttribute("data-k");
+        ST.modal.draft[k] = el.value;
+        el.classList.remove("is-invalid");
+      }
+    });
+
+    // 导航由 nav.js 统一渲染
+  }
+
+  /* ================= 初始化 ================= */
+  $("fltOrg").innerHTML = '<option value="">全部机构</option>' + ORGS.map(function (o) {
+    return '<option value="' + esc(o) + '">' + esc(o) + "</option>";
+  }).join("");
+
+  loadData();
+  bindEvents();
+  renderList();
+})();
+</script>
+
+  <script src="nav.js"></script>
+</body></html>

@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>药品消耗明细 · 处方管理</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+/* ===== 处方管理 · 药品消耗明细 ===== */
+
+/* 灰底水槽 + 白卡浮起 */
+.page.dc-page { background: var(--bg-page); padding: 12px; gap: 0; }
+.dc-card {
+  flex: 1; min-height: 0;
+  display: flex; flex-direction: column;
+  background: var(--bg-white);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 1px 2px rgba(0,0,0,.04);
+  overflow: hidden;
+}
+.dc-card > .page-head {
+  flex: none;
+  height: 48px; padding: 0 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-white);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+/* 紧凑筛选区 */
+.dc-filter {
+  display: flex; flex-wrap: wrap; align-items: center;
+  gap: 10px 20px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-white);
+}
+.dc-filter .filter-item { display: flex; align-items: center; gap: 6px; }
+.dc-filter .filter-label { font-size: 12px; color: var(--text-tertiary); white-space: nowrap; }
+.dc-filter .input, .dc-filter .select { height: 30px; }
+.dc-filter .filter-item .input, .dc-filter .filter-item .select { width: 170px; }
+.dc-filter .filter-item .input[type="date"] { width: 130px; }
+.dc-filter .filter-date-sep { font-size: 12px; color: var(--text-tertiary); }
+.dc-filter .filter-item.kw .input { width: 220px; }
+.dc-filter .filter-acts { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+
+/* 多选下拉触发器 */
+.multi-select {
+  position: relative;
+  width: 170px;
+}
+.multi-select .ms-trigger {
+  display: flex; align-items: center; justify-content: space-between;
+  height: 30px; padding: 0 10px;
+  border: 1px solid var(--border-input); border-radius: var(--radius);
+  background: var(--bg-white); cursor: pointer; font-size: 13px;
+  transition: border-color .15s;
+}
+.multi-select .ms-trigger:hover { border-color: var(--primary-dark); }
+.multi-select .ms-trigger.is-open { border-color: var(--primary-dark); box-shadow: 0 0 0 2px rgba(43,127,255,.12); }
+.multi-select .ms-placeholder { color: var(--text-placeholder); }
+.multi-select .ms-value { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-primary); }
+.multi-select .ms-count {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 18px; height: 18px; padding: 0 4px;
+  background: var(--primary); color: #fff; font-size: 11px; line-height: 1;
+  border-radius: 9px; margin-left: 6px;
+}
+.multi-select .ms-arrow { color: var(--text-tertiary); font-size: 12px; margin-left: 4px; }
+.multi-select .ms-panel {
+  position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+  max-height: 260px; overflow-y: auto;
+  background: #fff; border: 1px solid var(--border-input);
+  border-radius: var(--radius); box-shadow: 0 4px 12px rgba(0,0,0,.1);
+  z-index: 100; display: none;
+}
+.multi-select .ms-panel.is-open { display: block; }
+.multi-select .ms-option {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 10px; cursor: pointer; font-size: 13px;
+}
+.multi-select .ms-option:hover { background: var(--table-hover); }
+.multi-select .ms-option.is-checked .ms-opt-label { color: var(--primary); }
+.multi-select .ms-check {
+  width: 14px; height: 14px; border: 1px solid var(--border-input); border-radius: 3px;
+  display: flex; align-items: center; justify-content: center; flex: none;
+}
+.multi-select .ms-option.is-checked .ms-check { background: var(--primary); border-color: var(--primary); }
+.multi-select .ms-option.is-checked .ms-check::after {
+  content: ""; width: 8px; height: 4px; border: solid #fff; border-width: 0 1.5px 1.5px 0;
+  transform: rotate(45deg) translate(-1px, -1px);
+}
+
+/* 药品消耗表格容器 */
+.dc-table-wrap {
+  flex: 1; min-height: 0; overflow: auto;
+  background: var(--bg-white);
+  padding: 0 16px;
+}
+.dc-table {
+  width: max-content; min-width: 100%;
+  border-collapse: collapse; font-size: 13px;
+}
+.dc-table th {
+  position: sticky; top: 0; z-index: 2;
+  background: var(--table-head);
+  height: 38px; padding: 0 10px;
+  text-align: left; font-weight: 500; color: var(--text-secondary);
+  white-space: nowrap;
+  border-bottom: 1px solid var(--border);
+}
+.dc-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+.dc-table tbody tr:nth-child(even) { background: var(--table-even); }
+.dc-table tbody tr:hover { background: var(--table-hover); }
+.dc-table .col-num { text-align: right; font-variant-numeric: tabular-nums; }
+.dc-table .amt { font-weight: 500; color: var(--primary-dark); }
+
+/* 药品种类彩色标签 */
+.kind-tag { display: inline-block; padding: 1px 7px; border-radius: 3px; font-size: 12px; line-height: 18px; }
+.kind-tag.k-west     { background: #E6F1FB; color: #2B7FFF; }
+.kind-tag.k-cm       { background: #F6FFED; color: #52C41A; }
+.kind-tag.k-tcm      { background: #FFF7E6; color: #FA8C16; }
+.kind-tag.k-granule  { background: #F9F0FF; color: #722ED1; }
+.kind-tag.k-narcotic { background: #FFF1F0; color: #FF4D4F; }
+.kind-tag.k-psy1     { background: #FFF1F0; color: #FF4D4F; }
+.kind-tag.k-psy2     { background: #FFF7E6; color: #FA8C16; }
+.kind-tag.k-toxic    { background: #FFF1F0; color: #FF4D4F; }
+.kind-tag.k-vaccine  { background: #E6FFFB; color: #13C2C2; }
+
+/* 性别小标签 */
+.sex-tag { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 12px; }
+.sex-tag.m { background: #E6F1FB; color: #2B7FFF; }
+.sex-tag.f { background: #FFF0F5; color: #EB2F96; }
+
+/* 底部分页：左侧汇总 + 右侧标准 pager */
+.dc-card > .pager { padding: 0 16px; }
+.dc-summary { font-size: 12px; color: var(--text-secondary); }
+.dc-summary strong { color: var(--primary-dark); font-weight: 500; }
+
+/* 导出按钮 */
+.btn-export { display: inline-flex; align-items: center; gap: 4px; }
+.btn-export::before {
+  content: ""; width: 13px; height: 13px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2'><path d='M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4'/><polyline points='7 10 12 15 17 10'/><line x1='12' y1='15' x2='12' y2='3'/></svg>") center/contain no-repeat;
+          mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2'><path d='M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4'/><polyline points='7 10 12 15 17 10'/><line x1='12' y1='15' x2='12' y2='3'/></svg>") center/contain no-repeat;
+}
+
+</style>
+</head>
+<body>
+
+<!-- ========== 顶部导航 ========== -->
+<header class="app-header">
+  <div class="header-left">
+    <div class="header-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3.2" y="9.4" width="17.6" height="5.2" rx="2.6" transform="rotate(-45 12 12)"/>
+        <path d="M8.4 15.6L15.6 8.4"/>
+      </svg>
+    </div>
+    <div class="header-title">区域药房协同管理系统</div>
+  </div>
+  <div class="header-right">
+    <div class="header-user">
+      <div class="header-avatar">赵</div>
+      <span class="header-user-name">赵敏 · 中心药房</span>
+    </div>
+  </div>
+</header>
+
+<div class="app-body">
+  <!-- ========== 左侧导航 ========== -->
+  <aside class="app-side" id="appSide"></aside>
+<!-- ========== 主区域 ========== -->
+  <main class="app-main">
+    <div class="tabbar">
+      <div class="tab" onclick="location.href='drug-catalog.html'">首页</div>
+      <div class="tab active">
+        药品消耗明细
+        <button class="tab-close" title="关闭" onclick="location.href='drug-catalog.html'">
+          <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 5l14 14M19 5L5 19"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="page dc-page">
+      <div class="dc-card">
+        <!-- 标题行 -->
+        <div class="page-head">
+          <h1 class="page-title">药品消耗明细</h1>
+        <div class="page-acts">
+          <button class="btn btn-default btn-export" onclick="DC.exportData()">导出</button>
+        </div>
+      </div>
+
+      <!-- 筛选 + 表格 + 分页 -->
+      <div class="dc-filter">
+        <div class="filter-item">
+          <span class="filter-label">机构：</span>
+          <select class="select" id="f-org">
+            <option value="org-c" selected>中心药房</option>
+            <option value="org-a1">XX 社区卫生服务中心</option>
+            <option value="org-a2">YY 人民医院</option>
+            <option value="org-a3">ZZ 中西医结合医院</option>
+          </select>
+        </div>
+
+        <div class="filter-item">
+          <span class="filter-label">库位：</span>
+          <div class="multi-select" id="ms-loc">
+            <div class="ms-trigger" onclick="DC.toggleMs('ms-loc', event)">
+              <span class="ms-placeholder">全部</span>
+              <span class="ms-arrow">▾</span>
+            </div>
+            <div class="ms-panel" id="ms-loc-panel">
+              <div class="ms-option is-checked" data-val="" onclick="DC.toggleMsOpt('ms-loc', this, event)">全部</div>
+              <div class="ms-option" data-val="loc-c1-A" onclick="DC.toggleMsOpt('ms-loc', this, event)">西药库</div>
+              <div class="ms-option" data-val="loc-c1-B" onclick="DC.toggleMsOpt('ms-loc', this, event)">中药库</div>
+              <div class="ms-option" data-val="loc-c2-A" onclick="DC.toggleMsOpt('ms-loc', this, event)">藏药库</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="filter-item">
+          <span class="filter-label">消耗时间：</span>
+          <input class="input" type="date" id="f-date-start">
+          <span class="filter-date-sep">至</span>
+          <input class="input" type="date" id="f-date-end">
+        </div>
+
+        <div class="filter-item kw">
+          <span class="filter-label">药品：</span>
+          <input class="input" id="f-kw" placeholder="药品编码 / 拼音 / 名称">
+        </div>
+
+        <div class="filter-item">
+          <span class="filter-label">药品种类：</span>
+          <div class="multi-select" id="ms-kind">
+            <div class="ms-trigger" onclick="DC.toggleMs('ms-kind', event)">
+              <span class="ms-placeholder">全部</span>
+              <span class="ms-arrow">▾</span>
+            </div>
+            <div class="ms-panel" id="ms-kind-panel">
+              <div class="ms-option is-checked" data-val="" onclick="DC.toggleMsOpt('ms-kind', this, event)">全部</div>
+              <div class="ms-option" data-val="西药" onclick="DC.toggleMsOpt('ms-kind', this, event)">西药</div>
+              <div class="ms-option" data-val="中成药" onclick="DC.toggleMsOpt('ms-kind', this, event)">中成药</div>
+              <div class="ms-option" data-val="中药饮片" onclick="DC.toggleMsOpt('ms-kind', this, event)">中药饮片</div>
+              <div class="ms-option" data-val="配方颗粒" onclick="DC.toggleMsOpt('ms-kind', this, event)">配方颗粒</div>
+              <div class="ms-option" data-val="疫苗" onclick="DC.toggleMsOpt('ms-kind', this, event)">疫苗</div>
+              <div class="ms-option" data-val="麻醉药品" onclick="DC.toggleMsOpt('ms-kind', this, event)">麻醉药品</div>
+              <div class="ms-option" data-val="第一类精神药品" onclick="DC.toggleMsOpt('ms-kind', this, event)">第一类精神药品</div>
+              <div class="ms-option" data-val="第二类精神药品" onclick="DC.toggleMsOpt('ms-kind', this, event)">第二类精神药品</div>
+              <div class="ms-option" data-val="医疗用毒性药品" onclick="DC.toggleMsOpt('ms-kind', this, event)">医疗用毒性药品</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="filter-acts">
+          <button class="btn btn-default" onclick="DC.reset()">重置</button>
+          <button class="btn btn-primary" onclick="DC.search()">查询</button>
+        </div>
+      </div>
+
+      <!-- 表格 -->
+      <div class="dc-table-wrap">
+        <table class="dc-table" id="dc-table">
+          <thead>
+            <tr>
+              <th style="min-width:90px">库位</th>
+              <th style="min-width:80px">病人姓名</th>
+              <th style="min-width:48px">性别</th>
+              <th style="min-width:48px">年龄</th>
+              <th style="min-width:156px">消耗时间</th>
+              <th style="min-width:72px">发药人</th>
+              <th style="min-width:100px">开单科室</th>
+              <th style="min-width:160px">药品名称</th>
+              <th style="min-width:120px">药品编码</th>
+              <th style="min-width:130px">药品规格</th>
+              <th style="min-width:88px">最小换算系数</th>
+              <th style="min-width:130px">制剂规格</th>
+              <th style="min-width:100px">发药时进货价</th>
+              <th style="min-width:100px">发药时零售价</th>
+              <th style="min-width:80px; text-align:right">发药数量</th>
+              <th style="min-width:100px; text-align:right">零售金额</th>
+              <th style="min-width:130px">批次号</th>
+              <th style="min-width:160px">生产企业</th>
+              <th style="min-width:150px">批准文号</th>
+              <th style="min-width:110px">药品种类</th>
+            </tr>
+          </thead>
+          <tbody id="dc-tbody"></tbody>
+        </table>
+      </div>
+
+      <!-- 底部分页 -->
+        <div class="pager">
+          <span class="dc-summary" id="dc-summary">共 0 条记录，零售金额合计：¥0.00</span>
+          <span class="pager-ctrl" id="dc-pager"></span>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+/* ============================================================
+   药品消耗明细 · 原型脚本
+   ============================================================ */
+(function () {
+  var DC = {};
+  window.DC = DC;
+
+  function $(id) { return document.getElementById(id); }
+  function pad(n) { return n < 10 ? '0' + n : '' + n; }
+  function fmtDate(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  function fmtDT(d)   { return fmtDate(d) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds()); }
+  function money(n)   { return '¥' + Number(n).toFixed(2); }
+  function esc(s)     { return String(s == null ? '' : s).replace(/[<>&"]/g, function (c) {
+                          return { '<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;' }[c];
+                        }); }
+
+  /* ---------- Mock 数据生成 ---------- */
+  var PATIENTS = [
+    { name: '张伟', sex: 'm', age: 45 }, { name: '王芳', sex: 'f', age: 32 },
+    { name: '李明', sex: 'm', age: 28 }, { name: '陈静', sex: 'f', age: 56 },
+    { name: '刘洋', sex: 'm', age: 63 }, { name: '赵雪', sex: 'f', age: 19 },
+    { name: '周杰', sex: 'm', age: 71 }, { name: '吴敏', sex: 'f', age: 41 },
+    { name: '孙强', sex: 'm', age: 35 }, { name: '郑丽', sex: 'f', age: 48 },
+    { name: '马涛', sex: 'm', age: 52 }, { name: '黄慧', sex: 'f', age: 26 },
+    { name: '林峰', sex: 'm', age: 38 }, { name: '徐颖', sex: 'f', age: 67 },
+    { name: '郭亮', sex: 'm', age: 23 }, { name: '何琳', sex: 'f', age: 59 },
+    { name: '罗斌', sex: 'm', age: 44 }, { name: '梁欣', sex: 'f', age: 30 },
+    { name: '宋威', sex: 'm', age: 61 }, { name: '谢佳', sex: 'f', age: 22 }
+  ];
+  var DOCTORS = ['张伟', '黄药师', '李发药', '王护士', '陈发药', '赵敏'];
+  var DEPTS   = ['内科', '外科', '儿科', '妇产科', '急诊科', '中医科', '皮肤科', '口腔科'];
+
+  var DRUG_POOL = [
+    { kind:'西药',    name:'阿莫西林胶囊',   code:'YP001001', spec:'0.25g*24粒',  unitCoeff:1,  prepSpec:'0.25g', purchase:0.85, retail:1.35, vendor:'华北制药股份有限公司',       approval:'国药准字H13024121', batch:'H260115A' },
+    { kind:'西药',    name:'头孢克肟分散片', code:'YP001002', spec:'0.1g*12片',   unitCoeff:1,  prepSpec:'0.1g',  purchase:3.20, retail:4.80, vendor:'石药集团欧意药业有限公司',   approval:'国药准字H20065497', batch:'H260218B' },
+    { kind:'西药',    name:'布洛芬缓释胶囊', code:'YP001003', spec:'0.3g*20粒',   unitCoeff:1,  prepSpec:'0.3g',  purchase:2.10, retail:3.50, vendor:'中美天津史克制药有限公司',   approval:'国药准字H10900089', batch:'H260305C' },
+    { kind:'西药',    name:'奥美拉唑肠溶胶囊',code:'YP001004',spec:'20mg*14粒',   unitCoeff:1,  prepSpec:'20mg',  purchase:1.50, retail:2.80, vendor:'山东罗欣药业集团股份有限公司',approval:'国药准字H20030945', batch:'H260122D' },
+    { kind:'西药',    name:'复方甘草片',     code:'YP001005', spec:'100片',       unitCoeff:1,  prepSpec:'片',     purchase:0.08, retail:0.15, vendor:'安徽丰原药业股份有限公司',     approval:'国药准字H34022018', batch:'H260228E' },
+    { kind:'中成药',  name:'双黄连口服液',   code:'YP002001', spec:'10ml*10支',   unitCoeff:10, prepSpec:'10ml',   purchase:1.80, retail:3.20, vendor:'哈药集团三精制药有限公司',     approval:'国药准字Z10920053', batch:'Z260108A' },
+    { kind:'中成药',  name:'板蓝根颗粒',     code:'YP002002', spec:'10g*20袋',    unitCoeff:20, prepSpec:'10g',    purchase:0.25, retail:0.50, vendor:'广州白云山和记黄埔中药有限公司',approval:'国药准字Z44020009', batch:'Z260215B' },
+    { kind:'中成药',  name:'六味地黄丸',     code:'YP002003', spec:'9g*10丸',     unitCoeff:10, prepSpec:'9g',     purchase:1.20, retail:2.50, vendor:'北京同仁堂科技发展股份有限公司',approval:'国药准字Z11020162', batch:'Z260301C' },
+    { kind:'中成药',  name:'急支糖浆',       code:'YP002004', spec:'100ml',       unitCoeff:1,  prepSpec:'100ml',  purchase:2.30, retail:4.20, vendor:'太极集团重庆涪陵制药厂有限公司',approval:'国药准字Z50020062', batch:'Z260128D' },
+    { kind:'中药饮片',name:'黄芪',           code:'YP003001', spec:'500g/袋',     unitCoeff:1,  prepSpec:'500g',   purchase:0.60, retail:1.20, vendor:'甘肃陇西中药材有限公司',       approval:'国药准字Z20040001', batch:'Y260105A' },
+    { kind:'中药饮片',name:'当归',           code:'YP003002', spec:'500g/袋',     unitCoeff:1,  prepSpec:'500g',   purchase:0.80, retail:1.60, vendor:'岷县当归种植专业合作社',       approval:'国药准字Z20040002', batch:'Y260220B' },
+    { kind:'中药饮片',name:'金银花',         code:'YP003003', spec:'250g/袋',     unitCoeff:1,  prepSpec:'250g',   purchase:1.20, retail:2.50, vendor:'山东平邑金银花种植基地',       approval:'国药准字Z20040003', batch:'Y260310C' },
+    { kind:'配方颗粒',name:'黄芪配方颗粒',   code:'YP004001', spec:'10g*30袋',    unitCoeff:30, prepSpec:'10g',    purchase:0.45, retail:0.90, vendor:'华润三九医药股份有限公司',     approval:'国药准字Z20100001', batch:'P260118A' },
+    { kind:'配方颗粒',name:'川芎配方颗粒',   code:'YP004002', spec:'10g*30袋',    unitCoeff:30, prepSpec:'10g',    purchase:0.50, retail:1.00, vendor:'江阴天江药业有限公司',         approval:'国药准字Z20100002', batch:'P260225B' },
+    { kind:'麻醉药品',name:'盐酸吗啡注射液', code:'YP005001', spec:'10mg*1ml*5支',unitCoeff:5, prepSpec:'10mg',   purchase:12.00,retail:18.50,vendor:'东北制药集团股份有限公司',     approval:'国药准字H21022455', batch:'M260112A' },
+    { kind:'第二类精神药品',name:'地西泮片', code:'YP006001', spec:'2.5mg*24片',  unitCoeff:1,  prepSpec:'2.5mg',  purchase:0.20, retail:0.40, vendor:'江苏恩华药业股份有限公司',     approval:'国药准字H32020337', batch:'S260208A' }
+  ];
+
+  function genMockData() {
+    var rows = [];
+    var today = new Date();
+    var seed = 42;
+    function srand() { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; }
+    function sItem(arr) { return arr[Math.floor(srand() * arr.length)]; }
+    function sInt(a, b) { return a + Math.floor(srand() * (b - a + 1)); }
+
+    for (var i = 0; i < 128; i++) {
+      var drug = sItem(DRUG_POOL);
+      var pt   = sItem(PATIENTS);
+      var offsetHours = sInt(0, 24 * 14);
+      var dispenseAt = new Date(today.getTime() - offsetHours * 3600 * 1000 - sInt(0, 3600) * 1000);
+      var qty = sInt(1, 20);
+      var row = {
+        id: 'R' + String(100000 + i),
+        patient: pt.name, sex: pt.sex, age: pt.age,
+        dispenseAt: dispenseAt,
+        dispenser: sItem(DOCTORS),
+        dept: sItem(DEPTS),
+        drugName: drug.name, drugCode: drug.code,
+        spec: drug.spec, unitCoeff: drug.unitCoeff,
+        prepSpec: drug.prepSpec,
+        purchasePrice: drug.purchase, retailPrice: drug.retail,
+        qty: qty,
+        batch: drug.batch + '-' + sInt(1, 99),
+        vendor: drug.vendor, approval: drug.approval,
+        kind: drug.kind,
+        loc: sItem(['loc-c1-A','loc-c1-B','loc-c2-A'])
+      };
+      row.amount = +(row.qty * row.retailPrice).toFixed(2);
+      rows.push(row);
+    }
+    rows.sort(function (a, b) { return b.dispenseAt - a.dispenseAt; });
+    return rows;
+  }
+
+  /* ---------- 状态 ---------- */
+  var ST = {
+    all: [],
+    filtered: [],
+    page: 1,
+    pageSize: 20,
+    msLocVals: [''],
+    msKindVals: ['']
+  };
+
+  /* ---------- 初始化 ---------- */
+  function init() {
+    ST.all = genMockData();
+    var end = new Date();
+    var start = new Date(end.getTime() - 6 * 86400 * 1000);
+    $('f-date-start').value = fmtDate(start);
+    $('f-date-end').value   = fmtDate(end);
+    bindEvents();
+    DC.search();
+  }
+
+  function bindEvents() {
+    $('f-kw').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') DC.search();
+    });
+    document.addEventListener('click', function (e) {
+      if (!e.target.closest('.multi-select')) {
+        document.querySelectorAll('.multi-select .ms-panel.is-open').forEach(function (p) { p.classList.remove('is-open'); });
+        document.querySelectorAll('.multi-select .ms-trigger.is-open').forEach(function (t) { t.classList.remove('is-open'); });
+      }
+    });
+  }
+
+  /* ---------- 多选下拉 ---------- */
+  DC.toggleMs = function (id, ev) {
+    ev.stopPropagation();
+    var el = $(id);
+    var trigger = el.querySelector('.ms-trigger');
+    var panel = el.querySelector('.ms-panel');
+    var isOpen = panel.classList.contains('is-open');
+    document.querySelectorAll('.multi-select .ms-panel.is-open').forEach(function (p) { p.classList.remove('is-open'); });
+    document.querySelectorAll('.multi-select .ms-trigger.is-open').forEach(function (t) { t.classList.remove('is-open'); });
+    if (!isOpen) { panel.classList.add('is-open'); trigger.classList.add('is-open'); }
+  };
+
+  DC.toggleMsOpt = function (id, opt, ev) {
+    ev.stopPropagation();
+    var val = opt.getAttribute('data-val');
+    var panel = opt.parentElement;
+    var isAll = val === '';
+
+    if (isAll) {
+      panel.querySelectorAll('.ms-option').forEach(function (o) { o.classList.remove('is-checked'); });
+      opt.classList.add('is-checked');
+    } else {
+      panel.querySelectorAll('.ms-option').forEach(function (o) {
+        if (o.getAttribute('data-val') === '') o.classList.remove('is-checked');
+      });
+      opt.classList.toggle('is-checked');
+      var any = panel.querySelectorAll('.ms-option:not([data-val=""]).is-checked').length;
+      if (any === 0) panel.querySelector('.ms-option[data-val=""]').classList.add('is-checked');
+    }
+    DC.syncMsTrigger(id);
+  };
+
+  DC.syncMsTrigger = function (id) {
+    var el = $(id);
+    var panel = el.querySelector('.ms-panel');
+    var trigger = el.querySelector('.ms-trigger');
+    var label = trigger.querySelector('.ms-value') || trigger.querySelector('.ms-placeholder');
+    var checked = panel.querySelectorAll('.ms-option.is-checked:not([data-val=""])');
+    var vals = [];
+    checked.forEach(function (o) { vals.push(o.getAttribute('data-val')); });
+    if (vals.length === 0) {
+      ST[id === 'ms-loc' ? 'msLocVals' : 'msKindVals'] = [''];
+      if (label.classList.contains('ms-value')) label.classList.remove('ms-value');
+      label.classList.add('ms-placeholder');
+      label.textContent = '全部';
+      var countEl = trigger.querySelector('.ms-count');
+      if (countEl) countEl.remove();
+    } else {
+      ST[id === 'ms-loc' ? 'msLocVals' : 'msKindVals'] = vals;
+      var names = [];
+      checked.forEach(function (o) { names.push(o.textContent.trim()); });
+      if (label.classList.contains('ms-placeholder')) label.classList.remove('ms-placeholder');
+      label.classList.add('ms-value');
+      label.textContent = names.join('、');
+      var countEl = trigger.querySelector('.ms-count');
+      if (vals.length > 1) {
+        if (!countEl) {
+          countEl = document.createElement('span');
+          countEl.className = 'ms-count';
+          trigger.appendChild(countEl);
+        }
+        countEl.textContent = vals.length;
+      } else if (countEl) {
+        countEl.remove();
+      }
+    }
+  };
+
+  /* ---------- 查询 / 重置 ---------- */
+  DC.search = function () {
+    var dateS = $('f-date-start').value;
+    var dateE = $('f-date-end').value;
+    var kw    = $('f-kw').value.trim().toLowerCase();
+    var locs  = ST.msLocVals;
+    var kinds = ST.msKindVals;
+
+    ST.filtered = ST.all.filter(function (r) {
+      if (!(locs.length === 1 && locs[0] === '')) {
+        if (locs.indexOf(r.loc) === -1) return false;
+      }
+      if (dateS) {
+        var ds = new Date(dateS + 'T00:00:00');
+        if (r.dispenseAt < ds) return false;
+      }
+      if (dateE) {
+        var de = new Date(dateE + 'T23:59:59');
+        if (r.dispenseAt > de) return false;
+      }
+      if (kw) {
+        var hit = (r.drugCode || '').toLowerCase().indexOf(kw) !== -1
+               || (r.drugName || '').toLowerCase().indexOf(kw) !== -1;
+        if (!hit) return false;
+      }
+      if (!(kinds.length === 1 && kinds[0] === '')) {
+        if (kinds.indexOf(r.kind) === -1) return false;
+      }
+      return true;
+    });
+
+    ST.page = 1;
+    render();
+  };
+
+  DC.reset = function () {
+    $('f-org').value = 'org-c';
+    var end = new Date();
+    var start = new Date(end.getTime() - 6 * 86400 * 1000);
+    $('f-date-start').value = fmtDate(start);
+    $('f-date-end').value   = fmtDate(end);
+    $('f-kw').value = '';
+    ['ms-loc', 'ms-kind'].forEach(function (mid) {
+      var panel = $(mid + '-panel');
+      panel.querySelectorAll('.ms-option').forEach(function (o) { o.classList.remove('is-checked'); });
+      panel.querySelector('.ms-option[data-val=""]').classList.add('is-checked');
+      DC.syncMsTrigger(mid);
+    });
+    DC.search();
+  };
+
+  /* ---------- 渲染 ---------- */
+  function render() {
+    renderTable();
+    renderFooter();
+    renderPager();
+  }
+
+  function kindClass(kind) {
+    var map = {
+      '西药':'k-west','中成药':'k-cm','中药饮片':'k-tcm','配方颗粒':'k-granule',
+      '麻醉药品':'k-narcotic','第一类精神药品':'k-psy1','第二类精神药品':'k-psy2',
+      '医疗用毒性药品':'k-toxic','疫苗':'k-vaccine'
+    };
+    return map[kind] || 'k-west';
+  }
+
+  function renderTable() {
+    var tbody = $('dc-tbody');
+    var start = (ST.page - 1) * ST.pageSize;
+    var pageRows = ST.filtered.slice(start, start + ST.pageSize);
+
+    if (pageRows.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="20" class="table-empty">暂无数据</td></tr>';
+      return;
+    }
+
+    var LOC_NAMES = { 'loc-c1-A':'西药库', 'loc-c1-B':'中药库', 'loc-c2-A':'藏药库', 'loc-a1-1-A':'门诊西药库', 'loc-a1-1-B':'门诊中药库' };
+
+    var html = '';
+    pageRows.forEach(function (r) {
+      html += '<tr>'
+        + '<td>' + esc(LOC_NAMES[r.loc] || r.loc) + '</td>'
+        + '<td>' + esc(r.patient) + '</td>'
+        + '<td>' + (r.sex === 'm' ? '男' : '女') + '</td>'
+        + '<td>' + esc(r.age) + '</td>'
+        + '<td>' + fmtDT(r.dispenseAt) + '</td>'
+        + '<td>' + esc(r.dispenser) + '</td>'
+        + '<td>' + esc(r.dept) + '</td>'
+        + '<td title="' + esc(r.drugName) + '">' + esc(r.drugName) + '</td>'
+        + '<td>' + esc(r.drugCode) + '</td>'
+        + '<td>' + esc(r.spec) + '</td>'
+        + '<td class="col-num">' + esc(r.unitCoeff) + '</td>'
+        + '<td>' + esc(r.prepSpec) + '</td>'
+        + '<td class="col-num">' + money(r.purchasePrice) + '</td>'
+        + '<td class="col-num">' + money(r.retailPrice) + '</td>'
+        + '<td class="col-num">' + esc(r.qty) + '</td>'
+        + '<td class="col-num">' + money(r.amount) + '</td>'
+        + '<td>' + esc(r.batch) + '</td>'
+        + '<td title="' + esc(r.vendor) + '">' + esc(r.vendor) + '</td>'
+        + '<td>' + esc(r.approval) + '</td>'
+        + '<td>' + esc(r.kind) + '</td>'
+        + '</tr>';
+    });
+    tbody.innerHTML = html;
+  }
+
+  function renderFooter() {
+    var sum = 0;
+    ST.filtered.forEach(function (r) { sum += r.amount; });
+    $('dc-summary').innerHTML = '共 <strong>' + ST.filtered.length + '</strong> 条记录，零售金额合计：<strong>' + money(sum) + '</strong>';
+  }
+
+  function renderPager() {
+    var ctrl = $('dc-pager');
+    var total = ST.filtered.length;
+    var pages = Math.max(1, Math.ceil(total / ST.pageSize));
+    ST.page = Math.min(ST.page, pages);
+
+    var html = '';
+    // 上一页
+    html += '<button class="pager-btn"' + (ST.page <= 1 ? ' disabled' : '') + ' onclick="DC.goPage(' + (ST.page - 1) + ')" title="上一页">'
+      + '<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button>';
+    // 当前/总页数
+    html += '<span class="pager-num">' + ST.page + ' / ' + pages + '</span>';
+    // 下一页
+    html += '<button class="pager-btn"' + (ST.page >= pages ? ' disabled' : '') + ' onclick="DC.goPage(' + (ST.page + 1) + ')" title="下一页">'
+      + '<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>';
+
+    ctrl.innerHTML = html;
+  }
+
+  DC.goPage = function (n) {
+    var pages = Math.max(1, Math.ceil(ST.filtered.length / ST.pageSize));
+    if (n < 1 || n > pages) return;
+    ST.page = n;
+    render();
+    var wrap = document.querySelector('.dc-table-wrap');
+    if (wrap) wrap.scrollTop = 0;
+  };
+
+  /* ---------- 导出 CSV ---------- */
+  DC.exportData = function () {
+    if (ST.filtered.length === 0) {
+      showToast('没有可导出的数据');
+      return;
+    }
+    var headers = ['病人姓名','性别','年龄','消耗时间','发药人','开单科室','药品名称','药品编码','药品规格','最小换算系数','制剂规格','发药时进货价','发药时零售价','发药数量','零售金额','批次号','生产企业','批准文号','药品种类'];
+    var lines = [headers.join(',')];
+    ST.filtered.forEach(function (r) {
+      var row = [
+        r.patient, r.sex === 'm' ? '男' : '女', r.age, fmtDT(r.dispenseAt),
+        r.dispenser, r.dept, r.drugName, r.drugCode, r.spec, r.unitCoeff,
+        r.prepSpec, r.purchasePrice, r.retailPrice, r.qty, r.amount,
+        r.batch, r.vendor, r.approval, r.kind
+      ];
+      lines.push(row.map(function (v) {
+        var s = String(v).replace(/"/g, '""');
+        return /[",\n]/.test(s) ? '"' + s + '"' : s;
+      }).join(','));
+    });
+    var csv = '\uFEFF' + lines.join('\n');
+    var blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = '药品消耗明细_' + fmtDate(new Date()) + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('已导出 ' + ST.filtered.length + ' 条记录');
+  };
+
+  /* ---------- Toast ---------- */
+  function showToast(msg) {
+    var t = document.createElement('div');
+    t.textContent = msg;
+    t.style.cssText = 'position:fixed;top:72px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.8);color:#fff;padding:8px 20px;border-radius:4px;font-size:13px;z-index:9999;';
+    document.body.appendChild(t);
+    setTimeout(function () {
+      t.style.opacity = '0'; t.style.transition = 'opacity .3s';
+      setTimeout(function () { t.remove(); }, 300);
+    }, 1800);
+  }
+
+  init();
+})();
+</script>
+
+  <script src="nav.js"></script>
+</body>
+</html>

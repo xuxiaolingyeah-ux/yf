@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>登录 · 区域药房协同管理系统</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body class="login-body">
+
+<div class="login-wrap">
+  <div class="login-card">
+    <div class="login-brand">
+      <div class="lb-logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3.2" y="9.4" width="17.6" height="5.2" rx="2.6" transform="rotate(-45 12 12)"/>
+          <path d="M8.4 15.6L15.6 8.4"/>
+        </svg>
+      </div>
+      <div class="lb-title">区域药房协同管理系统</div>
+      <div class="lb-sub">药品目录遴选 · 演示环境</div>
+    </div>
+
+    <div class="login-form">
+      <div class="form-item">
+        <input class="input" id="fAccount" placeholder="账号" autocomplete="off">
+      </div>
+      <div class="form-item">
+        <input class="input" id="fPassword" type="password" placeholder="密码">
+      </div>
+      <button class="btn btn-primary btn-login" id="btnLogin">登 录</button>
+    </div>
+
+    <div class="login-tip">演示账号（点击卡片一键登录，密码统一 123456）</div>
+    <div class="demo-cards" id="demoCards"></div>
+  </div>
+</div>
+
+<div class="modal-mask" id="modalMask"></div>
+<div class="toast" id="toast">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+  <span id="toastText"></span>
+</div>
+
+<script src="mock.js"></script>
+<script src="selection-common.js"></script>
+<script>
+(function () {
+  var $ = SEL.$;
+
+  function renderCards() {
+    $("demoCards").innerHTML = MOCK.users.map(function (u) {
+      return '<div class="demo-card" data-acc="' + u.account + '">' +
+        '<span class="demo-avatar">' + u.name.charAt(0) + "</span>" +
+        '<span class="demo-info">' +
+          '<div class="demo-name">' + u.name + '<span style="color:var(--text-tertiary);font-size:12px;">（' + u.account + "）</span></div>" +
+          '<div class="demo-org">' + u.org + " · " + u.roleName + "</div>" +
+        "</span>" +
+      "</div>";
+    }).join("");
+  }
+
+  function doLogin(account, password) {
+    var user = null;
+    MOCK.users.forEach(function (u) { if (u.account === account) user = u; });
+    if (!user || user.password !== password) {
+      SEL.toast("账号或密码错误");
+      return;
+    }
+    SEL.login({ id: user.id, account: user.account, name: user.name, org: user.org, role: user.role, roleName: user.roleName });
+    SEL.toast("登录成功");
+    setTimeout(function () {
+      // 有来源页（如库存盘点）时回跳来源页，否则按角色进入默认页
+      var ret = sessionStorage.getItem("SC_RETURN");
+      if (ret) {
+        sessionStorage.removeItem("SC_RETURN");
+        location.href = ret;
+        return;
+      }
+      // 登录后进入系统首页，由左侧目录进入各业务模块
+      location.href = "home.html";
+    }, 300);
+  }
+
+  $("btnLogin").addEventListener("click", function () {
+    var acc = $("fAccount").value.trim();
+    var pwd = $("fPassword").value.trim();
+    if (!acc) { SEL.toast("请输入账号"); return; }
+    if (!pwd) { SEL.toast("请输入密码"); return; }
+    doLogin(acc, pwd);
+  });
+
+  $("fPassword").addEventListener("keydown", function (e) {
+    if (e.key === "Enter") $("btnLogin").click();
+  });
+
+  $("demoCards").addEventListener("click", function (e) {
+    var card = e.target.closest(".demo-card");
+    if (!card) return;
+    var acc = card.getAttribute("data-acc");
+    $("fAccount").value = acc;
+    $("fPassword").value = "123456";
+    doLogin(acc, "123456");
+  });
+
+  renderCards();
+})();
+</script>
+</body>
+</html>

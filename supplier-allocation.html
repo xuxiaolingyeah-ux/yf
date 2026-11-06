@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>供应商分配 · 中心药房</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ========== 顶部导航 ========== -->
+<header class="app-header">
+  <div class="header-left">
+    <div class="header-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3.2" y="9.4" width="17.6" height="5.2" rx="2.6" transform="rotate(-45 12 12)"></rect>
+        <path d="M8.4 15.6L15.6 8.4"></path>
+      </svg>
+    </div>
+    <div class="header-title">区域药房协同管理系统</div>
+  </div>
+  <div class="header-right">
+    <div class="header-user">
+      <div class="header-avatar">张</div>
+      <span class="header-user-name">张明远</span>
+    </div>
+  </div>
+</header>
+
+<div class="app-body">
+  <!-- ========== 左侧导航 ========== -->
+  <aside class="app-side" id="appSide"></aside>
+<!-- ========== 主区域 ========== -->
+  <main class="app-main">
+    <div class="tabbar">
+      <div class="tab" data-href="drug-catalog.html">首页</div>
+      <div class="tab active">
+        供应商分配
+        <button class="tab-close" id="tabClose" title="关闭">
+          <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+            <path d="M5 5l14 14M19 5L5 19"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="page">
+      <!-- 标题行 -->
+      <div class="page-head">
+        <h1 class="page-title">供应商分配</h1>
+        <div class="page-acts">
+          <button class="btn btn-primary" id="btnBatch" disabled="">批量分配</button>
+        </div>
+      </div>
+
+      <div class="page-body sa-body">
+        <!-- 筛选条 -->
+        <div class="sa-toolbar">
+          <input class="input sa-kw" id="fKw" placeholder="药品名称 / 编码 / 拼音码 / 生产企业" autocomplete="off">
+          <select class="select sa-sel" id="fKind">
+            <option value="">全部种类</option>
+            <option value="西药">西药</option>
+            <option value="中成药">中成药</option>
+            <option value="中药饮片">中药饮片</option>
+            <option value="生物制品">生物制品</option>
+          </select>
+          <select class="select sa-sel sa-sel-sup" id="fSup">
+            <option value="">全部供应商</option>
+            <option value="__none">未分配供应商</option>
+          </select>
+          <select class="select sa-sel" id="fAssign">
+            <option value="">全部分配状态</option>
+            <option value="yes">已分配</option>
+            <option value="no">未分配</option>
+          </select>
+          <label class="sa-switch" title="开启后仅展示启用的药品规格">
+            <span class="switch">
+              <input type="checkbox" id="onlyOn">
+              <span class="track"></span>
+            </span>
+            <span class="sa-switch-txt">仅看启用</span>
+          </label>
+          <div class="sa-toolbar-right">
+            <span class="sa-picked" id="pickedTxt"></span>
+            <button class="btn btn-sm" id="btnReset">重置</button>
+          </div>
+        </div>
+
+        <!-- 列表 -->
+        <div class="sa-table-wrap">
+          <table class="sa-table">
+            <thead>
+              <tr>
+                <th class="c-check">
+                  <label class="check">
+                    <input type="checkbox" id="pickAll">
+                    <span class="check-box"></span>
+                  </label>
+                </th>
+                <th class="col-code">药品编码</th>
+                <th class="col-name">药品名称</th>
+                <th class="col-spec">药品规格</th>
+                <th class="col-form">剂型</th>
+                <th class="col-vendor">生产企业</th>
+                <th class="col-approval">批准文号</th>
+                <th class="col-sup">供应商</th>
+                <th class="col-time">更新时间</th>
+                <th class="col-ops">操作</th>
+              </tr>
+            </thead>
+            <tbody id="rows"></tbody>
+          </table>
+        </div>
+
+        <div class="sa-pager" id="pager"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ========== 批量分配抽屉 ========== -->
+<div class="drawer-mask" id="drawerMask"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-head">
+    <span class="drawer-title" id="drawerTitle">批量分配供应商</span>
+    <button class="drawer-close" id="drawerClose" title="关闭">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <path d="M5 5l14 14M19 5L5 19"></path>
+      </svg>
+    </button>
+  </div>
+  <div class="drawer-body">
+    <div class="drawer-section">
+      <div class="drawer-section-title">分配范围</div>
+      <div class="sa-scope">
+        <div class="sa-scope-line">已选 <b id="scopeCount">0</b> 个药品（规格·厂家）</div>
+        <div class="sa-scope-sub" id="scopeSub"></div>
+        <button class="link-btn" id="btnShowList">查看清单</button>
+        <div class="sa-scope-list" id="scopeList" style="display:none;"></div>
+      </div>
+    </div>
+
+    <div class="drawer-section">
+      <div class="drawer-section-title"><span class="req">*</span>供应商</div>
+      <div class="sa-combo">
+        <input class="input" id="dSupInput" placeholder="输入供应商名称 / 编码进行模糊匹配" autocomplete="off">
+        <div class="sa-combo-list" id="supList"></div>
+      </div>
+      <div class="sa-sup-info" id="supInfo"></div>
+    </div>
+
+    <div class="drawer-section">
+      <div class="drawer-section-title">分配方式</div>
+      <div class="sa-radio">
+        <label>
+          <input type="radio" name="saMode" value="append" checked="">
+          <span class="sa-radio-txt">追加
+            <span class="sa-radio-sub" id="modeAppendSub"></span>
+          </span>
+        </label>
+        <label>
+          <input type="radio" name="saMode" value="cover">
+          <span class="sa-radio-txt">覆盖
+            <span class="sa-radio-sub" id="modeCoverSub"></span>
+          </span>
+        </label>
+      </div>
+    </div>
+  </div>
+  <div class="drawer-foot">
+    <button class="btn" id="drawerCancel">取消</button>
+    <button class="btn btn-primary" id="drawerOk">确定</button>
+  </div>
+</div>
+
+<!-- ========== 通用弹窗容器 ========== -->
+<div class="modal-mask" id="modalMask"></div>
+
+<!-- ========== Toast ========== -->
+<div class="toast" id="toast">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M20 6L9 17l-5-5"></path>
+  </svg>
+  <span id="toastText"></span>
+</div>
+
+<script src="mock.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  function $(id) { return document.getElementById(id); }
+  function esc(v) {
+    return String(v == null || v === "" ? "—" : v).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+  function pad(n) { return n < 10 ? "0" + n : String(n); }
+  function todayStr() {
+    var d = new Date();
+    return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+  }
+  function nowStr() {
+    var d = new Date();
+    return todayStr() + " " + pad(d.getHours()) + ":" + pad(d.getMinutes());
+  }
+
+  var SUP = MOCK.suppliers || [];
+  var SUP_BY = {};
+  SUP.forEach(function (s) { SUP_BY[s.code] = s; });
+
+  /* ---------- 数据：一行 = 规格 × 生产企业 ---------- */
+  var ROWS = [];
+  MOCK.drugs.forEach(function (d, di) {
+    d.specs.forEach(function (s, si) {
+      s.vendors.forEach(function (v, vi) {
+        var key = MOCK.vkey(d.id, si, vi);
+        var rec = (MOCK.supplies || {})[key];
+        ROWS.push({
+          key: key, di: di,
+          code: s.code, name: d.name, spec: s.title, form: d.form,
+          kind: d.kind, py: d.py || "",
+          vendor: v.name, approval: v.approval,
+          drugStatus: s.status,
+          supplier: rec ? rec.supplier : "",
+          updated: rec ? rec.updated : ""
+        });
+      });
+    });
+  });
+
+  /* ---------- 页面状态 ---------- */
+  var ST = { kw: "", kind: "", sup: "", assign: "", onlyOn: false, page: 1, size: 20, sel: {} };
+  var D = { open: false, keys: [], mode: "append", supplier: "", showList: false, invalidSup: false };
+  var CUR_PAGE_KEYS = [];
+
+  var TOAST_T = null;
+  function toast(msg) {
+    $("toastText").textContent = msg;
+    $("toast").classList.add("show");
+    if (TOAST_T) clearTimeout(TOAST_T);
+    TOAST_T = setTimeout(function () { $("toast").classList.remove("show"); }, 2200);
+  }
+
+  /* ---------- 筛选 ---------- */
+  function filtered() {
+    var kw = ST.kw.trim().toLowerCase();
+    return ROWS.filter(function (r) {
+      if (ST.onlyOn && r.drugStatus !== "on") return false;
+      if (ST.kind && r.kind !== ST.kind) return false;
+      if (ST.assign === "yes" && !r.supplier) return false;
+      if (ST.assign === "no" && r.supplier) return false;
+      if (ST.sup === "__none" && r.supplier) return false;
+      if (ST.sup && ST.sup !== "__none" && r.supplier !== ST.sup) return false;
+      if (kw) {
+        var hay = (r.name + " " + r.code + " " + r.spec + " " + r.vendor + " " + r.approval + " " + r.py).toLowerCase();
+        if (hay.indexOf(kw) === -1) return false;
+      }
+      return true;
+    });
+  }
+
+  function selCount() { return Object.keys(ST.sel).length; }
+
+  /* ---------- 渲染：统计 / 表格 / 分页 ---------- */
+  function render() {
+    var list = filtered();
+    var totalPages = Math.max(1, Math.ceil(list.length / ST.size));
+    if (ST.page > totalPages) ST.page = totalPages;
+
+    var start = (ST.page - 1) * ST.size;
+    var pageRows = list.slice(start, start + ST.size);
+
+    var html = "";
+    pageRows.forEach(function (r) {
+      var picked = !!ST.sel[r.key];
+      var supHtml = r.supplier
+        ? '<span class="sa-sup-name" title="' + esc(SUP_BY[r.supplier] ? SUP_BY[r.supplier].name : r.supplier) + '">' +
+            esc(SUP_BY[r.supplier] ? SUP_BY[r.supplier].name : r.supplier) + '</span>'
+        : '<span class="sa-unassigned">未分配</span>';
+
+      html += '<tr class="sa-row' + (picked ? " is-picked" : "") + '" data-key="' + r.key + '">' +
+        '<td class="c-check"><label class="check"><input type="checkbox" data-pick' + (picked ? " checked" : "") + '><span class="check-box"></span></label></td>' +
+        '<td class="col-code mono" title="' + esc(r.code) + '">' + esc(r.code) + '</td>' +
+        '<td class="col-name"><span class="dot ' + (r.drugStatus === "on" ? "on" : "off") + '"></span>' +
+          '<span class="sa-name" title="' + esc(r.name) + '">' + esc(r.name) + '</span></td>' +
+        '<td class="col-spec" title="' + esc(r.spec) + '">' + esc(r.spec) + '</td>' +
+        '<td class="col-form" title="' + esc(r.form) + '">' + esc(r.form) + '</td>' +
+        '<td class="col-vendor" title="' + esc(r.vendor) + '">' + esc(r.vendor) + '</td>' +
+        '<td class="col-approval mono" title="' + esc(r.approval) + '">' + esc(r.approval) + '</td>' +
+        '<td class="col-sup">' + supHtml + '</td>' +
+        '<td class="col-time">' + (r.updated ? esc(r.updated) : "—") + '</td>' +
+        '<td class="col-ops">' +
+          '<button class="link-btn" data-act="assign">' + (r.supplier ? "更换" : "分配") + '</button>' +
+          (r.supplier ? '<button class="link-btn sa-danger" data-act="remove">移除</button>' : "") +
+        '</td>' +
+      '</tr>';
+    });
+
+    if (!pageRows.length) {
+      html = '<tr><td colspan="10"><div class="empty">暂无符合条件的数据</div></td></tr>';
+    }
+    $("rows").innerHTML = html;
+
+    CUR_PAGE_KEYS = pageRows.map(function (r) { return r.key; });
+    syncSel();
+
+    renderPager(list.length, totalPages);
+  }
+
+  function pageList(total, cur) {
+    if (total <= 7) {
+      var all = [];
+      for (var i = 1; i <= total; i++) all.push(i);
+      return all;
+    }
+    var arr = [1];
+    var from = Math.max(2, cur - 1), to = Math.min(total - 1, cur + 1);
+    if (from > 2) arr.push("...");
+    for (var j = from; j <= to; j++) arr.push(j);
+    if (to < total - 1) arr.push("...");
+    arr.push(total);
+    return arr;
+  }
+
+  function renderPager(total, totalPages) {
+    var nums = pageList(totalPages, ST.page).map(function (p) {
+      if (p === "...") return '<span class="sa-page-ellipsis">…</span>';
+      return '<button class="sa-page-num' + (p === ST.page ? " is-cur" : "") + '" data-page="' + p + '">' + p + '</button>';
+    }).join("");
+
+    $("pager").innerHTML =
+      '<span class="sa-pager-total">共 <b>' + total + '</b> 条</span>' +
+      '<select class="select sa-page-size" id="pageSize">' +
+        '<option value="20"' + (ST.size === 20 ? " selected" : "") + '>20 条/页</option>' +
+        '<option value="50"' + (ST.size === 50 ? " selected" : "") + '>50 条/页</option>' +
+        '<option value="100"' + (ST.size === 100 ? " selected" : "") + '>100 条/页</option>' +
+      '</select>' +
+      '<div class="pager-ctrl">' +
+        '<button class="pager-btn" data-page="' + (ST.page - 1) + '"' + (ST.page <= 1 ? " disabled" : "") + ' title="上一页">' +
+          '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M15 6l-6 6 6 6"/></svg>' +
+        '</button>' +
+        nums +
+        '<button class="pager-btn" data-page="' + (ST.page + 1) + '"' + (ST.page >= totalPages ? " disabled" : "") + ' title="下一页">' +
+          '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>' +
+        '</button>' +
+      '</div>' +
+      '<span class="sa-page-jump">跳至 <input class="input sa-page-input" id="pageJump" value="' + ST.page + '"> 页</span>';
+
+    $("pageSize").addEventListener("change", function () {
+      ST.size = parseInt(this.value, 10) || 20;
+      ST.page = 1;
+      render();
+    });
+    $("pageJump").addEventListener("keydown", function (e) {
+      if (e.key !== "Enter") return;
+      var p = parseInt(this.value, 10);
+      if (!p || p < 1) p = 1;
+      if (p > totalPages) p = totalPages;
+      ST.page = p;
+      render();
+    });
+  }
+
+  /* ---------- 选择（不重渲染表格，只同步选中态） ---------- */
+  function syncSel() {
+    var n = selCount();
+    $("pickedTxt").textContent = n ? "已选 " + n + " 个" : "";
+    $("btnBatch").disabled = n === 0;
+    $("btnBatch").textContent = "批量分配";
+    var pageAll = CUR_PAGE_KEYS.length > 0 && CUR_PAGE_KEYS.every(function (k) { return !!ST.sel[k]; });
+    $("pickAll").checked = pageAll;
+  }
+
+  function togglePick(key, on) {
+    if (on) ST.sel[key] = true;
+    else delete ST.sel[key];
+    var tr = document.querySelector('tr.sa-row[data-key="' + key + '"]');
+    if (tr) {
+      tr.classList.toggle("is-picked", on);
+      var cb = tr.querySelector("[data-pick]");
+      if (cb) cb.checked = on;
+    }
+    syncSel();
+  }
+
+  /* ---------- 拖拽抽屉 ---------- */
+  function openDrawer(keys) {
+    D.keys = keys.slice();
+    D.mode = "append";
+    D.supplier = "";
+    D.invalidSup = false;
+    D.showList = false;
+    D.open = true;
+    renderDrawer();
+    document.body.classList.add("drawer-open");
+  }
+  function closeDrawer() {
+    D.open = false;
+    document.body.classList.remove("drawer-open");
+  }
+
+  function renderDrawer() {
+    var rows = D.keys.map(function (k) {
+      return ROWS.filter(function (r) { return r.key === k; })[0];
+    }).filter(Boolean);
+    var assigned = rows.filter(function (r) { return !!r.supplier; }).length;
+
+    $("drawerTitle").textContent = rows.length > 1 ? "批量分配供应商" : "分配供应商";
+    $("scopeCount").textContent = rows.length;
+    $("scopeSub").textContent = "其中已分配 " + assigned + " 个，未分配 " + (rows.length - assigned) + " 个";
+
+    $("modeAppendSub").textContent = "已分配的 " + assigned + " 个药品保持原供应商不变，仅分配未分配的 " + (rows.length - assigned) + " 个";
+    $("modeCoverSub").textContent = assigned
+      ? "已分配的 " + assigned + " 个药品会被替换为本次选择的供应商"
+      : "所选药品均未分配，直接指定供应商";
+
+    // 清单
+    $("scopeList").style.display = D.showList ? "block" : "none";
+    $("btnShowList").textContent = D.showList ? "收起清单" : "查看清单";
+    $("scopeList").innerHTML = rows.map(function (r) {
+      return '<div class="sa-scope-item">' +
+        '<span class="sa-scope-drug" title="' + esc(r.name) + '">' + esc(r.name) + '</span>' +
+        '<span class="sa-scope-meta" title="' + esc(r.spec + " · " + r.vendor) + '">' + esc(r.spec) + ' · ' + esc(r.vendor) + '</span>' +
+        '</div>';
+    }).join("");
+
+    // 供应商输入框 / 已选标签
+    $("dSupInput").value = D.supplier && SUP_BY[D.supplier] ? supLabel(SUP_BY[D.supplier]) : "";
+    $("dSupInput").classList.toggle("is-invalid", D.invalidSup);
+    renderSupInfo();
+    $("supList").classList.remove("show");
+
+    // 分配方式
+    var radios = document.querySelectorAll('input[name="saMode"]');
+    Array.prototype.forEach.call(radios, function (r) {
+      r.checked = (r.value === D.mode);
+    });
+  }
+
+  /* ---------- 供应商模糊匹配 ---------- */
+  function supLabel(s) { return s.code + " · " + s.name; }
+
+  function renderSupList(kw) {
+    var q = (kw || "").trim().toLowerCase();
+    var list = SUP.filter(function (s) {
+      if (!q) return true;
+      return (s.code + " " + s.name + " " + s.contact).toLowerCase().indexOf(q) > -1;
+    });
+    var html = "";
+    if (!list.length) {
+      html = '<div class="sa-combo-empty">未匹配到供应商</div>';
+    } else {
+      list.forEach(function (s) {
+        html += '<div class="sa-combo-item' + (D.supplier === s.code ? " is-cur" : "") + '" data-code="' + esc(s.code) + '">' +
+          '<span class="sa-combo-name">' + esc(s.name) + '</span>' +
+          '<span class="sa-combo-code">' + esc(s.code) + '</span>' +
+        '</div>';
+      });
+    }
+    $("supList").innerHTML = html;
+    $("supList").classList.add("show");
+  }
+
+  function supMatch(text) {
+    var v = (text || "").trim();
+    if (!v) return null;
+    for (var i = 0; i < SUP.length; i++) {
+      if (SUP[i].name === v || SUP[i].code === v || supLabel(SUP[i]) === v) return SUP[i];
+    }
+    return null;
+  }
+
+  function selectSupplier(code) {
+    D.supplier = code;
+    D.invalidSup = false;
+    var s = SUP_BY[code];
+    $("dSupInput").value = s ? supLabel(s) : "";
+    $("dSupInput").classList.remove("is-invalid");
+    $("supList").classList.remove("show");
+    renderSupInfo();
+  }
+
+  function renderSupInfo() {
+    var sup = SUP_BY[D.supplier];
+    if (!sup) {
+      $("supInfo").innerHTML = '<span class="sa-sup-tip">选择供应商后可查看联系人与供货区域</span>';
+      return;
+    }
+    $("supInfo").innerHTML =
+      '<div>联系人：' + esc(sup.contact) + ' · ' + esc(sup.phone) + '</div>' +
+      '<div>供货区域：' + esc(sup.area) + ' · 类型：' + esc(sup.type) + '</div>';
+  }
+
+  function applyAssign() {
+    var skipped = 0, changed = 0;
+    D.keys.forEach(function (k) {
+      var r = ROWS.filter(function (x) { return x.key === k; })[0];
+      if (!r) return;
+      if (D.mode === "append" && r.supplier) { skipped++; return; }
+      r.supplier = D.supplier;
+      r.updated = nowStr();
+      changed++;
+    });
+    closeDrawer();
+    ST.sel = {};
+    render();
+    if (changed) {
+      toast("已为 " + changed + " 个药品分配供应商" + (skipped ? "（跳过 " + skipped + " 个已分配）" : ""));
+    } else {
+      toast("所选药品均已分配供应商，未做变更");
+    }
+  }
+
+  /* ---------- 通用确认弹窗 ---------- */
+  function confirmDialog(opt, onOk) {
+    var mask = $("modalMask");
+    mask.innerHTML =
+      '<div class="modal sa-confirm">' +
+        '<div class="modal-head"><span class="modal-title">' + esc(opt.title) + '</span>' +
+          '<button class="drawer-close" data-close title="关闭">' +
+            '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>' +
+          '</button>' +
+        '</div>' +
+        '<div class="modal-body"><div class="modal-text">' + opt.text + '</div></div>' +
+        '<div class="modal-foot">' +
+          '<button class="btn" data-close>取消</button>' +
+          '<button class="btn ' + (opt.danger ? "btn-danger-text" : "btn-primary") + '" data-ok>' + esc(opt.okText || "确定") + '</button>' +
+        '</div>' +
+      '</div>';
+    mask.classList.add("show");
+    function hide() { mask.classList.remove("show"); mask.innerHTML = ""; }
+    mask.querySelectorAll("[data-close]").forEach(function (b) { b.addEventListener("click", hide); });
+    mask.querySelector("[data-ok]").addEventListener("click", function () { hide(); onOk(); });
+    mask.addEventListener("click", function (e) { if (e.target === mask) hide(); });
+  }
+
+  /* ---------- 事件绑定 ---------- */
+  $("fKw").addEventListener("input", function () { ST.kw = this.value; ST.page = 1; render(); });
+  $("fKind").addEventListener("change", function () { ST.kind = this.value; ST.page = 1; render(); });
+  $("fSup").addEventListener("change", function () { ST.sup = this.value; ST.page = 1; render(); });
+  $("fAssign").addEventListener("change", function () { ST.assign = this.value; ST.page = 1; render(); });
+  $("onlyOn").addEventListener("change", function () { ST.onlyOn = this.checked; ST.page = 1; render(); });
+  $("btnReset").addEventListener("click", function () {
+    ST.kw = ""; ST.kind = ""; ST.sup = ""; ST.assign = ""; ST.onlyOn = false; ST.page = 1; ST.sel = {};
+    $("fKw").value = ""; $("fKind").value = ""; $("fSup").value = ""; $("fAssign").value = ""; $("onlyOn").checked = false;
+    render();
+  });
+
+  $("pickAll").addEventListener("change", function () {
+    var on = this.checked;
+    CUR_PAGE_KEYS.forEach(function (k) { togglePick(k, on); });
+  });
+
+  $("rows").addEventListener("click", function (e) {
+    var tr = e.target.closest("tr.sa-row");
+    if (!tr) return;
+    var key = tr.getAttribute("data-key");
+    var actBtn = e.target.closest("[data-act]");
+    if (actBtn) {
+      e.stopPropagation();
+      var act = actBtn.getAttribute("data-act");
+      if (act === "assign") { openDrawer([key]); return; }
+      if (act === "remove") {
+        var row = ROWS.filter(function (r) { return r.key === key; })[0];
+        confirmDialog({
+          title: "移除供应关系",
+          text: "确定将「" + esc(row.name) + " · " + esc(row.spec) + " · " + esc(row.vendor) + "」的供应商关系移除？移除后该药品需重新分配供应商。",
+          okText: "移除",
+          danger: true
+        }, function () {
+          row.supplier = ""; row.updated = "";
+          render();
+          toast("已移除供应关系");
+        });
+        return;
+      }
+    }
+    if (e.target.closest(".check")) return;   // checkbox 的 change 事件里处理
+    togglePick(key, !ST.sel[key]);
+  });
+
+  $("rows").addEventListener("change", function (e) {
+    if (!e.target.hasAttribute("data-pick")) return;
+    var tr = e.target.closest("tr.sa-row");
+    if (!tr) return;
+    togglePick(tr.getAttribute("data-key"), e.target.checked);
+  });
+
+  $("pager").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-page]");
+    if (!b || b.disabled) return;
+    var p = parseInt(b.getAttribute("data-page"), 10);
+    if (!p || p < 1) return;
+    ST.page = p;
+    render();
+  });
+
+  $("btnBatch").addEventListener("click", function () {
+    if (!selCount()) { toast("请先勾选药品"); return; }
+    var keys = ROWS.filter(function (r) { return ST.sel[r.key]; }).map(function (r) { return r.key; });
+    openDrawer(keys);
+  });
+
+  $("btnShowList").addEventListener("click", function () { D.showList = !D.showList; renderDrawer(); });
+
+  $("dSupInput").addEventListener("input", function () {
+    var v = this.value;
+    var m = supMatch(v);
+    D.supplier = m ? m.code : "";
+    D.invalidSup = false;
+    this.classList.remove("is-invalid");
+    renderSupInfo();
+    renderSupList(v);
+  });
+  $("dSupInput").addEventListener("focus", function () {
+    renderSupList(D.supplier ? "" : this.value);
+    if (D.supplier) this.select();
+  });
+  $("dSupInput").addEventListener("blur", function () {
+    setTimeout(function () { $("supList").classList.remove("show"); }, 160);
+  });
+  $("supList").addEventListener("mousedown", function (e) {
+    var item = e.target.closest("[data-code]");
+    if (!item) return;
+    e.preventDefault();
+    selectSupplier(item.getAttribute("data-code"));
+  });
+
+  document.querySelectorAll('input[name="saMode"]').forEach(function (r) {
+    r.addEventListener("change", function () { D.mode = this.value; });
+  });
+  $("drawerClose").addEventListener("click", closeDrawer);
+  $("drawerCancel").addEventListener("click", closeDrawer);
+  $("drawerMask").addEventListener("click", closeDrawer);
+
+  $("drawerOk").addEventListener("click", function () {
+    if (!D.supplier) {
+      D.invalidSup = true;
+      $("dSupInput").classList.add("is-invalid");
+      $("dSupInput").focus();
+      toast("请选择供应商");
+      return;
+    }
+    var assigned = D.keys.filter(function (k) {
+      var r = ROWS.filter(function (x) { return x.key === k; })[0];
+      return r && r.supplier;
+    }).length;
+    if (D.mode === "cover" && assigned > 0) {
+      confirmDialog({
+        title: "覆盖现有供应关系",
+        text: "本次将覆盖 <b>" + assigned + "</b> 个已分配药品的现有供应商，确定继续？",
+        okText: "覆盖",
+        danger: true
+      }, applyAssign);
+      return;
+    }
+    applyAssign();
+  });
+
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && D.open) closeDrawer();
+  });
+
+  // 供应商筛选下拉
+  SUP.forEach(function (s) {
+    var o = document.createElement("option");
+    o.value = s.code;
+    o.textContent = s.code + " · " + s.name;
+    $("fSup").appendChild(o);
+  });
+
+  render();
+})();
+</script>
+  <script src="nav.js"></script>
+</body>
+</html>

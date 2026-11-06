@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>新增调拨 · 区域药房协同管理系统</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="app-header">
+  <div class="header-left">
+    <div class="header-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3.2" y="9.4" width="17.6" height="5.2" rx="2.6" transform="rotate(-45 12 12)"/>
+        <path d="M8.4 15.6L15.6 8.4"/>
+      </svg>
+    </div>
+    <div class="header-title">区域药房协同管理系统</div>
+  </div>
+  <div class="header-right">
+    <div class="header-user" id="headerUser" title="点击退出登录">
+      <span class="header-avatar">药</span>
+      <span class="header-user-name">—</span>
+      <svg class="user-arrow" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+    </div>
+  </div>
+</header>
+
+<div class="app-body">
+  <aside class="app-side" id="appSide"></aside>
+<main class="app-main">
+    <div class="tabbar">
+      <div class="tab">首页</div>
+      <div class="tab" data-href="transfer.html">调拨管理</div>
+      <div class="tab active">
+        <span id="tabName">新增调拨</span>
+        <button class="tab-close" id="tabClose" title="关闭">
+          <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="page sel-page">
+      <div class="sel-main">
+        <div class="page-head">
+          <div class="head-back">
+            <button class="back-btn" id="btnBack" title="返回调拨列表">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+            </button>
+            <h1 class="page-title" id="pageTitle">新增调拨</h1>
+            <span class="pa-code" id="headCode"></span>
+          </div>
+        </div>
+
+        <div class="sel-card">
+          <div class="card-body">
+            <div class="form-wrap">
+
+              <!-- 申请详情 -->
+              <section class="block">
+                <div class="block-head"><h2 class="block-title">申请详情</h2></div>
+                <div class="form-grid-4">
+                  <div class="form-item">
+                    <span class="form-label">申请机构</span>
+                    <input class="input is-readonly" id="fOrg" readonly>
+                  </div>
+                  <div class="form-item">
+                    <span class="form-label"><span class="req">*</span>申请药房</span>
+                    <select class="select" id="fPharmacy">
+                      <option value="">请选择</option>
+                    </select>
+                  </div>
+                  <div class="form-item">
+                    <span class="form-label"><span class="req">*</span>申请库位</span>
+                    <select class="select" id="fLocation" disabled>
+                      <option value="">请选择</option>
+                    </select>
+                  </div>
+                  <div class="form-item">
+                    <span class="form-label">提交人</span>
+                    <input class="input is-readonly" id="fCreator" readonly>
+                  </div>
+                  <div class="form-item">
+                    <span class="form-label">提交时间</span>
+                    <input class="input is-readonly" id="fSubmitTime" readonly>
+                  </div>
+                  <div class="form-item span-2of4">
+                    <span class="form-label">缺药说明</span>
+                    <input class="input" id="fDesc" maxlength="120" placeholder="请填写缺药情况，便于出库方准备">
+                  </div>
+                </div>
+              </section>
+
+              <!-- 药品明细 -->
+              <section class="block tr-items-table">
+                <div class="block-head">
+                  <h2 class="block-title">药品明细<span class="count" id="itemCount"></span></h2>
+                  <div class="block-acts">
+                    <button class="btn btn-primary btn-sm" id="btnAddItem">添加药品</button>
+                  </div>
+                </div>
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th style="width:230px;">药品名称</th>
+                      <th style="width:130px;">药品编码</th>
+                      <th style="width:180px;">规格</th>
+                      <th style="width:110px;" class="num">机构库存</th>
+                      <th style="width:130px;" class="num"><span class="req">*</span>申请数量</th>
+                      <th style="width:90px;">操作</th>
+                    </tr>
+                  </thead>
+                  <tbody id="itemBody"></tbody>
+                </table>
+              </section>
+
+            </div>
+          </div>
+
+          <div class="page-foot">
+            <button class="btn" id="btnCancel">取消</button>
+            <button class="btn" id="btnSave">暂存</button>
+            <button class="btn btn-primary" id="btnSubmit">提交审核</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="modal-mask" id="modalMask"></div>
+<div class="toast" id="toast">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+  <span id="toastText"></span>
+</div>
+
+<script src="mock.js"></script>
+<script src="selection-common.js"></script>
+<script src="transfer-common.js"></script>
+<script>
+(function () {
+  var $ = SEL.$, esc = SEL.esc;
+  var user = TR.user();
+  if (!user) return;
+
+  if (user.role === "center" || user.role === "pharmacist") {
+    location.href = "transfer.html";
+    return;
+  }
+
+  var applyOrg = TR.orgKey(user);
+  var all = TR.load();
+  var bill = SEL.qs("id") ? TR.byId(all, SEL.qs("id")) : null;
+  var isEdit = !!bill;
+  if (isEdit && !TR.canEdit(bill, user)) { location.href = "transfer.html"; return; }
+
+  if (!bill) {
+    bill = {
+      id: "t" + Date.now().toString(36),
+      code: TR.newCode(all),
+      createType: user.role === "village" ? "village" : "member",
+      creatorId: user.id, creator: user.name, creatorOrg: user.org,
+      applyOrg: applyOrg, applyOrgName: TR.ORGS[applyOrg],
+      applyPharmacy: "", applyPharmacyName: "", applyLocation: "", applyLocationName: "",
+      shortageDesc: "", createdAt: SEL.fmtNow(), submitTime: SEL.fmtNow(),
+      auditStatus: "draft", transferStatus: "", outOrg: "", outOrgName: "",
+      outPharmacy: "", outPharmacyName: "", outLocation: "", outLocationName: "",
+      outCode: "", inCode: "", nextStep: "", items: [], batches: [], records: []
+    };
+  }
+
+  function renderPharmacies() {
+    var sel = $("fPharmacy");
+    var list = TR.pharmaciesOf(applyOrg);
+    sel.innerHTML = '<option value="">请选择</option>' + list.map(function (p) {
+      return '<option value="' + p.id + '">' + esc(p.name) + "</option>";
+    }).join("");
+    if (bill.applyPharmacy) sel.value = bill.applyPharmacy;
+    renderLocations();
+  }
+  function renderLocations() {
+    var ph = $("fPharmacy").value;
+    var sel = $("fLocation");
+    var list = ph ? TR.locationsOf(ph) : [];
+    sel.disabled = !ph;
+    sel.innerHTML = '<option value="">请选择</option>' + list.map(function (l) {
+      return '<option value="' + l.id + '">' + esc(l.name) + "</option>";
+    }).join("");
+    if (bill.applyLocation && ph === bill.applyPharmacy) sel.value = bill.applyLocation;
+  }
+
+  function renderItems() {
+    var body = $("itemBody");
+    if (!bill.items.length) {
+      body.innerHTML = '<tr><td colspan="6" class="tr-empty-cell">请点击右上角「添加药品」选择调拨药品</td></tr>';
+    } else {
+      body.innerHTML = bill.items.map(function (it, i) {
+        return "<tr>" +
+          '<td title="' + esc(it.drugName) + '">' + esc(it.drugName) + "</td>" +
+          "<td>" + esc(it.drugCode) + "</td>" +
+          '<td title="' + esc(it.spec) + '">' + esc(it.spec) + "</td>" +
+          '<td class="num">' + it.stock + "</td>" +
+          '<td class="num"><input class="input tr-qty" type="text" inputmode="numeric" data-si="' + i + '" value="' + it.applyQty + '"></td>' +
+          '<td><button class="link-btn is-danger" data-remove="' + i + '">删除</button></td>' +
+        "</tr>";
+      }).join("");
+    }
+    $("itemCount").textContent = "（" + bill.items.length + "）";
+  }
+
+  function syncInfo() {
+    $("fOrg").value = TR.ORGS[applyOrg];
+    $("fCreator").value = user.name;
+    $("fSubmitTime").value = bill.submitTime || SEL.fmtNow();
+    $("fDesc").value = bill.shortageDesc || "";
+    $("pageTitle").textContent = isEdit ? "编辑调拨" : "新增调拨";
+    $("tabName").textContent = $("pageTitle").textContent;
+    $("headCode").textContent = "调拨单号：" + bill.code;
+    document.title = $("pageTitle").textContent + " " + bill.code + " · 区域药房协同管理系统";
+  }
+
+  /* ---------------- 选择药品 ---------------- */
+  var pickState = { kw: "" };
+
+  function openPicker() {
+    pickState.kw = "";
+    var mask = $("modalMask");
+    mask.innerHTML =
+      '<div class="modal tr-drug-modal">' +
+        '<div class="modal-head">' +
+          '<span class="modal-title">选择药品</span>' +
+          '<button class="drawer-close" data-close="1"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg></button>' +
+        "</div>" +
+        '<div class="modal-body">' +
+          '<div class="tr-pick-toolbar">' +
+            '<input class="input" id="pickKw" placeholder="搜索药品名称 / 编码 / 规格" style="width:280px;">' +
+            '<span class="tr-in-hint">可多选，已在明细中的药品不可重复添加</span>' +
+          "</div>" +
+          '<div class="tr-pick-wrap"><table class="data-table"><thead><tr>' +
+            '<th style="width:40px;"><input type="checkbox" id="pickAll"></th>' +
+            '<th style="width:180px;">药品名称</th>' +
+            '<th style="width:110px;">药品编码</th>' +
+            '<th style="width:150px;">规格</th>' +
+            '<th style="width:80px;" class="num">机构库存</th>' +
+            '<th style="width:90px;">种类</th>' +
+          "</tr></thead><tbody id=\"pickBody\"></tbody></table></div>" +
+        "</div>" +
+        '<div class="modal-foot">' +
+          '<button class="btn" data-close="1">取消</button>' +
+          '<button class="btn btn-primary" id="pickOk">确定添加</button>' +
+        "</div>" +
+      "</div>";
+    mask.classList.add("show");
+    renderPick();
+    $("pickKw").addEventListener("input", function () {
+      pickState.kw = this.value.trim().toLowerCase();
+      renderPick();
+    });
+    $("pickAll").addEventListener("change", function () {
+      var on = this.checked;
+      [].slice.call($("pickBody").querySelectorAll("input[data-key]")).forEach(function (cb) {
+        if (!cb.disabled) cb.checked = on;
+      });
+    });
+    $("pickOk").addEventListener("click", addPicked);
+    document.addEventListener("click", function (e) {
+      if (e.target === mask && mask.classList.contains("show")) SEL.closeModal();
+    });
+  }
+
+  function addedKeys() {
+    return bill.items.map(function (it) { return it.drugId + "_" + it.si; });
+  }
+
+  function renderPick() {
+    var keys = addedKeys();
+    var rows = TR.specList().filter(function (s) {
+      if (!pickState.kw) return true;
+      return (s.drugName + s.drugCode + s.spec).toLowerCase().indexOf(pickState.kw) >= 0;
+    });
+    $("pickBody").innerHTML = rows.length ? rows.map(function (s) {
+      var added = keys.indexOf(s.key) >= 0;
+      return '<tr class="' + (added ? "is-disabled" : "") + '">' +
+        '<td><input type="checkbox" data-key="' + s.key + '"' + (added ? " disabled" : "") + "></td>" +
+        "<td>" + esc(s.drugName) + "</td>" +
+        "<td>" + esc(s.drugCode) + "</td>" +
+        "<td>" + esc(s.spec) + "</td>" +
+        '<td class="num">' + TR.orgStock(applyOrg, s.drugId, s.si) + "</td>" +
+        "<td>" + esc(s.kind) + (added ? '<span class="tr-added">已添加</span>' : "") + "</td>" +
+      "</tr>";
+    }).join("") : '<tr><td colspan="6" class="tr-empty-cell">没有匹配的药品</td></tr>';
+  }
+
+  function addPicked() {
+    var chosen = [].slice.call($("pickBody").querySelectorAll("input[data-key]:checked"));
+    if (!chosen.length) { SEL.toast("请先勾选要调拨的药品"); return; }
+    chosen.forEach(function (cb) {
+      var s = TR.specByKey(cb.getAttribute("data-key"));
+      bill.items.push({
+        drugId: s.drugId, si: s.si,
+        drugCode: s.drugCode, drugName: s.drugName,
+        specCode: s.specCode, spec: s.spec,
+        stock: TR.orgStock(applyOrg, s.drugId, s.si),
+        applyQty: ""
+      });
+    });
+    SEL.closeModal();
+    renderItems();
+    SEL.toast("已添加 " + chosen.length + " 个药品");
+  }
+
+  /* ---------------- 提交 / 暂存 ---------------- */
+  function validQty(v) { return /^\d+$/.test(String(v).trim()) && parseInt(v, 10) >= 1; }
+
+  function validate() {
+    var bad = [];
+    $("fPharmacy").classList.remove("is-invalid");
+    $("fLocation").classList.remove("is-invalid");
+    if (!$("fPharmacy").value) { $("fPharmacy").classList.add("is-invalid"); bad.push("申请药房"); }
+    if (!$("fLocation").value) { $("fLocation").classList.add("is-invalid"); bad.push("申请库位"); }
+
+    var qtyBad = false;
+    [].slice.call($("itemBody").querySelectorAll(".tr-qty")).forEach(function (inp) {
+      inp.classList.remove("is-invalid");
+      if (!validQty(inp.value)) { inp.classList.add("is-invalid"); qtyBad = true; }
+    });
+    if (qtyBad) bad.push("申请数量（需为正整数）");
+    if (!bill.items.length) bad.push("药品明细");
+    if (bad.length) { SEL.toast("请完善：" + bad.join("、")); return false; }
+    return true;
+  }
+
+  function collect() {
+    bill.applyPharmacy = $("fPharmacy").value;
+    var ph = TR.pharmaciesOf(applyOrg).filter(function (p) { return p.id === bill.applyPharmacy; })[0];
+    bill.applyPharmacyName = ph ? ph.name : "";
+    bill.applyLocation = $("fLocation").value;
+    var loc = TR.locationsOf(bill.applyPharmacy).filter(function (l) { return l.id === bill.applyLocation; })[0];
+    bill.applyLocationName = loc ? loc.name : "";
+    bill.shortageDesc = $("fDesc").value.trim();
+    [].slice.call($("itemBody").querySelectorAll(".tr-qty")).forEach(function (inp) {
+      var it = bill.items[parseInt(inp.getAttribute("data-si"), 10)];
+      if (it) it.applyQty = parseInt(inp.value, 10);
+    });
+  }
+
+  function saveDraft() {
+    collect();
+    bill.auditStatus = "draft";
+    bill.submitTime = bill.submitTime || SEL.fmtNow();
+    bill.applyOrg = applyOrg;
+    bill.applyOrgName = TR.ORGS[applyOrg];
+    TR.persist(bill);
+    SEL.toast("已暂存");
+    setTimeout(function () { location.href = "transfer.html"; }, 400);
+  }
+
+  function submit() {
+    if (!validate()) return;
+    collect();
+    bill.applyOrg = applyOrg;
+    bill.applyOrgName = TR.ORGS[applyOrg];
+    if (bill.auditStatus === "draft" || bill.auditStatus === "rejected") {
+      TR.submitBill(bill);
+    }
+    TR.persist(bill);
+    SEL.toast("已提交审核");
+    setTimeout(function () { location.href = "transfer.html"; }, 400);
+  }
+
+  /* ---------------- 事件 ---------------- */
+  $("btnBack").addEventListener("click", function () { location.href = "transfer.html"; });
+  $("tabClose").addEventListener("click", function () { location.href = "transfer.html"; });
+  $("fPharmacy").addEventListener("change", function () {
+    this.classList.remove("is-invalid");
+    bill.applyPharmacy = this.value;
+    bill.applyLocation = "";
+    renderLocations();
+  });
+  $("fLocation").addEventListener("change", function () { this.classList.remove("is-invalid"); });
+  $("btnAddItem").addEventListener("click", openPicker);
+  $("itemBody").addEventListener("click", function (e) {
+    var btn = e.target.closest("[data-remove]");
+    if (!btn) return;
+    var idx = parseInt(btn.getAttribute("data-remove"), 10);
+    bill.items.splice(idx, 1);
+    renderItems();
+  });
+  $("itemBody").addEventListener("input", function (e) {
+    if (!e.target.classList.contains("tr-qty")) return;
+    e.target.classList.remove("is-invalid");
+    var it = bill.items[parseInt(e.target.getAttribute("data-si"), 10)];
+    if (it) it.applyQty = e.target.value;
+  });
+  $("btnCancel").addEventListener("click", function () { location.href = "transfer.html"; });
+  $("btnSave").addEventListener("click", saveDraft);
+  $("btnSubmit").addEventListener("click", submit);
+  $("headerUser").addEventListener("click", function () {
+    SEL.confirmDialog({
+      title: "退出登录",
+      text: "确认退出当前账号「" + user.name + "」？",
+      okText: "退出",
+      onOk: function () { SEL.logout(); }
+    });
+  });
+
+  renderPharmacies();
+  renderItems();
+  syncInfo();
+  SEL.renderHeaderUser(user);
+  SEL.bindNav();
+})();
+</script>
+  <script src="nav.js"></script>
+</body>
+</html>

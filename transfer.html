@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>调拨管理 · 区域药房协同管理系统</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ========== 顶部导航 ========== -->
+<header class="app-header">
+  <div class="header-left">
+    <div class="header-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3.2" y="9.4" width="17.6" height="5.2" rx="2.6" transform="rotate(-45 12 12)"/>
+        <path d="M8.4 15.6L15.6 8.4"/>
+      </svg>
+    </div>
+    <div class="header-title">区域药房协同管理系统</div>
+  </div>
+  <div class="header-right">
+    <div class="header-user" id="headerUser" title="点击退出登录">
+      <span class="header-avatar">药</span>
+      <span class="header-user-name">—</span>
+      <svg class="user-arrow" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+    </div>
+  </div>
+</header>
+
+<div class="app-body">
+  <!-- ========== 左侧导航 ========== -->
+  <aside class="app-side" id="appSide"></aside>
+<!-- ========== 主区域 ========== -->
+  <main class="app-main">
+    <div class="tabbar">
+      <div class="tab">首页</div>
+      <div class="tab active">
+        调拨管理
+        <button class="tab-close" id="tabClose" title="关闭">
+          <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="page sel-page">
+      <div class="sel-main">
+        <!-- 标题行 -->
+        <div class="page-head">
+          <h1 class="page-title">调拨管理</h1>
+          <div class="page-acts">
+            <button class="btn btn-primary" id="btnCreate">新增调拨</button>
+          </div>
+        </div>
+
+        <div class="sel-card">
+          <!-- 筛选 -->
+          <div class="filter-bar">
+            <div class="filter-item">
+              <span class="filter-label">调拨单号</span>
+              <input class="input" id="fCode" placeholder="请输入调拨单号" style="width:160px;">
+            </div>
+            <div class="filter-item">
+              <span class="filter-label">申请机构</span>
+              <select class="select" id="fApply" style="width:160px;">
+                <option value="">全部</option>
+                <option value="village-1">青河村卫生室</option>
+                <option value="member-1">城东社区卫生服务中心</option>
+              </select>
+            </div>
+            <div class="filter-item">
+              <span class="filter-label">出库机构</span>
+              <select class="select" id="fOut" style="width:150px;">
+                <option value="">全部</option>
+                <option value="org-c">区域中心药房</option>
+                <option value="member-1">城东社区卫生服务中心</option>
+              </select>
+            </div>
+            <div class="filter-item">
+              <span class="filter-label">审核状态</span>
+              <select class="select" id="fAudit" style="width:140px;">
+                <option value="">全部</option>
+                <option value="draft">草稿</option>
+                <option value="member">待成员机构审核</option>
+                <option value="center">待中心药房审核</option>
+                <option value="approved">审核通过</option>
+                <option value="rejected">已拒绝</option>
+              </select>
+            </div>
+            <div class="filter-item">
+              <span class="filter-label">调拨状态</span>
+              <select class="select" id="fTransfer" style="width:118px;">
+                <option value="">全部</option>
+                <option value="out">待调拨</option>
+                <option value="in">待签收</option>
+                <option value="done">已完成</option>
+              </select>
+            </div>
+            <div class="filter-item">
+              <span class="filter-label">提交日期</span>
+              <input class="input" type="date" id="fFrom">
+              <span class="filter-sep">至</span>
+              <input class="input" type="date" id="fTo">
+            </div>
+            <div class="filter-acts">
+              <button class="btn" id="btnReset">重置</button>
+              <button class="btn btn-primary" id="btnQuery">查询</button>
+            </div>
+          </div>
+
+          <!-- 列表 -->
+          <div class="tr-list-wrap">
+            <table class="data-table tr-list-table">
+              <thead>
+                <tr>
+                  <th style="width:130px;">调拨单号</th>
+                  <th>申请机构</th>
+                  <th>出库机构</th>
+                  <th>提交人</th>
+                  <th style="width:150px;">提交时间</th>
+                  <th style="width:120px;" class="col-audit">审核状态</th>
+                  <th style="width:90px;" class="col-transfer">调拨状态</th>
+                  <th style="width:176px;" class="col-acts">操作</th>
+                </tr>
+              </thead>
+              <tbody id="tbody"></tbody>
+            </table>
+            <div class="table-empty" id="tableEmpty" style="display:none;">暂无数据</div>
+          </div>
+
+          <div class="pager">
+            <span id="pagerInfo"></span>
+            <div class="pager-ctrl">
+              <button class="pager-btn" id="pgPrev" title="上一页">
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+              </button>
+              <span class="pager-num" id="pgNum">1</span>
+              <button class="pager-btn" id="pgNext" title="下一页">
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="modal-mask" id="modalMask"></div>
+<div class="toast" id="toast">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+  <span id="toastText"></span>
+</div>
+
+<script src="mock.js"></script>
+<script src="selection-common.js"></script>
+<script src="transfer-common.js"></script>
+<script>
+(function () {
+  var $ = SEL.$, esc = SEL.esc;
+  var user = TR.user();
+  if (!user) return;
+
+  var state = { code: "", apply: "", out: "", audit: "", transfer: "", from: "", to: "", page: 1, size: 10 };
+
+  function filtered() {
+    return TR.load().filter(function (b) {
+      if (!TR.related(b, user)) return false;
+      if (state.code && b.code.toLowerCase().indexOf(state.code.toLowerCase()) < 0) return false;
+      if (state.apply && b.applyOrg !== state.apply) return false;
+      if (state.out && b.outOrg !== state.out) return false;
+      if (state.audit && b.auditStatus !== state.audit) return false;
+      if (state.transfer && b.transferStatus !== state.transfer) return false;
+      if (state.from || state.to) {
+        var day = (b.submitTime || "").slice(0, 10);
+        if (!day) return false;
+        if (state.from && day < state.from) return false;
+        if (state.to && day > state.to) return false;
+      }
+      return true;
+    }).sort(function (x, y) {
+      var a = x.submitTime || x.createdAt;
+      var b = y.submitTime || y.createdAt;
+      if (a === b) return 0;
+      return a < b ? 1 : -1;
+    });
+  }
+
+  function actionHtml(b) {
+    return TR.actionsFor(b, user).map(function (a) {
+      return '<button class="link-btn' + (a.danger ? " is-danger" : "") + '" data-act="' + a.key +
+        '" data-id="' + b.id + '">' + a.label + "</button>";
+    }).join("");
+  }
+
+  function renderTable() {
+    var rows = filtered();
+    var total = rows.length;
+    var pages = Math.max(1, Math.ceil(total / state.size));
+    if (state.page > pages) state.page = pages;
+    var start = (state.page - 1) * state.size;
+
+    $("tbody").innerHTML = rows.slice(start, start + state.size).map(function (b) {
+      return "<tr>" +
+        "<td><button class=\"link-btn\" data-act=\"view\" data-id=\"" + b.id + "\">" + esc(b.code) + "</button></td>" +
+        "<td title=\"" + esc(b.applyOrgName) + "\">" + esc(b.applyOrgName || "—") + "</td>" +
+        "<td title=\"" + esc(b.outOrgName) + "\">" + esc(b.outOrgName || "—") + "</td>" +
+        "<td>" + esc(b.creator) + "</td>" +
+        "<td>" + esc(b.submitTime || "—") + "</td>" +
+        '<td class="col-audit"><span class="status-text">' + esc(TR.AUDIT[b.auditStatus]) + "</span></td>" +
+        '<td class="col-transfer"><span class="status-text">' + esc(TR.TRANSFER[b.transferStatus] || "—") + "</span></td>" +
+        '<td class="col-acts">' + actionHtml(b) + "</td>" +
+      "</tr>";
+    }).join("");
+
+    $("tableEmpty").style.display = total ? "none" : "block";
+    $("pagerInfo").textContent = "共 " + total + " 条";
+    $("pgNum").textContent = state.page + " / " + pages;
+    $("pgPrev").disabled = state.page <= 1;
+    $("pgNext").disabled = state.page >= pages;
+  }
+
+  /* ---------------- 操作 ---------------- */
+  function withBill(id, fn) {
+    var list = TR.load();
+    var b = TR.byId(list, id);
+    if (b) fn(b, list);
+  }
+
+  function doSubmit(id) {
+    withBill(id, function (b) {
+      SEL.confirmDialog({
+        title: "提交审核",
+        text: "确认提交调拨单「" + b.code + "」？提交后进入审核，审核期间不可编辑。",
+        okText: "提交",
+        onOk: function () {
+          TR.submitBill(b);
+          TR.persist(b);
+          SEL.toast("已提交审核");
+          renderTable();
+        }
+      });
+    });
+  }
+
+  function doWithdraw(id) {
+    withBill(id, function (b) {
+      SEL.confirmDialog({
+        title: "撤回",
+        text: "确认撤回调拨单「" + b.code + "」？撤回后回到草稿，可修改后重新提交。",
+        okText: "撤回",
+        onOk: function () {
+          TR.withdrawBill(b);
+          TR.persist(b);
+          SEL.toast("已撤回");
+          renderTable();
+        }
+      });
+    });
+  }
+
+  function doDelete(id) {
+    withBill(id, function (b) {
+      SEL.confirmDialog({
+        title: "删除调拨单",
+        text: "确认删除调拨单「" + b.code + "」？删除后列表不再展示。",
+        okText: "删除",
+        onOk: function () {
+          b.deleted = true;
+          TR.persist(b);
+          SEL.toast("已删除");
+          renderTable();
+        }
+      });
+    });
+  }
+
+  /* ---------------- 事件 ---------------- */
+  if (user.role === "center" || user.role === "pharmacist") {
+    $("btnCreate").style.display = "none";
+  }
+  $("btnCreate").addEventListener("click", function () {
+    location.href = "transfer-create.html";
+  });
+
+  function doQuery() {
+    state.code = $("fCode").value.trim();
+    state.apply = $("fApply").value;
+    state.out = $("fOut").value;
+    state.audit = $("fAudit").value;
+    state.transfer = $("fTransfer").value;
+    state.from = $("fFrom").value;
+    state.to = $("fTo").value;
+    state.page = 1;
+    renderTable();
+  }
+  $("btnQuery").addEventListener("click", doQuery);
+  $("fCode").addEventListener("keydown", function (e) { if (e.key === "Enter") doQuery(); });
+
+  $("btnReset").addEventListener("click", function () {
+    ["fCode", "fApply", "fOut", "fAudit", "fTransfer", "fFrom", "fTo"].forEach(function (id) {
+      $(id).value = "";
+    });
+    state = { code: "", apply: "", out: "", audit: "", transfer: "", from: "", to: "", page: 1, size: 10 };
+    renderTable();
+  });
+
+  $("pgPrev").addEventListener("click", function () { state.page--; renderTable(); });
+  $("pgNext").addEventListener("click", function () { state.page++; renderTable(); });
+
+  $("tbody").addEventListener("click", function (e) {
+    var btn = e.target.closest("[data-id]");
+    if (!btn) return;
+    var id = btn.getAttribute("data-id");
+    var act = btn.getAttribute("data-act");
+    if (act === "view") location.href = "transfer-detail.html?id=" + id;
+    else if (act === "edit") location.href = "transfer-create.html?id=" + id;
+    else if (act === "submit") doSubmit(id);
+    else if (act === "withdraw") doWithdraw(id);
+    else if (act === "delete") doDelete(id);
+    else if (act === "audit") {
+      var b = TR.byId(TR.load(), id);
+      location.href = (user.role === "member" ? "transfer-audit-member.html" : "transfer-audit-center.html") + "?id=" + id;
+      if (!b) location.href = "transfer.html";
+    } else if (act === "outbound") location.href = "transfer-outbound.html?id=" + id;
+    else if (act === "inbound") location.href = "transfer-inbound.html?id=" + id;
+  });
+
+  $("tabClose").addEventListener("click", function () { location.href = "batch-management.html"; });
+  $("headerUser").addEventListener("click", function () {
+    SEL.confirmDialog({
+      title: "退出登录",
+      text: "确认退出当前账号「" + user.name + "」？",
+      okText: "退出",
+      onOk: function () { SEL.logout(); }
+    });
+  });
+
+  SEL.renderHeaderUser(user);
+  SEL.bindNav();
+  renderTable();
+})();
+</script>
+  <script src="nav.js"></script>
+</body>
+</html>

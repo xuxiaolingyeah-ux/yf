@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>药品出库 · 中心药房</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+/* 出库列表：6 个筛选项 */
+.ob-fields { grid-template-columns: minmax(0,.9fr) minmax(0,1.1fr) minmax(0,1.1fr) minmax(0,.8fr) minmax(0,.8fr) minmax(0,1.1fr); }
+@media (max-width: 1399px) { .ob-fields { grid-template-columns: repeat(3, minmax(0,1fr)); } }
+.ob-table td .link-btn + .link-btn { margin-left: 12px; }
+</style>
+</head>
+<body>
+
+<!-- ========== 顶部导航 ========== -->
+<header class="app-header">
+  <div class="header-left">
+    <div class="header-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3.2" y="9.4" width="17.6" height="5.2" rx="2.6" transform="rotate(-45 12 12)"/>
+        <path d="M8.4 15.6L15.6 8.4"/>
+      </svg>
+    </div>
+    <div class="header-title">区域药房协同管理系统</div>
+    <span class="header-sub">中心药房</span>
+  </div>
+  <div class="header-right">
+    <div class="ob-user">
+      <div class="header-user" id="userBtn">
+        <div class="header-avatar" id="userAvatar">陈</div>
+        <span class="header-user-name" id="userName">陈静</span>
+      </div>
+      <div class="ob-user-menu" id="userMenu"></div>
+    </div>
+  </div>
+</header>
+
+<div class="app-body">
+  <!-- ========== 左侧导航 ========== -->
+  <aside class="app-side" id="appSide"></aside>
+<!-- ========== 主区域 ========== -->
+  <main class="app-main">
+    <div class="tabbar">
+      <div class="tab" onclick="location.href='batch-management.html'">首页</div>
+      <div class="tab active">
+        药品出库
+        <button class="tab-close" title="关闭" onclick="location.href='batch-management.html'">
+          <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="page">
+      <div class="ob-card">
+        <!-- 标题行 -->
+        <div class="ob-head">
+          <div class="page-title">药品出库</div>
+          <div class="page-acts" style="margin-left:auto">
+            <button class="btn btn-primary" id="btnCreate">新增出库</button>
+          </div>
+        </div>
+
+        <!-- 筛选区 -->
+        <div class="ob-filter">
+          <div class="ob-fields">
+            <div class="ob-fi"><span class="lbl">出库单号：</span><div class="ctrl"><input class="input" id="fCode" placeholder="请输入单号" autocomplete="off"></div></div>
+            <div class="ob-fi"><span class="lbl">出库机构：</span><div class="ctrl"><select class="select" id="fOrg"></select></div></div>
+            <div class="ob-fi"><span class="lbl">接收机构：</span><div class="ctrl"><select class="select" id="fInOrg"></select></div></div>
+            <div class="ob-fi"><span class="lbl">出库方式：</span><div class="ctrl"><select class="select" id="fMethod"><option value="">全部</option></select></div></div>
+            <div class="ob-fi"><span class="lbl">审核状态：</span><div class="ctrl"><select class="select" id="fStatus"></select></div></div>
+            <div class="ob-fi"><span class="lbl">出库时间：</span><div class="ctrl"><div class="ob-drange"><input type="date" id="fT1"><span>~</span><input type="date" id="fT2"></div></div></div>
+          </div>
+          <div class="ob-filter-acts">
+            <button class="btn btn-sm" id="btnReset">重置 ( R )</button>
+            <button class="btn btn-sm btn-primary" id="btnSearch">查询 ( Q )</button>
+          </div>
+        </div>
+
+        <!-- 表格 -->
+        <div class="ob-table-wrap">
+          <table class="ob-table" style="min-width:1120px">
+            <thead>
+              <tr>
+                <th style="width:132px">出库单号</th>
+                <th style="width:88px">出库方式</th>
+                <th style="width:140px">出库机构</th>
+                <th style="width:140px">接收机构</th>
+                <th style="width:100px" class="num">进货价合计金额</th>
+                <th style="width:100px" class="num">零售价合计金额</th>
+                <th style="width:70px">提交人</th>
+                <th style="width:150px">提交时间</th>
+                <th style="width:80px">审核状态</th>
+                <th style="width:170px" class="col-acts">操作</th>
+              </tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+          </table>
+          <div class="ob-empty" id="empty" style="display:none">暂无符合条件的出库单</div>
+        </div>
+
+        <!-- 分页 -->
+        <div class="ob-pager">
+          <span class="total">共 <b id="totalNum">0</b> 条</span>
+          <button class="pager-btn" id="pgPrev">‹</button>
+          <span id="pgNums"></span>
+          <button class="pager-btn" id="pgNext">›</button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ========== 确认弹窗 ========== -->
+<div class="modal-mask" id="cfMask">
+  <div class="modal" style="width:400px">
+    <div class="modal-head">
+      <div class="modal-title" id="cfTitle">提示</div>
+      <button class="drawer-close" id="cfClose" title="关闭">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+      </button>
+    </div>
+    <div class="modal-body"><div style="font-size:13px;color:var(--text-secondary);line-height:1.6" id="cfDesc"></div></div>
+    <div class="modal-foot">
+      <button class="btn" id="cfCancel">取消</button>
+      <button class="btn btn-danger" id="cfOk">删除</button>
+    </div>
+  </div>
+</div>
+
+<!-- toast -->
+<div id="toast" style="position:fixed;top:70px;left:50%;transform:translateX(-50%);padding:8px 16px;background:rgba(0,0,0,.78);color:#fff;border-radius:4px;font-size:13px;z-index:9999;display:none"></div>
+
+<script src="outbound-common.js"></script>
+<script>
+(function(){
+  "use strict";
+  var OB = window.OB;
+  var $ = function(s,c){ return (c||document).querySelector(s); };
+  var $$ = function(s,c){ return Array.prototype.slice.call((c||document).querySelectorAll(s)); };
+  function toast(msg){
+    var t=$("#toast"); t.textContent=msg; t.style.display="block";
+    clearTimeout(t._t); t._t=setTimeout(function(){ t.style.display="none"; },2200);
+  }
+
+  var user = OB.currentUser();
+  var list = OB.load();
+  var ST = { page:1, pageSize:10, filtered:list.slice() };
+
+  /* ===== 顶栏用户切换 ===== */
+  function renderUser(){
+    $("#userAvatar").textContent = user.name.charAt(0);
+    $("#userName").textContent = user.name;
+    $("#userMenu").innerHTML = OB.USERS.map(function(u){
+      return '<div class="ob-user-item'+(u.id===user.id?' is-cur':'')+'" data-uid="'+u.id+'">'
+        + '<span class="n">'+OB.esc(u.name)+'</span><span class="r">'+OB.esc(u.roleName)+'</span></div>';
+    }).join("");
+    $$("#userMenu .ob-user-item").forEach(function(el){
+      el.addEventListener("click", function(){
+        OB.setUser(el.getAttribute("data-uid"));
+        location.reload();
+      });
+    });
+  }
+  $("#userBtn").addEventListener("click", function(e){ e.stopPropagation(); $("#userMenu").classList.toggle("show"); });
+  document.addEventListener("click", function(){ $("#userMenu").classList.remove("show"); });
+
+  /* ===== 筛选下拉 ===== */
+  function fillOrgs(sel){
+    sel.innerHTML = '<option value="">全部</option>' + OB.ORGS.map(function(o){
+      return '<option value="'+o.id+'">'+OB.esc(o.name)+'</option>';
+    }).join("");
+  }
+  fillOrgs($("#fOrg"));
+  fillOrgs($("#fInOrg"));
+  $("#fMethod").innerHTML = '<option value="">全部</option>' + OB.METHODS.map(function(m){
+    return '<option>'+OB.esc(m)+'</option>';
+  }).join("");
+  $("#fStatus").innerHTML = '<option value="">全部</option>' + Object.keys(OB.AUDIT_STATUS).map(function(k){
+    return '<option value="'+k+'">'+OB.AUDIT_STATUS[k]+'</option>';
+  }).join("");
+
+  /* ===== 查询 / 重置 ===== */
+  function applyFilter(){
+    var code = $("#fCode").value.trim();
+    var org = $("#fOrg").value, inOrg = $("#fInOrg").value, method = $("#fMethod").value;
+    var status = $("#fStatus").value;
+    var t1 = $("#fT1").value, t2 = $("#fT2").value;
+    ST.filtered = list.filter(function(b){
+      if(code && b.code.indexOf(code) < 0) return false;
+      if(org && OB.ownerOrg(b) !== org) return false;
+      if(inOrg && b.inOrgId !== inOrg) return false;
+      if(method && b.method !== method) return false;
+      if(status && b.auditStatus !== status) return false;
+      var d = (b.submitTime||"").slice(0,10);
+      if(t1 && d < t1) return false;
+      if(t2 && d > t2) return false;
+      return true;
+    }).sort(function(a,b){ return (b.submitTime||"") < (a.submitTime||"") ? -1 : 1; });
+    ST.page = 1;
+    renderTable();
+  }
+  $("#btnSearch").addEventListener("click", applyFilter);
+  $("#btnReset").addEventListener("click", function(){
+    $("#fCode").value = ""; $("#fT1").value = ""; $("#fT2").value = "";
+    $("#fOrg").value = ""; $("#fInOrg").value = ""; $("#fMethod").value = ""; $("#fStatus").value = "";
+    applyFilter();
+  });
+  $("#fCode").addEventListener("keydown", function(e){ if(e.key === "Enter") applyFilter(); });
+  document.addEventListener("keydown", function(e){
+    if(e.target.tagName === "INPUT" || e.target.tagName === "SELECT" || e.target.tagName === "TEXTAREA") return;
+    var k = e.key.toLowerCase();
+    if(k === "q") applyFilter();
+    if(k === "r") $("#btnReset").click();
+  });
+
+  /* ===== 确认弹窗 ===== */
+  var cfCb = null;
+  function confirmDlg(title, desc, okText, cb){
+    $("#cfTitle").textContent = title;
+    $("#cfDesc").textContent = desc;
+    $("#cfOk").textContent = okText || "确定";
+    cfCb = cb;
+    $("#cfMask").classList.add("show");
+  }
+  function closeCf(){ $("#cfMask").classList.remove("show"); cfCb = null; }
+  $("#cfCancel").addEventListener("click", closeCf);
+  $("#cfClose").addEventListener("click", closeCf);
+  $("#cfOk").addEventListener("click", function(){ var cb = cfCb; closeCf(); if(cb) cb(); });
+
+  /* ===== 提交前校验（列表内直接提交） ===== */
+  function checkBill(b){
+    var errs = [];
+    if(!b.outLocation) errs.push("出库库位");
+    if(!b.inOrgId) errs.push("接收机构");
+    if(!b.inLocation) errs.push("接收库位");
+    if(!(b.items||[]).length) errs.push("药品明细（至少 1 条）");
+    (b.items||[]).forEach(function(it, i){
+      var n = "第" + (i+1) + "行";
+      var av = OB.availableOf(list, it.code, it.batch);
+      if(!(Number(it.qty) > 0)) errs.push(n + "出库数量");
+      else if(Number(it.qty) > av) errs.push(n + "出库数量超过可用库存量（" + av + "）");
+      if((it.traces||[]).length !== Number(it.qty)){
+        errs.push(n + "追溯码（已录 " + (it.traces||[]).length + " / 出库 " + it.qty + "）");
+      }
+    });
+    return errs;
+  }
+
+  /* ===== 行操作 ===== */
+  function actView(b){ location.href = "outbound-detail.html?id=" + encodeURIComponent(b.id); }
+  function actAudit(b){ location.href = "outbound-detail.html?id=" + encodeURIComponent(b.id) + "&mode=approve"; }
+  function actEdit(b){ location.href = "outbound-create.html?id=" + encodeURIComponent(b.id); }
+  function actSubmit(b){
+    var errs = checkBill(b);
+    if(errs.length){
+      toast("请先完善：" + errs.slice(0, 2).join("、") + "，已为你打开编辑页");
+      setTimeout(function(){ actEdit(b); }, 900);
+      return;
+    }
+    var now = OB.fmtNow(), aud = OB.auditorFor(b.outOrgId);
+    if(!b.code) b.code = OB.newCode(list);
+    b.auditStatus = "pending";
+    b.auditorId = aud.id;
+    b.auditorName = aud.name;
+    b.auditorOrg = aud.org;
+    b.auditTime = "";
+    b.submitTime = now;
+    b.records = (b.records || []).concat([{
+      node: "提交", person: user.name, org: OB.orgName(b.outOrgId), time: now, result: "已提交", opinion: ""
+    }]);
+    OB.save(list);
+    applyFilter();
+    toast("已提交，待上级审核");
+  }
+  function actWithdraw(b){
+    confirmDlg("撤回出库单", "撤回后单据回到草稿状态，已预占的库存将被释放。确认撤回？", "撤回", function(){
+      b.auditStatus = "draft";
+      b.records = (b.records||[]).concat([{ node:"撤回", person:user.name, org:OB.orgName(OB.ownerOrg(b)), time:OB.fmtNow(), result:"已撤回", opinion:"" }]);
+      OB.save(list);
+      applyFilter();
+      toast("已撤回，库存预占已释放");
+    });
+  }
+  function actDelete(b){
+    confirmDlg("删除出库单", "确认删除该出库单？删除后不可恢复。", "删除", function(){
+      list = list.filter(function(x){ return x.id !== b.id; });
+      OB.save(list);
+      applyFilter();
+      toast("已删除");
+    });
+  }
+
+  /* ===== 表格 ===== */
+  function orgName(id){ return OB.orgName(id) || "—"; }
+  function renderTable(){
+    var start = (ST.page-1) * ST.pageSize;
+    var rows = ST.filtered.slice(start, start + ST.pageSize);
+    $("#tbody").innerHTML = rows.map(function(b){
+      var s = OB.sums(b);
+      var isDraft = b.auditStatus === "draft";
+      var mine = b.creatorId === user.id;
+      var acts = [];
+      if(b.auditStatus === "pending"){
+        acts.push('<a class="link-btn" data-act="view" data-id="'+b.id+'">查看</a>');
+        if(OB.canAudit(b, user)) acts.push('<a class="link-btn" data-act="audit" data-id="'+b.id+'">审核</a>');
+        if(mine) acts.push('<a class="link-btn" data-act="withdraw" data-id="'+b.id+'">撤回</a>');
+      } else if(isDraft || b.auditStatus === "rejected"){
+        acts.push('<a class="link-btn" data-act="view" data-id="'+b.id+'">查看</a>');
+        if(mine){
+          acts.push('<a class="link-btn" data-act="edit" data-id="'+b.id+'">编辑</a>');
+          acts.push('<a class="link-btn" data-act="submit" data-id="'+b.id+'">提交</a>');
+          acts.push('<a class="link-btn is-danger" data-act="del" data-id="'+b.id+'">删除</a>');
+        }
+      } else {
+        acts.push('<a class="link-btn" data-act="view" data-id="'+b.id+'">查看</a>');
+      }
+
+      var h = "<tr>";
+      h += "<td class='cell-code' title='"+OB.esc(b.code || "草稿未生成单号")+"'>"+OB.esc(b.code || "—")+"</td>";
+      h += "<td>"+OB.esc(b.method)+"</td>";
+      h += "<td title='"+OB.esc(orgName(b.outOrgId))+"'>"+OB.esc(orgName(b.outOrgId))+"</td>";
+      h += "<td title='"+OB.esc(orgName(b.inOrgId))+"'>"+OB.esc(orgName(b.inOrgId))+"</td>";
+      h += "<td class='num'>"+OB.num2(s.purchase)+"</td>";
+      h += "<td class='num'>"+OB.num2(s.retail)+"</td>";
+      h += "<td>"+OB.esc(b.creatorName)+"</td>";
+      h += "<td>"+OB.esc(isDraft ? "—" : b.submitTime)+"</td>";
+      h += "<td>"+OB.esc(OB.AUDIT_STATUS[b.auditStatus] || "—")+"</td>";
+      h += "<td class='col-acts'>"+acts.join("")+"</td>";
+      return h + "</tr>";
+    }).join("");
+    $("#empty").style.display = rows.length ? "none" : "block";
+    renderPager();
+  }
+
+  $("#tbody").addEventListener("click", function(e){
+    var a = e.target.closest("[data-act]");
+    if(!a) return;
+    var id = a.getAttribute("data-id");
+    var b = list.filter(function(x){ return x.id === id; })[0];
+    if(!b) return;
+    var act = a.getAttribute("data-act");
+    if(act === "view") actView(b);
+    if(act === "edit") actEdit(b);
+    if(act === "submit") actSubmit(b);
+    if(act === "audit") actAudit(b);
+    if(act === "withdraw") actWithdraw(b);
+    if(act === "del") actDelete(b);
+  });
+
+  function renderPager(){
+    var total = ST.filtered.length;
+    var pages = Math.max(1, Math.ceil(total / ST.pageSize));
+    if(ST.page > pages) ST.page = pages;
+    $("#totalNum").textContent = total;
+    $("#pgPrev").disabled = ST.page <= 1;
+    $("#pgNext").disabled = ST.page >= pages;
+    var nums = [];
+    for(var i=1; i<=pages; i++) nums.push(i);
+    $("#pgNums").innerHTML = nums.map(function(n){
+      return "<span class='pager-num"+(n===ST.page?" is-cur":"")+"' data-pg='"+n+"'>"+n+"</span>";
+    }).join("");
+    $$("#pgNums [data-pg]").forEach(function(el){
+      el.addEventListener("click", function(){ ST.page = parseInt(el.getAttribute("data-pg"),10); renderTable(); });
+    });
+  }
+  $("#pgPrev").addEventListener("click", function(){ if(ST.page>1){ ST.page--; renderTable(); } });
+  $("#pgNext").addEventListener("click", function(){
+    var pages = Math.max(1, Math.ceil(ST.filtered.length / ST.pageSize));
+    if(ST.page<pages){ ST.page++; renderTable(); }
+  });
+
+  /* ===== 初始化 ===== */
+  $("#btnCreate").addEventListener("click", function(){ location.href = "outbound-create.html"; });
+  renderUser();
+  applyFilter();
+})();
+</script>
+  <script src="nav.js"></script>
+</body>
+</html>

@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>选择药品 · 机构药房</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ========== 顶部导航 ========== -->
+<header class="app-header">
+  <div class="header-left">
+    <div class="header-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3.2" y="9.4" width="17.6" height="5.2" rx="2.6" transform="rotate(-45 12 12)"/>
+        <path d="M8.4 15.6L15.6 8.4"/>
+      </svg>
+    </div>
+    <div class="header-title">区域药房协同管理系统</div>
+  </div>
+  <div class="header-right">
+    <div class="header-user">
+      <div class="header-avatar">张</div>
+      <span class="header-user-name">张明远</span>
+    </div>
+  </div>
+</header>
+
+<div class="app-body">
+  <!-- ========== 左侧导航 ========== -->
+  <aside class="app-side" id="appSide"></aside>
+<!-- ========== 主区域 ========== -->
+  <main class="app-main">
+    <div class="tabbar">
+      <div class="tab" data-nav="机构药品目录">机构药品目录</div>
+      <div class="tab active">
+        选择药品
+        <button class="tab-close" title="关闭" id="tabClose">
+          <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+            <path d="M5 5l14 14M19 5L5 19"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="page">
+      <!-- 标题行：返回+页题合并（左） + 草稿统计 + 取消/保存（右） -->
+      <div class="page-head">
+        <div class="page-head-left">
+          <button class="back-link" id="btnBack" title="返回机构药品目录">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M15 18l-6-6 6-6"/>
+            </svg>
+            <span>选择药品</span>
+          </button>
+        </div>
+        <div class="page-acts">
+          <span class="draft-hint" id="draftHint" style="display:none;"></span>
+          <button class="btn" id="btnCancel">取消</button>
+          <button class="btn btn-primary" id="btnSave">保存</button>
+        </div>
+      </div>
+
+      <div class="page-body shuttle-body">
+        <!-- ---------- 筛选区：三控件同一行 + 顶部间距 ---------- -->
+        <div class="lfilter shuttle-filter">
+          <input class="input" id="kw" placeholder="药品名称 / 规格 / 编码 / 拼音码" autocomplete="off">
+          <select class="select" id="kind">
+            <option value="">全部种类</option>
+          </select>
+          <select class="select" id="status">
+            <option value="">全部状态</option>
+            <option value="on">启用</option>
+            <option value="off">停用</option>
+          </select>
+          <div class="lfilter-acts">
+            <button class="btn btn-sm" id="btnReset">重置</button>
+            <button class="btn btn-primary btn-sm" id="btnSearch">查询</button>
+          </div>
+        </div>
+
+        <!-- ---------- 穿梭三栏 ---------- -->
+        <div class="shuttle-wrap">
+          <!-- 左：中心目录 -->
+          <div class="shuttle-col" id="leftCol">
+            <div class="shuttle-head">
+              <span class="shuttle-title">中心药房药品目录</span>
+              <span class="shuttle-selected" id="leftSelCount"></span>
+            </div>
+            <div class="shuttle-table-wrap">
+              <table class="shuttle-table">
+                <thead>
+                  <tr>
+                    <th class="col-name">
+                      <label class="check">
+                        <input type="checkbox" id="leftAll">
+                        <span class="check-box"></span>
+                      </label>
+                      药品名称
+                    </th>
+                    <th class="col-spec">药品规格</th>
+                    <th class="col-vend">生产企业</th>
+                  </tr>
+                </thead>
+                <tbody id="leftBody"></tbody>
+              </table>
+            </div>
+            <div class="pager">
+              <span id="leftPagerInfo">共 0 条</span>
+              <span class="pager-ctrl">
+                <button class="pager-btn" id="leftPrev" title="上一页">
+                  <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M15 6l-6 6 6 6"/>
+                  </svg>
+                </button>
+                <span class="pager-num" id="leftPagerNum">1</span>
+                <button class="pager-btn" id="leftNext" title="下一页">
+                  <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 6l6 6-6 6"/>
+                  </svg>
+                </button>
+              </span>
+            </div>
+          </div>
+
+          <!-- 中：穿梭按钮 -->
+          <div class="shuttle-arrows">
+            <button class="shuttle-arrow" id="btnAdd" title="加入右栏（草稿）">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 6l6 6-6 6"/>
+              </svg>
+              <span>加入</span>
+            </button>
+            <button class="shuttle-arrow" id="btnRemove" title="移出左栏（草稿）">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M15 6l-6 6 6 6"/>
+              </svg>
+              <span>移出</span>
+            </button>
+          </div>
+
+          <!-- 右：本机构已选（对称左栏，也有分页） -->
+          <div class="shuttle-col" id="rightCol">
+            <div class="shuttle-head">
+              <span class="shuttle-title">机构药品目录</span>
+              <span class="shuttle-selected" id="rightSelCount"></span>
+            </div>
+            <div class="shuttle-table-wrap">
+              <table class="shuttle-table">
+                <thead>
+                  <tr>
+                    <th class="col-name">
+                      <label class="check">
+                        <input type="checkbox" id="rightAll">
+                        <span class="check-box"></span>
+                      </label>
+                      药品名称
+                    </th>
+                    <th class="col-spec">药品规格</th>
+                    <th class="col-vend">生产企业</th>
+                  </tr>
+                </thead>
+                <tbody id="rightBody"></tbody>
+              </table>
+            </div>
+            <div class="pager">
+              <span id="rightPagerInfo">共 0 条</span>
+              <span class="pager-ctrl">
+                <button class="pager-btn" id="rightPrev" title="上一页">
+                  <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M15 6l-6 6 6 6"/>
+                  </svg>
+                </button>
+                <span class="pager-num" id="rightPagerNum">1</span>
+                <button class="pager-btn" id="rightNext" title="下一页">
+                  <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 6l6 6-6 6"/>
+                  </svg>
+                </button>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ========== 通用弹窗容器 ========== -->
+<div class="modal-mask" id="modalMask"></div>
+
+<!-- ========== Toast ========== -->
+<div class="toast" id="toast">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M20 6L9 17l-5-5"/>
+  </svg>
+  <span id="toastText"></span>
+</div>
+
+<script src="mock.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  var PAGE_SIZE = 10;
+  var $ = function (id) { return document.getElementById(id); };
+
+  /* 状态 */
+  var state = {
+    orgId: "",
+    keyword: "", kind: "", status: "",
+    leftPage: 1,
+    rightPage: 1,
+    draft: null,    // Set<string> — 厂商行键集合（草稿态）
+    initial: null,  // Set<string> — 页面打开时的机构已选（用于 diff）
+    leftSel: {},    // 左栏当前页勾选
+    rightSel: {}    // 右栏当前页勾选
+  };
+
+  /* 公共筛选：单行是否命中关键词 + 种类 + 状态 */
+  function rowHit(r) {
+    var kw = state.keyword;
+    var hitKw = !kw ||
+      r.drug.name.toLowerCase().indexOf(kw) > -1 ||
+      r.spec.title.toLowerCase().indexOf(kw) > -1 ||
+      r.drug.code.toLowerCase().indexOf(kw) > -1 ||
+      r.drug.py.toLowerCase().indexOf(kw) > -1;
+    var hitKind = !state.kind || r.drug.kind === state.kind;
+    var hitStatus = !state.status || r.spec.status === state.status;
+    return hitKw && hitKind && hitStatus;
+  }
+
+  /* 工具函数：从 URL 取 orgId */
+  function getQuery(name) {
+    var m = location.search.match(new RegExp("[?&]" + name + "=([^&]+)"));
+    return m ? decodeURIComponent(m[1]) : "";
+  }
+
+  /* 展开 MOCK.drugs → 厂商行行数组 */
+  function allRows() {
+    var arr = [];
+    MOCK.drugs.forEach(function (d) {
+      d.specs.forEach(function (s, si) {
+        s.vendors.forEach(function (v, vi) {
+          arr.push({
+            key: MOCK.vkey(d.id, si, vi),
+            drug: d, spec: s, vendor: v, si: si, vi: vi
+          });
+        });
+      });
+    });
+    return arr;
+  }
+
+  /* 脏检查 */
+  function isDirty() {
+    if (!state.draft || !state.initial) return false;
+    if (state.draft.size !== state.initial.size) return true;
+    var it = state.initial.values();
+    var n;
+    while (!(n = it.next()).done) {
+      if (!state.draft.has(n.value)) return true;
+    }
+    return false;
+  }
+
+  /* diff 统计：加入数 / 移出数 */
+  function draftDiff() {
+    var add = 0, remove = 0;
+    var it1 = state.draft.values(), n1;
+    while (!(n1 = it1.next()).done) if (!state.initial.has(n1.value)) add++;
+    var it2 = state.initial.values(), n2;
+    while (!(n2 = it2.next()).done) if (!state.draft.has(n2.value)) remove++;
+    return { add: add, remove: remove };
+  }
+
+  /* ---------- 初始化 ---------- */
+  function init() {
+    // orgId：URL 参数优先，否则 current 机构
+    state.orgId = getQuery("orgId");
+    if (!state.orgId || !MOCK.orgs.some(function (o) { return o.id === state.orgId; })) {
+      for (var i = 0; i < MOCK.orgs.length; i++) {
+        if (MOCK.orgs[i].current) { state.orgId = MOCK.orgs[i].id; break; }
+      }
+    }
+    // 页面 title 里带上机构名（视觉反馈，让用户知道当前在配哪个机构）
+    var orgName = "";
+    MOCK.orgs.forEach(function (o) { if (o.id === state.orgId) orgName = o.name; });
+    if (orgName) document.title = "选择药品 · " + orgName;
+
+    // 初始化 draft / initial
+    var keys = MOCK.orgDrugs[state.orgId] || [];
+    state.initial = new Set(keys);
+    state.draft = new Set(keys);
+
+    // 种类下拉
+    MOCK.kinds.forEach(function (k) {
+      var o = document.createElement("option");
+      o.value = k; o.textContent = k;
+      $("kind").appendChild(o);
+    });
+
+    bindEvents();
+    doFilter(true);
+  }
+
+  /* ---------- 筛选（同时作用于左右两栏） ---------- */
+  var filteredLeft = [], filteredRight = [];
+  function doFilter(resetPage) {
+    if (resetPage) { state.leftPage = 1; state.rightPage = 1; }
+    state.keyword = $("kw").value.trim().toLowerCase();
+    state.kind = $("kind").value;
+    state.status = $("status").value;
+
+    var all = allRows();
+    filteredLeft = all.filter(function (r) {
+      return !state.draft.has(r.key) && rowHit(r);
+    });
+    filteredRight = all.filter(function (r) {
+      return state.draft.has(r.key) && rowHit(r);
+    });
+
+    var lp = Math.max(1, Math.ceil(filteredLeft.length / PAGE_SIZE));
+    var rp = Math.max(1, Math.ceil(filteredRight.length / PAGE_SIZE));
+    if (state.leftPage > lp) state.leftPage = lp;
+    if (state.rightPage > rp) state.rightPage = rp;
+
+    render();
+  }
+
+  /* ---------- 渲染 ---------- */
+  function esc(s) {
+    return String(s === null || s === undefined ? "" : s)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+
+  function renderLeft() {
+    var box = $("leftBody");
+    var start = (state.leftPage - 1) * PAGE_SIZE;
+    var rows = filteredLeft.slice(start, start + PAGE_SIZE);
+
+    if (!rows.length) {
+      box.innerHTML = '<tr><td colspan="3" class="empty-cell">中心目录无符合条件的药品</td></tr>';
+    } else {
+      box.innerHTML = rows.map(function (r) {
+        var checked = !!state.leftSel[r.key];
+        var off = r.spec.status === "off";
+        var dotCls = off ? "off" : "on";
+        return '<tr data-key="' + r.key + '" class="' + (off ? " row-off" : "") + '">' +
+          '<td class="col-name" title="' + esc(r.drug.name) + '">' +
+            '<label class="check"><input type="checkbox"' + (checked ? " checked" : "") + '>' +
+            '<span class="check-box"></span></label>' +
+            '<span class="dot ' + dotCls + '" title="' + (off ? "已停用" : "启用中") + '"></span>' +
+            esc(r.drug.name) +
+          '</td>' +
+          '<td class="col-spec" title="' + esc(r.spec.title) + '">' + esc(r.spec.title) + '</td>' +
+          '<td class="col-vend" title="' + esc(r.vendor.name) + '">' + esc(r.vendor.name) + '</td>' +
+        '</tr>';
+      }).join("");
+    }
+
+    var pages = Math.max(1, Math.ceil(filteredLeft.length / PAGE_SIZE));
+    $("leftPagerInfo").textContent = "共 " + filteredLeft.length + " 条";
+    $("leftPagerNum").textContent = state.leftPage + " / " + pages;
+    $("leftPrev").disabled = state.leftPage <= 1;
+    $("leftNext").disabled = state.leftPage >= pages;
+
+    // 全选状态（当前页）
+    var pageKeys = rows.map(function (r) { return r.key; });
+    var allChecked = pageKeys.length > 0 && pageKeys.every(function (k) { return state.leftSel[k]; });
+    $("leftAll").checked = allChecked;
+
+    // 已选计数
+    updateSelCount("leftSelCount", state.leftSel);
+  }
+
+  function renderRight() {
+    var box = $("rightBody");
+    var start = (state.rightPage - 1) * PAGE_SIZE;
+    var rows = filteredRight.slice(start, start + PAGE_SIZE);
+
+    if (!rows.length) {
+      box.innerHTML = '<tr><td colspan="3" class="empty-cell">机构药品目录中无符合条件的结果</td></tr>';
+    } else {
+      box.innerHTML = rows.map(function (r) {
+        var checked = !!state.rightSel[r.key];
+        var off = r.spec.status === "off";
+        var dotCls = off ? "off" : "on";
+        return '<tr data-key="' + r.key + '" class="' + (off ? " row-off" : "") + '">' +
+          '<td class="col-name" title="' + esc(r.drug.name) + '">' +
+            '<label class="check"><input type="checkbox"' + (checked ? " checked" : "") + '>' +
+            '<span class="check-box"></span></label>' +
+            '<span class="dot ' + dotCls + '" title="' + (off ? "已停用" : "启用中") + '"></span>' +
+            esc(r.drug.name) +
+          '</td>' +
+          '<td class="col-spec" title="' + esc(r.spec.title) + '">' + esc(r.spec.title) + '</td>' +
+          '<td class="col-vend" title="' + esc(r.vendor.name) + '">' + esc(r.vendor.name) + '</td>' +
+        '</tr>';
+      }).join("");
+    }
+
+    // 分页（与左栏对称）
+    var pages = Math.max(1, Math.ceil(filteredRight.length / PAGE_SIZE));
+    $("rightPagerInfo").textContent = "共 " + filteredRight.length + " 条";
+    $("rightPagerNum").textContent = state.rightPage + " / " + pages;
+    $("rightPrev").disabled = state.rightPage <= 1;
+    $("rightNext").disabled = state.rightPage >= pages;
+
+    // 全选状态（当前页）
+    var allChecked = rows.length > 0 && rows.every(function (r) { return state.rightSel[r.key]; });
+    $("rightAll").checked = allChecked;
+
+    // 已选计数
+    updateSelCount("rightSelCount", state.rightSel);
+  }
+
+  function updateSelCount(elId, selMap) {
+    var n = Object.keys(selMap).length;
+    var el = $(elId);
+    if (n > 0) {
+      el.textContent = "已选中 " + n + " 个";
+      el.classList.add("has-sel");
+    } else {
+      el.textContent = "";
+      el.classList.remove("has-sel");
+    }
+  }
+
+  function renderDraftHint() {
+    var hint = $("draftHint");
+    if (!isDirty()) { hint.style.display = "none"; return; }
+    var d = draftDiff();
+    var parts = [];
+    if (d.add) parts.push("加入 " + d.add + " 条");
+    if (d.remove) parts.push("移出 " + d.remove + " 条");
+    hint.textContent = parts.join(" / ");
+    hint.style.display = "inline-block";
+  }
+
+  function render() {
+    renderLeft();
+    renderRight();
+    renderDraftHint();
+    // 穿梭按钮禁用态
+    $("btnAdd").disabled = Object.keys(state.leftSel).length === 0;
+    $("btnRemove").disabled = Object.keys(state.rightSel).length === 0;
+  }
+
+  /* ---------- 穿梭动作 ---------- */
+  function addSelected() {
+    var keys = Object.keys(state.leftSel).filter(function (k) { return state.leftSel[k]; });
+    if (!keys.length) return;
+    keys.forEach(function (k) { state.draft.add(k); });
+    state.leftSel = {};
+    state.leftPage = 1;
+    doFilter(false);
+    toast("已加入 " + keys.length + " 条");
+  }
+
+  function removeSelected() {
+    var keys = Object.keys(state.rightSel).filter(function (k) { return state.rightSel[k]; });
+    if (!keys.length) return;
+    keys.forEach(function (k) { state.draft.delete(k); });
+    state.rightSel = {};
+    doFilter(false);  // 重新筛选左栏（刚移走的行应该回到左栏）
+    toast("已移出 " + keys.length + " 条");
+  }
+
+  /* ---------- 返回 / 取消 / 保存 ---------- */
+  function backToOrg() {
+    location.href = "org-drug-catalog.html?orgId=" + encodeURIComponent(state.orgId);
+  }
+
+  function handleBack() {
+    if (isDirty()) {
+      confirmDialog({
+        title: "放弃未保存的修改",
+        text: "当前草稿尚未保存，确定离开？",
+        okText: "离开",
+        onOk: backToOrg
+      });
+    } else {
+      backToOrg();
+    }
+  }
+
+  function handleSave() {
+    // 写回 MOCK
+    MOCK.orgDrugs[state.orgId] = Array.from(state.draft);
+    // 标记：机构目录页打开时需要刷新
+    sessionStorage.setItem("orgDrugChanged_" + state.orgId, "1");
+    toast("保存成功");
+    setTimeout(backToOrg, 600);
+  }
+
+  /* ---------- 弹窗 / Toast ---------- */
+  function openModal(html) {
+    var mask = $("modalMask");
+    mask.innerHTML = '<div class="modal">' + html + '</div>';
+    mask.classList.add("show");
+  }
+  function closeModal() {
+    var mask = $("modalMask");
+    mask.classList.remove("show");
+    mask.innerHTML = "";
+  }
+  function confirmDialog(opt) {
+    openModal(
+      '<div class="modal-head">' +
+        '<span class="modal-title">' + opt.title + '</span>' +
+        '<button class="drawer-close" data-close="1">' +
+          '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>' +
+        '</button>' +
+      '</div>' +
+      '<div class="modal-body"><p class="modal-text">' + opt.text + '</p></div>' +
+      '<div class="modal-foot">' +
+        '<button class="btn" data-close="1">取消</button>' +
+        '<button class="btn btn-primary" data-ok="1">' + (opt.okText || "确定") + '</button>' +
+      '</div>'
+    );
+    var mask = $("modalMask");
+    mask.querySelector("[data-ok]").addEventListener("click", function () {
+      closeModal();
+      if (opt.onOk) opt.onOk();
+    });
+  }
+
+  var toastTimer = null;
+  function toast(msg) {
+    var el = $("toast");
+    $("toastText").textContent = msg;
+    el.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { el.classList.remove("show"); }, 2200);
+  }
+
+  /* ---------- 事件绑定 ---------- */
+  function bindEvents() {
+    // 返回按钮 & 取消
+    $("btnBack").addEventListener("click", handleBack);
+    $("tabClose").addEventListener("click", function (e) {
+      e.stopPropagation();
+      handleBack();
+    });
+    $("btnCancel").addEventListener("click", function () {
+      // 取消无条件丢弃草稿
+      backToOrg();
+    });
+    $("btnSave").addEventListener("click", handleSave);
+
+    // 筛选
+    $("btnSearch").addEventListener("click", function () { doFilter(true); });
+    // 重置
+    $("btnReset").addEventListener("click", function () {
+      $("kw").value = ""; $("kind").value = ""; $("status").value = "";
+      doFilter(true);
+    });
+    $("kw").addEventListener("keydown", function (e) {
+      if (e.key === "Enter") doFilter(true);
+    });
+
+    // 穿梭按钮
+    $("btnAdd").addEventListener("click", addSelected);
+    $("btnRemove").addEventListener("click", removeSelected);
+
+    // 左栏分页
+    $("leftPrev").addEventListener("click", function () {
+      if (state.leftPage > 1) { state.leftPage--; renderLeft(); }
+    });
+    $("leftNext").addEventListener("click", function () {
+      var pages = Math.max(1, Math.ceil(filteredLeft.length / PAGE_SIZE));
+      if (state.leftPage < pages) { state.leftPage++; renderLeft(); }
+    });
+
+    // 左栏勾选
+    $("leftBody").addEventListener("change", function (e) {
+      var row = e.target.closest("tr[data-key]");
+      if (!row || !e.target.matches("input[type=checkbox]")) return;
+      var key = row.getAttribute("data-key");
+      if (e.target.checked) state.leftSel[key] = true;
+      else delete state.leftSel[key];
+      renderLeft();
+      renderDraftHint();
+      $("btnAdd").disabled = Object.keys(state.leftSel).length === 0;
+    });
+    $("leftAll").addEventListener("change", function () {
+      var rows = filteredLeft.slice((state.leftPage - 1) * PAGE_SIZE, state.leftPage * PAGE_SIZE);
+      if (this.checked) rows.forEach(function (r) { state.leftSel[r.key] = true; });
+      else rows.forEach(function (r) { delete state.leftSel[r.key]; });
+      renderLeft();
+      renderDraftHint();
+      $("btnAdd").disabled = Object.keys(state.leftSel).length === 0;
+    });
+
+    // 右栏分页（对称左栏）
+    $("rightPrev").addEventListener("click", function () {
+      if (state.rightPage > 1) { state.rightPage--; renderRight(); }
+    });
+    $("rightNext").addEventListener("click", function () {
+      var pages = Math.max(1, Math.ceil(filteredRight.length / PAGE_SIZE));
+      if (state.rightPage < pages) { state.rightPage++; renderRight(); }
+    });
+
+    // 右栏勾选
+    $("rightBody").addEventListener("change", function (e) {
+      var row = e.target.closest("tr[data-key]");
+      if (!row || !e.target.matches("input[type=checkbox]")) return;
+      var key = row.getAttribute("data-key");
+      if (e.target.checked) state.rightSel[key] = true;
+      else delete state.rightSel[key];
+      renderRight();
+      renderDraftHint();
+      $("btnRemove").disabled = Object.keys(state.rightSel).length === 0;
+    });
+    $("rightAll").addEventListener("change", function () {
+      var rows = filteredRight.slice((state.rightPage - 1) * PAGE_SIZE, state.rightPage * PAGE_SIZE);
+      if (this.checked) rows.forEach(function (r) { state.rightSel[r.key] = true; });
+      else rows.forEach(function (r) { delete state.rightSel[r.key]; });
+      renderRight();
+      renderDraftHint();
+      $("btnRemove").disabled = Object.keys(state.rightSel).length === 0;
+    });
+
+    // 弹窗关闭
+    $("modalMask").addEventListener("click", function (e) {
+      if (e.target === $("modalMask")) closeModal();
+      if (e.target.closest("[data-close]")) closeModal();
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") closeModal();
+    });
+
+    // 导航（仅作跳转演示）
+    document.querySelectorAll("[data-nav]").forEach(function (el) {
+      el.addEventListener("click", function () {
+        var name = el.getAttribute("data-nav");
+        if (name === "机构药品目录" || name === "药品目录管理") {
+          location.href = (name === "机构药品目录" ? "org-drug-catalog" : "drug-catalog") + ".html";
+        }
+      });
+    });
+  }
+
+  init();
+})();
+</script>
+  <script src="nav.js"></script>
+</body>
+</html>

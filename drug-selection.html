@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>药品目录遴选 · 区域药房协同管理系统</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ========== 顶部导航 ========== -->
+<header class="app-header">
+  <div class="header-left">
+    <div class="header-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3.2" y="9.4" width="17.6" height="5.2" rx="2.6" transform="rotate(-45 12 12)"/>
+        <path d="M8.4 15.6L15.6 8.4"/>
+      </svg>
+    </div>
+    <div class="header-title">区域药房协同管理系统</div>
+  </div>
+  <div class="header-right">
+    <div class="header-user" id="headerUser" title="点击退出登录">
+      <span class="header-avatar">药</span>
+      <span class="header-user-name">—</span>
+      <svg class="user-arrow" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+    </div>
+  </div>
+</header>
+
+<div class="app-body">
+  <!-- ========== 左侧导航 ========== -->
+  <aside class="app-side" id="appSide"></aside>
+<!-- ========== 主区域 ========== -->
+  <main class="app-main">
+    <div class="tabbar">
+      <div class="tab">首页</div>
+      <div class="tab active">
+        药品目录遴选
+        <button class="tab-close" id="tabClose" title="关闭">
+          <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="page sel-page">
+      <div class="sel-main">
+        <!-- 标题行 -->
+        <div class="page-head">
+          <h1 class="page-title">药品目录遴选</h1>
+          <div class="page-acts" id="pageActs"></div>
+        </div>
+
+        <div class="sel-card">
+          <!-- 范围页签 -->
+          <div class="page-tabs" id="scopeTabs"></div>
+
+          <!-- 筛选 -->
+          <div class="filter-bar">
+            <div class="filter-item">
+              <span class="filter-label">申请标题</span>
+              <input class="input" id="fKeyword" placeholder="请输入申请标题" style="width:200px;">
+            </div>
+            <div class="filter-item">
+              <span class="filter-label">申请时间</span>
+              <input class="input" type="date" id="fDateFrom">
+              <span class="filter-sep">至</span>
+              <input class="input" type="date" id="fDateTo">
+            </div>
+            <div class="filter-item">
+              <span class="filter-label">当前状态</span>
+              <select class="select" id="fStatus" style="width:170px">
+                <option value="">全部状态</option>
+              </select>
+            </div>
+            <div class="filter-acts">
+              <button class="btn" id="btnReset">重置</button>
+              <button class="btn btn-primary" id="btnQuery">查询</button>
+            </div>
+          </div>
+
+          <!-- 列表 -->
+          <div class="table-wrap" style="padding:0 16px;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>申请标题</th>
+                  <th style="width:110px;">涉及药品数量</th>
+                  <th style="width:200px;">申请机构</th>
+                  <th style="width:90px;">申请人</th>
+                  <th style="width:164px;" class="th-sort desc" id="thTime">
+                    申请时间
+                    <span class="sort-ico"><span class="s-up">▲</span><span class="s-down">▼</span></span>
+                  </th>
+                  <th style="width:130px;">当前状态</th>
+                  <th class="col-acts">操作</th>
+                </tr>
+              </thead>
+              <tbody id="tbody"></tbody>
+            </table>
+            <div class="table-empty" id="tableEmpty" style="display:none;">暂无数据</div>
+          </div>
+
+          <div class="pager">
+            <span id="pagerInfo"></span>
+            <div class="pager-ctrl">
+              <button class="pager-btn" id="pgPrev" title="上一页">
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+              </button>
+              <span class="pager-num" id="pgNum">1</span>
+              <button class="pager-btn" id="pgNext" title="下一页">
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="modal-mask" id="modalMask"></div>
+<div class="toast" id="toast">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+  <span id="toastText"></span>
+</div>
+
+<script src="mock.js"></script>
+<script src="selection-common.js"></script>
+<script>
+(function () {
+  var $ = SEL.$, esc = SEL.esc;
+
+  var user = SEL.requireAuth();
+  if (!user) return;
+
+  var state = {
+    scope: "mine",       // mine / todo / done
+    status: "",
+    keyword: "",
+    dateFrom: "",
+    dateTo: "",
+    sort: "desc",        // 申请时间排序，默认倒序
+    page: 1,
+    size: 10
+  };
+
+  /* ---------------- 范围页签 ---------------- */
+  function scopesOf(role) {
+    if (user.role === "village") return [{ k: "mine", t: "我的申请" }];
+    if (user.role === "member") return [
+      { k: "mine", t: "我的申请" },
+      { k: "todo", t: "待我审核" },
+      { k: "done", t: "我已审核" }
+    ];
+    return [
+      { k: "todo", t: "待我审核" },
+      { k: "done", t: "我已审核" }
+    ];
+  }
+
+  function renderScopeTabs() {
+    var tabs = scopesOf(user.role);
+    if (!tabs.some(function (t) { return t.k === state.scope; })) state.scope = tabs[0].k;
+    $("scopeTabs").innerHTML = tabs.map(function (t) {
+      return '<span class="page-tab' + (t.k === state.scope ? " active" : "") + '" data-scope="' + t.k + '">' +
+        t.t + "</span>";
+    }).join("");
+  }
+
+  function scopeMatch(a, scope) {
+    if (scope === "mine") return SEL.isApplicant(a, user);
+    if (scope === "todo") return SEL.canApprove(a, user);
+    if (scope === "done") {
+      return a.records.some(function (r) {
+        return r.person === user.name && (r.result === "同意" || r.result === "拒绝");
+      });
+    }
+    return true;
+  }
+
+  /* ---------------- 列表 ---------------- */
+  function filtered() {
+    return SEL.loadData().filter(function (a) {
+      if (!scopeMatch(a, state.scope)) return false;
+      if (state.status && a.status !== state.status) return false;
+      if (state.keyword && a.title.toLowerCase().indexOf(state.keyword.toLowerCase()) < 0) return false;
+      var day = a.createdAt.slice(0, 10);
+      if (state.dateFrom && day < state.dateFrom) return false;
+      if (state.dateTo && day > state.dateTo) return false;
+      return true;
+    }).sort(function (x, y) {
+      if (x.createdAt === y.createdAt) return 0;
+      var r = x.createdAt < y.createdAt ? -1 : 1;
+      return state.sort === "desc" ? -r : r;
+    });
+  }
+
+  function actionHtml(a) {
+    var mine = SEL.isApplicant(a, user);
+    var acts = [];
+    acts.push('<button class="link-btn" data-act="view" data-id="' + a.id + '">查看</button>');
+
+    if (a.status === "draft" || a.status === "rejected") {
+      if (mine) {
+        acts.push('<button class="link-btn" data-act="edit" data-id="' + a.id + '">编辑</button>');
+        acts.push('<button class="link-btn" data-act="submit" data-id="' + a.id + '">提交审核</button>');
+        acts.push('<button class="link-btn is-danger" data-act="del" data-id="' + a.id + '">删除</button>');
+      }
+    } else if (a.status === "member" || a.status === "center") {
+      if (mine) {
+        acts.push('<button class="link-btn" data-act="revoke" data-id="' + a.id + '">撤销审核</button>');
+      }
+      if (SEL.canApprove(a, user)) {
+        acts.push('<button class="link-btn" data-act="approve" data-id="' + a.id + '">审核</button>');
+      }
+    }
+    return acts.join("");
+  }
+
+  function renderTable() {
+    var rows = filtered();
+    var total = rows.length;
+    var pages = Math.max(1, Math.ceil(total / state.size));
+    if (state.page > pages) state.page = pages;
+    var start = (state.page - 1) * state.size;
+    var slice = rows.slice(start, start + state.size);
+
+    $("tbody").innerHTML = slice.map(function (a) {
+      return "<tr>" +
+        '<td><div class="cell-ellipsis" title="' + esc(a.title) + '">' + esc(a.title) + "</div></td>" +
+        "<td>" + a.items.length + "</td>" +
+        '<td><div class="cell-ellipsis" title="' + esc(a.org) + '">' + esc(a.org) + "</div></td>" +
+        "<td>" + esc(a.applicant) + "</td>" +
+        "<td>" + esc(a.createdAt) + "</td>" +
+        '<td><span class="status-text">' + esc(SEL.STATUS[a.status]) + "</span></td>" +
+        '<td class="col-acts">' + actionHtml(a) + "</td>" +
+      "</tr>";
+    }).join("");
+
+    $("tableEmpty").style.display = total ? "none" : "block";
+    $("pagerInfo").textContent = "共 " + total + " 条";
+    $("pgNum").textContent = state.page + " / " + pages;
+    $("pgPrev").disabled = state.page <= 1;
+    $("pgNext").disabled = state.page >= pages;
+  }
+
+  function renderActs() {
+    if (user.role === "village" || user.role === "member") {
+      $("pageActs").innerHTML = '<button class="btn btn-primary" id="btnCreate">发起申请</button>';
+      $("btnCreate").addEventListener("click", function () {
+        location.href = "drug-selection-create.html";
+      });
+    } else {
+      $("pageActs").innerHTML = "";
+    }
+  }
+
+  function renderAll() {
+    renderScopeTabs();
+    renderTable();
+  }
+
+  /* ---------------- 操作 ---------------- */
+  function doSubmit(id) {
+    var list = SEL.loadData();
+    var app = SEL.byId(list, id);
+    if (!app) return;
+    SEL.confirmDialog({
+      title: "提交审核",
+      text: "确认提交「" + app.title + "」？提交后进入" + (app.orgType === "village" ? "成员机构审核" : "中心药房审核") + "，期间不可编辑。",
+      okText: "提交",
+      onOk: function () {
+        app.status = SEL.nextStatus(app);
+        app.records.push({ node: "提交", org: app.org, person: app.applicant, result: "已提交", opinion: "—", time: SEL.fmtNow() });
+        SEL.saveData(list);
+        SEL.toast("已提交审核");
+        renderAll();
+      }
+    });
+  }
+
+  function doRevoke(id) {
+    var list = SEL.loadData();
+    var app = SEL.byId(list, id);
+    if (!app) return;
+    SEL.confirmDialog({
+      title: "撤销审核",
+      text: "确认撤销「" + app.title + "」的审核？撤销后申请回到草稿，可重新编辑提交。",
+      okText: "撤销",
+      onOk: function () {
+        app.status = "draft";
+        app.records.push({ node: "撤销审核", org: app.org, person: app.applicant, result: "已撤销", opinion: "—", time: SEL.fmtNow() });
+        SEL.saveData(list);
+        SEL.toast("已撤销审核");
+        renderAll();
+      }
+    });
+  }
+
+  function doDelete(id) {
+    var list = SEL.loadData();
+    var app = SEL.byId(list, id);
+    if (!app) return;
+    SEL.confirmDialog({
+      title: "删除申请",
+      text: "确认删除「" + app.title + "」？删除后不可恢复。",
+      okText: "删除",
+      onOk: function () {
+        var next = list.filter(function (x) { return x.id !== id; });
+        SEL.saveData(next);
+        SEL.toast("已删除");
+        renderAll();
+      }
+    });
+  }
+
+  /* ---------------- 事件 ---------------- */
+  $("scopeTabs").addEventListener("click", function (e) {
+    var t = e.target.closest("[data-scope]");
+    if (!t) return;
+    state.scope = t.getAttribute("data-scope");
+    state.page = 1;
+    renderAll();
+  });
+
+  $("fStatus").addEventListener("change", doQuery);
+
+  $("fKeyword").addEventListener("keydown", function (e) {
+    if (e.key === "Enter") doQuery();
+  });
+  $("fDateFrom").addEventListener("change", doQuery);
+  $("fDateTo").addEventListener("change", doQuery);
+
+  $("btnQuery").addEventListener("click", doQuery);
+
+  function doQuery() {
+    state.status = $("fStatus").value;
+    state.keyword = $("fKeyword").value.trim();
+    state.dateFrom = $("fDateFrom").value;
+    state.dateTo = $("fDateTo").value;
+    state.page = 1;
+    renderTable();
+  }
+
+  $("btnReset").addEventListener("click", function () {
+    state.status = ""; state.keyword = ""; state.dateFrom = ""; state.dateTo = ""; state.page = 1;
+    $("fStatus").value = ""; $("fKeyword").value = ""; $("fDateFrom").value = ""; $("fDateTo").value = "";
+    renderTable();
+  });
+
+  $("thTime").addEventListener("click", function () {
+    state.sort = state.sort === "desc" ? "asc" : "desc";
+    this.classList.toggle("desc", state.sort === "desc");
+    this.classList.toggle("asc", state.sort === "asc");
+    renderTable();
+  });
+
+  $("pgPrev").addEventListener("click", function () { state.page--; renderTable(); });
+  $("pgNext").addEventListener("click", function () { state.page++; renderTable(); });
+
+  $("tbody").addEventListener("click", function (e) {
+    var btn = e.target.closest("[data-id]");
+    if (!btn) return;
+    var id = btn.getAttribute("data-id");
+    var act = btn.getAttribute("data-act") || "view";
+    if (act === "view") location.href = "drug-selection-detail.html?id=" + id;
+    else if (act === "edit") location.href = "drug-selection-create.html?id=" + id;
+    else if (act === "approve") location.href = "drug-selection-detail.html?id=" + id + "&mode=approve";
+    else if (act === "submit") doSubmit(id);
+    else if (act === "revoke") doRevoke(id);
+    else if (act === "del") doDelete(id);
+  });
+
+  $("tabClose").addEventListener("click", function () { location.href = "drug-catalog.html"; });
+  $("headerUser").addEventListener("click", function () {
+    SEL.confirmDialog({
+      title: "退出登录",
+      text: "确认退出当前账号「" + user.name + "」？",
+      okText: "退出",
+      onOk: function () { SEL.logout(); }
+    });
+  });
+
+  /* 状态下拉选项 */
+  Object.keys(SEL.STATUS).forEach(function (k) {
+    var opt = document.createElement("option");
+    opt.value = k; opt.textContent = SEL.STATUS[k];
+    $("fStatus").appendChild(opt);
+  });
+
+  SEL.renderHeaderUser(user);
+  SEL.bindNav();
+  renderActs();
+  renderAll();
+})();
+</script>
+  <script src="nav.js"></script>
+</body>
+</html>

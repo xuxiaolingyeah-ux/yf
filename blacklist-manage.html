@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>黑名单管理 · 中心药房</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body class="black-open">
+
+<!-- ========== 顶部导航 ========== -->
+<header class="app-header">
+  <div class="header-left">
+    <div class="header-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3.2" y="9.4" width="17.6" height="5.2" rx="2.6" transform="rotate(-45 12 12)"></rect>
+        <path d="M8.4 15.6L15.6 8.4"></path>
+      </svg>
+    </div>
+    <div class="header-title">区域药房协同管理系统</div>
+  </div>
+  <div class="header-right">
+    <div class="header-user">
+      <div class="header-avatar">张</div>
+      <span class="header-user-name">张明远</span>
+    </div>
+  </div>
+</header>
+
+<div class="app-body">
+  <!-- ========== 左侧导航 ========== -->
+  <aside class="app-side" id="appSide"></aside>
+<!-- ========== 主区域 ========== -->
+  <main class="app-main">
+    <div class="tabbar">
+      <div class="tab" onclick="location.href='drug-catalog.html'">首页</div>
+      <div class="tab" onclick="location.href='manufacturer-manage.html'">企业管理</div>
+      <div class="tab active">
+        黑名单管理
+        <button class="tab-close" title="关闭" onclick="location.href='manufacturer-manage.html'">
+          <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+            <path d="M5 5l14 14M19 5L5 19"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="page">
+      <div class="page-head">
+        <div class="head-back">
+          <button class="back-btn" id="btnBack" title="返回厂商管理">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg>
+          </button>
+          <h1 class="page-title">黑名单管理</h1>
+        </div>
+        <div class="page-acts">
+          <button class="btn btn-primary" id="btnAddBlack">添加至黑名单</button>
+        </div>
+      </div>
+
+      <div class="sel-card">
+        <div class="filter-bar mf-filter" id="filterBar">
+          <div class="mf-fi">
+            <span class="lbl">企业名称：</span>
+            <input class="input" id="fltName" placeholder="请输入企业名称" autocomplete="off">
+          </div>
+          <div class="mf-fi">
+            <span class="lbl">企业类型：</span>
+            <select class="select" id="fltType">
+              <option value="">请选择企业类型</option>
+              <option value="供应商">供应商</option>
+              <option value="生产企业">生产企业</option>
+              <option value="生产企业+供应商">生产企业+供应商</option>
+            </select>
+          </div>
+          <div class="mf-fi">
+            <span class="lbl">企业分类：</span>
+            <select class="select" id="fltCategory">
+              <option value="">请选择企业分类</option>
+              <option value="物资">物资</option>
+              <option value="药品">药品</option>
+              <option value="药品+物资">药品+物资</option>
+            </select>
+          </div>
+          <div class="filter-acts">
+            <button class="btn btn-sm" id="btnReset">重置</button>
+            <button class="btn btn-sm btn-primary" id="btnSearch">查询</button>
+          </div>
+        </div>
+
+        <div class="mf-table-wrap" style="padding:0 16px;">
+          <table class="data-table mf-table">
+            <colgroup>
+              <col style="width:56px"><col style="width:104px"><col style="width:200px"><col style="width:150px">
+              <col style="width:110px"><col style="width:140px"><col style="width:230px"><col style="width:120px">
+            </colgroup>
+            <thead>
+              <tr>
+                <th>序号</th><th>企业编码</th><th>企业名称</th><th>企业类型</th>
+                <th>企业分类</th><th>加入时间</th><th>拉黑原因</th><th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="blackBody"><tr><td>1</td><td>Q23572</td><td title="无锡赛德科技开发有限公司">无锡赛德科技开发有限公司</td><td>生产企业</td><td>物资</td><td>2026-07-18</td><td title="资质到期未续办">资质到期未续办</td><td><div class="mf-acts"><button class="link-btn" data-act="unblack" data-id="Q23572">移出黑名单</button></div></td></tr><tr><td>2</td><td>Q22637</td><td title="龙口市康谐医疗器械有限公司">龙口市康谐医疗器械有限公司</td><td>生产企业</td><td>物资</td><td>2026-09-02</td><td title="违规经营，暂停合作">违规经营，暂停合作</td><td><div class="mf-acts"><button class="link-btn" data-act="unblack" data-id="Q22637">移出黑名单</button></div></td></tr><tr><td>3</td><td>Q22629</td><td title="南京医药股份有限公司">南京医药股份有限公司</td><td>供应商</td><td>药品</td><td>2026-10-11</td><td title="药品质量抽检不合格">药品质量抽检不合格</td><td><div class="mf-acts"><button class="link-btn" data-act="unblack" data-id="Q22629">移出黑名单</button></div></td></tr></tbody>
+          </table>
+        </div>
+
+        <div class="mf-pager">
+          <span>共 <b id="totalNum">3</b> 条</span>
+          <div class="ctrl">
+            <button class="pager-btn" id="pagePrev">‹</button>
+            <span id="pageNums"><button class="pager-num is-cur" data-page="1">1</button></span>
+            <button class="pager-btn" id="pageNext">›</button>
+            <select class="select mf-size" id="pageSize">
+              <option value="15">15条/页</option>
+              <option value="30">30条/页</option>
+              <option value="50">50条/页</option>
+            </select>
+            <span>跳至第</span>
+            <input class="input mf-jump" id="pageJump" value="1">
+            <span>页</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ========== 抽屉：添加至黑名单 ========== -->
+<div class="drawer-mask" id="drawerMask"></div>
+<div class="drawer is-black" id="blackDrawer">
+  <div class="drawer-head">
+    <div class="drawer-title">添加至黑名单</div>
+    <button class="drawer-close" id="blackDrawerClose" title="关闭">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <path d="M5 5l14 14M19 5L5 19"></path>
+      </svg>
+    </button>
+  </div>
+  <div class="drawer-body">
+    <div class="mf-bk-form">
+      <div class="mf-bk-label">选择企业 <span class="req">*</span><span class="mf-bk-tip-inline" id="bkSelName">未选择</span></div>
+      <div class="mf-bk-search">
+        <input class="input" id="bkKw" placeholder="输入企业名称或企业编码搜索" autocomplete="off">
+      </div>
+      <div class="mf-bk-list" id="bkList"></div>
+      <div class="mf-bk-label">拉黑原因 <span class="req">*</span></div>
+      <textarea class="textarea" id="bkReason" rows="4" placeholder="请输入拉黑原因，例如资质过期未续办、质量抽检不合格等"></textarea>
+      <div class="mf-bk-tip">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="9"></circle><path d="M12 8v4.5M12 16h.01"></path>
+        </svg>
+        <span>提交后该企业将<b>自动停用</b>；黑名单期间<b>无法启用</b>，如需恢复请在此页面移出。</span>
+      </div>
+    </div>
+  </div>
+  <div class="drawer-foot">
+    <button class="btn" id="bkCancel">取消</button>
+    <button class="btn btn-primary" id="bkOk">确认拉黑</button>
+  </div>
+</div>
+
+<!-- ========== Toast ========== -->
+<div class="toast" id="toast">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M20 6L9 17l-5-5"></path>
+  </svg>
+  <span id="toastText"></span>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  function $(id) { return document.getElementById(id); }
+  function esc(s) {
+    return String(s === null || s === undefined ? "" : s)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+
+  var DATA_KEY = "MF_VENDORS_V4";
+
+  var SEED = [
+    { code: "Q24581", name: "双通医疗", type: "供应商", category: "药品", shelf: "启用" },
+    { code: "Q24580", name: "", type: "生产企业+供应商", category: "物资", shelf: "停用" },
+    { code: "Q24576", name: "燀", type: "供应商", category: "物资", shelf: "启用" },
+    { code: "Q24574", name: "", type: "", category: "", shelf: "停用" },
+    { code: "Q24573", name: "", type: "", category: "药品", shelf: "停用" },
+    { code: "Q23574", name: "重庆大清生物有限公司", type: "生产企业", category: "物资", shelf: "启用" },
+    { code: "Q23572", name: "无锡赛德科技开发有限公司", type: "生产企业", category: "物资", shelf: "启用", black: true, blackAt: "2026-07-18", blackReason: "资质到期未续办" },
+    { code: "Q22640", name: "邗江新创", type: "生产企业", category: "物资", shelf: "启用" },
+    { code: "Q22639", name: "宁波市温度表厂", type: "生产企业", category: "物资", shelf: "启用" },
+    { code: "Q22638", name: "南京万福金安生物医药科技有限公司", type: "生产企业", category: "物资", shelf: "启用" },
+    { code: "Q22637", name: "龙口市康谐医疗器械有限公司", type: "生产企业", category: "物资", shelf: "启用", black: true, blackAt: "2026-09-02", blackReason: "违规经营，暂停合作" },
+    { code: "Q22636", name: "烟台市健新医疗科技有限公司", type: "生产企业", category: "物资", shelf: "启用" },
+    { code: "Q22635", name: "江苏华夏医疗器械有限公司", type: "生产企业", category: "物资", shelf: "启用" },
+    { code: "Q22634", name: "施爱德（厦门）医疗器材有限公司", type: "生产企业", category: "物资", shelf: "启用" },
+    { code: "Q22633", name: "普迈德（北京）科技有限公司", type: "生产企业", category: "物资", shelf: "启用" },
+    { code: "Q22632", name: "徐州诚信医疗器械有限公司", type: "生产企业", category: "物资", shelf: "启用", province: "江苏省" },
+    { code: "Q22631", name: "苏州伟康医疗器械有限公司", type: "供应商", category: "药品", shelf: "启用", province: "江苏省" },
+    { code: "Q22630", name: "江苏鱼跃医疗设备股份有限公司", type: "生产企业", category: "物资", shelf: "启用", province: "江苏省" },
+    { code: "Q22629", name: "南京医药股份有限公司", type: "供应商", category: "药品", shelf: "启用", province: "江苏省", black: true, blackAt: "2026-10-11", blackReason: "药品质量抽检不合格" },
+    { code: "Q22628", name: "常州华通医疗器械有限公司", type: "生产企业", category: "物资", shelf: "停用", province: "江苏省" },
+    { code: "Q24590", name: "山东威高集团医用高分子制品股份有限公司", type: "生产企业", category: "药品", shelf: "启用" }
+  ];
+
+  var DATA = [];
+  var ST = {
+    filters: { kw: "", type: "", category: "" },
+    page: 1,
+    size: 15,
+    bk: { codes: [], kw: "" }
+  };
+
+  function loadData() {
+    var raw = null;
+    try { raw = sessionStorage.getItem(DATA_KEY); } catch (e) { /* ignore */ }
+    if (raw) {
+      try { DATA = JSON.parse(raw); } catch (e) { DATA = []; }
+    }
+    if (!DATA || !DATA.length) DATA = SEED.map(function (v) { return JSON.parse(JSON.stringify(v)); });
+  }
+  function saveData() {
+    try { sessionStorage.setItem(DATA_KEY, JSON.stringify(DATA)); } catch (e) { /* ignore */ }
+  }
+  function findVendor(code) {
+    return DATA.filter(function (v) { return v.code === code; })[0] || null;
+  }
+
+  function filtered() {
+    var f = ST.filters;
+    return DATA.filter(function (v) {
+      if (!v.black) return false;
+      if (f.kw) {
+        var kw = f.kw.toLowerCase();
+        if ([v.name, v.code].join("|").toLowerCase().indexOf(kw) < 0) return false;
+      }
+      if (f.type && v.type !== f.type) return false;
+      if (f.category && v.category !== f.category) return false;
+      return true;
+    });
+  }
+
+  function renderRows() {
+    var rows = filtered();
+    var start = (ST.page - 1) * ST.size;
+    var pageRows = rows.slice(start, start + ST.size);
+    var body = $("blackBody");
+    if (!pageRows.length) {
+      body.innerHTML = '<tr><td colspan="8" class="table-empty">暂无数据</td></tr>';
+    } else {
+      body.innerHTML = pageRows.map(function (v, i) {
+        return "<tr>"
+          + "<td>" + (start + i + 1) + "</td>"
+          + "<td>" + esc(v.code) + "</td>"
+          + "<td title=\"" + esc(v.name) + "\">" + (v.name ? esc(v.name) : "—") + "</td>"
+          + "<td>" + (v.type ? esc(v.type) : "—") + "</td>"
+          + "<td>" + (v.category ? esc(v.category) : "—") + "</td>"
+          + "<td>" + (v.blackAt ? esc(v.blackAt) : "—") + "</td>"
+          + "<td title=\"" + esc(v.blackReason) + "\">" + (v.blackReason ? esc(v.blackReason) : "—") + "</td>"
+          + '<td><div class="mf-acts">'
+          + '<button class="link-btn" data-act="unblack" data-id="' + esc(v.code) + '">移出黑名单</button>'
+          + "</div></td>"
+          + "</tr>";
+      }).join("");
+    }
+    renderPager(rows.length);
+  }
+
+  function renderPager(total) {
+    var pages = Math.max(1, Math.ceil(total / ST.size));
+    if (ST.page > pages) ST.page = pages;
+    if (ST.page < 1) ST.page = 1;
+    $("totalNum").textContent = total;
+
+    var nums = "";
+    var from = 1, to = pages;
+    if (pages > 7) {
+      from = Math.max(1, ST.page - 2);
+      to = Math.min(pages, from + 4);
+      from = Math.max(1, to - 4);
+    }
+    for (var p = from; p <= to; p++) {
+      nums += '<button class="pager-num' + (p === ST.page ? " is-cur" : "") + '" data-page="' + p + '">' + p + "</button>";
+    }
+    $("pageNums").innerHTML = nums;
+    $("pageJump").value = ST.page;
+  }
+
+  function applyFilters() {
+    ST.filters.kw = $("fltName").value.trim();
+    ST.filters.type = $("fltType").value;
+    ST.filters.category = $("fltCategory").value;
+    ST.page = 1;
+    renderRows();
+  }
+
+  function resetFilters() {
+    $("fltName").value = "";
+    $("fltType").value = "";
+    $("fltCategory").value = "";
+    ST.filters = { kw: "", type: "", category: "" };
+    ST.page = 1;
+    renderRows();
+  }
+
+  /* ================= Toast ================= */
+  var toastTimer = null;
+  function toast(msg) {
+    var t = $("toast");
+    $("toastText").textContent = msg;
+    t.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { t.classList.remove("show"); }, 2200);
+  }
+
+  /* ================= 添加至黑名单 ================= */
+  function today() {
+    var d = new Date(), p = function (n) { return n < 10 ? "0" + n : String(n); };
+    return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate());
+  }
+
+  function renderPicker() {
+    var kw = ST.bk.kw.toLowerCase();
+    var list = DATA.filter(function (v) { return !v.black && v.shelf === "启用"; })
+      .filter(function (v) {
+        if (!kw) return true;
+        return [v.name, v.code].join("|").toLowerCase().indexOf(kw) >= 0;
+      }).slice(0, 30);
+    var box = $("bkList");
+    if (!list.length) {
+      box.innerHTML = '<div class="mf-bk-empty">' + (kw ? "没有符合条件的企业" : "暂无可加入黑名单的启用企业") + '</div>';
+      return;
+    }
+    box.innerHTML = list.map(function (v) {
+      var checked = ST.bk.codes.indexOf(v.code) >= 0;
+      return '<label class="mf-bk-item' + (checked ? " is-checked" : "") + '">'
+        + '<input type="checkbox" name="bkPick" value="' + esc(v.code) + '"' + (checked ? " checked" : "") + ">"
+        + '<span class="mf-bk-code">' + esc(v.code) + "</span>"
+        + '<span class="mf-bk-name" title="' + esc(v.name) + '">' + (v.name ? esc(v.name) : "—") + "</span>"
+        + '<span class="mf-bk-meta">' + (v.type ? esc(v.type) : "—") + "</span>"
+        + "</label>";
+    }).join("");
+  }
+
+  function syncCount() {
+    var n = ST.bk.codes.length;
+    $("bkSelName").textContent = n ? ("已选择 " + n + " 家") : "未选择";
+    $("bkSelName").classList.toggle("is-picked", n > 0);
+  }
+
+  function openDrawer() {
+    ST.bk = { codes: [], kw: "" };
+    $("bkKw").value = "";
+    $("bkReason").value = "";
+    syncCount();
+    renderPicker();
+    document.body.classList.add("black-open");
+  }
+  function closeDrawer() {
+    document.body.classList.remove("black-open");
+  }
+
+  function confirmBlack() {
+    var reason = $("bkReason").value.trim();
+    if (!ST.bk.codes.length) { toast("请至少选择一家企业"); return; }
+    if (!reason) { toast("请填写拉黑原因"); return; }
+    var n = 0;
+    ST.bk.codes.forEach(function (code) {
+      var v = findVendor(code);
+      if (!v || v.black) return;
+      v.black = true;
+      v.blackAt = today();
+      v.blackReason = reason;
+      v.shelf = "停用";
+      n++;
+    });
+    saveData();
+    closeDrawer();
+    renderRows();
+    toast("已拉黑 " + n + " 家企业，并自动停用");
+  }
+
+  /* ================= 事件 ================= */
+  function bindEvents() {
+    $("btnBack").addEventListener("click", function () { location.href = "manufacturer-manage.html"; });
+    $("btnAddBlack").addEventListener("click", openDrawer);
+    $("blackDrawerClose").addEventListener("click", closeDrawer);
+    $("bkCancel").addEventListener("click", closeDrawer);
+    $("bkOk").addEventListener("click", confirmBlack);
+    $("drawerMask").addEventListener("click", closeDrawer);
+
+    $("bkKw").addEventListener("input", function () {
+      ST.bk.kw = this.value.trim();
+      renderPicker();
+    });
+    $("bkList").addEventListener("change", function (e) {
+      if (!e.target.matches('input[name="bkPick"]')) return;
+      var code = e.target.value;
+      var idx = ST.bk.codes.indexOf(code);
+      if (e.target.checked && idx < 0) ST.bk.codes.push(code);
+      if (!e.target.checked && idx >= 0) ST.bk.codes.splice(idx, 1);
+      syncCount();
+      var item = e.target.closest(".mf-bk-item");
+      item.classList.toggle("is-checked", e.target.checked);
+    });
+
+    $("btnSearch").addEventListener("click", applyFilters);
+    $("btnReset").addEventListener("click", resetFilters);
+
+    $("blackBody").addEventListener("click", function (e) {
+      var btn = e.target.closest("button[data-act]");
+      if (!btn || btn.getAttribute("data-act") !== "unblack") return;
+      var v = findVendor(btn.getAttribute("data-id"));
+      if (!v) return;
+      v.black = false;
+      v.blackAt = "";
+      v.blackReason = "";
+      saveData();
+      renderRows();
+      toast("已移出黑名单：" + (v.name || v.code));
+    });
+
+    $("pageNums").addEventListener("click", function (e) {
+      var b = e.target.closest("[data-page]");
+      if (!b) return;
+      ST.page = parseInt(b.getAttribute("data-page"), 10);
+      renderRows();
+    });
+    $("pagePrev").addEventListener("click", function () {
+      if (ST.page > 1) { ST.page--; renderRows(); }
+    });
+    $("pageNext").addEventListener("click", function () {
+      var pages = Math.max(1, Math.ceil(filtered().length / ST.size));
+      if (ST.page < pages) { ST.page++; renderRows(); }
+    });
+    $("pageSize").addEventListener("change", function () {
+      ST.size = parseInt(this.value, 10);
+      ST.page = 1;
+      renderRows();
+    });
+    $("pageJump").addEventListener("keydown", function (e) {
+      if (e.key !== "Enter") return;
+      var pages = Math.max(1, Math.ceil(filtered().length / ST.size));
+      var p = parseInt(this.value, 10);
+      if (!p || p < 1) p = 1;
+      if (p > pages) p = pages;
+      ST.page = p;
+      renderRows();
+    });
+  }
+
+  loadData();
+  bindEvents();
+  renderRows();
+})();
+</script>
+
+  <script src="nav.js"></script>
+</body></html>

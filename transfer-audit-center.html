@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>中心药房审核 · 区域药房协同管理系统</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="app-header">
+  <div class="header-left">
+    <div class="header-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3.2" y="9.4" width="17.6" height="5.2" rx="2.6" transform="rotate(-45 12 12)"/>
+        <path d="M8.4 15.6L15.6 8.4"/>
+      </svg>
+    </div>
+    <div class="header-title">区域药房协同管理系统</div>
+  </div>
+  <div class="header-right">
+    <div class="header-user" id="headerUser" title="点击退出登录">
+      <span class="header-avatar">药</span>
+      <span class="header-user-name">—</span>
+      <svg class="user-arrow" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+    </div>
+  </div>
+</header>
+
+<div class="app-body">
+  <aside class="app-side" id="appSide"></aside>
+<main class="app-main">
+    <div class="tabbar">
+      <div class="tab">首页</div>
+      <div class="tab" data-href="transfer.html">调拨管理</div>
+      <div class="tab active">
+        <span id="tabName">调拨审核</span>
+        <button class="tab-close" id="tabClose" title="关闭">
+          <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="page sel-page tr-detail">
+      <div class="sel-main">
+        <div class="page-head">
+          <div class="head-back">
+            <button class="back-btn" id="btnBack" title="返回调拨列表">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+            </button>
+            <h1 class="page-title" id="pageTitle">中心药房审核</h1>
+            <span class="pa-code" id="headCode">调拨单号：—</span>
+          </div>
+          <span class="status-text" id="headStatus"></span>
+        </div>
+
+        <div class="sel-card" id="detailCard">
+          <div class="page-tabs" id="jumpTabs">
+            <span class="page-tab active" data-jump="top">申请详情</span>
+            <span class="page-tab" data-jump="records">审批记录</span>
+          </div>
+
+          <div class="card-body" id="detailBody" style="padding:16px;">
+            <div class="form-wrap">
+              <section class="block" id="secInfo">
+                <div class="block-head"><h2 class="block-title">申请信息</h2></div>
+                <div class="form-grid-4" id="infoGrid"></div>
+              </section>
+
+              <section class="block" id="secItems">
+                <div class="block-head">
+                  <h2 class="block-title">药品明细<span class="count" id="itemCount"></span></h2>
+                </div>
+                <div class="tr-stage-table">
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <th style="width:230px;">药品名称</th>
+                        <th style="width:140px;">药品编码</th>
+                        <th style="width:210px;">规格</th>
+                        <th style="width:120px;" class="num">机构库存</th>
+                        <th style="width:120px;" class="num">申请数量</th>
+                      </tr>
+                    </thead>
+                    <tbody id="itemBody"></tbody>
+                  </table>
+                </div>
+              </section>
+
+              <section class="block" id="secRecords">
+                <div class="block-head"><h2 class="block-title">审批记录</h2></div>
+                <div class="tr-stage-table">
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <th style="width:140px;">节点名称</th>
+                        <th style="width:100px;">操作人</th>
+                        <th style="width:180px;">所属机构</th>
+                        <th style="width:100px;">审批结果</th>
+                        <th>审批意见</th>
+                        <th style="width:150px;">时间</th>
+                      </tr>
+                    </thead>
+                    <tbody id="recordBody"></tbody>
+                  </table>
+                </div>
+              </section>
+            </div>
+          </div>
+        </div>
+
+        <!-- 审批区：固定底部，位于卡片之后 -->
+        <div class="page-foot" id="pageFoot"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="modal-mask" id="modalMask"></div>
+<div class="toast" id="toast">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+  <span id="toastText"></span>
+</div>
+
+<script src="mock.js"></script>
+<script src="selection-common.js"></script>
+<script src="transfer-common.js"></script>
+<script>
+(function () {
+  var user = TR.user();
+  if (!user) return;
+  TR.mountAudit("center");
+  document.getElementById("headerUser").addEventListener("click", function () {
+    SEL.confirmDialog({
+      title: "退出登录",
+      text: "确认退出当前账号「" + user.name + "」？",
+      okText: "退出",
+      onOk: function () { SEL.logout(); }
+    });
+  });
+})();
+</script>
+  <script src="nav.js"></script>
+</body>
+</html>

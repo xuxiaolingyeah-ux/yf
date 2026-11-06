@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>新增出库 · 中心药房</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+/* ===== 新增出库页局部样式 ===== */
+.oc-page { background: var(--bg-page); }
+.oc-card {
+  flex: 1; min-height: 0; display: flex; flex-direction: column; background: var(--bg-white);
+  margin: 12px; border-radius: var(--radius-lg); box-shadow: 0 1px 2px rgba(0,0,0,.04); overflow: hidden;
+}
+.oc-head {
+  flex: none; height: 56px; display: flex; align-items: center; gap: 10px;
+  padding: 0 20px; border-bottom: 1px solid var(--border);
+}
+.oc-head .page-title { font-size: 16px; font-weight: 500; }
+.oc-head .oc-code { font-size: 12px; color: var(--text-tertiary); }
+.oc-head .status-text { margin-left: auto; font-size: 13px; }
+.oc-body { flex: 1; min-height: 0; overflow: auto; padding: 16px 20px; }
+.oc-sec + .oc-sec { margin-top: 20px; }
+.oc-sec-title {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 13px; font-weight: 500; color: var(--text-primary);
+  padding-left: 8px; margin-bottom: 12px; border-left: 3px solid var(--primary);
+}
+.oc-sec-title .req { color: var(--danger); margin-right: 2px; }
+.oc-sec-title .add-link { margin-left: auto; }
+/* 表单：4 列栅格，label 在左 104px */
+.oc-form { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px 16px; max-width: 1280px; }
+.oc-form .fi { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.oc-form .fi .lbl { width: 104px; flex: none; text-align: right; font-size: 12px; color: var(--text-tertiary); white-space: nowrap; }
+.oc-form .fi .lbl .req { color: var(--danger); margin-right: 2px; }
+.oc-form .fi .ctrl { flex: 1; min-width: 0; }
+.oc-form .fi .ctrl .input, .oc-form .fi .ctrl .select { width: 100%; }
+.oc-form .is-readonly { background: var(--bg-disabled); color: var(--text-secondary); cursor: default; }
+.oc-form .fi-full { grid-column: 1 / -1; }
+.oc-form .fi-full .ctrl { max-width: 100%; }
+/* 明细宽表 */
+.oc-items-wrap { border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: auto; max-width: 100%; }
+.oc-items { width: max-content; min-width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 13px; }
+.oc-items th {
+  position: sticky; top: 0; z-index: 2; background: var(--table-head); height: 38px; padding: 0 8px;
+  text-align: left; font-weight: 500; color: var(--text-secondary); white-space: nowrap;
+  border-bottom: 1px solid var(--border);
+}
+.oc-items th .req { color: var(--danger); margin-right: 2px; }
+.oc-items td { padding: 6px 8px; border-bottom: 1px solid var(--border); white-space: nowrap; vertical-align: middle; }
+.oc-items tbody tr:nth-child(even) td { background: var(--table-even); }
+.oc-items tbody tr:hover td { background: var(--table-hover); }
+.oc-items .num { text-align: right; font-variant-numeric: tabular-nums; }
+.oc-items .cell-ellipsis { overflow: hidden; text-overflow: ellipsis; }
+.oc-items .w-name { position: sticky; left: 0; z-index: 3; background: var(--bg-white); box-shadow: 2px 0 6px -4px rgba(0,0,0,.18); }
+.oc-items .w-trace { position: sticky; right: 126px; z-index: 3; background: var(--bg-white); }
+.oc-items .w-acts { position: sticky; right: 0; z-index: 3; background: var(--bg-white); box-shadow: -2px 0 6px -4px rgba(0,0,0,.18); }
+.oc-items th.w-name, .oc-items th.w-trace, .oc-items th.w-acts { background: var(--table-head); z-index: 5; }
+.oc-items tbody tr:nth-child(even) td.w-name,
+.oc-items tbody tr:nth-child(even) td.w-trace,
+.oc-items tbody tr:nth-child(even) td.w-acts { background: var(--table-even); }
+.oc-items tbody tr:hover td.w-name,
+.oc-items tbody tr:hover td.w-trace,
+.oc-items tbody tr:hover td.w-acts { background: var(--table-hover); }
+.oc-items .cell-input {
+  height: 28px; width: 76px; box-sizing: border-box; font-size: 12px; text-align: right;
+}
+.oc-items .cell-input.is-invalid { border-color: var(--danger); }
+.oc-items .w-acts .link-btn + .link-btn { margin-left: 10px; }
+.oc-empty-row td { text-align: center; color: var(--text-placeholder); padding: 34px 0 !important; background: var(--bg-white) !important; }
+/* 合计条（表格外） */
+.oc-sum-line { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 32px; margin-top: 12px; padding: 0 2px; }
+.oc-sum-line .item { font-size: 12px; color: var(--text-tertiary); }
+.oc-sum-line .item b {
+  margin-left: 4px; font-size: 14px; font-weight: 500; color: var(--text-primary); font-variant-numeric: tabular-nums;
+}
+/* 底部操作条 */
+.oc-foot {
+  flex: none; height: 56px; display: flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 0 20px; border-top: 1px solid var(--border); background: var(--bg-white);
+}
+/* 选药弹窗 */
+.oc-pick .modal { width: 880px; max-width: 94vw; }
+.oc-pick-search { display: flex; gap: 12px; align-items: center; margin-bottom: 12px; }
+.oc-pick-search .fi { display: flex; align-items: center; gap: 6px; }
+.oc-pick-search .lbl { font-size: 12px; color: var(--text-tertiary); white-space: nowrap; }
+.oc-pick-search .input { width: 160px; height: 30px; }
+.oc-pick-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.oc-pick-table th {
+  background: var(--table-head); height: 36px; padding: 0 10px; text-align: left;
+  font-weight: 500; color: var(--text-secondary); white-space: nowrap; border-bottom: 1px solid var(--border);
+}
+.oc-pick-table td { padding: 7px 10px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.oc-pick-table tbody tr { cursor: pointer; }
+.oc-pick-table tbody tr:hover { background: var(--table-hover); }
+.oc-pick-table tr.is-disabled td { color: var(--text-placeholder); background: var(--bg-disabled); cursor: not-allowed; }
+.oc-pick-table tr.is-disabled:hover td { background: var(--bg-disabled); }
+.oc-pick-table .added-tag { font-size: 12px; color: var(--text-placeholder); margin-left: 6px; }
+.oc-pick-table .cell-ellipsis { max-width: 190px; overflow: hidden; text-overflow: ellipsis; }
+.oc-pick-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.oc-pick-table input[type="checkbox"] { width: 13px; height: 13px; margin: 0; accent-color: var(--primary); cursor: pointer; }
+.oc-pick-empty { padding: 40px 0; text-align: center; color: var(--text-placeholder); font-size: 13px; }
+/* 追溯码抽屉 */
+.oc-scan-mode { display: flex; align-items: center; gap: 16px; margin: 12px 0 10px; }
+.oc-scan-mode .mode-label { font-size: 12px; color: var(--text-tertiary); }
+.oc-scan-mode .radio { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; color: var(--text-primary); cursor: pointer; }
+.oc-scan-mode .radio input { width: 14px; height: 14px; margin: 0; accent-color: var(--primary); cursor: pointer; }
+.oc-scan-note { margin-top: 16px; font-size: 12px; color: var(--text-tertiary); line-height: 1.8; }
+.tr-code-chip .x { margin-left: 2px; color: var(--text-tertiary); font-family: var(--font-mono); }
+.tr-code-chip:hover .x { color: var(--danger); }
+</style>
+</head>
+<body>
+
+<!-- ========== 顶部导航 ========== -->
+<header class="app-header">
+  <div class="header-left">
+    <div class="header-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3.2" y="9.4" width="17.6" height="5.2" rx="2.6" transform="rotate(-45 12 12)"/>
+        <path d="M8.4 15.6L15.6 8.4"/>
+      </svg>
+    </div>
+    <div class="header-title">区域药房协同管理系统</div>
+    <span class="header-sub">中心药房</span>
+  </div>
+  <div class="header-right">
+    <div class="header-user">
+      <div class="header-avatar" id="userAvatar">陈</div>
+      <span class="header-user-name" id="userName">陈静</span>
+    </div>
+  </div>
+</header>
+
+<div class="app-body">
+  <!-- ========== 左侧导航 ========== -->
+  <aside class="app-side" id="appSide"></aside>
+<!-- ========== 主区域 ========== -->
+  <main class="app-main">
+    <div class="tabbar">
+      <div class="tab" onclick="location.href='batch-management.html'">首页</div>
+      <div class="tab" onclick="location.href='outbound.html'">药品出库</div>
+      <div class="tab active">
+        新增出库
+        <button class="tab-close" title="关闭" onclick="location.href='outbound.html'">
+          <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="page oc-page">
+      <div class="oc-card" id="mainCard">
+        <!-- 标题行 -->
+        <div class="oc-head">
+          <button class="back-btn" id="btnBack" title="返回" onclick="location.href='outbound.html'">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+          </button>
+          <div class="page-title" id="pageTitle">新增出库</div>
+          <span class="oc-code" id="headCode" style="display:none"></span>
+          <span class="status-text" id="headStatus" style="display:none"></span>
+        </div>
+
+        <div class="oc-body">
+          <!-- 出库信息 -->
+          <div class="oc-sec">
+            <div class="oc-sec-title">出库信息</div>
+            <div class="oc-form">
+              <div class="fi"><span class="lbl">出库方式：</span><div class="ctrl"><input class="input is-readonly" id="fMethod" value="直接出库" readonly></div></div>
+              <div class="fi"><span class="lbl">出库机构：</span><div class="ctrl"><input class="input is-readonly" id="fOrg" readonly></div></div>
+              <div class="fi"><span class="lbl"><span class="req">*</span>出库库位：</span><div class="ctrl"><select class="select" id="fLocation"></select></div></div>
+              <div class="fi"><span class="lbl"><span class="req">*</span>接收机构：</span><div class="ctrl"><select class="select" id="fInOrg"></select></div></div>
+              <div class="fi"><span class="lbl"><span class="req">*</span>接收库位：</span><div class="ctrl"><select class="select" id="fInLocation"></select></div></div>
+              <div class="fi"><span class="lbl">提交人：</span><div class="ctrl"><input class="input is-readonly" id="fCreator" readonly></div></div>
+              <div class="fi"><span class="lbl">提交时间：</span><div class="ctrl"><input class="input is-readonly" id="fTime" readonly></div></div>
+              <div class="fi fi-full"><span class="lbl">说明：</span><div class="ctrl"><input class="input" id="fRemark" placeholder="选填，如：村室领用补充" autocomplete="off"></div></div>
+            </div>
+          </div>
+
+          <!-- 药品明细 -->
+          <div class="oc-sec">
+            <div class="oc-sec-title">
+              <span><span class="req">*</span>药品明细</span>
+              <a class="link-btn add-link" id="btnPick">+ 选择药品</a>
+            </div>
+            <div class="oc-items-wrap">
+              <table class="oc-items">
+                <colgroup>
+                  <col style="width:160px"><col style="width:100px"><col style="width:108px">
+                  <col style="width:170px"><col style="width:88px"><col style="width:90px">
+                  <col style="width:92px"><col style="width:92px"><col style="width:118px">
+                  <col style="width:78px"><col style="width:78px"><col style="width:98px">
+                  <col style="width:98px"><col style="width:100px"><col style="width:100px">
+                  <col style="width:126px">
+                </colgroup>
+                <thead>
+                  <tr>
+                    <th class="w-name">药品名称</th>
+                    <th>药品编码</th>
+                    <th>规格</th>
+                    <th>生产企业</th>
+                    <th>包装规格</th>
+                    <th class="num">最小换算系数</th>
+                    <th class="num"><span class="req">*</span>出库数量</th>
+                    <th class="num">可用库存量</th>
+                    <th>批次号</th>
+                    <th class="num">进货价</th>
+                    <th class="num">零售价</th>
+                    <th class="num">进货价合计</th>
+                    <th class="num">零售价合计</th>
+                    <th>有效期</th>
+                    <th class="w-trace">追溯码进度</th>
+                    <th class="w-acts">操作</th>
+                  </tr>
+                </thead>
+                <tbody id="itemsBody"></tbody>
+              </table>
+            </div>
+            <div class="oc-sum-line">
+              <span class="item">明细行数<b id="sumRows">0</b></span>
+              <span class="item">进货价合计金额<b id="sumPurchase">0.00</b></span>
+              <span class="item">零售价合计金额<b id="sumRetail">0.00</b></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 底部操作条 -->
+        <div class="oc-foot">
+          <button class="btn" id="btnCancel">取消</button>
+          <button class="btn" id="btnDraft">暂存草稿</button>
+          <button class="btn btn-primary" id="btnSubmit">提交审核</button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ========== 弹窗：选择药品 ========== -->
+<div class="modal-mask oc-pick" id="pickMask">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">选择药品</div>
+      <button class="drawer-close" id="pickClose" title="关闭">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="oc-pick-search">
+        <div class="fi"><span class="lbl">药品名称/编码：</span><input class="input" id="pkKey" autocomplete="off"></div>
+        <div class="fi"><span class="lbl">生产企业：</span><input class="input" id="pkVendor" autocomplete="off"></div>
+        <button class="btn btn-sm" id="pkReset">重置</button>
+        <button class="btn btn-sm btn-primary" id="pkSearch">查询</button>
+      </div>
+      <table class="oc-pick-table">
+        <thead>
+          <tr>
+            <th style="width:36px"></th>
+            <th>药品名称</th><th>药品编码</th><th>规格</th>
+            <th class="num">库存</th><th>批次号</th><th>有效期</th>
+            <th class="num">进货价</th><th class="num">零售价</th><th>生产企业</th>
+          </tr>
+        </thead>
+        <tbody id="pickBody"></tbody>
+      </table>
+      <div class="oc-pick-empty" id="pickEmpty" style="display:none">未找到符合条件的药品</div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" id="pkCancel">取消</button>
+      <button class="btn btn-primary" id="pkOk" disabled>确定</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== 抽屉：追溯码录入 ========== -->
+<div class="drawer-mask" id="traceMask"></div>
+<div class="drawer is-wide" id="traceDrawer">
+  <div class="drawer-head">
+    <div class="drawer-title" id="traceTitle">追溯码录入</div>
+    <button class="drawer-close" id="traceClose" title="关闭">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+    </button>
+  </div>
+  <div class="drawer-body tr-scan-body">
+    <!-- 明确模式切换：扫码添加 / 扫码删除 -->
+    <div class="oc-scan-mode">
+      <span class="mode-label">扫码模式：</span>
+      <label class="radio"><input type="radio" name="traceMode" value="add" checked><span>扫码添加</span></label>
+      <label class="radio"><input type="radio" name="traceMode" value="del"><span>扫码删除</span></label>
+    </div>
+    <div class="tr-scan-input">
+      <input class="input" id="traceInput" placeholder="扫码或手工输入追溯码，回车添加" autocomplete="off">
+      <button class="btn" id="traceSim">模拟扫码</button>
+    </div>
+
+    <div class="tr-code-head">
+      <span>已录入 <b id="traceCount">0</b> / 出库数量 <b id="traceQty">0</b></span>
+      <span class="count" id="traceState"></span>
+    </div>
+    <div class="tr-code-chips" id="traceChips"></div>
+    <div class="tr-code-empty" id="traceEmpty">暂无追溯码，请扫码录入</div>
+
+    <div class="oc-scan-note">
+      1. 追溯码必须与当前药品一致（药品名称 + 规格 + 生产企业 + 批次号）；<br>
+      2. 追溯码数量需与出库数量相等，才可提交审核；<br>
+      3. 切换「扫码删除」后，扫码即剔除对应追溯码。
+    </div>
+  </div>
+  <div class="drawer-foot">
+    <button class="btn" id="traceCancel">取消</button>
+    <button class="btn btn-primary" id="traceOk">保存</button>
+  </div>
+</div>
+
+<!-- ========== 确认弹窗 ========== -->
+<div class="modal-mask" id="cfMask">
+  <div class="modal" style="width:400px">
+    <div class="modal-head">
+      <div class="modal-title" id="cfTitle">提示</div>
+      <button class="drawer-close" id="cfClose" title="关闭">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+      </button>
+    </div>
+    <div class="modal-body"><div style="font-size:13px;color:var(--text-secondary);line-height:1.6" id="cfDesc"></div></div>
+    <div class="modal-foot">
+      <button class="btn" id="cfCancel">取消</button>
+      <button class="btn btn-danger" id="cfOk">删除</button>
+    </div>
+  </div>
+</div>
+
+<!-- toast -->
+<div id="toast" style="position:fixed;top:70px;left:50%;transform:translateX(-50%);padding:8px 16px;background:rgba(0,0,0,.78);color:#fff;border-radius:4px;font-size:13px;z-index:9999;display:none"></div>
+
+<script src="outbound-common.js"></script>
+<script>
+(function(){
+  "use strict";
+  var OB = window.OB;
+  var $ = function(s,c){ return (c||document).querySelector(s); };
+  var $$ = function(s,c){ return Array.prototype.slice.call((c||document).querySelectorAll(s)); };
+  function toast(msg){
+    var t=$("#toast"); t.textContent=msg; t.style.display="block";
+    clearTimeout(t._t); t._t=setTimeout(function(){ t.style.display="none"; },2200);
+  }
+
+  var user = OB.currentUser();
+  $("#userAvatar").textContent = user.name.charAt(0);
+  $("#userName").textContent = user.name;
+
+  var list = OB.load();
+  var editId = OB.qs("id");
+  var editBill = editId ? list.filter(function(b){ return b.id === editId; })[0] : null;
+
+  var ST = {
+    location: "", inOrgId: "", inLocation: "", remark: "",
+    items: []
+  };
+
+  function blankItem(){
+    return { code:"", name:"", spec:"", vendor:"", packSpec:"", minFactor:"",
+      batch:"", expiry:"", purchase:"", retail:"", qty:1, traces:[] };
+  }
+
+  /* ===== 顶部信息 ===== */
+  $("#fOrg").value = OB.orgName(user.orgId);
+  $("#fCreator").value = user.name;
+  $("#fTime").value = OB.fmtNow();
+
+  function fillOptions(){
+    $("#fLocation").innerHTML = '<option value="">请选择库位</option>' + OB.LOCATIONS.map(function(l){
+      return '<option>'+OB.esc(l)+'</option>';
+    }).join("");
+    $("#fInOrg").innerHTML = '<option value="">请选择接收机构</option>' + OB.ORGS.map(function(o){
+      return '<option value="'+o.id+'">'+OB.esc(o.name)+'</option>';
+    }).join("");
+    $("#fInLocation").innerHTML = '<option value="">请选择库位</option>' + OB.LOCATIONS.map(function(l){
+      return '<option>'+OB.esc(l)+'</option>';
+    }).join("");
+  }
+  fillOptions();
+
+  $("#fLocation").addEventListener("change", function(){ ST.location = this.value; this.classList.remove("is-invalid"); });
+  $("#fInOrg").addEventListener("change", function(){ ST.inOrgId = this.value; this.classList.remove("is-invalid"); });
+  $("#fInLocation").addEventListener("change", function(){ ST.inLocation = this.value; this.classList.remove("is-invalid"); });
+  $("#fRemark").addEventListener("input", function(){ ST.remark = this.value; });
+
+  /* ===== 明细表 ===== */
+  function available(it){ return OB.availableOf(list, it.code, it.batch); }
+
+  function renderItems(){
+    if(!ST.items.length){
+      $("#itemsBody").innerHTML = '<tr class="oc-empty-row"><td colspan="16">暂未添加药品，请点击上方「+ 选择药品」</td></tr>';
+    } else {
+      $("#itemsBody").innerHTML = ST.items.map(function(it, i){
+        var av = available(it);
+        var tp = (it.traces||[]).length;
+        var ok = tp === Number(it.qty);
+        var h = '<tr data-idx="'+i+'">';
+        h += '<td class="w-name cell-ellipsis" title="'+OB.esc(it.name)+'">'+OB.esc(it.name)+'</td>';
+        h += '<td>'+OB.esc(it.code)+'</td>';
+        h += '<td>'+OB.esc(it.spec)+'</td>';
+        h += '<td class="cell-ellipsis" title="'+OB.esc(it.vendor)+'">'+OB.esc(it.vendor)+'</td>';
+        h += '<td>'+OB.esc(it.packSpec)+'</td>';
+        h += '<td class="num">'+OB.esc(it.minFactor)+'</td>';
+        h += '<td class="num"><input class="cell-input" type="number" min="1" max="'+av+'" data-f="qty" data-idx="'+i+'" value="'+it.qty+'"></td>';
+        h += '<td class="num" data-c="avail">'+av+'</td>';
+        h += '<td>'+OB.esc(it.batch)+'</td>';
+        h += '<td class="num">'+OB.num2(it.purchase)+'</td>';
+        h += '<td class="num">'+OB.num2(it.retail)+'</td>';
+        h += '<td class="num" data-c="pamt">'+OB.num2(OB.purchaseAmt(it))+'</td>';
+        h += '<td class="num" data-c="ramt">'+OB.num2(OB.retailAmt(it))+'</td>';
+        h += '<td>'+OB.esc(it.expiry)+'</td>';
+        h += '<td class="w-trace"><span class="tr-code-progress '+(ok?'is-ok':'is-bad')+'" title="已录入 '+tp+' / 出库数量 '+it.qty+'">'+tp+'/'+it.qty+'</span></td>';
+        h += '<td class="w-acts"><a class="link-btn" data-act="trace" data-idx="'+i+'">录入追溯码</a><a class="link-btn is-danger" data-act="del" data-idx="'+i+'">删除</a></td>';
+        h += '</tr>';
+        return h;
+      }).join("");
+    }
+    updateSums();
+  }
+
+  function updateRow(i){
+    var it = ST.items[i], av = available(it);
+    var tr = $('#itemsBody tr[data-idx="'+i+'"]');
+    if(!tr) return;
+    var pa = tr.querySelector('[data-c="pamt"]'); if(pa) pa.textContent = OB.num2(OB.purchaseAmt(it));
+    var ra = tr.querySelector('[data-c="ramt"]'); if(ra) ra.textContent = OB.num2(OB.retailAmt(it));
+    var avEl = tr.querySelector('[data-c="avail"]'); if(avEl) avEl.textContent = av;
+    var prog = tr.querySelector('.tr-code-progress');
+    if(prog){
+      var tp = (it.traces||[]).length, ok = tp === Number(it.qty);
+      prog.textContent = tp + "/" + it.qty;
+      prog.className = "tr-code-progress " + (ok ? "is-ok" : "is-bad");
+      prog.title = "已录入 "+tp+" / 出库数量 "+it.qty;
+    }
+    updateSums();
+  }
+
+  function updateSums(){
+    var p = 0, r = 0;
+    ST.items.forEach(function(it){ p += OB.purchaseAmt(it); r += OB.retailAmt(it); });
+    $("#sumRows").textContent = ST.items.length;
+    $("#sumPurchase").textContent = OB.num2(p);
+    $("#sumRetail").textContent = OB.num2(r);
+  }
+
+  $("#itemsBody").addEventListener("change", function(e){
+    var t = e.target;
+    if(t.getAttribute("data-f") !== "qty") return;
+    var i = parseInt(t.getAttribute("data-idx"), 10), it = ST.items[i];
+    var av = available(it);
+    var v = t.value.trim();
+    if(!/^\d+$/.test(v) || Number(v) <= 0){
+      toast("出库数量必须为大于 0 的整数");
+      t.value = it.qty;
+      t.classList.add("is-invalid");
+      return;
+    }
+    if(Number(v) > av){
+      toast("出库数量不能超过可用库存量（"+av+"）");
+      t.value = it.qty;
+      t.classList.add("is-invalid");
+      return;
+    }
+    t.classList.remove("is-invalid");
+    it.qty = Number(v);
+    if((it.traces||[]).length > it.qty) it.traces = it.traces.slice(0, it.qty);
+    updateRow(i);
+  });
+
+  $("#itemsBody").addEventListener("click", function(e){
+    var a = e.target.closest("[data-act]");
+    if(!a) return;
+    var i = parseInt(a.getAttribute("data-idx"), 10);
+    var act = a.getAttribute("data-act");
+    if(act === "trace"){ openTrace(i); return; }
+    if(act === "del"){
+      confirmDlg("删除药品明细", "确认删除该药品明细行？", "删除", function(){
+        ST.items.splice(i, 1);
+        renderItems();
+        toast("已删除");
+      });
+    }
+  });
+
+  /* ===== 选择药品 ===== */
+  var pickRows = [];
+  function alreadyAdded(code, batch){
+    return ST.items.some(function(it){ return it.code === code && it.batch === batch; });
+  }
+  function renderPick(){
+    var k = $("#pkKey").value.trim().toLowerCase();
+    var v = $("#pkVendor").value.trim().toLowerCase();
+    pickRows = [];
+    OB.DRUGS.forEach(function(d){
+      if(k && d.name.toLowerCase().indexOf(k) < 0 && d.code.indexOf(k) < 0) return;
+      if(v && d.vendor.toLowerCase().indexOf(v) < 0) return;
+      (OB.BATCHES[d.code] || []).forEach(function(b){
+        pickRows.push({ d: d, b: b });
+      });
+    });
+    $("#pickEmpty").style.display = pickRows.length ? "none" : "block";
+    $("#pickBody").innerHTML = pickRows.map(function(r, i){
+      var av = OB.availableOf(list, r.d.code, r.b.batch);
+      var added = alreadyAdded(r.d.code, r.b.batch);
+      var noStock = av <= 0;
+      var dis = added || noStock;
+      var tag = added ? '<span class="added-tag">已添加</span>' : (noStock ? '<span class="added-tag">无可用库存</span>' : '');
+      var h = '<tr data-i="'+i+'"'+(dis?' class="is-disabled"':'')+'>';
+      h += '<td><input type="checkbox" data-pk="'+i+'"'+(dis?' disabled':'')+'></td>';
+      h += '<td>'+OB.esc(r.d.name)+tag+'</td>';
+      h += '<td>'+OB.esc(r.d.code)+'</td>';
+      h += '<td>'+OB.esc(r.d.spec)+'</td>';
+      h += '<td class="num">'+av+'</td>';
+      h += '<td>'+OB.esc(r.b.batch)+'</td>';
+      h += '<td>'+OB.esc(r.b.expiry)+'</td>';
+      h += '<td class="num">'+OB.num2(r.b.purchase)+'</td>';
+      h += '<td class="num">'+OB.num2(r.b.retail)+'</td>';
+      h += '<td class="cell-ellipsis" title="'+OB.esc(r.d.vendor)+'">'+OB.esc(r.d.vendor)+'</td>';
+      h += '</tr>';
+      return h;
+    }).join("");
+    $$('#pickBody input[type="checkbox"]').forEach(function(cb){
+      cb.addEventListener("change", syncPickOk);
+    });
+    $$('#pickBody tr:not(.is-disabled)').forEach(function(tr){
+      tr.addEventListener("click", function(e){
+        if(e.target.tagName === "INPUT") return;
+        var cb = tr.querySelector('input[type="checkbox"]');
+        if(!cb || cb.disabled) return;
+        cb.checked = !cb.checked;
+        syncPickOk();
+      });
+    });
+    syncPickOk();
+  }
+  function syncPickOk(){
+    $("#pkOk").disabled = !$$('#pickBody input[type="checkbox"]:checked').length;
+  }
+  function openPicker(){
+    $("#pkKey").value = ""; $("#pkVendor").value = "";
+    renderPick();
+    $("#pickMask").classList.add("show");
+  }
+  function closePicker(){ $("#pickMask").classList.remove("show"); pickRows = []; }
+  $("#btnPick").addEventListener("click", openPicker);
+  $("#pkSearch").addEventListener("click", renderPick);
+  $("#pkReset").addEventListener("click", function(){ $("#pkKey").value = ""; $("#pkVendor").value = ""; renderPick(); });
+  $("#pickClose").addEventListener("click", closePicker);
+  $("#pkCancel").addEventListener("click", closePicker);
+  $("#pkOk").addEventListener("click", function(){
+    var sel = $$('#pickBody input[type="checkbox"]:checked').map(function(cb){
+      return pickRows[parseInt(cb.getAttribute("data-pk"), 10)];
+    });
+    sel.forEach(function(r){
+      var it = blankItem();
+      it.code = r.d.code; it.name = r.d.name; it.spec = r.d.spec; it.vendor = r.d.vendor;
+      it.packSpec = r.d.packSpec; it.minFactor = r.d.minFactor;
+      it.batch = r.b.batch; it.expiry = r.b.expiry;
+      it.purchase = r.b.purchase; it.retail = r.b.retail;
+      it.qty = 1;
+      ST.items.push(it);
+    });
+    closePicker();
+    renderItems();
+    toast("已添加 " + sel.length + " 条药品明细");
+  });
+
+  /* ===== 追溯码抽屉 ===== */
+  var traceIdx = -1, traceDraft = [], traceMode = "add";
+  var traceItem = function(){ return ST.items[traceIdx]; };
+
+  function renderTrace(){
+    var it = traceItem();
+    if(!it) return;
+    $("#traceTitle").textContent = "追溯码录入";
+    $("#traceQty").textContent = it.qty;
+    $("#traceCount").textContent = traceDraft.length;
+    var ok = traceDraft.length === Number(it.qty);
+    var st = $("#traceState");
+    st.textContent = ok ? "数量已匹配" : "还差 " + Math.max(0, Number(it.qty) - traceDraft.length) + " 条";
+    st.className = "count " + (ok ? "" : "is-bad");
+    $("#traceEmpty").style.display = traceDraft.length ? "none" : "block";
+    $("#traceChips").innerHTML = traceDraft.map(function(code, i){
+      return '<span class="tr-code-chip" title="'+OB.esc(code)+'">'+OB.esc(code)+'<span class="x" data-del="'+i+'" title="移除">×</span></span>';
+    }).join("");
+    $$("#traceChips [data-del]").forEach(function(x){
+      x.addEventListener("click", function(e){
+        e.stopPropagation();
+        traceDraft.splice(parseInt(x.getAttribute("data-del"), 10), 1);
+        renderTrace();
+      });
+    });
+  }
+
+  function openTrace(i){
+    traceIdx = i;
+    traceDraft = (ST.items[i].traces || []).slice();
+    traceMode = "add";
+    $$('input[name="traceMode"]').forEach(function(r){ r.checked = (r.value === "add"); });
+    syncModeText();
+    $("#traceInput").value = "";
+    renderTrace();
+    $("#traceMask").classList.add("show");
+    document.body.classList.add("drawer-open");
+    setTimeout(function(){ $("#traceInput").focus(); }, 60);
+  }
+  function closeTrace(){
+    document.body.classList.remove("drawer-open");
+    $("#traceMask").classList.remove("show");
+    traceIdx = -1; traceDraft = [];
+  }
+  function syncModeText(){
+    var isDel = traceMode === "del";
+    $("#traceInput").placeholder = isDel
+      ? "扫码或手工输入追溯码，回车删除"
+      : "扫码或手工输入追溯码，回车添加";
+  }
+
+  function applyTrace(code){
+    var it = traceItem();
+    if(!it) return;
+    code = (code || "").trim();
+    if(!code) return;
+
+    if(traceMode === "del"){
+      var idx = traceDraft.indexOf(code);
+      if(idx < 0){ toast("该追溯码不在已录入列表，无法删除"); return; }
+      traceDraft.splice(idx, 1);
+      $("#traceInput").value = "";
+      renderTrace();
+      toast("已删除追溯码 " + code);
+      return;
+    }
+
+    if(traceDraft.indexOf(code) >= 0){ toast("该追溯码已录入，请勿重复添加"); return; }
+    if(!/^\d{8,}$/.test(code)){ toast("追溯码格式不正确，应为 8 位以上数字"); return; }
+    if(traceDraft.length >= Number(it.qty)){ toast("追溯码数量不能超过出库数量（"+it.qty+"）"); return; }
+    /* 一致性校验：同一单据内追溯码已被其他药品使用 → 药品信息不一致 */
+    var usedByOther = ST.items.some(function(x, i){
+      return i !== traceIdx && (x.traces || []).indexOf(code) >= 0;
+    });
+    if(usedByOther){ toast("该追溯码已用于其他药品，药品信息不一致"); return; }
+
+    traceDraft.push(code);
+    $("#traceInput").value = "";
+    renderTrace();
+    toast("已添加追溯码 " + code);
+  }
+  function simScan(){
+    if(traceMode === "del"){
+      if(!traceDraft.length){ toast("暂无可删除的追溯码"); return; }
+      applyTrace(traceDraft[traceDraft.length - 1]);
+      return;
+    }
+    var code = "81" + String(Math.floor(Math.random() * 1e14)).padStart(14, "0");
+    applyTrace(code);
+  }
+
+  $$('input[name="traceMode"]').forEach(function(r){
+    r.addEventListener("change", function(){
+      traceMode = this.value;
+      syncModeText();
+      $("#traceInput").focus();
+    });
+  });
+  $("#traceInput").addEventListener("keydown", function(e){
+    if(e.key === "Enter"){
+      e.preventDefault();
+      applyTrace(this.value);
+    }
+  });
+  $("#traceSim").addEventListener("click", simScan);
+  $("#traceClose").addEventListener("click", closeTrace);
+  $("#traceCancel").addEventListener("click", closeTrace);
+  $("#traceMask").addEventListener("click", closeTrace);
+  $("#traceOk").addEventListener("click", function(){
+    if(traceIdx < 0) return;
+    ST.items[traceIdx].traces = traceDraft.slice();
+    closeTrace();
+    renderItems();
+    toast("追溯码已保存");
+  });
+
+  /* ===== 确认弹窗 ===== */
+  var cfCb = null;
+  function confirmDlg(title, desc, okText, cb){
+    $("#cfTitle").textContent = title;
+    $("#cfDesc").textContent = desc;
+    $("#cfOk").textContent = okText || "确定";
+    cfCb = cb;
+    $("#cfMask").classList.add("show");
+  }
+  function closeCf(){ $("#cfMask").classList.remove("show"); cfCb = null; }
+  $("#cfCancel").addEventListener("click", closeCf);
+  $("#cfClose").addEventListener("click", closeCf);
+  $("#cfOk").addEventListener("click", function(){ var cb = cfCb; closeCf(); if(cb) cb(); });
+
+  /* ===== 编辑 / 回填 ===== */
+  if(editBill){
+    document.title = "编辑出库 · 中心药房";
+    $("#pageTitle").textContent = editBill.auditStatus === "rejected" ? "重新提交出库" : "编辑出库";
+    if(editBill.code){
+      $("#headCode").style.display = "";
+      $("#headCode").textContent = "出库单号：" + editBill.code;
+    }
+    $("#headStatus").style.display = "";
+    $("#headStatus").textContent = "审核状态：" + (OB.AUDIT_STATUS[editBill.auditStatus] || "—");
+    ST.location = editBill.outLocation || "";
+    ST.inOrgId = editBill.inOrgId || "";
+    ST.inLocation = editBill.inLocation || "";
+    ST.remark = editBill.remark || "";
+    ST.items = (editBill.items || []).map(function(it){ return Object.assign(blankItem(), it, { traces: (it.traces || []).slice() }); });
+    $("#fLocation").value = ST.location;
+    $("#fInOrg").value = ST.inOrgId;
+    $("#fInLocation").value = ST.inLocation;
+    $("#fRemark").value = ST.remark;
+    $("#fCreator").value = editBill.creatorName;
+    $("#fTime").value = editBill.submitTime || OB.fmtNow();
+  } else {
+    ST.location = "";
+  }
+  renderItems();
+
+  /* ===== 校验 ===== */
+  function markInvalid(el, bad){ if(el) el.classList.toggle("is-invalid", !!bad); }
+  function validate(submit){
+    var errs = [];
+    markInvalid($("#fLocation"), !ST.location);   if(!ST.location) errs.push("出库库位");
+    markInvalid($("#fInOrg"), !ST.inOrgId);       if(!ST.inOrgId) errs.push("接收机构");
+    markInvalid($("#fInLocation"), !ST.inLocation); if(!ST.inLocation) errs.push("接收库位");
+    if(!ST.items.length) errs.push("药品明细（至少 1 条）");
+    ST.items.forEach(function(it, i){
+      var n = "第" + (i + 1) + "行";
+      var av = available(it);
+      var q = String(it.qty);
+      if(!/^\d+$/.test(q) || Number(q) <= 0) errs.push(n + "出库数量");
+      else if(Number(q) > av) errs.push(n + "出库数量超过可用库存量（" + av + "）");
+      if(submit && (it.traces || []).length !== Number(it.qty)){
+        errs.push(n + "追溯码（已录 " + (it.traces || []).length + " / 出库 " + it.qty + "）");
+      }
+    });
+    return errs;
+  }
+
+  /* ===== 保存 / 提交 ===== */
+  function buildBill(isSubmit){
+    var now = OB.fmtNow();
+    var b;
+    if(editBill){ b = editBill; }
+    else {
+      b = { id: "c" + Date.now(), code: "", records: [] };
+      list.push(b);
+    }
+    b.method = "直接出库";
+    b.outOrgId = b.outOrgId || user.orgId;
+    b.outLocation = ST.location;
+    b.inOrgId = ST.inOrgId;
+    b.inLocation = ST.inLocation;
+    b.remark = ST.remark;
+    b.creatorId = b.creatorId || user.id;
+    b.creatorName = b.creatorName || user.name;
+    b.submitTime = isSubmit ? now : "";
+    b.traceRequired = true;
+    b.items = ST.items.map(function(it){
+      return {
+        code: it.code, name: it.name, spec: it.spec, packSpec: it.packSpec, minFactor: it.minFactor,
+        vendor: it.vendor, batch: it.batch, expiry: it.expiry,
+        purchase: it.purchase, retail: it.retail, qty: Number(it.qty),
+        traces: (it.traces || []).slice()
+      };
+    });
+    if(isSubmit){
+      if(!b.code) b.code = OB.newCode(list);
+      var aud = OB.auditorFor(b.outOrgId);
+      b.auditStatus = "pending";
+      b.auditorId = aud.id;
+      b.auditorName = aud.name;
+      b.auditorOrg = aud.org;
+      b.auditTime = "";
+      b.records = (b.records || []).concat([{
+        node: "提交", person: user.name, org: OB.orgName(b.outOrgId), time: now, result: "已提交", opinion: ""
+      }]);
+    } else {
+      b.auditStatus = "draft";
+      b.auditorId = "";
+      b.auditorName = "";
+      b.auditorOrg = "";
+      b.auditTime = "";
+    }
+    return b;
+  }
+
+  function doSave(submit){
+    if(submit){
+      var errs = validate(true);
+      if(errs.length){
+        toast("请完善：" + errs.slice(0, 3).join("、") + (errs.length > 3 ? " 等 " + errs.length + " 项" : ""));
+        return;
+      }
+    }
+    var b = buildBill(submit);
+    OB.save(list);
+    toast(submit ? "已提交，待上级审核" : "已暂存草稿");
+    setTimeout(function(){ location.href = "outbound.html"; }, 700);
+  }
+  $("#btnSubmit").addEventListener("click", function(){ doSave(true); });
+  $("#btnDraft").addEventListener("click", function(){ doSave(false); });
+  $("#btnCancel").addEventListener("click", function(){ location.href = "outbound.html"; });
+  $("#btnBack").addEventListener("click", function(){ location.href = "outbound.html"; });
+})();
+</script>
+  <script src="nav.js"></script>
+</body>
+</html>

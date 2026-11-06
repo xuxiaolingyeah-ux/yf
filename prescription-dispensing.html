@@ -1,0 +1,1433 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>处方发药 · 中心药房</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+/* ===== 处方管理 · 处方发药（门诊处方发药 · 中药房） ===== */
+.disp-wrap {
+  flex: 1; min-height: 0;
+  display: flex; gap: 12px; padding: 12px;
+  background: var(--bg-page);
+}
+
+/* 顶部系统栏：药房切换 */
+.header-pharmacy {
+  position: relative;
+  display: flex; align-items: center;
+  margin-left: 4px; padding-left: 12px;
+  border-left: 1px solid rgba(255, 255, 255, .24);
+}
+.header-pharm-btn {
+  display: flex; align-items: center; gap: 6px;
+  height: 28px; padding: 0 8px;
+  background: none; border: none; border-radius: var(--radius);
+  color: #fff; font-size: 13px; cursor: pointer;
+}
+.header-pharm-btn:hover { background: rgba(255, 255, 255, .14); }
+.header-pharm-btn svg { width: 10px; height: 10px; opacity: .8; }
+.header-pharm-menu {
+  display: none; position: absolute; top: 36px; left: 12px; z-index: 300;
+  min-width: 148px; padding: 4px 0;
+  background: #fff; border-radius: 6px; box-shadow: var(--shadow-2);
+}
+.header-pharm-menu.show { display: block; }
+.header-pharm-item {
+  height: 34px; display: flex; align-items: center;
+  padding: 0 12px; font-size: 13px; color: var(--text-secondary); cursor: pointer;
+}
+.header-pharm-item:hover { background: var(--primary-lighter); color: var(--primary-dark); }
+.header-pharm-item.active { color: var(--primary-dark); font-weight: 500; }
+.header-pharm-item .chk { margin-left: auto; font-size: 12px; }
+
+/* 左侧处方列表卡片 */
+.disp-side {
+  flex: none; width: 316px; min-height: 0;
+  display: flex; flex-direction: column;
+  background: var(--bg-white);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .04);
+  overflow: hidden;
+}
+.disp-side-head {
+  flex: none; height: 44px;
+  display: flex; align-items: center;
+  padding: 0 6px 0 12px;
+  border-bottom: 1px solid var(--border);
+}
+.disp-side-title { font-size: 14px; font-weight: 500; color: var(--text-primary); }
+.disp-x {
+  margin-left: auto; width: 26px; height: 26px;
+  border: none; background: none; border-radius: var(--radius);
+  display: grid; place-items: center;
+  color: var(--text-tertiary); cursor: pointer;
+}
+.disp-x:hover { background: rgba(0, 0, 0, .05); color: var(--text-secondary); }
+.disp-x svg { width: 12px; height: 12px; }
+
+/* 已收费 / 未收费 */
+.disp-tabs { flex: none; display: flex; padding: 8px 12px 0; border-bottom: 1px solid var(--border); }
+.disp-tab {
+  height: 30px; padding: 0 16px;
+  border: 1px solid var(--border-input); border-bottom: none;
+  border-radius: 4px 4px 0 0;
+  background: var(--bg-white);
+  color: var(--text-secondary);
+  font-size: 13px; cursor: pointer;
+  margin-right: -1px;
+}
+.disp-tab:hover { color: var(--primary-dark); }
+.disp-tab.active {
+  background: var(--primary-lighter);
+  color: var(--primary-dark);
+  border-color: #BEDAFF;
+  font-weight: 500;
+  position: relative; z-index: 1;
+}
+
+/* 筛选区 */
+.disp-filter {
+  flex: none; padding: 10px 12px 8px;
+  display: flex; flex-direction: column; gap: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.disp-filter.is-hidden { display: none; }
+.disp-frow { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.disp-flbl { flex: none; font-size: 12px; color: var(--text-secondary); white-space: nowrap; }
+.disp-frow .input { height: 30px; font-size: 12px; min-width: 0; }
+.disp-range { position: relative; flex: 1; min-width: 0; }
+.disp-range .input { padding-right: 26px; cursor: pointer; font-size: 11px; }
+.disp-range svg {
+  position: absolute; right: 8px; top: 8px;
+  width: 14px; height: 14px; color: var(--text-tertiary);
+  pointer-events: none;
+}
+.disp-facts { display: flex; justify-content: flex-end; gap: 8px; }
+.disp-facts .btn { height: 28px; padding: 0 14px; font-size: 12px; }
+
+.disp-fold {
+  flex: none; height: 24px;
+  display: flex; align-items: center; justify-content: center;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-tertiary); cursor: pointer;
+}
+.disp-fold:hover { color: var(--primary-dark); }
+.disp-fold svg { width: 16px; height: 16px; transition: transform .2s; }
+.disp-fold.is-folded svg { transform: rotate(180deg); }
+
+/* 左侧列表 */
+.disp-listwrap { flex: 1; min-height: 0; overflow: auto; }
+.disp-ltable {
+  width: 100%; border-collapse: separate; border-spacing: 0;
+  table-layout: fixed; font-size: 12px;
+}
+.disp-ltable thead th {
+  position: sticky; top: 0; z-index: 2;
+  height: 32px; padding: 0 6px;
+  background: var(--table-head);
+  color: var(--text-secondary); font-weight: 500; text-align: left;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+}
+.disp-ltable tbody td {
+  height: 32px; padding: 0 6px;
+  border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  color: var(--text-primary);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.disp-ltable th:last-child, .disp-ltable td:last-child { border-right: none; }
+.disp-ltable tbody tr { cursor: pointer; }
+.disp-ltable tbody tr:hover { background: var(--table-hover); }
+.disp-ltable tbody tr.is-checked { background: var(--primary-light); }
+.disp-ltable tbody tr.is-current { background: #D6E9FF; }
+.disp-ltable .c-chk { width: 38px; text-align: center; padding: 0; }
+.disp-ltable .c-no { width: 118px; }
+.disp-ltable .c-name { width: 56px; }
+.disp-ltable .c-outp { width: auto; }
+.disp-l-empty { padding: 40px 0; text-align: center; color: var(--text-placeholder); font-size: 12px; }
+
+/* 已选处方条 */
+.disp-selbar {
+  flex: none; height: 32px;
+  display: flex; align-items: center; gap: 6px;
+  padding: 0 10px;
+  background: #EAF3FF;
+  border-top: 1px solid #D3E5FF;
+  color: var(--primary-dark); font-size: 12px;
+}
+.disp-selbar svg { width: 14px; height: 14px; flex: none; }
+.disp-pagefoot {
+  flex: none; height: 40px;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 10px;
+  border-top: 1px solid var(--border);
+  font-size: 12px; color: var(--text-secondary);
+}
+.disp-pagefoot .pager-ctrl { display: flex; align-items: center; gap: 4px; }
+.disp-pagefoot .select { height: 24px; width: 86px; font-size: 12px; }
+
+/* 右侧主区 */
+.disp-main {
+  flex: 1; min-width: 0; min-height: 0;
+  display: flex; flex-direction: column;
+  background: var(--bg-white);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .04);
+  overflow: hidden;
+}
+.disp-toolbar {
+  flex: none; height: 46px;
+  display: flex; align-items: center; justify-content: flex-end; gap: 8px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--border);
+}
+.dbtn {
+  height: 30px; padding: 0 12px;
+  border: 1px solid var(--border-btn); border-radius: var(--radius);
+  background: var(--bg-white); color: var(--primary-dark);
+  font-size: 13px;
+  display: inline-flex; align-items: center; gap: 4px;
+  white-space: nowrap;
+}
+.dbtn:hover:not(:disabled) { border-color: var(--primary); background: var(--primary-lighter); }
+.dbtn:disabled { color: var(--text-placeholder); border-color: var(--border); background: var(--bg-disabled); cursor: not-allowed; }
+.dbtn-primary { background: var(--primary); border-color: var(--primary); color: #fff; }
+.dbtn-primary:hover:not(:disabled) { background: var(--primary-dark); border-color: var(--primary-dark); color: #fff; }
+.dbtn .k { font-size: 12px; opacity: .82; }
+
+/* 处方详情头部 */
+.disp-dhead {
+  flex: none;
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 12px 4px;
+}
+.disp-dtitle { font-size: 14px; font-weight: 500; color: var(--text-primary); }
+.disp-type {
+  height: 20px; padding: 0 8px;
+  display: inline-flex; align-items: center;
+  border-radius: 10px; font-size: 12px;
+  background: var(--primary-lighter); color: var(--primary-dark);
+}
+.disp-type.is-tcm { background: #EAF7EE; color: #2E8B57; }
+.disp-links { margin-left: auto; display: flex; align-items: center; gap: 16px; }
+.disp-link {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 12px; color: var(--primary-dark); cursor: pointer;
+}
+.disp-link:hover { color: var(--primary); text-decoration: underline; }
+.disp-link.is-mute { color: var(--text-tertiary); cursor: default; text-decoration: none; }
+.disp-link.is-reject { color: var(--danger); cursor: default; text-decoration: none; }
+.disp-link svg { width: 13px; height: 13px; }
+.disp-collapse {
+  display: inline-flex; align-items: center; gap: 2px;
+  font-size: 12px; color: var(--text-tertiary);
+  cursor: pointer; white-space: nowrap;
+}
+.disp-collapse:hover { color: var(--primary-dark); }
+.disp-collapse svg { width: 12px; height: 12px; transition: transform .2s; }
+.disp-collapse.is-folded svg { transform: rotate(180deg); }
+
+/* 处方信息 */
+.disp-info { flex: none; padding: 2px 12px 10px; border-bottom: 1px solid var(--border); transition: height .18s ease; overflow: hidden; }
+/* 收起时仅展示前两行（约 2*24px + 上下 padding ≈ 52px） */
+.disp-info.is-folded { height: 52px; overflow: hidden; }
+.disp-grid {
+  display: grid;
+  grid-template-columns: 1.05fr 1.08fr 1.1fr 0.97fr 0.85fr 1fr;
+  column-gap: 10px; row-gap: 6px;
+}
+/* 窗口变窄时减少列数，保证字段值完整展示 */
+@media (max-width: 1646px) {
+  .disp-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+}
+@media (max-width: 1580px) {
+  .disp-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+@media (max-width: 1390px) {
+  .disp-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+.disp-field { display: flex; gap: 4px; min-width: 0; font-size: 12px; line-height: 18px; }
+.disp-field .k { flex: none; color: var(--text-tertiary); }
+.disp-field .v {
+  color: var(--text-primary);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* 处方明细表 */
+.disp-dwrap { flex: 1; min-height: 0; overflow: auto; }
+.disp-dtable {
+  width: 100%; min-width: 1542px;
+  border-collapse: separate; border-spacing: 0;
+  table-layout: fixed; font-size: 12px;
+}
+.disp-dtable thead th {
+  position: sticky; top: 0; z-index: 3;
+  height: 34px; padding: 0 8px;
+  background: var(--table-head);
+  border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  text-align: left; font-weight: 500; color: var(--text-secondary);
+  white-space: nowrap;
+}
+.disp-dtable tbody tr { background: var(--bg-white); }
+.disp-dtable tbody tr:nth-child(even) { background: var(--table-even); }
+.disp-dtable tbody tr:hover { background: var(--table-hover); }
+.disp-dtable tbody td {
+  height: 34px; padding: 0 8px;
+  background: inherit;
+  border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  color: var(--text-primary);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.disp-dtable th:last-child, .disp-dtable td:last-child { border-right: none; }
+.disp-dtable .num { text-align: right; font-variant-numeric: tabular-nums; }
+.disp-dtable .c-idx { width: 44px; text-align: center; }
+.disp-dtable .c-code { width: 118px; }
+.disp-dtable .c-drug { width: 96px; }
+.disp-dtable .c-qty { width: 58px; }
+.disp-dtable .c-route { width: 56px; }
+.disp-dtable .c-dose { width: 72px; }
+.disp-dtable .c-freq { width: 44px; }
+.disp-dtable .c-days { width: 60px; }
+.disp-dtable .c-spec { width: 108px; }
+.disp-dtable .c-amt { width: 72px; }
+.disp-dtable .c-price { width: 72px; }
+.disp-dtable .c-ins { width: 60px; }
+.disp-dtable .c-ess { width: 58px; }
+.disp-dtable .c-vendor { width: 128px; }
+.disp-dtable .c-batch { width: 82px; }
+.disp-dtable .c-inscode { width: 118px; }
+.disp-dtable .c-insname { width: 96px; }
+.disp-dtable .c-unit { width: 60px; }
+.disp-dtable .c-factor { width: 76px; }
+.disp-dtable .c-dqty { width: 64px; }
+.disp-d-empty td { text-align: center; color: var(--text-placeholder); padding: 40px 0; }
+
+/* 通用弹窗 */
+.disp-mask {
+  display: none; position: fixed; inset: 0; z-index: 400;
+  background: rgba(0, 0, 0, .35);
+  align-items: center; justify-content: center;
+}
+.disp-mask.show { display: flex; }
+.disp-dlg {
+  width: 420px; background: #fff;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-2);
+  overflow: hidden;
+}
+.disp-dlg-title { padding: 18px 20px 8px; font-size: 15px; font-weight: 500; color: var(--text-primary); }
+.disp-dlg-body { padding: 0 20px 22px; font-size: 13px; line-height: 1.7; color: var(--text-secondary); }
+.disp-dlg-foot { padding: 12px 20px; display: flex; justify-content: flex-end; gap: 8px; border-top: 1px solid var(--border); }
+
+/* 审核弹窗 */
+.audit-dlg { width: 480px; background: #fff; border-radius: var(--radius-lg); box-shadow: var(--shadow-2); overflow: hidden; }
+.audit-body { padding: 4px 20px 20px; }
+.audit-rxno { font-size: 12px; color: var(--text-tertiary); margin-bottom: 14px; }
+.audit-radios { display: flex; align-items: center; gap: 28px; margin-bottom: 14px; font-size: 13px; color: var(--text-primary); }
+.audit-radios label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.audit-opinion {
+  width: 100%; height: 82px; resize: vertical;
+  padding: 8px 10px; font-size: 13px; line-height: 1.5;
+  border: 1px solid var(--border-input); border-radius: var(--radius);
+  color: var(--text-primary); outline: none;
+}
+.audit-opinion:focus { border-color: var(--primary); }
+.audit-opinion.is-invalid { border-color: var(--danger); background: #FFF1F0; }
+
+/* 追溯码录入弹窗 */
+.trace-mask {
+  display: none; position: fixed; inset: 0; z-index: 420;
+  background: rgba(0, 0, 0, .35);
+  align-items: center; justify-content: center;
+}
+.trace-mask.show { display: flex; }
+.trace-dlg {
+  width: 1260px; max-width: calc(100vw - 32px);
+  height: 660px; max-height: calc(100vh - 48px);
+  display: flex; flex-direction: column;
+  background: #fff; border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-2); overflow: hidden;
+}
+.trace-head {
+  flex: none; height: 44px;
+  display: flex; align-items: center;
+  padding: 0 12px 0 16px;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px; font-weight: 500; color: var(--text-primary);
+}
+.trace-x {
+  margin-left: auto; width: 26px; height: 26px;
+  border: none; background: none; border-radius: var(--radius);
+  display: grid; place-items: center;
+  color: var(--text-tertiary); cursor: pointer;
+}
+.trace-x:hover { background: rgba(0, 0, 0, .05); color: var(--text-secondary); }
+.trace-x svg { width: 12px; height: 12px; }
+.trace-toolbar {
+  flex: none; display: flex; align-items: center; gap: 8px;
+  padding: 8px 16px 0;
+  font-size: 12px; color: var(--text-secondary);
+}
+.trace-toolbar + .trace-toolbar {
+  padding-top: 8px; margin-top: 8px;
+  border-top: 1px solid var(--border);
+}
+.trace-toolbar .req { color: var(--danger); margin-right: -4px; }
+.trace-toolbar .input { height: 30px; font-size: 12px; }
+.trace-toolbar .btn { height: 30px; padding: 0 16px; font-size: 12px; }
+.trace-body {
+  flex: 1; min-height: 0;
+  display: flex; gap: 10px;
+  padding: 10px 16px 0;
+}
+.trace-left {
+  flex: 1; min-width: 0; overflow: auto;
+  border: 1px solid var(--border);
+}
+.trace-table {
+  width: 100%; min-width: 918px;
+  border-collapse: separate; border-spacing: 0;
+  table-layout: fixed; font-size: 12px;
+}
+.trace-table thead th {
+  position: sticky; top: 0; z-index: 2;
+  height: 32px; padding: 0 6px;
+  background: var(--table-head);
+  border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  text-align: left; font-weight: 500; color: var(--text-secondary);
+  white-space: nowrap;
+}
+.trace-table tbody td {
+  height: 32px; padding: 0 6px;
+  border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  color: var(--text-primary);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.trace-table th:last-child, .trace-table td:last-child { border-right: none; }
+.trace-table tbody tr { cursor: pointer; }
+.trace-table tbody tr:hover { background: var(--table-hover); }
+.trace-table tbody tr.is-sel { background: var(--primary-light); }
+.trace-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.trace-table .c-name { width: 60px; }
+.trace-table .c-cat { width: 60px; }
+.trace-table .c-code { width: 100px; }
+.trace-table .c-drug { width: 90px; }
+.trace-table .c-whole { width: 56px; }
+.trace-table .c-whole2 { width: 52px; }
+.trace-table .c-split { width: 56px; }
+.trace-table .c-split2 { width: 56px; }
+.trace-table .c-qty { width: 50px; }
+.trace-table .c-spec { width: 96px; }
+.trace-table .c-vendor { width: 100px; }
+.trace-table .c-bulk { width: 46px; }
+.trace-table .c-status { width: 96px; }
+.trace-status { display: inline-flex; align-items: center; gap: 5px; }
+.trace-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text-placeholder); flex: none; }
+.trace-dot.ok { background: var(--success); }
+.trace-dot.bad { background: var(--warning); }
+.trace-right {
+  flex: none; width: 280px; min-height: 0;
+  display: flex; flex-direction: column;
+  border: 1px solid var(--border);
+}
+.trace-right-head {
+  flex: none; height: 32px;
+  display: grid; grid-template-columns: 1fr 56px 58px 42px;
+  align-items: center;
+  background: var(--table-head);
+  border-bottom: 1px solid var(--border);
+  font-size: 12px; font-weight: 500; color: var(--text-secondary);
+}
+.trace-right-head span { padding: 0 6px; white-space: nowrap; border-right: 1px solid var(--border); }
+.trace-right-head span:last-child { border-right: none; }
+.trace-codes { flex: 1; min-height: 0; overflow: auto; }
+.trace-code-row {
+  display: grid; grid-template-columns: 1fr 56px 58px 42px;
+  align-items: center;
+  min-height: 32px;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px; color: var(--text-primary);
+}
+.trace-code-row > div { padding: 0 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.trace-code-row .qty {
+  width: 40px; height: 24px; padding: 0 4px;
+  border: 1px solid var(--border-input); border-radius: var(--radius);
+  font-size: 12px; text-align: right; color: var(--text-primary);
+}
+.trace-code-row .del {
+  border: none; background: none; color: var(--primary-dark);
+  font-size: 12px; cursor: pointer; padding: 0;
+}
+.trace-code-row .del:hover { text-decoration: underline; }
+.trace-empty {
+  height: 100%; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 8px;
+  color: var(--text-placeholder); font-size: 12px;
+}
+.trace-empty svg { width: 54px; height: 54px; opacity: .5; }
+.trace-legend {
+  flex: none; display: flex; align-items: center; gap: 18px;
+  padding: 6px 16px 0;
+  font-size: 12px; color: var(--text-secondary);
+}
+.trace-legend span { display: inline-flex; align-items: center; gap: 5px; }
+.trace-foot {
+  flex: none; display: flex; justify-content: flex-end; gap: 8px;
+  padding: 10px 16px 12px;
+}
+.trace-foot .btn { height: 30px; padding: 0 16px; font-size: 12px; }
+</style>
+</head>
+<body>
+
+<!-- ========== 顶部导航 ========== -->
+<header class="app-header">
+  <div class="header-left">
+    <div class="header-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z"></path></svg>
+    </div>
+    <div class="header-title">区域药房协同管理系统</div>
+    <div class="header-pharmacy">
+      <button class="header-pharm-btn" id="btnPharmacy">
+        <span id="curPharmacy">中药房</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"></path></svg>
+      </button>
+      <div class="header-pharm-menu" id="pharmMenu">
+        <div class="header-pharm-item active" data-ph="中药房">中药房<span class="chk">✓</span></div>
+        <div class="header-pharm-item" data-ph="西药房">西药房<span class="chk"></span></div>
+        <div class="header-pharm-item" data-ph="住院药房">住院药房<span class="chk"></span></div>
+      </div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="header-user">
+      <div class="header-avatar">赵</div>
+      <div class="header-user-name">赵敏 · 中心药房</div>
+    </div>
+  </div>
+</header>
+
+<div class="app-body">
+
+  <!-- 左侧导航 -->
+  <aside class="app-side" id="appSide"></aside>
+<!-- 主区 -->
+  <main class="app-main">
+    <div class="tabbar">
+      <div class="tab" onclick="location.href='drug-catalog.html'">首页</div>
+      <div class="tab active">
+        处方发药
+        <button class="tab-close" title="关闭" onclick="location.href='drug-catalog.html'">
+          <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 5l14 14M19 5L5 19"></path></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="disp-wrap">
+
+      <!-- ========== 左侧：门诊处方发药列表 ========== -->
+      <aside class="disp-side">
+        <div class="disp-side-head">
+          <span class="disp-side-title" id="sideTitle">门诊处方发药（中药房）</span>
+          <button class="disp-x" id="btnSideClose" title="关闭">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+          </button>
+        </div>
+
+        <div class="disp-tabs" id="dispTabs">
+          <button class="disp-tab active" data-tab="paid">已收费</button>
+          <button class="disp-tab" data-tab="unpaid">未收费</button>
+        </div>
+
+        <div class="disp-filter" id="dispFilter">
+          <div class="disp-frow">
+            <span class="disp-flbl">时间范围：</span>
+            <div class="disp-range">
+              <input class="input" id="dispRange" readonly="" value="2026-11-03 00:00:00 - 2026-11-04 23:59:59">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>
+            </div>
+          </div>
+          <div class="disp-frow">
+            <span class="disp-flbl">检索：</span>
+            <input class="input" id="dispQ" placeholder="门诊号/姓名/拼音码">
+            <span class="disp-flbl">证件号码：</span>
+            <input class="input" id="dispIdq" placeholder="请输入证件号码">
+          </div>
+          <div class="disp-facts">
+            <button class="btn" id="btnReset">重置</button>
+            <button class="btn btn-primary" id="btnQuery">查询</button>
+          </div>
+        </div>
+
+        <div class="disp-fold" id="btnFoldFilter" title="收起筛选">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"></path></svg>
+        </div>
+
+        <div class="disp-listwrap">
+          <table class="disp-ltable">
+            <thead>
+              <tr>
+                <th class="c-chk"><input type="checkbox" id="chkAllList" title="全选"></th>
+                <th class="c-no">处方号</th>
+                <th class="c-name">姓名</th>
+                <th class="c-outp">门诊号</th>
+              </tr>
+            </thead>
+            <tbody id="dispListBody"><tr data-id="dp1" class="is-checked is-current"><td class="c-chk"><input type="checkbox" data-chk="dp1" checked=""></td><td title="M202611000005A">M202611000005A</td><td title="冯小容">冯小容</td><td title="202611040002">202611040002</td></tr><tr data-id="dp2" class="is-checked"><td class="c-chk"><input type="checkbox" data-chk="dp2" checked=""></td><td title="M202611000007A">M202611000007A</td><td title="冯小容">冯小容</td><td title="202611040003">202611040003</td></tr><tr data-id="dp3" class="is-checked"><td class="c-chk"><input type="checkbox" data-chk="dp3" checked=""></td><td title="M202611000009A">M202611000009A</td><td title="王秀兰">王秀兰</td><td title="202611040006">202611040006</td></tr></tbody>
+          </table>
+        </div>
+
+        <div class="disp-selbar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v6M12 16v.5"></path></svg>
+          <span id="dispSelText">共选择 3 张处方</span>
+        </div>
+
+        <div class="disp-pagefoot">
+          <span id="dispTotalText">共 3 条</span>
+          <div class="pager-ctrl">
+            <select class="select" id="dispPageSize">
+              <option>100 条/页</option>
+            </select>
+            <button class="pager-btn" disabled="">
+              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"></path></svg>
+            </button>
+            <button class="pager-num">1</button>
+            <button class="pager-btn" disabled="">
+              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg>
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      <!-- ========== 右侧：处方详情 ========== -->
+      <section class="disp-main">
+        <div class="disp-toolbar">
+          <button class="dbtn dbtn-primary" id="btnDispense" title="">发药(<span class="k">S</span>)</button>
+        </div>
+
+        <div class="disp-dhead">
+          <span class="disp-dtitle">处方详情</span>
+          <span class="disp-type" id="dispType">中成药处方</span>
+          <div class="disp-links">
+            <span class="disp-link" id="lnk360">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"></path><circle cx="12" cy="12" r="2.6"></circle></svg>
+              360视图
+            </span>
+          </div>
+          <span class="disp-collapse" id="btnCollapse">
+            <span id="collapseText">收起</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 15l6-6 6 6"></path></svg>
+          </span>
+        </div>
+
+        <div class="disp-info" id="dispInfo">
+          <div class="disp-grid" id="dispGrid"><div class="disp-field"><span class="k">姓名：</span><span class="v" title="冯小容">冯小容</span></div><div class="disp-field"><span class="k">性别：</span><span class="v" title="女性">女性</span></div><div class="disp-field"><span class="k">年龄：</span><span class="v" title="44岁">44岁</span></div><div class="disp-field"><span class="k">处方号：</span><span class="v" title="M202611000005A">M202611000005A</span></div><div class="disp-field"><span class="k">门诊号：</span><span class="v" title="202611040002">202611040002</span></div><div class="disp-field"><span class="k">医疗号：</span><span class="v" title="260430000000001">260430000000001</span></div><div class="disp-field"><span class="k">医保号：</span><span class="v" title="2604300000000001">2604300000000001</span></div><div class="disp-field"><span class="k">科室：</span><span class="v" title="内科门诊">内科门诊</span></div><div class="disp-field"><span class="k">医师：</span><span class="v" title="林落落">林落落</span></div><div class="disp-field"><span class="k">划价药房：</span><span class="v" title="中药房">中药房</span></div><div class="disp-field"><span class="k">收费种类：</span><span class="v" title="自费">自费</span></div><div class="disp-field"><span class="k">应收金额：</span><span class="v" title="26.45">26.45</span></div><div class="disp-field"><span class="k">诊断：</span><span class="v" title="痤疮; 虚证; 痤疮">痤疮; 虚证; 痤疮</span></div><div class="disp-field"><span class="k">处方时间：</span><span class="v" title="2026-11-04 19:40:21">2026-11-04 19:40:21</span></div><div class="disp-field"><span class="k">收费时间：</span><span class="v" title="2026-11-04 19:59:57">2026-11-04 19:59:57</span></div><div class="disp-field"><span class="k">体温/呼吸：</span><span class="v" title=""></span></div><div class="disp-field"><span class="k">脉搏：</span><span class="v" title="—">—</span></div><div class="disp-field"><span class="k">血压：</span><span class="v" title="—">—</span></div><div class="disp-field"><span class="k">过敏药物：</span><span class="v" title="青霉素类抗生素">青霉素类抗生素</span></div><div class="disp-field"><span class="k">联系电话：</span><span class="v" title="13309608869">13309608869</span></div><div class="disp-field"><span class="k">协定处方：</span><span class="v" title="—">—</span></div><div class="disp-field"><span class="k">身高：</span><span class="v" title="—">—</span></div><div class="disp-field"><span class="k">体重：</span><span class="v" title="—">—</span></div><div class="disp-field"><span class="k">备注：</span><span class="v" title="—">—</span></div></div>
+        </div>
+
+        <div class="disp-dwrap" style="position: relative;">
+          <table class="disp-dtable" style="">
+            <thead>
+              <tr>
+                <th class="c-idx">序号</th>
+                <th class="c-code">药品编码</th>
+                <th class="c-drug">药品名称</th>
+                <th class="c-qty">数量</th>
+                <th class="c-route">用法</th>
+                <th class="c-dose">单次剂量</th>
+                <th class="c-freq">用次</th>
+                <th class="c-days">用药天数</th>
+                <th class="c-spec">药品规格</th>
+                <th class="c-amt num">应收金额</th>
+                <th class="c-price num">药品单价</th>
+                <th class="c-ins">医保等级</th>
+                <th class="c-ess">国家基药</th>
+                <th class="c-vendor">生产企业</th>
+                <th class="c-batch">批号</th>
+                <th class="c-inscode">国家医保编码</th>
+                <th class="c-insname">国家医保名称</th>
+                <th class="c-unit">发药单位</th>
+                <th class="c-factor">发药换算系数</th>
+                <th class="c-dqty">发药数量</th>
+              </tr>
+            </thead>
+            <tbody id="dispDetailBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<!-- 通用确认弹窗 -->
+<div class="disp-mask" id="dispMask">
+  <div class="disp-dlg">
+    <div class="disp-dlg-title" id="dispDlgTitle">提示</div>
+    <div class="disp-dlg-body" id="dispDlgBody"></div>
+    <div class="disp-dlg-foot">
+      <button class="btn" id="dispDlgCancel">取消</button>
+      <button class="btn btn-primary" id="dispDlgOk">确定</button>
+    </div>
+  </div>
+</div>
+
+<!-- 审核弹窗 -->
+<div class="disp-mask" id="auditMask">
+  <div class="audit-dlg">
+    <div class="disp-dlg-title">处方审核</div>
+    <div class="audit-body">
+      <div class="audit-rxno" id="auditRxNo">处方号：—</div>
+      <div class="audit-radios">
+        <label><input type="radio" name="auditResult" value="pass" checked=""> 通过</label>
+        <label><input type="radio" name="auditResult" value="reject"> 拒绝</label>
+      </div>
+      <textarea class="audit-opinion" id="auditOpinion" placeholder="请输入审核意见（拒绝时必填）"></textarea>
+    </div>
+    <div class="disp-dlg-foot">
+      <button class="btn" id="auditCancel">取消</button>
+      <button class="btn btn-primary" id="auditSubmit">提交</button>
+    </div>
+  </div>
+</div>
+
+<!-- 追溯码录入弹窗 -->
+<div class="trace-mask" id="traceMask">
+  <div class="trace-dlg">
+    <div class="trace-head">
+      追溯码录入
+      <button class="trace-x" id="traceClose" title="关闭">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+      </button>
+    </div>
+
+    <div class="trace-toolbar">
+      <span class="req">*</span>
+      <span>追溯码：</span>
+      <input class="input" id="traceInput" style="width:340px" placeholder="请输入追溯码">
+      <button class="btn btn-primary" id="traceAdd">添加</button>
+    </div>
+
+    <div class="trace-toolbar">
+      <span>检索：</span>
+      <input class="input" id="traceSearch" style="width:260px" placeholder="请输入药品名称/拼音码">
+      <button class="btn btn-primary" id="traceQuery">查询</button>
+    </div>
+
+    <div class="trace-body">
+      <div class="trace-left">
+        <table class="trace-table">
+          <thead>
+            <tr>
+              <th class="c-name">姓名</th>
+              <th class="c-cat">药品类别</th>
+              <th class="c-code">药品编码</th>
+              <th class="c-drug">药品名称</th>
+              <th class="c-whole num">整码个数</th>
+              <th class="c-whole2 num">整码已扫</th>
+              <th class="c-split num">拆零数量</th>
+              <th class="c-split2 num">拆零已扫</th>
+              <th class="c-qty">数量</th>
+              <th class="c-spec">规格</th>
+              <th class="c-vendor">生产厂家</th>
+              <th class="c-bulk">拆零</th>
+              <th class="c-status">状态</th>
+            </tr>
+          </thead>
+          <tbody id="traceBody"></tbody>
+        </table>
+      </div>
+
+      <aside class="trace-right">
+        <div class="trace-right-head">
+          <span>追溯码</span><span>拆零标识</span><span>数量</span><span>操作</span>
+        </div>
+        <div class="trace-codes" id="traceCodes"></div>
+      </aside>
+    </div>
+
+    <div class="trace-legend">
+      <span><i class="trace-dot ok"></i>扫码完成</span>
+      <span><i class="trace-dot bad"></i>追溯码不足</span>
+      <span><i class="trace-dot"></i>无需扫码</span>
+    </div>
+
+    <div class="trace-foot">
+      <button class="btn" id="btnSplitFetch">获取拆零追溯码</button>
+      <button class="btn btn-primary" id="btnTraceOk">确定(<span class="k">S</span>)</button>
+      <button class="btn" id="btnTraceCancel">取消</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="dispToast"></div>
+
+<script src="mock.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  function $(id){ return document.getElementById(id); }
+  function raw(v){
+    return String(v === null || v === undefined ? "" : v).replace(/[&<>"']/g, function(c){
+      return { "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c];
+    });
+  }
+  function esc(v){
+    if (v === null || v === undefined || v === "") return "—";
+    return raw(v);
+  }
+  function cell(v){ return raw(v); }
+  function money(n){ return (Math.round((Number(n) || 0) * 100) / 100).toFixed(2); }
+  function intVal(v){ var n = parseInt(v, 10); return isNaN(n) ? 0 : n; }
+
+  var KEY = "RX_DISP_DATA_V2";
+
+  function loadData(){
+    try {
+      var rawData = sessionStorage.getItem(KEY);
+      if (rawData){
+        var data = JSON.parse(rawData);
+        if (Array.isArray(data) && data.length) return data;
+      }
+    } catch(e){}
+    return JSON.parse(JSON.stringify(MOCK.rxDisp));
+  }
+  function persist(){
+    try { sessionStorage.setItem(KEY, JSON.stringify(ST.data)); } catch(e){}
+  }
+
+  var ST = {
+    tab: "paid",
+    data: loadData(),
+    checked: {},
+    currentId: null,
+    q: "",
+    idq: "",
+    infoOpen: true,
+    filterOpen: true,
+    pharmacy: "中药房"
+  };
+
+  function visibleList(){
+    var q = ST.q.trim().toLowerCase();
+    var idq = ST.idq.trim().toLowerCase();
+    return ST.data.filter(function(p){
+      if (p.dispensed) return false;
+      if (p.feeStatus !== ST.tab) return false;
+      if (q){
+        var hay = (p.rxNo + " " + p.name + " " + p.py + " " + p.outpatientNo).toLowerCase();
+        if (hay.indexOf(q) < 0) return false;
+      }
+      if (idq && String(p.idNo || "").toLowerCase().indexOf(idq) < 0) return false;
+      return true;
+    });
+  }
+  function current(){
+    var list = visibleList();
+    for (var i = 0; i < list.length; i++) if (list[i].id === ST.currentId) return list[i];
+    return null;
+  }
+  function checkedCount(){
+    var n = 0;
+    Object.keys(ST.checked).forEach(function(k){ if (ST.checked[k]) n++; });
+    return n;
+  }
+
+  /* ---------------- 左侧列表 ---------------- */
+  function renderList(){
+    var list = visibleList();
+    var body = $("dispListBody");
+
+    if (!list.length){
+      body.innerHTML = '<tr><td colspan="4" class="disp-l-empty">暂无处方</td></tr>';
+    } else {
+      body.innerHTML = list.map(function(p){
+        var checked = !!ST.checked[p.id];
+        var cls = checked ? " is-checked" : "";
+        if (p.id === ST.currentId) cls += " is-current";
+        return '<tr data-id="' + p.id + '" class="' + cls.trim() + '">'
+          + '<td class="c-chk"><input type="checkbox" data-chk="' + p.id + '"' + (checked ? " checked" : "") + '></td>'
+          + '<td title="' + esc(p.rxNo) + '">' + esc(p.rxNo) + '</td>'
+          + '<td title="' + esc(p.name) + '">' + esc(p.name) + '</td>'
+          + '<td title="' + esc(p.outpatientNo) + '">' + esc(p.outpatientNo) + '</td>'
+          + '</tr>';
+      }).join("");
+    }
+
+    var ids = list.map(function(p){ return p.id; });
+    var n = 0;
+    ids.forEach(function(id){ if (ST.checked[id]) n++; });
+    $("chkAllList").checked = ids.length > 0 && n === ids.length;
+    $("chkAllList").indeterminate = n > 0 && n < ids.length;
+
+    $("dispTotalText").textContent = "共 " + list.length + " 条";
+    $("dispSelText").textContent = "共选择 " + checkedCount() + " 张处方";
+  }
+
+  /* ---------------- 右侧详情 ---------------- */
+  function renderInfo(){
+    var p = current();
+    var rows = [];
+    if (p){
+      rows = [
+        ["姓名", p.name], ["性别", p.gender], ["年龄", p.age],
+        ["处方号", p.rxNo], ["门诊号", p.outpatientNo], ["医疗号", p.medicalNo],
+        ["医保号", p.insNo], ["科室", p.dept], ["医师", p.doctor],
+        ["划价药房", p.pharmacy], ["收费种类", p.feeType], ["应收金额", money(p.amount)],
+        ["诊断", p.diagnose], ["处方时间", p.rxTime], ["收费时间", p.chargeTime],
+        ["体温/呼吸", p.temp], ["脉搏", p.pulse], ["血压", p.bp],
+        ["过敏药物", p.allergic], ["联系电话", p.phone], ["协定处方", p.agreement],
+        ["身高", p.height], ["体重", p.weight]
+      ];
+      if (p.rxType === "中药饮片处方"){
+        rows.push(["剂数", p.doses]);
+        rows.push(["用法", p.usage]);
+      }
+      rows.push(["备注", p.remark]);
+    } else {
+      ["姓名","性别","年龄","处方号","门诊号","医疗号","医保号","科室","医师","划价药房",
+       "收费种类","应收金额","诊断","处方时间","收费时间","体温/呼吸","脉搏","血压",
+       "过敏药物","联系电话","协定处方","身高","体重"].forEach(function(k){ rows.push([k, "—"]); });
+      rows.push(["备注", "—"]);
+    }
+
+    $("dispGrid").innerHTML = rows.map(function(r){
+      var text = r[1] === null || r[1] === undefined ? "" : String(r[1]);
+      return '<div class="disp-field"><span class="k">' + r[0] + '：</span>'
+        + '<span class="v" title="' + raw(text) + '">' + raw(text) + '</span></div>';
+    }).join("");
+  }
+
+  function renderType(){
+    var p = current();
+    var el = $("dispType");
+    if (!p){ el.textContent = "—"; el.className = "disp-type"; return; }
+    el.textContent = p.rxType || "中成药处方";
+    el.className = "disp-type" + (p.rxType === "中药饮片处方" ? " is-tcm" : "");
+  }
+
+  function renderDetail(){
+    var p = current();
+    var body = $("dispDetailBody");
+    if (!p || !p.items.length){
+      body.innerHTML = '<tr class="disp-d-empty"><td colspan="20">' + (p ? "该处方暂无药品明细" : "请从左侧选择一张处方") + '</td></tr>';
+      return;
+    }
+    body.innerHTML = p.items.map(function(it, i){
+      return '<tr>'
+        + '<td class="c-idx">' + (i + 1) + '</td>'
+        + '<td title="' + esc(it.drugCode) + '">' + esc(it.drugCode) + '</td>'
+        + '<td title="' + esc(it.name) + '">' + esc(it.name) + '</td>'
+        + '<td>' + esc(it.qty) + '</td>'
+        + '<td>' + esc(it.route) + '</td>'
+        + '<td>' + esc(it.dose) + '</td>'
+        + '<td>' + esc(it.freq) + '</td>'
+        + '<td class="num">' + esc(it.days) + '</td>'
+        + '<td title="' + esc(it.spec) + '">' + esc(it.spec) + '</td>'
+        + '<td class="num">' + money(it.amount) + '</td>'
+        + '<td class="num">' + money(it.price) + '</td>'
+        + '<td>' + cell(it.insLevel) + '</td>'
+        + '<td>' + cell(it.essential) + '</td>'
+        + '<td title="' + esc(it.vendor) + '">' + esc(it.vendor) + '</td>'
+        + '<td>' + cell(it.batch) + '</td>'
+        + '<td>' + cell(it.insCode) + '</td>'
+        + '<td>' + cell(it.insName) + '</td>'
+        + '<td>' + cell(it.dispUnit) + '</td>'
+        + '<td class="num">' + cell(it.factor) + '</td>'
+        + '<td class="num">' + cell(it.dispQty) + '</td>'
+        + '</tr>';
+    }).join("");
+  }
+
+  function renderLinks(){ /* 审核入口已移除 */ }
+
+  function renderButtons(){
+    $("btnDispense").disabled = ST.tab === "unpaid" || checkedCount() === 0;
+    $("btnDispense").title = ST.tab === "unpaid" ? "处方未收费，不能发药" : "";
+  }
+
+  function renderAll(){
+    renderList();
+    renderInfo();
+    renderType();
+    renderDetail();
+    renderLinks();
+    renderButtons();
+  }
+
+  function setCurrent(id){
+    ST.currentId = id;
+    renderAll();
+  }
+  function firstOrNull(){
+    var list = visibleList();
+    return list.length ? list[0].id : null;
+  }
+
+  /* ---------------- 弹窗 / toast ---------------- */
+  var dlgOk = null;
+  function confirmDialog(title, body, okText, onOk){
+    $("dispDlgTitle").textContent = title;
+    $("dispDlgBody").textContent = body;
+    $("dispDlgOk").textContent = okText || "确定";
+    dlgOk = onOk;
+    $("dispMask").classList.add("show");
+  }
+  function closeDialog(){
+    $("dispMask").classList.remove("show");
+    dlgOk = null;
+  }
+  var toastTimer = null;
+  function toast(msg){
+    var el = $("dispToast");
+    el.textContent = msg;
+    el.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ el.classList.remove("show"); }, 2200);
+  }
+
+  /* ---------------- 业务动作 ---------------- */
+  function switchTab(tab){
+    if (ST.tab === tab) return;
+    ST.tab = tab;
+    ST.checked = {};
+    Array.prototype.forEach.call($("dispTabs").children, function(el){
+      el.classList.toggle("active", el.getAttribute("data-tab") === tab);
+    });
+    ST.currentId = firstOrNull();
+    renderAll();
+  }
+
+  function toggleCheck(id, val){
+    ST.checked[id] = val;
+    if (val) ST.currentId = id;
+    else if (ST.currentId === id) ST.currentId = firstOrNull();
+    renderAll();
+  }
+
+  function toggleAll(val){
+    visibleList().forEach(function(p){ ST.checked[p.id] = val; });
+    if (val) ST.currentId = firstOrNull();
+    renderAll();
+  }
+
+  function finishDispense(ids, msg){
+    ST.data.forEach(function(p){ if (ids.indexOf(p.id) >= 0) p.dispensed = true; });
+    ST.checked = {};
+    ST.currentId = firstOrNull();
+    persist();
+    renderAll();
+    toast(msg);
+  }
+
+  function doDispense(){
+    if (ST.tab === "unpaid"){ toast("未收费处方不能发药"); return; }
+    var list = visibleList().filter(function(p){ return ST.checked[p.id]; });
+    if (!list.length){ toast("请先勾选需要发药的处方"); return; }
+
+    var ids = list.map(function(p){ return p.id; });
+    var allTcm = list.every(function(p){ return p.rxType === "中药饮片处方"; });
+
+    if (allTcm){
+      finishDispense(ids, "中药饮片处方无需追溯码，已直接发药 " + ids.length + " 张");
+      return;
+    }
+    openTrace(list);
+  }
+
+  function doQuery(){
+    ST.q = $("dispQ").value;
+    ST.idq = $("dispIdq").value;
+    ST.currentId = firstOrNull();
+    ST.checked = {};
+    renderAll();
+  }
+
+  /* ---------------- 审核 ---------------- */
+  function openAudit(){
+    var p = current();
+    if (!p){ toast("请先选择一张处方"); return; }
+    if (p.audited){
+      toast(p.auditResult === "reject" ? "该处方已被拒绝" : "该处方已审核");
+      return;
+    }
+    $("auditRxNo").textContent = "处方号：" + p.rxNo;
+    document.querySelector('input[name="auditResult"][value="pass"]').checked = true;
+    var op = $("auditOpinion");
+    op.value = "";
+    op.classList.remove("is-invalid");
+    $("auditMask").classList.add("show");
+  }
+  function closeAudit(){
+    $("auditMask").classList.remove("show");
+    $("auditOpinion").classList.remove("is-invalid");
+  }
+  function submitAudit(){
+    var p = current();
+    if (!p) return;
+    var result = (document.querySelector('input[name="auditResult"]:checked') || {}).value || "pass";
+    var opinion = $("auditOpinion").value.trim();
+    if (result === "reject" && !opinion){
+      $("auditOpinion").classList.add("is-invalid");
+      toast("拒绝时必须填写审核意见");
+      return;
+    }
+    p.audited = true;
+    p.auditResult = result;
+    p.auditOpinion = opinion;
+    p.auditTime = nowStr();
+    persist();
+    closeAudit();
+    renderAll();
+    toast(result === "reject" ? "处方已拒绝" : "处方审核通过");
+  }
+
+  function nowStr(){
+    var d = new Date();
+    function pad(n){ return n < 10 ? "0" + n : "" + n; }
+    return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) + " "
+      + pad(d.getHours()) + ":" + pad(d.getMinutes()) + ":" + pad(d.getSeconds());
+  }
+
+  /* ---------------- 追溯码录入 ---------------- */
+  var TRACE = { rxIds: [], rows: [], selected: null, q: "" };
+
+  function selectedTraceRow(){
+    for (var i = 0; i < TRACE.rows.length; i++) if (TRACE.rows[i].key === TRACE.selected) return TRACE.rows[i];
+    return null;
+  }
+  function wholeScanned(r){ return r.codes.filter(function(c){ return !c.isSplit; }).length; }
+  function splitScanned(r){
+    return r.codes.reduce(function(a, c){ return a + (c.isSplit ? intVal(c.qty) : 0); }, 0);
+  }
+  function rowComplete(r){ return wholeScanned(r) === r.wholeNeed && splitScanned(r) === r.splitNeed; }
+  function rowStatus(r){
+    if (r.wholeNeed + r.splitNeed === 0) return ["无需扫码", ""];
+    return rowComplete(r) ? ["扫码完成", "ok"] : ["追溯码不足", "bad"];
+  }
+
+  function buildTraceRows(list){
+    var rows = [];
+    list.forEach(function(p){
+      if (p.rxType === "中药饮片处方") return;
+      p.items.forEach(function(it, i){
+        var whole = intVal(it.wholeNeed);
+        var split = intVal(it.splitNeed);
+        if (!whole && !split) return;
+        rows.push({
+          key: p.id + "-" + i,
+          patient: p.name,
+          category: it.category || (p.rxType === "中成药处方" ? "中成药" : "西药"),
+          drugCode: it.drugCode,
+          name: it.name,
+          spec: it.spec,
+          vendor: it.vendor,
+          qty: it.qty,
+          wholeNeed: whole,
+          splitNeed: split,
+          splitAllowed: !!(it.splitAllowed || split),
+          codes: []
+        });
+      });
+    });
+    return rows;
+  }
+
+  function openTrace(list){
+    TRACE.rxIds = list.map(function(p){ return p.id; });
+    TRACE.rows = buildTraceRows(list);
+    TRACE.q = "";
+    TRACE.selected = TRACE.rows.length ? TRACE.rows[0].key : null;
+    $("traceSearch").value = "";
+    $("traceInput").value = "";
+    if (!TRACE.rows.length){
+      finishDispense(TRACE.rxIds, "所选处方无需追溯码，已直接发药 " + TRACE.rxIds.length + " 张");
+      return;
+    }
+    $("traceMask").classList.add("show");
+    renderTrace();
+    setTimeout(function(){ $("traceInput").focus(); }, 50);
+  }
+
+  function traceFiltered(){
+    var q = TRACE.q.trim().toLowerCase();
+    if (!q) return TRACE.rows;
+    return TRACE.rows.filter(function(r){
+      return (r.name + " " + r.drugCode).toLowerCase().indexOf(q) >= 0;
+    });
+  }
+
+  function renderTrace(){
+    var list = traceFiltered();
+    var body = $("traceBody");
+    if (!list.length){
+      body.innerHTML = '<tr><td colspan="13" style="text-align:center;color:var(--text-placeholder);padding:32px 0">暂无数据</td></tr>';
+    } else {
+      body.innerHTML = list.map(function(r){
+        var st = rowStatus(r);
+        return '<tr data-key="' + r.key + '" class="' + (r.key === TRACE.selected ? "is-sel" : "") + '">'
+          + '<td title="' + esc(r.patient) + '">' + esc(r.patient) + '</td>'
+          + '<td>' + esc(r.category) + '</td>'
+          + '<td title="' + esc(r.drugCode) + '">' + esc(r.drugCode) + '</td>'
+          + '<td title="' + esc(r.name) + '">' + esc(r.name) + '</td>'
+          + '<td class="num">' + r.wholeNeed + '</td>'
+          + '<td class="num">' + wholeScanned(r) + '</td>'
+          + '<td class="num">' + r.splitNeed + '</td>'
+          + '<td class="num">' + splitScanned(r) + '</td>'
+          + '<td>' + esc(r.qty) + '</td>'
+          + '<td title="' + esc(r.spec) + '">' + esc(r.spec) + '</td>'
+          + '<td title="' + esc(r.vendor) + '">' + esc(r.vendor) + '</td>'
+          + '<td>' + (r.splitAllowed ? "是" : "否") + '</td>'
+          + '<td><span class="trace-status"><i class="trace-dot ' + st[1] + '"></i>' + st[0] + '</span></td>'
+          + '</tr>';
+      }).join("");
+    }
+
+    var r = selectedTraceRow();
+    var box = $("traceCodes");
+    if (!r || !r.codes.length){
+      box.innerHTML = '<div class="trace-empty">'
+        + '<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2"><rect x="10" y="16" width="44" height="32" rx="4"/><path d="M10 26h44M22 16v10M42 16v10" opacity=".5"/></svg>'
+        + '<span>暂无数据</span></div>';
+    } else {
+      box.innerHTML = r.codes.map(function(c, i){
+        var qtyCell = c.isSplit
+          ? '<input class="qty" type="number" min="1" step="1" data-qty="' + i + '" value="' + intVal(c.qty) + '">'
+          : '<span>' + intVal(c.qty) + '</span>';
+        return '<div class="trace-code-row">'
+          + '<div title="' + esc(c.code) + '">' + esc(c.code) + '</div>'
+          + '<div>' + (c.isSplit ? "是" : "否") + '</div>'
+          + '<div>' + qtyCell + '</div>'
+          + '<div><button class="del" data-del="' + i + '">删除</button></div>'
+          + '</div>';
+      }).join("");
+    }
+
+    var rem = r ? Math.max(0, r.splitNeed - splitScanned(r)) : 0;
+    $("btnSplitFetch").disabled = !r || rem <= 0;
+    $("btnSplitFetch").title = !r ? "请先选择药品" : (rem <= 0 ? "当前药品无需拆零追溯码" : "");
+  }
+
+  function addTraceCode(){
+    var r = selectedTraceRow();
+    if (!r){ toast("请先选择需要录入追溯码的药品"); return; }
+    var code = $("traceInput").value.trim();
+    if (!code){ toast("请输入追溯码"); return; }
+    if (rowComplete(r)){ toast("该药品追溯码已录入完成"); return; }
+    var dup = false;
+    TRACE.rows.forEach(function(row){
+      row.codes.forEach(function(c){ if (c.code === code) dup = true; });
+    });
+    if (dup){ toast("追溯码 " + code + " 已录入"); return; }
+
+    if (wholeScanned(r) < r.wholeNeed){
+      r.codes.push({ code: code, isSplit: false, qty: 1 });
+    } else if (splitScanned(r) < r.splitNeed){
+      r.codes.push({ code: code, isSplit: true, qty: 1 });
+    } else {
+      toast("该药品追溯码已录入完成");
+      return;
+    }
+    $("traceInput").value = "";
+    renderTrace();
+    $("traceInput").focus();
+  }
+
+  function fetchSplitCode(){
+    var r = selectedTraceRow();
+    if (!r){ toast("请先选择药品"); return; }
+    var rem = r.splitNeed - splitScanned(r);
+    if (rem <= 0){ toast("当前药品无需拆零追溯码"); return; }
+    var code = "FZ" + nowStr().replace(/[^0-9]/g, "").slice(-8);
+    var dup = false;
+    TRACE.rows.forEach(function(row){ row.codes.forEach(function(c){ if (c.code === code) dup = true; }); });
+    if (dup) code = code + "A";
+    r.codes.push({ code: code, isSplit: true, qty: rem });
+    renderTrace();
+    toast("已获取拆零追溯码，数量 " + rem);
+  }
+
+  function submitTrace(){
+    var bad = TRACE.rows.filter(function(r){ return !rowComplete(r); });
+    if (bad.length){
+      toast("追溯码录入不完整：" + bad.map(function(r){ return r.name; }).join("、"));
+      return;
+    }
+    var ids = TRACE.rxIds.slice();
+    $("traceMask").classList.remove("show");
+    finishDispense(ids, "已发药 " + ids.length + " 张处方");
+  }
+
+  /* ---------------- 事件绑定 ---------------- */
+  function bind(){
+    $("dispTabs").addEventListener("click", function(e){
+      var t = e.target.closest(".disp-tab");
+      if (t) switchTab(t.getAttribute("data-tab"));
+    });
+
+    $("dispListBody").addEventListener("click", function(e){
+      var ck = e.target.closest("input[data-chk]");
+      if (ck){ toggleCheck(ck.getAttribute("data-chk"), ck.checked); return; }
+      var tr = e.target.closest("tr[data-id]");
+      if (!tr) return;
+      var id = tr.getAttribute("data-id");
+      ST.checked[id] = true;
+      ST.currentId = id;
+      renderAll();
+    });
+
+    $("chkAllList").addEventListener("change", function(){ toggleAll(this.checked); });
+
+    $("btnQuery").onclick = doQuery;
+    $("dispQ").addEventListener("keydown", function(e){ if (e.key === "Enter") doQuery(); });
+    $("dispIdq").addEventListener("keydown", function(e){ if (e.key === "Enter") doQuery(); });
+    $("btnReset").onclick = function(){
+      $("dispQ").value = "";
+      $("dispIdq").value = "";
+      ST.q = ""; ST.idq = ""; ST.checked = {};
+      ST.currentId = firstOrNull();
+      renderAll();
+    };
+
+    $("btnFoldFilter").onclick = function(){
+      ST.filterOpen = !ST.filterOpen;
+      $("dispFilter").classList.toggle("is-hidden", !ST.filterOpen);
+      this.classList.toggle("is-folded", !ST.filterOpen);
+      this.title = ST.filterOpen ? "收起筛选" : "展开筛选";
+    };
+
+    $("dispRange").addEventListener("click", function(){ toast("时间范围选择（演示）"); });
+
+    $("btnDispense").onclick = doDispense;
+
+    $("lnk360").onclick = function(){ toast("正在打开患者 360 视图（演示）"); };
+
+    $("btnCollapse").onclick = function(){
+      ST.infoOpen = !ST.infoOpen;
+      $("dispInfo").classList.toggle("is-folded", !ST.infoOpen);
+      $("collapseText").textContent = ST.infoOpen ? "收起" : "展开";
+      this.classList.toggle("is-folded", !ST.infoOpen);
+    };
+
+    // 审核弹窗
+    $("auditCancel").onclick = closeAudit;
+    $("auditSubmit").onclick = submitAudit;
+    $("auditOpinion").addEventListener("input", function(){ this.classList.remove("is-invalid"); });
+    $("auditMask").addEventListener("click", function(e){ if (e.target === this) closeAudit(); });
+
+    // 追溯码弹窗
+    $("traceAdd").onclick = addTraceCode;
+    $("traceInput").addEventListener("keydown", function(e){
+      if (e.key === "Enter"){ e.preventDefault(); addTraceCode(); }
+    });
+    $("traceQuery").onclick = function(){
+      TRACE.q = $("traceSearch").value;
+      var list = traceFiltered();
+      if (list.length){
+        TRACE.selected = list[0].key;
+      }
+      renderTrace();
+    };
+    $("traceSearch").addEventListener("keydown", function(e){
+      if (e.key === "Enter") $("traceQuery").click();
+    });
+    $("traceBody").addEventListener("click", function(e){
+      var tr = e.target.closest("tr[data-key]");
+      if (!tr) return;
+      TRACE.selected = tr.getAttribute("data-key");
+      renderTrace();
+    });
+    $("traceCodes").addEventListener("click", function(e){
+      var del = e.target.closest("[data-del]");
+      if (del){
+        var r = selectedTraceRow();
+        if (r) r.codes.splice(intVal(del.getAttribute("data-del")), 1);
+        renderTrace();
+      }
+    });
+    $("traceCodes").addEventListener("change", function(e){
+      var inp = e.target.closest("input[data-qty]");
+      if (!inp) return;
+      var r = selectedTraceRow();
+      if (!r) return;
+      var idx = intVal(inp.getAttribute("data-qty"));
+      var c = r.codes[idx];
+      if (!c) return;
+      var other = splitScanned(r) - intVal(c.qty);
+      var max = Math.max(1, r.splitNeed - other);
+      var v = Math.max(1, Math.min(intVal(inp.value), max));
+      c.qty = v;
+      renderTrace();
+    });
+    $("btnSplitFetch").onclick = fetchSplitCode;
+    $("btnTraceOk").onclick = submitTrace;
+    $("btnTraceCancel").onclick = function(){ $("traceMask").classList.remove("show"); };
+    $("traceClose").onclick = function(){ $("traceMask").classList.remove("show"); };
+    $("traceMask").addEventListener("click", function(e){ if (e.target === this) $("traceMask").classList.remove("show"); });
+
+    // 系统栏药房切换
+    $("btnPharmacy").onclick = function(e){
+      e.stopPropagation();
+      $("pharmMenu").classList.toggle("show");
+    };
+    $("pharmMenu").addEventListener("click", function(e){
+      e.stopPropagation();
+      var item = e.target.closest(".header-pharm-item");
+      if (!item) return;
+      var ph = item.getAttribute("data-ph");
+      ST.pharmacy = ph;
+      $("curPharmacy").textContent = ph;
+      $("sideTitle").textContent = "门诊处方发药（" + ph + "）";
+      Array.prototype.forEach.call(this.children, function(el){
+        el.classList.toggle("active", el === item);
+        var chk = el.querySelector(".chk");
+        if (chk) chk.textContent = el === item ? "✓" : "";
+      });
+      this.classList.remove("show");
+      toast("已切换至 " + ph);
+    });
+    document.addEventListener("click", function(){ $("pharmMenu").classList.remove("show"); });
+
+    $("btnSideClose").onclick = function(){ location.href = "drug-catalog.html"; };
+
+    $("dispDlgCancel").onclick = closeDialog;
+    $("dispDlgOk").onclick = function(){
+      var fn = dlgOk;
+      closeDialog();
+      if (fn) fn();
+    };
+    $("dispMask").addEventListener("click", function(e){
+      if (e.target === this) closeDialog();
+    });
+
+    document.addEventListener("keydown", function(e){
+      if (e.altKey && !e.ctrlKey && !e.metaKey && (e.key || "").toLowerCase() === "s"){
+        e.preventDefault();
+        if ($("traceMask").classList.contains("show")){ submitTrace(); return; }
+        doDispense();
+      }
+      if (e.key === "Escape"){
+        if ($("traceMask").classList.contains("show")) $("traceMask").classList.remove("show");
+        else if ($("auditMask").classList.contains("show")) closeAudit();
+        else if ($("dispMask").classList.contains("show")) closeDialog();
+      }
+    });
+  }
+
+  /* ---------------- 初始化 ---------------- */
+  ST.currentId = firstOrNull();
+  if (ST.currentId) ST.checked[ST.currentId] = true;
+  bind();
+  renderAll();
+})();
+</script>
+
+
+  <script src="nav.js"></script>
+</body></html>

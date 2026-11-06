@@ -1,0 +1,1533 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>药品目录管理 · 中心药房</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ========== 顶部导航 ========== -->
+<header class="app-header">
+  <div class="header-left">
+    <div class="header-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3.2" y="9.4" width="17.6" height="5.2" rx="2.6" transform="rotate(-45 12 12)"/>
+        <path d="M8.4 15.6L15.6 8.4"/>
+      </svg>
+    </div>
+    <div class="header-title">区域药房协同管理系统</div>
+  </div>
+  <div class="header-right">
+    <button class="header-icon" title="通知">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+        <path d="M13.7 21a2 2 0 0 1-3.4 0"/>
+      </svg>
+    </button>
+    <div class="header-user">
+      <div class="header-avatar">张</div>
+      <span class="header-user-name">张明远</span>
+    </div>
+  </div>
+</header>
+
+<div class="app-body">
+  <!-- ========== 左侧导航 ========== -->
+  <aside class="app-side" id="appSide"></aside>
+<!-- ========== 主区域 ========== -->
+  <main class="app-main">
+    <div class="tabbar">
+      <div class="tab" data-nav="首页">首页</div>
+      <div class="tab active">
+        药品目录管理
+        <button class="tab-close" title="关闭">
+          <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+            <path d="M5 5l14 14M19 5L5 19"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="page">
+      <!-- 标题行：左侧页面标题 + 右侧操作按钮 -->
+      <div class="page-head">
+        <h1 class="page-title">药品目录管理</h1>
+        <div class="page-acts">
+          <button class="btn btn-primary" id="btnAdd">新增药品</button>
+        </div>
+      </div>
+
+      <div class="page-body">
+        <!-- ---------- 左栏：筛选 + 药品列表 ---------- -->
+        <section class="lbar">
+          <div class="lfilter">
+            <input class="input" id="kw" placeholder="药品名称 / 编码 / 拼音码" autocomplete="off">
+            <div class="lfilter-row">
+              <select class="select" id="kind">
+                <option value="">全部种类</option>
+              </select>
+              <select class="select" id="status">
+                <option value="">全部状态</option>
+                <option value="on">启用</option>
+                <option value="off">停用</option>
+              </select>
+            </div>
+            <div class="lfilter-acts">
+              <button class="btn btn-sm" id="btnReset">重置</button>
+              <button class="btn btn-primary btn-sm" id="btnSearch">查询</button>
+            </div>
+          </div>
+
+          <div class="llist" id="drugList"></div>
+          <div class="pager">
+            <span id="pagerInfo">共 0 条</span>
+            <span class="pager-ctrl">
+              <button class="pager-btn" id="prevPage" title="上一页">
+                <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M15 6l-6 6 6 6"/>
+                </svg>
+              </button>
+              <span class="pager-num" id="pagerNum">1</span>
+              <button class="pager-btn" id="nextPage" title="下一页">
+                <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M9 6l6 6-6 6"/>
+                </svg>
+              </button>
+            </span>
+          </div>
+        </section>
+
+        <!-- ---------- 右栏：药品详情 ---------- -->
+        <section class="rbar" id="detail"></section>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ========== 规格详情抽屉 ========== -->
+<div class="drawer-mask" id="drawerMask"></div>
+<aside class="drawer" id="drawer">
+  <div class="drawer-head">
+    <span class="drawer-title" id="drawerTitle">规格详情</span>
+    <button class="drawer-close" id="drawerClose" title="关闭">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <path d="M5 5l14 14M19 5L5 19"/>
+      </svg>
+    </button>
+  </div>
+  <div class="drawer-body" id="drawerBody"></div>
+  <div class="drawer-foot" id="drawerFoot"></div>
+</aside>
+
+<!-- ========== 通用弹窗容器 ========== -->
+<div class="modal-mask" id="modalMask"></div>
+
+<!-- ========== Toast ========== -->
+<div class="toast" id="toast">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M20 6L9 17l-5-5"/>
+  </svg>
+  <span id="toastText"></span>
+</div>
+
+<script src="mock.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  var PAGE_SIZE = 5;
+  var state = { keyword: "", kind: "", status: "", page: 1, activeId: "" };
+  var filtered = [];
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  /* ---------------- 初始化 ---------------- */
+  function loadPendingDrugs() {
+    var pending = [];
+    try {
+      pending = JSON.parse(sessionStorage.getItem("pendingDrugs") || "[]");
+    } catch (e) {
+      pending = [];
+    }
+    if (!pending.length) return;
+
+    pending.forEach(function (d) {
+      if (MOCK.drugs.some(function (x) { return x.code === d.code; })) return;
+      if (d.insClass && d.insClass !== "—") {
+        MOCK.insMap[d.id] = { leaf: d.insClass, path: d.insClass };
+      }
+      MOCK.drugs.unshift(d);
+    });
+
+    sessionStorage.removeItem("pendingDrugs");
+    sessionStorage.removeItem("pendingDrugsIns");
+    MOCK.total = MOCK.drugs.length;
+  }
+
+  function init() {
+    loadPendingDrugs();
+
+    MOCK.kinds.forEach(function (k) {
+      var o = document.createElement("option");
+      o.value = k; o.textContent = k;
+      $("kind").appendChild(o);
+    });
+
+    var first = MOCK.drugs[0];
+    state.activeId = first.id;
+
+    bindEvents();
+    doSearch(false);
+  }
+
+  /* ---------------- 筛选 + 列表 ---------------- */
+  function doSearch(resetPage) {
+    if (resetPage) state.page = 1;
+    state.keyword = $("kw").value.trim();
+    state.kind = $("kind").value;
+    state.status = $("status").value;
+
+    var kw = state.keyword.toLowerCase();
+    filtered = MOCK.drugs.filter(function (d) {
+      var hitKw = !kw ||
+        d.name.toLowerCase().indexOf(kw) > -1 ||
+        d.code.indexOf(kw) > -1 ||
+        d.py.toLowerCase().indexOf(kw) > -1;
+      var hitKind = !state.kind || d.kind === state.kind;
+      var hitStatus = !state.status || d.status === state.status;
+      return hitKw && hitKind && hitStatus;
+    });
+
+    var pages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+    if (state.page > pages) state.page = pages;
+
+    // 当前选中项若不在结果内，自动选中第一条
+    var exists = filtered.some(function (d) { return d.id === state.activeId; });
+    if (!exists && filtered.length) state.activeId = filtered[0].id;
+
+    renderList();
+    renderDetail();
+  }
+
+  function renderList() {
+    var box = $("drugList");
+    var start = (state.page - 1) * PAGE_SIZE;
+    var rows = filtered.slice(start, start + PAGE_SIZE);
+
+    if (!rows.length) {
+      box.innerHTML = '<div class="empty">没有符合条件的药品</div>';
+    } else {
+      box.innerHTML = rows.map(function (d) {
+        var active = d.id === state.activeId ? " active" : "";
+        var off = d.status === "off" ? " is-off" : "";
+        var dotCls = d.status === "on" ? "on" : "off";
+        return '<div class="drug-item' + active + off + '" data-id="' + d.id + '">' +
+          '<span class="dot ' + dotCls + '" title="' + (d.status === 'on' ? '启用' : '停用') + '"></span>' +
+          '<span class="di-name" title="' + d.name + '">' + d.name + '</span>' +
+          '<button class="di-more" data-id="' + d.id + '" title="更多操作">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">' +
+              '<circle cx="5" cy="12" r="1.2" fill="currentColor" stroke="none"/>' +
+              '<circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none"/>' +
+              '<circle cx="19" cy="12" r="1.2" fill="currentColor" stroke="none"/>' +
+            '</svg>' +
+          '</button>' +
+        '</div>';
+      }).join("");
+    }
+
+    // 分页
+    var pages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+    $("pagerInfo").textContent = "共 " + filtered.length + " 条";
+    $("pagerNum").textContent = state.page + " / " + pages;
+    $("prevPage").disabled = state.page <= 1;
+    $("nextPage").disabled = state.page >= pages;
+  }
+
+  /* ---------------- 右栏详情 ---------------- */
+  function renderDetail() {
+    var drug = MOCK.drugs.filter(function (d) { return d.id === state.activeId; })[0];
+    var box = $("detail");
+
+    if (!drug) {
+      box.innerHTML = '<div class="empty">请在左侧选择药品</div>';
+      return;
+    }
+
+    var tradeName = MOCK.tradeNames[drug.id];
+    var drugName = tradeName ? drug.name + "（" + tradeName + "）" : drug.name;
+    var ins = (MOCK.insMap && MOCK.insMap[drug.id]) || null;
+
+    var kv = [
+      ["品种编码", drug.code, true],
+      ["品种名称", drug.name, false],
+      ["药品名称", drugName, false],
+      ["药品拼音码", drug.py, true],
+      ["药品英文名", drug.en, false],
+      ["药品种类", drug.kind, false],
+      ["药品分类", drug.category, false],
+      ["剂型", drug.form, false],
+      ["医保药品分类", ins ? ins.leaf : drug.insClass, false, ins ? ins.path : ""],
+      ["DDD", drug.ddd ? drug.ddd + " " + drug.dddUnit : "—", false]
+    ];
+
+    var kvHtml = kv.map(function (item) {
+      return '<div class="kv"><span class="kv-label">' + item[0] + '：</span>' +
+        '<span class="kv-value' + (item[2] ? " mono" : "") + '" title="' + (item[3] || item[1]) + '">' + item[1] + '</span></div>';
+    }).join("");
+
+    var tagsHtml = buildMarks(drug.marks).map(function (t) {
+      return '<span class="tag ' + (t.on ? "is-on" : "is-off") + '">' + t.t + '</span>';
+    }).join("");
+
+    var specsHtml = drug.specs.length
+      ? drug.specs.map(function (s, i) { return specCard(s, drug, i); }).join("")
+      : '<div class="spec-empty">暂无药品规格，点击右上角「新增药品规格」创建。</div>';
+
+    box.innerHTML =
+      /* 基本信息 */
+      '<section class="block">' +
+        '<div class="block-head">' +
+          '<h2 class="block-title">基本信息</h2>' +
+          '<div class="block-acts">' +
+            '<button class="btn btn-sm" data-act="toggle">' + (drug.status === "on" ? "停用" : "启用") + '</button>' +
+            '<button class="btn btn-sm" data-act="edit">编辑</button>' +
+            '<button class="btn btn-sm btn-danger-text" data-act="delete">删除</button>' +
+          '</div>' +
+        '</div>' +
+        '<div class="kv-grid">' + kvHtml + '</div>' +
+      '</section>' +
+
+      /* 特殊药品标识 */
+      '<section class="block">' +
+        '<div class="block-head">' +
+          '<h2 class="block-title">特殊药品标识</h2>' +
+        '</div>' +
+        '<div class="tag-group">' + tagsHtml + '</div>' +
+      '</section>' +
+
+      /* 药品规格 */
+      '<section class="block">' +
+        '<div class="block-head">' +
+          '<h2 class="block-title">药品规格 <span class="count">' + drug.specs.length + ' 个</span></h2>' +
+          '<div class="block-acts">' +
+            '<button class="btn btn-sm" data-act="add-spec">新增药品规格</button>' +
+          '</div>' +
+        '</div>' +
+        '<div class="spec-grid">' + specsHtml + '</div>' +
+      '</section>';
+  }
+
+  /* 特殊药品标识：固定 10 项，全量展示；带级别的用「·级别」后缀 */
+  function buildMarks(m) {
+    return [
+      { t: m.spirit ? "精神药品·" + m.spirit : "精神药品", on: !!m.spirit },
+      { t: "毒性药品", on: m.toxic },
+      { t: "麻醉药品", on: m.narcotic },
+      { t: m.antibiotic ? "抗菌药物·" + m.antibiotic : "抗菌药物", on: !!m.antibiotic },
+      { t: m.antitumor ? "抗肿瘤药物·" + m.antitumor : "抗肿瘤药物", on: !!m.antitumor },
+      { t: m.highAlert ? "高警示药品 " + m.highAlert + " 级" : "高警示药品", on: !!m.highAlert },
+      { t: m.allergy.length ? "过敏药物·" + m.allergy.join("/") : "过敏药物", on: m.allergy.length > 0 },
+      { t: "皮试", on: m.skinTest },
+      { t: "长处方", on: m.longTerm },
+      { t: "OTC", on: m.otc }
+    ];
+  }
+
+  /* 演示用：由批准文号派生稳定的药品编码（正式环境由主数据系统同步回填） */
+  function vendorCode(v) {
+    if (v.drugCode) return v.drugCode;
+    var digits = (v.approval || "").replace(/\D/g, "");
+    if (!digits) return "—";
+    return "8690" + ("00000000" + digits).slice(-8);
+  }
+
+  /* 规格卡片：标题 + 基药标识；品规编码；厂商列表；底部操作行（开关+状态 | 详情 编辑 删除） */
+  function specCard(spec, drug, si) {
+    var off = spec.status === "off";
+
+    var vendHtml = spec.vendors.map(function (v) {
+      return '<div class="vend">' +
+        '<div class="vend-name" title="' + v.name + '">' + v.name + '</div>' +
+        '<div class="vend-meta">药品编码 ' + vendorCode(v) + ' · 批准文号 ' + v.approval + '</div>' +
+      '</div>';
+    }).join("");
+
+    var flags = "";
+    if (spec.essential) flags += '<span class="flag flag-essential">基药</span>';
+
+    return '<article class="spec-card' + (off ? " is-off" : "") + '">' +
+      '<div class="sc-top">' +
+        '<h3 class="sc-title">' + spec.title + '</h3>' +
+        (flags ? '<span class="sc-flags">' + flags + '</span>' : "") +
+      '</div>' +
+      '<div class="sc-code">品规编码 <span class="code">' + spec.code + '</span></div>' +
+      '<div class="sc-vend">' +
+        '<div class="sc-vend-head"><span>厂商 <b>' + spec.vendors.length + '</b> 家</span></div>' +
+        '<div class="sc-vend-list">' + vendHtml + '</div>' +
+      '</div>' +
+      '<div class="sc-foot">' +
+        '<label class="sc-status" title="点击切换规格状态">' +
+          '<span class="switch">' +
+            '<input type="checkbox" data-si="' + si + '"' + (off ? "" : " checked") + '>' +
+            '<span class="track"></span>' +
+          '</span>' +
+          '<span class="sc-status-text">' + (off ? "已停用" : "启用中") + '</span>' +
+        '</label>' +
+        '<span class="sc-actions">' +
+          '<button class="link-btn" data-act="spec-detail" data-si="' + si + '">详情</button>' +
+          '<button class="link-btn" data-act="spec-edit" data-si="' + si + '">编辑</button>' +
+          '<button class="link-btn is-danger" data-act="spec-delete" data-si="' + si + '">删除</button>' +
+        '</span>' +
+      '</div>' +
+    '</article>';
+  }
+
+  /* ---------------- 规格详情抽屉（880px 只读） ---------------- */
+  function vendorReadHtml(v, vi) {
+    return '<div class="vendor-item">' +
+      '<div class="vi-head"><span class="vi-name" title="' + esc(v.name) + '">' + esc(v.name) + '</span></div>' +
+      '<div class="eg-grid">' +
+        egRead("药品编码", v.drugCode, true) +
+        egRead("国家药品名称", v.nationalName) +
+        egRead("国家药品ID", v.nationalId, true) +
+        egRead("批准文号", v.approval, true) +
+        egRead("本位码", v.standardCode, true) +
+        egRead("进药价格", v.price ? v.price + " 元" : "—") +
+        egRead("进口标识", v.imported) +
+        egRead("集采标识", v.centralized ? "是" : "否") +
+        egRead("集采类别", v.centralized ? v.centralType : "—") +
+        egRead("采购类型", v.purchaseType) +
+        egRead("国谈标识", v.negotiated ? "是" : "否") +
+        egRead("医保标识", v.ins ? "是" : "否") +
+        egRead("医保药品代码", v.ins ? v.insCode : "—") +
+      '</div>' +
+    '</div>';
+  }
+
+  function openDrawer(si) {
+    var drug = activeDrug();
+    if (!drug) return;
+    var spec = drug.specs[si];
+    if (!spec) return;
+    closeCascader();
+
+    var d = specDraft(drug, spec);
+
+    $("drawerTitle").textContent = "规格详情";
+    $("drawer").className = "drawer is-wide";
+    $("drawerBody").innerHTML =
+      '<div class="drawer-section">' +
+        '<div class="drawer-section-title">规格属性</div>' +
+        '<div class="eg-grid">' +
+          egRead("品规编码", d.code, true) +
+          egRead("药品规格", d.title) +
+          egRead("制剂规格", d.formSpec) +
+          egRead("基本剂量", d.basicDose) +
+          egRead("剂量单位", d.doseUnit) +
+          egRead("制剂单位", d.prepUnit) +
+          egRead("最小换算系数", d.minFactor) +
+          egRead("包装规格", d.pkgSpec) +
+          egRead("最小包装单位", d.minPkgUnit) +
+          egRead("包装系数", d.pkgFactor) +
+          egRead("包装单位", d.pkgUnit) +
+          egRead("包装材质", d.material) +
+          egRead("基药标识", d.essential ? "是" : "否") +
+          egRead("允许拆零", d.splitOn ? "是" : "否") +
+          egRead("拆零-发药单位", d.splitOn ? d.splitUnit : "—") +
+          egRead("拆零-发药系数", d.splitOn ? d.splitFactor : "—") +
+        '</div>' +
+      '</div>' +
+      '<div class="drawer-section">' +
+        '<div class="drawer-section-title"><span>生产企业（' + d.vendors.length + '）</span></div>' +
+        (d.vendors.length
+          ? d.vendors.map(function (v, vi) { return vendorReadHtml(v, vi); }).join("")
+          : '<div class="vi-none">暂无生产企业</div>') +
+      '</div>';
+
+    $("drawerFoot").innerHTML =
+      '<button class="btn" data-dact="close">关闭</button>' +
+      '<button class="btn btn-primary" data-dact="spec-edit" data-si="' + si + '">编辑规格</button>';
+    document.body.classList.add("drawer-open");
+  }
+
+  function closeDrawer(force) {
+    if (!force && editState && editState.type === "create-spec") {
+      syncSpecDraft();
+      if (newSpecDirty(editState.draft)) {
+        confirmDialog({
+          title: "放弃新增规格",
+          text: "当前已填写内容，关闭后将丢失。确认放弃本次新增？",
+          okText: "放弃",
+          onOk: function () { closeDrawer(true); }
+        });
+        return;
+      }
+    }
+    closeCascader();
+    editState = null;
+    document.body.classList.remove("drawer-open");
+  }
+
+  /* ================= 编辑基本信息 / 编辑规格信息 抽屉 ================= */
+  var editState = null;
+
+  var EG_FLAGS = [
+    { key: "spirit",     name: "精神药品",   levels: ["第一类", "第二类"] },
+    { key: "toxic",      name: "毒性药品" },
+    { key: "narcotic",   name: "麻醉药品" },
+    { key: "antibiotic", name: "抗菌药物",   levels: ["非限制使用级", "限制使用级", "特殊使用级"] },
+    { key: "antitumor",  name: "抗肿瘤药物", levels: ["非限制使用级", "限制使用级"] },
+    { key: "highAlert",  name: "高警示药品", levels: ["A 级", "B 级", "C 级"] },
+    { key: "allergy",    name: "过敏药物",   levels: ["青霉素类", "头孢菌素类", "磺胺类", "其他"] },
+    { key: "skinTest",   name: "是否皮试" },
+    { key: "longTerm",   name: "长处方" },
+    { key: "otc",        name: "OTC" }
+  ];
+
+  function esc(s) {
+    return String(s === null || s === undefined ? "" : s)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+
+  function activeDrug() {
+    return MOCK.drugs.filter(function (d) { return d.id === state.activeId; })[0];
+  }
+
+  /* 单元格：label 在左、值在右 */
+  function egCell(label, inner, cls) {
+    return '<div class="eg-field' + (cls ? " " + cls : "") + '">' +
+      '<span class="eg-label">' + label + '</span>' + inner + '</div>';
+  }
+
+  function egRead(label, val, mono, cls) {
+    var v = (val === null || val === undefined || val === "") ? "—" : String(val);
+    return egCell(label, '<span class="eg-val' + (mono ? " mono" : "") + '" title="' + esc(v) + '">' + esc(v) + '</span>', cls);
+  }
+
+  function egInput(label, val, ph, attr, dis, cls) {
+    return egCell(label,
+      '<input class="input" value="' + esc(val || "") + '" placeholder="' + esc(ph || "") + '"' + attr + (dis ? " disabled" : "") + '>', cls);
+  }
+
+  function egSelect(label, val, opts, attr, dis, cls) {
+    return egCell(label,
+      '<select class="select"' + attr + (dis ? " disabled" : "") + '>' +
+        opts.map(function (o) {
+          return '<option' + (o === val ? " selected" : "") + '>' + o + '</option>';
+        }).join("") + '</select>', cls);
+  }
+
+  function egSwitch(label, on, attr, cls) {
+    return egCell(label,
+      '<label class="switch"><input type="checkbox"' + (on ? " checked" : "") + attr + '><span class="track"></span></label>', cls);
+  }
+
+  /* ---------- 抽屉 A：编辑基本信息 ---------- */
+  function flagState(m, f) {
+    if (f.key === "allergy") return { on: !!(m.allergy && m.allergy.length), lv: (m.allergy && m.allergy[0]) || "" };
+    if (f.key === "highAlert") return { on: !!m.highAlert, lv: m.highAlert ? m.highAlert + " 级" : "" };
+    var v = m[f.key];
+    return { on: !!v, lv: typeof v === "string" ? v : "" };
+  }
+
+  function egFlagCell(f, m) {
+    var st = flagState(m, f);
+    var tail = f.levels
+      ? '<select class="select ff-level" data-eflv="' + f.key + '"' + (st.on ? "" : " disabled") + '>' +
+          f.levels.map(function (l) {
+            return '<option' + (l === st.lv ? " selected" : "") + '>' + l + '</option>';
+          }).join("") + '</select>'
+      : '<span class="eg-flag-gap"></span>';
+    return '<div class="flag-cell' + (st.on ? " is-on" : "") + '" data-efcell="' + f.key + '">' +
+      '<span class="flag-name">' + f.name + '</span>' +
+      '<label class="switch"><input type="checkbox" data-ef="' + f.key + '"' + (st.on ? " checked" : "") + '><span class="track"></span></label>' +
+      tail + '</div>';
+  }
+
+  function openEditBasic() {
+    var drug = activeDrug();
+    if (!drug) return;
+    closeCascader();
+    editState = { type: "basic", drug: drug };
+
+    var trade = MOCK.tradeNames[drug.id];
+    var drugName = trade ? drug.name + "（" + trade + "）" : drug.name;
+    var ins = (MOCK.insMap && MOCK.insMap[drug.id]) || null;
+
+    $("drawerTitle").textContent = "编辑基本信息";
+    $("drawer").className = "drawer is-edit";
+    $("drawerBody").innerHTML =
+      '<div class="drawer-section">' +
+        '<div class="drawer-section-title">基本信息</div>' +
+        '<div class="eg-grid">' +
+          egRead("品种编码", drug.code, true) +
+          egRead("品种名称", drug.name) +
+          egRead("药品名称", drugName) +
+          egRead("药品拼音码", drug.py, true) +
+          egRead("药品种类", drug.kind) +
+          egRead("药品分类", drug.category) +
+          egRead("剂型", drug.form) +
+          egInput("药品英文名", drug.en === "—" ? "" : drug.en, "如：Amoxicillin Capsules", ' data-ek="en"') +
+          egCell("医保药品分类",
+            '<input class="input casc-input" id="e_ins" readonly value="' + esc(ins ? ins.leaf : (drug.insClass || "")) +
+            '" title="' + esc(ins ? ins.path : "") + '" placeholder="点击选择">') +
+          egCell("DDD",
+            '<div class="input-pair">' +
+              '<input class="input" data-ek="ddd" value="' + esc(drug.ddd) + '" placeholder="值">' +
+              '<select class="select" data-ek="dddUnit">' +
+                ["g", "mg", "ml", "IU"].map(function (u) {
+                  return '<option' + (u === drug.dddUnit ? " selected" : "") + '>' + u + '</option>';
+                }).join("") +
+              '</select></div>') +
+        '</div>' +
+      '</div>' +
+      '<div class="drawer-section">' +
+        '<div class="drawer-section-title">特殊药品标识</div>' +
+        '<div class="eg-flag-grid">' +
+          EG_FLAGS.map(function (f) { return egFlagCell(f, drug.marks); }).join("") +
+        '</div>' +
+      '</div>';
+    $("drawerFoot").innerHTML =
+      '<button class="btn" data-dact="edit-cancel">取消</button>' +
+      '<button class="btn btn-primary" data-dact="edit-save">保存</button>';
+    document.body.classList.add("drawer-open");
+  }
+
+  function saveEditBasic() {
+    var es = editState;
+    if (!es || es.type !== "basic") return;
+    var drug = es.drug;
+    var body = $("drawerBody");
+
+    drug.en = body.querySelector('[data-ek="en"]').value.trim() || "—";
+    drug.ddd = body.querySelector('[data-ek="ddd"]').value.trim();
+    drug.dddUnit = body.querySelector('[data-ek="dddUnit"]').value;
+
+    var insEl = body.querySelector("#e_ins");
+    var leaf = insEl.value.trim();
+    if (leaf) {
+      drug.insClass = leaf;
+      MOCK.insMap[drug.id] = { leaf: leaf, path: insEl.title || leaf };
+    }
+
+    EG_FLAGS.forEach(function (f) {
+      var on = body.querySelector('[data-ef="' + f.key + '"]').checked;
+      var lvEl = body.querySelector('[data-eflv="' + f.key + '"]');
+      var lv = lvEl ? lvEl.value : "";
+      if (f.key === "allergy") drug.marks.allergy = on ? [lv] : [];
+      else if (f.key === "highAlert") drug.marks.highAlert = on ? lv.replace(/\s*级$/, "") : "";
+      else if (f.levels) drug.marks[f.key] = on ? lv : "";
+      else drug.marks[f.key] = on;
+    });
+
+    closeDrawer();
+    renderList();
+    renderDetail();
+    toast("修改成功");
+  }
+
+  /* ---------- 抽屉 B：编辑规格信息（含生产企业） ---------- */
+  function vendorOf(name) {
+    return (MOCK.vendors || []).filter(function (m) { return m.name === name; })[0] || null;
+  }
+
+  function specDraft(drug, spec) {
+    return {
+      code: spec.code || "",
+      title: spec.title || "",
+      formSpec: spec.formSpec || "",
+      basicDose: spec.basicDose || "",
+      doseUnit: spec.doseUnit || "",
+      prepUnit: spec.prepUnit || "",
+      minFactor: spec.minFactor || spec.factor || "",
+      pkgSpec: spec.pkgSpec || "",
+      minPkgUnit: spec.minPkgUnit || "",
+      pkgFactor: spec.pkgFactor || "",
+      pkgUnit: spec.pkgUnit || "",
+      material: spec.pkgMaterial || spec.material || "",
+      essential: spec.essential !== undefined ? !!spec.essential : !!(drug.marks && drug.marks.essential),
+      splitOn: !!(spec.splitUnit && spec.splitUnit !== "—"),
+      splitUnit: (spec.splitUnit && spec.splitUnit !== "—") ? spec.splitUnit : "",
+      splitFactor: (spec.splitFactor && spec.splitFactor !== "—") ? spec.splitFactor : "",
+      vendors: (spec.vendors || []).map(function (v) {
+        var m = vendorOf(v.name) || {};
+        var purchase = v.purchase || "";
+        var centralType = /集采/.test(purchase) ? (purchase.indexOf("国家") > -1 ? "国家集采" : "省集采") : "";
+        return {
+          name: v.name,
+          drugCode: vendorCode(v),
+          nationalName: m.nationalName || "—",
+          nationalId: m.nationalId || "—",
+          approval: v.approval || "—",
+          standardCode: m.standardCode || "—",
+          price: v.price || "",
+          imported: v.imported || "否",
+          centralized: !!centralType,
+          centralType: centralType || "国家集采",
+          purchaseType: purchase || "阳光采购",
+          negotiated: !!v.negotiated,
+          ins: v.ins === undefined ? true : !!v.ins,
+          insCode: v.insCode || spec.insCode || ""
+        };
+      })
+    };
+  }
+
+  function vendorEditHtml(v, vi) {
+    var at = ' data-vi="' + vi + '" data-vk="';
+    return '<div class="vendor-item is-editing">' +
+      '<div class="vi-head">' +
+        '<span class="vi-name" title="' + esc(v.name) + '">' + esc(v.name) + '</span>' +
+        '<button class="link-btn is-danger" data-eact="del-vendor" data-vi="' + vi + '">删除</button>' +
+      '</div>' +
+      '<div class="eg-grid">' +
+        egRead("药品编码", v.drugCode, true) +
+        egRead("国家药品名称", v.nationalName) +
+        egRead("国家药品ID", v.nationalId, true) +
+        egRead("批准文号", v.approval, true) +
+        egRead("本位码", v.standardCode, true) +
+        egInput("进药价格", v.price, "如：12.50", at + 'price"') +
+        egRead("进口标识", v.imported) +
+        egSwitch("集采标识", v.centralized, at + 'centralized"') +
+        egSelect("集采类别", v.centralType, ["国家集采", "省集采"], at + 'centralType"', !v.centralized) +
+        egSelect("采购类型", v.purchaseType, ["国家集中采购", "省级集中采购", "阳光采购", "挂网采购"], at + 'purchaseType"') +
+        egSwitch("国谈标识", v.negotiated, at + 'negotiated"') +
+        egSwitch("医保标识", v.ins, at + 'ins"') +
+        egInput("医保药品代码", v.insCode, "如：XJ01CA0401010101032", at + 'insCode"', !v.ins) +
+      '</div>' +
+    '</div>';
+  }
+
+  var DOSE_UNITS = ["g", "mg", "ml", "IU"];
+  var SPLIT_UNITS = ["片", "粒", "袋", "ml", "g"];
+
+  function newSpecDraft(drug) {
+    return {
+      code: "—",
+      title: "", formSpec: "", basicDose: "", doseUnit: "g", prepUnit: "",
+      minFactor: "", pkgSpec: "", minPkgUnit: "", pkgFactor: "", pkgUnit: "", material: "",
+      essential: !!(drug.marks && drug.marks.essential),
+      splitOn: false, splitUnit: "", splitFactor: "",
+      vendors: []
+    };
+  }
+
+  function newSpecDirty(d) {
+    if (!d) return false;
+    if (d.vendors && d.vendors.length) return true;
+    return !!(d.title || d.formSpec || d.basicDose || d.prepUnit || d.minFactor ||
+      d.pkgSpec || d.minPkgUnit || d.pkgFactor || d.pkgUnit || d.material ||
+      d.splitUnit || d.splitFactor);
+  }
+
+  function specSectionsHtml(d, editable) {
+    var R = '<span class="req">*</span>';
+    var attrGrid = editable
+      ? egRead("品规编码", d.code || "—", true) +
+        egInput(R + "药品规格", d.title, "如：0.25g * 24粒/盒", ' data-sk="title"') +
+        egInput("制剂规格", d.formSpec, "如：0.25g", ' data-sk="formSpec"') +
+        egInput(R + "基本剂量", d.basicDose, "如：0.25", ' data-sk="basicDose"') +
+        egSelect(R + "剂量单位", d.doseUnit || "g", DOSE_UNITS, ' data-sk="doseUnit"') +
+        egInput(R + "制剂单位", d.prepUnit, "如：粒", ' data-sk="prepUnit"') +
+        egInput(R + "最小换算系数", d.minFactor, "如：24", ' data-sk="minFactor"') +
+        egInput(R + "包装规格", d.pkgSpec, "如：24粒/盒", ' data-sk="pkgSpec"') +
+        egInput(R + "最小包装单位", d.minPkgUnit, "如：盒", ' data-sk="minPkgUnit"') +
+        egInput(R + "包装系数", d.pkgFactor, "如：1", ' data-sk="pkgFactor"') +
+        egInput(R + "包装单位", d.pkgUnit, "如：盒", ' data-sk="pkgUnit"') +
+        egInput("包装材质", d.material, "如：铝塑泡罩", ' data-sk="material"') +
+        egSwitch("基药标识", d.essential, ' data-sk="essential"') +
+        egSwitch("允许拆零", d.splitOn, ' data-sk="splitOn"') +
+        egSelect("拆零-发药单位", d.splitUnit, SPLIT_UNITS, ' data-sk="splitUnit"', !d.splitOn) +
+        egInput("拆零-发药系数", d.splitFactor, "正整数", ' data-sk="splitFactor"', !d.splitOn)
+      : egRead("品规编码", d.code, true) +
+        egRead("药品规格", d.title) +
+        egRead("制剂规格", d.formSpec) +
+        egRead("基本剂量", d.basicDose) +
+        egRead("剂量单位", d.doseUnit) +
+        egRead("制剂单位", d.prepUnit) +
+        egRead("最小换算系数", d.minFactor) +
+        egRead("包装规格", d.pkgSpec) +
+        egRead("最小包装单位", d.minPkgUnit) +
+        egRead("包装系数", d.pkgFactor) +
+        egRead("包装单位", d.pkgUnit) +
+        egRead("包装材质", d.material) +
+        egSwitch("基药标识", d.essential, ' data-sk="essential"') +
+        egSwitch("允许拆零", d.splitOn, ' data-sk="splitOn"') +
+        egSelect("拆零-发药单位", d.splitUnit, SPLIT_UNITS, ' data-sk="splitUnit"', !d.splitOn) +
+        egInput("拆零-发药系数", d.splitFactor, "正整数", ' data-sk="splitFactor"', !d.splitOn);
+
+    var vendorHtml = d.vendors.length
+      ? d.vendors.map(function (v, vi) { return vendorEditHtml(v, vi); }).join("")
+      : '<div class="vi-none">暂无生产企业</div>';
+
+    return '<div class="drawer-section">' +
+        '<div class="drawer-section-title">规格属性</div>' +
+        '<div class="eg-grid">' + attrGrid + '</div>' +
+      '</div>' +
+      '<div class="drawer-section">' +
+        '<div class="drawer-section-title">' +
+          '<span><span class="req">*</span>生产企业（' + d.vendors.length + '）</span>' +
+          '<button class="btn btn-sm add-vendor-btn" data-eact="add-vendor">新增生产企业</button>' +
+        '</div>' +
+        vendorHtml +
+      '</div>';
+  }
+
+  function renderEditSpec() {
+    var es = editState;
+    if (!es || (es.type !== "spec" && es.type !== "create-spec")) return;
+    $("drawerBody").innerHTML = specSectionsHtml(es.draft, es.type === "create-spec");
+  }
+
+  function openCreateSpec() {
+    var drug = activeDrug();
+    if (!drug) return;
+    closeCascader();
+    editState = { type: "create-spec", drug: drug, draft: newSpecDraft(drug) };
+    $("drawerTitle").textContent = "新增药品规格";
+    $("drawer").className = "drawer is-edit";
+    $("drawerFoot").innerHTML =
+      '<button class="btn" data-dact="edit-cancel">取消</button>' +
+      '<button class="btn btn-primary" data-dact="edit-save">保存</button>';
+    renderEditSpec();
+    document.body.classList.add("drawer-open");
+  }
+
+  function openEditSpec(si) {
+    var drug = activeDrug();
+    if (!drug) return;
+    var spec = drug.specs[si];
+    if (!spec) return;
+    closeCascader();
+    editState = { type: "spec", drug: drug, si: si, draft: specDraft(drug, spec) };
+    $("drawerTitle").textContent = "编辑规格信息";
+    $("drawer").className = "drawer is-edit";
+    $("drawerFoot").innerHTML =
+      '<button class="btn" data-dact="edit-cancel">取消</button>' +
+      '<button class="btn btn-primary" data-dact="edit-save">保存</button>';
+    renderEditSpec();
+    document.body.classList.add("drawer-open");
+  }
+
+  function syncSpecDraft() {
+    var es = editState;
+    if (!es || (es.type !== "spec" && es.type !== "create-spec")) return;
+    var body = $("drawerBody");
+    var d = es.draft;
+
+    ["title", "formSpec", "basicDose", "doseUnit", "prepUnit", "minFactor",
+      "pkgSpec", "minPkgUnit", "pkgFactor", "pkgUnit", "material"].forEach(function (k) {
+      var el = body.querySelector('[data-sk="' + k + '"]');
+      if (el) d[k] = el.value.trim();
+    });
+
+    var ess = body.querySelector('[data-sk="essential"]');
+    var spl = body.querySelector('[data-sk="splitOn"]');
+    var su = body.querySelector('[data-sk="splitUnit"]');
+    var sf = body.querySelector('[data-sk="splitFactor"]');
+    if (ess) d.essential = ess.checked;
+    if (spl) d.splitOn = spl.checked;
+    if (su) d.splitUnit = su.value;
+    if (sf) d.splitFactor = sf.value.trim();
+
+    Array.prototype.forEach.call(body.querySelectorAll("[data-vk]"), function (el) {
+      var vi = parseInt(el.getAttribute("data-vi"), 10);
+      var k = el.getAttribute("data-vk");
+      var v = d.vendors[vi];
+      if (!v) return;
+      v[k] = el.type === "checkbox" ? el.checked : el.value.trim();
+    });
+  }
+
+  function saveEditSpec() {
+    var es = editState;
+    if (!es || (es.type !== "spec" && es.type !== "create-spec")) return;
+    syncSpecDraft();
+    var d = es.draft;
+
+    var missing = [];
+    if (es.type === "create-spec") {
+      [["title", "药品规格"], ["basicDose", "基本剂量"], ["doseUnit", "剂量单位"],
+        ["prepUnit", "制剂单位"], ["minFactor", "最小换算系数"], ["pkgSpec", "包装规格"],
+        ["minPkgUnit", "最小包装单位"], ["pkgFactor", "包装系数"], ["pkgUnit", "包装单位"]]
+        .forEach(function (r) {
+          if (!String(d[r[0]] || "").trim()) missing.push(r[1]);
+        });
+    }
+    if (!d.vendors.length) missing.push("生产企业");
+    if (d.splitOn && !d.splitUnit) missing.push("拆零-发药单位");
+    if (d.splitOn && !d.splitFactor) missing.push("拆零-发药系数");
+    if (missing.length) { toast("请完善：" + missing.join("、")); return; }
+
+    var vendors = d.vendors.map(function (v) {
+      return {
+        name: v.name,
+        approval: v.approval,
+        imported: v.imported,
+        purchase: v.purchaseType,
+        drugCode: v.drugCode === "—" ? "" : v.drugCode,
+        price: v.price,
+        centralized: v.centralized,
+        centralType: v.centralType,
+        negotiated: v.negotiated,
+        ins: v.ins,
+        insCode: v.insCode
+      };
+    });
+
+    if (es.type === "create-spec") {
+      es.drug.specs.push({
+        code: "—",
+        title: d.title,
+        formSpec: d.formSpec,
+        basicDose: d.basicDose,
+        doseUnit: d.doseUnit,
+        prepUnit: d.prepUnit,
+        minFactor: d.minFactor,
+        pkgSpec: d.pkgSpec,
+        minPkgUnit: d.minPkgUnit,
+        pkgFactor: d.pkgFactor,
+        pkgUnit: d.pkgUnit,
+        pkgMaterial: d.material,
+        insCode: (vendors[0] && vendors[0].insCode) || "—",
+        essential: d.essential,
+        splitUnit: d.splitOn ? d.splitUnit : "—",
+        splitFactor: d.splitOn ? d.splitFactor : "—",
+        status: "on",
+        vendors: vendors
+      });
+      closeDrawer(true);
+      renderList();
+      renderDetail();
+      toast("新增成功");
+      return;
+    }
+
+    var spec = es.drug.specs[es.si];
+    spec.essential = d.essential;
+    spec.splitUnit = d.splitOn ? d.splitUnit : "—";
+    spec.splitFactor = d.splitOn ? d.splitFactor : "—";
+    spec.vendors = vendors;
+
+    closeDrawer(true);
+    renderDetail();
+    toast("修改成功");
+  }
+
+  /* 删除生产企业：二次确认 */
+  function deleteVendor(vi) {
+    if (!editState || (editState.type !== "spec" && editState.type !== "create-spec")) return;
+    syncSpecDraft();
+    var v = editState.draft.vendors[vi];
+    if (!v) return;
+    confirmDialog({
+      title: "删除生产企业",
+      text: "确认删除生产企业「" + v.name + "」？删除后需重新添加。",
+      okText: "删除",
+      onOk: function () {
+        editState.draft.vendors.splice(vi, 1);
+        renderEditSpec();
+      }
+    });
+  }
+
+  /* 新增生产企业：弹窗选企业 */
+  function openVendorPicker() {
+    if (!editState || (editState.type !== "spec" && editState.type !== "create-spec")) return;
+    syncSpecDraft();
+    var added = editState.draft.vendors.map(function (v) { return v.name; });
+    var list = (MOCK.vendors || []).filter(function (m) { return added.indexOf(m.name) < 0; });
+
+    var items = list.length
+      ? list.map(function (m, i) {
+          return '<div class="pick-opt" data-pick="' + i + '">' +
+            '<span class="po-name">' + esc(m.name) + '</span>' +
+            '<span class="po-meta">' + esc(m.approval) + '</span>' +
+          '</div>';
+        }).join("")
+      : '<div class="pick-empty">没有可添加的生产企业</div>';
+
+    openModal(
+      '<div class="modal-head">' +
+        '<span class="modal-title">选择生产企业</span>' +
+        '<button class="drawer-close" data-close="1">' +
+          '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>' +
+        '</button>' +
+      '</div>' +
+      '<div class="modal-body"><div class="pick-list">' + items + '</div></div>' +
+      '<div class="modal-foot"><button class="btn" data-close="1">取消</button></div>'
+    );
+
+    $("modalMask").querySelector(".pick-list").addEventListener("click", function (e) {
+      var opt = e.target.closest("[data-pick]");
+      if (!opt) return;
+      var m = list[parseInt(opt.getAttribute("data-pick"), 10)];
+      if (!m) return;
+      editState.draft.vendors.push({
+        name: m.name,
+        drugCode: "—",
+        nationalName: m.nationalName || "—",
+        nationalId: m.nationalId || "—",
+        approval: m.approval || "—",
+        standardCode: m.standardCode || "—",
+        price: "",
+        imported: m.imported || "否",
+        centralized: false,
+        centralType: "国家集采",
+        purchaseType: "阳光采购",
+        negotiated: false,
+        ins: false,
+        insCode: ""
+      });
+      closeModal();
+      renderEditSpec();
+    });
+  }
+
+  /* ---------------- 新增药品抽屉 ---------------- */
+  var FLAG_FIELDS = [
+    { key: "spirit",    name: "精神药品",   levels: ["第一类", "第二类"] },
+    { key: "toxic",     name: "毒性药品" },
+    { key: "narcotic",  name: "麻醉药品" },
+    { key: "antibiotic", name: "抗菌药物",  levels: ["非限制使用级", "限制使用级", "特殊使用级"] },
+    { key: "antitumor", name: "抗肿瘤药物", levels: ["非限制使用级", "限制使用级"] },
+    { key: "highAlert", name: "高警示药品", levels: ["A 级", "B 级", "C 级"] },
+    { key: "allergy",   name: "过敏药物",   levels: ["青霉素类", "头孢菌素类", "磺胺类", "其他"] },
+    { key: "skinTest",  name: "是否皮试" },
+    { key: "longTerm",  name: "长处方" },
+    { key: "otc",       name: "OTC" }
+  ];
+
+  /* 医保级联选择状态 */
+  var cascPanel = null;
+  var cascPath = [];
+  var insLeaf = "";
+  var insPath = "";
+
+  function nextDrugCode() {
+    var max = 0;
+    MOCK.drugs.forEach(function (d) {
+      var n = parseInt(d.code, 10);
+      if (!isNaN(n) && n > max) max = n;
+    });
+    return String(max + 1);
+  }
+
+  function formInput(id, label, req, val, ph) {
+    return '<div class="form-item">' +
+      '<label class="form-label">' + (req ? '<span class="req">*</span>' : "") + label + '</label>' +
+      '<input class="input" id="' + id + '" value="' + val + '" placeholder="' + ph + '">' +
+    '</div>';
+  }
+
+  function formSelect(id, label, req, options) {
+    return '<div class="form-item">' +
+      '<label class="form-label">' + (req ? '<span class="req">*</span>' : "") + label + '</label>' +
+      '<select class="select" id="' + id + '"><option value="">请选择</option>' +
+        options.map(function (o) { return "<option>" + o + "</option>"; }).join("") +
+      '</select>' +
+    '</div>';
+  }
+
+  function flagItem(f) {
+    var levelHtml = f.levels
+      ? '<select class="select ff-level" data-flag-level="' + f.key + '" disabled>' +
+          f.levels.map(function (l) { return "<option>" + l + "</option>"; }).join("") +
+        '</select>'
+      : '<span class="ff-gap"></span>';
+    return '<div class="ff-item" data-flag-item="' + f.key + '">' +
+      '<span class="ff-name">' + f.name + '</span>' +
+      '<label class="switch"><input type="checkbox" data-flag="' + f.key + '"><span class="track"></span></label>' +
+      levelHtml +
+    '</div>';
+  }
+
+  function openCreate() {
+    var drawer = $("drawer");
+    closeCascader();
+    insLeaf = ""; insPath = "";
+    drawer.classList.add("is-wide");
+    $("drawerTitle").textContent = "新增药品";
+    $("drawerBody").innerHTML =
+      '<div class="drawer-section">' +
+        '<div class="drawer-section-title">基本信息</div>' +
+        '<div class="form-grid">' +
+          formInput("f_code", "品种编码", true, nextDrugCode(), "系统自动生成，可修改") +
+          formInput("f_name", "品种名称", true, "", "如：阿莫西林胶囊") +
+          formInput("f_trade", "商品名", false, "", "选填，如：阿莫仙") +
+          formInput("f_py", "药品拼音码", true, "", "如：AMXLJN") +
+          formInput("f_en", "药品英文名", false, "", "如：Amoxicillin Capsules") +
+          formSelect("f_kind", "药品种类", true, ["西药", "中成药", "中药饮片"]) +
+          formSelect("f_cat", "药品分类", true, ["处方药", "非处方药"]) +
+          formSelect("f_form", "剂型", true, ["片剂", "胶囊", "颗粒", "注射剂", "口服液", "丸剂", "散剂", "糖浆剂"]) +
+          '<div class="form-item span-2">' +
+            '<label class="form-label">医保药品分类</label>' +
+            '<input class="input casc-input" id="f_ins" readonly placeholder="点击选择（级联选择，保存叶子节点）">' +
+          '</div>' +
+          '<div class="form-item span-2">' +
+            '<label class="form-label">DDD</label>' +
+            '<div class="input-pair">' +
+              '<input class="input" id="f_ddd" placeholder="值，如 1.0">' +
+              '<select class="select" id="f_dddUnit"><option>g</option><option>mg</option><option>ml</option><option>IU</option></select>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="drawer-section">' +
+        '<div class="drawer-section-title">特殊药品标识</div>' +
+        '<div class="flag-form-grid">' + FLAG_FIELDS.map(flagItem).join("") + '</div>' +
+        '<div class="form-tip" style="margin-top:10px">带级别的标识开启后，可在右侧下拉中选择级别。</div>' +
+      '</div>';
+    $("drawerFoot").innerHTML =
+      '<button class="btn" data-dact="create-cancel">取消</button>' +
+      '<button class="btn btn-primary" data-dact="create-save">保存</button>';
+    document.body.classList.add("drawer-open");
+  }
+
+  /* ---------- 医保分类级联面板 ---------- */
+  function openCascader(anchor) {
+    closeCascader();
+    cascPath = [];
+    cascPanel = document.createElement("div");
+    cascPanel.className = "casc-panel";
+    document.body.appendChild(cascPanel);
+    renderCascCol(MOCK.insTree, 0);
+    cascPanel.addEventListener("click", function (e) {
+      e.stopPropagation();
+      onCascClick(e, anchor);
+    });
+    positionCascader(anchor);
+    anchor.classList.add("is-active");
+  }
+
+  function positionCascader(anchor) {
+    if (!cascPanel) return;
+    var r = anchor.getBoundingClientRect();
+    cascPanel.style.top = (r.bottom + 4) + "px";
+    cascPanel.style.left = Math.max(12, Math.min(r.left, window.innerWidth - cascPanel.offsetWidth - 12)) + "px";
+  }
+
+  function renderCascCol(nodes, level) {
+    while (cascPanel.children.length > level) cascPanel.removeChild(cascPanel.lastChild);
+    var col = document.createElement("div");
+    col.className = "casc-col";
+    nodes.forEach(function (n, idx) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "casc-opt";
+      b.setAttribute("data-level", level);
+      b.setAttribute("data-idx", idx);
+      b.title = n.name;
+      b.innerHTML = n.name + (n.children ? '<span class="casc-arrow">›</span>' : "");
+      col.appendChild(b);
+    });
+    cascPanel.appendChild(col);
+  }
+
+  function onCascClick(e, anchor) {
+    var opt = e.target.closest(".casc-opt");
+    if (!opt || !cascPanel) return;
+    var level = parseInt(opt.getAttribute("data-level"), 10);
+    var idx = parseInt(opt.getAttribute("data-idx"), 10);
+    var nodes = MOCK.insTree;
+    for (var i = 0; i < level; i++) nodes = cascPath[i].children;
+    var node = nodes[idx];
+    cascPath = cascPath.slice(0, level);
+    cascPath.push(node);
+    Array.prototype.forEach.call(opt.parentElement.children, function (c) { c.classList.remove("is-active"); });
+    opt.classList.add("is-active");
+    if (node.children) {
+      renderCascCol(node.children, level + 1);
+      positionCascader(anchor);
+    } else {
+      insLeaf = node.name;
+      insPath = cascPath.map(function (n) { return n.name; }).join(" / ");
+      anchor.value = insLeaf;
+      anchor.title = insPath;
+      closeCascader();
+    }
+  }
+
+  function closeCascader() {
+    if (cascPanel) { cascPanel.remove(); cascPanel = null; cascPath = []; }
+    Array.prototype.forEach.call(document.querySelectorAll(".casc-input.is-active"), function (el) {
+      el.classList.remove("is-active");
+    });
+  }
+
+  /* ---------- 保存新增药品 ---------- */
+  function saveCreate() {
+    function val(id) { var el = $(id); return el ? el.value.trim() : ""; }
+    var body = $("drawerBody");
+    Array.prototype.forEach.call(body.querySelectorAll(".is-invalid"), function (el) {
+      el.classList.remove("is-invalid");
+    });
+
+    var required = [
+      ["f_code", "品种编码"], ["f_name", "品种名称"], ["f_py", "药品拼音码"],
+      ["f_kind", "药品种类"], ["f_cat", "药品分类"], ["f_form", "剂型"]
+    ];
+    var missing = [];
+    required.forEach(function (r) {
+      if (!val(r[0])) { missing.push(r[1]); $(r[0]).classList.add("is-invalid"); }
+    });
+    var code = val("f_code");
+    if (code && MOCK.drugs.some(function (d) { return d.code === code; })) {
+      missing.push("品种编码（已存在）");
+      $("f_code").classList.add("is-invalid");
+    }
+    if (missing.length) { toast("请完善：" + missing.join("、")); return; }
+
+    var marks = {};
+    FLAG_FIELDS.forEach(function (f) {
+      var on = body.querySelector('[data-flag="' + f.key + '"]').checked;
+      if (f.levels) {
+        var lv = body.querySelector('[data-flag-level="' + f.key + '"]').value;
+        if (f.key === "highAlert") marks[f.key] = on ? lv.charAt(0) : null;
+        else if (f.key === "allergy") marks[f.key] = on ? [lv] : [];
+        else marks[f.key] = on ? lv : null;
+      } else {
+        marks[f.key] = on;
+      }
+    });
+
+    var id = "d" + Date.now();
+    var drug = {
+      id: id,
+      code: code,
+      name: val("f_name"),
+      py: val("f_py").toUpperCase(),
+      en: val("f_en") || "—",
+      kind: val("f_kind"),
+      category: val("f_cat"),
+      form: val("f_form"),
+      insClass: insLeaf || "—",
+      ddd: val("f_ddd"),
+      dddUnit: val("f_dddUnit"),
+      status: "on",
+      marks: marks,
+      specs: []
+    };
+    MOCK.drugs.unshift(drug);
+    if (val("f_trade")) MOCK.tradeNames[id] = val("f_trade");
+    if (insLeaf) MOCK.insMap[id] = { leaf: insLeaf, path: insPath };
+
+    state.keyword = ""; state.kind = ""; state.status = ""; state.page = 1; state.activeId = id;
+    $("kw").value = ""; $("kind").value = ""; $("status").value = "";
+    renderList();
+    renderDetail();
+    closeDrawer();
+    toast("药品「" + drug.name + "」已新增，可继续维护规格");
+  }
+
+  /* ---------------- 浮动菜单（药品行操作） ---------------- */
+  var activeMenu = null;
+
+  function closeMenu() {
+    if (activeMenu) {
+      activeMenu.remove();
+      activeMenu = null;
+    }
+  }
+
+  function openMenu(anchor) {
+    closeMenu();
+    var drug = MOCK.drugs.filter(function (d) { return d.id === state.activeId; })[0];
+    if (!drug) return;
+
+    var menu = document.createElement("div");
+    menu.className = "float-menu";
+    menu.innerHTML =
+      '<button data-menu="toggle">' + (drug.status === "on" ? "停用药品" : "启用药品") + '</button>' +
+      '<button data-menu="edit">编辑</button>' +
+      '<div class="menu-sep"></div>' +
+      '<button data-menu="delete" class="is-danger">删除药品</button>';
+
+    document.body.appendChild(menu);
+    activeMenu = menu;
+
+    var r = anchor.getBoundingClientRect();
+    var mw = menu.offsetWidth, mh = menu.offsetHeight;
+    var left = Math.min(r.right - mw, window.innerWidth - mw - 8);
+    var top = r.bottom + 4;
+    if (top + mh > window.innerHeight - 8) top = r.top - mh - 4;
+    menu.style.left = Math.max(8, left) + "px";
+    menu.style.top = top + "px";
+
+    menu.addEventListener("click", function (e) {
+      var btn = e.target.closest("button[data-menu]");
+      if (!btn) return;
+      var act = btn.getAttribute("data-menu");
+      closeMenu();
+      handleDrugAction(act, drug);
+    });
+  }
+
+  /* ---------------- 药品操作 ---------------- */
+  function handleDrugAction(act, drug) {
+    if (act === "toggle") {
+      drug.status = drug.status === "on" ? "off" : "on";
+      doSearch(false);
+      toast(drug.name + " 已" + (drug.status === "on" ? "启用" : "停用"));
+    } else if (act === "edit") {
+      openEditBasic();
+    } else if (act === "delete") {
+      confirmDialog({
+        title: "删除药品",
+        text: "确认删除「" + drug.name + "」？删除后该药品将不在目录中展示，已引用该药品的历史单据不受影响。",
+        okText: "删除",
+        onOk: function () {
+          toast("「" + drug.name + "」已删除（原型演示）");
+        }
+      });
+    }
+  }
+
+  /* ---------------- 通用弹窗 ---------------- */
+  function openModal(html) {
+    var mask = $("modalMask");
+    mask.innerHTML = '<div class="modal">' + html + '</div>';
+    mask.classList.add("show");
+  }
+
+  function closeModal() {
+    var mask = $("modalMask");
+    mask.classList.remove("show");
+    mask.innerHTML = "";
+  }
+
+  function confirmDialog(opt) {
+    openModal(
+      '<div class="modal-head">' +
+        '<span class="modal-title">' + opt.title + '</span>' +
+        '<button class="drawer-close" data-close="1">' +
+          '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>' +
+        '</button>' +
+      '</div>' +
+      '<div class="modal-body"><p class="modal-text">' + opt.text + '</p></div>' +
+      '<div class="modal-foot">' +
+        '<button class="btn" data-close="1">取消</button>' +
+        '<button class="btn btn-primary" data-ok="1">' + (opt.okText || "确定") + '</button>' +
+      '</div>'
+    );
+
+    var mask = $("modalMask");
+    mask.querySelector("[data-ok]").addEventListener("click", function () {
+      closeModal();
+      if (opt.onOk) opt.onOk();
+    });
+  }
+
+  /* ---------------- Toast ---------------- */
+  var toastTimer = null;
+  function toast(msg) {
+    var el = $("toast");
+    $("toastText").textContent = msg;
+    el.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { el.classList.remove("show"); }, 2200);
+  }
+
+  /* ---------------- 事件绑定 ---------------- */
+  function bindEvents() {
+    // 查询 / 重置 / 回车
+    $("btnSearch").addEventListener("click", function () { doSearch(true); });
+    $("btnReset").addEventListener("click", function () {
+      $("kw").value = "";
+      $("kind").value = "";
+      $("status").value = "";
+      doSearch(true);
+    });
+    $("kw").addEventListener("keydown", function (e) {
+      if (e.key === "Enter") doSearch(true);
+    });
+
+    // 列表点击
+    $("drugList").addEventListener("click", function (e) {
+      var more = e.target.closest(".di-more");
+      if (more) {
+        e.stopPropagation();
+        // 先切换到该药品，菜单动作才能作用于正确对象
+        state.activeId = more.getAttribute("data-id");
+        openMenu(more);
+        return;
+      }
+      var item = e.target.closest(".drug-item");
+      if (item) {
+        closeMenu();
+        state.activeId = item.getAttribute("data-id");
+        renderList();
+        renderDetail();
+      }
+    });
+
+    // 分页
+    $("prevPage").addEventListener("click", function () {
+      if (state.page > 1) { state.page--; renderList(); }
+    });
+    $("nextPage").addEventListener("click", function () {
+      var pages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+      if (state.page < pages) { state.page++; renderList(); }
+    });
+
+    // 右栏操作
+    $("detail").addEventListener("click", function (e) {
+      var btn = e.target.closest("[data-act]");
+      if (!btn) return;
+      var act = btn.getAttribute("data-act");
+      var drug = MOCK.drugs.filter(function (d) { return d.id === state.activeId; })[0];
+      if (!drug) return;
+      var si = parseInt(btn.getAttribute("data-si"), 10);
+
+      if (act === "toggle" || act === "edit" || act === "delete") {
+        handleDrugAction(act, drug);
+      } else if (act === "add-spec") {
+        openCreateSpec();
+      } else if (act === "spec-detail") {
+        openDrawer(si);
+      } else if (act === "spec-edit") {
+        openEditSpec(si);
+      } else if (act === "spec-delete") {
+        var spec = drug.specs[si];
+        if (!spec) return;
+        confirmDialog({
+          title: "删除药品规格",
+          text: "确认删除规格「" + spec.title + "」？删除后该规格及其厂商关系将不可恢复，历史单据不受影响。",
+          okText: "删除",
+          onOk: function () {
+            drug.specs.splice(si, 1);
+            renderList();
+            renderDetail();
+            toast("规格「" + spec.title + "」已删除");
+          }
+        });
+      }
+    });
+
+    // 规格开关
+    $("detail").addEventListener("change", function (e) {
+      var input = e.target;
+      if (!input.matches(".switch input")) return;
+      var si = parseInt(input.getAttribute("data-si"), 10);
+      var drug = MOCK.drugs.filter(function (d) { return d.id === state.activeId; })[0];
+      var spec = drug.specs[si];
+      if (!spec) return;
+      spec.status = input.checked ? "on" : "off";
+      renderDetail();
+      toast("规格 " + spec.title + " 已" + (input.checked ? "启用" : "停用"));
+    });
+
+    // 抽屉
+    $("drawerMask").addEventListener("click", function () { closeDrawer(); });
+    $("drawerClose").addEventListener("click", function () { closeDrawer(); });
+    $("drawerFoot").addEventListener("click", function (e) {
+      var b = e.target.closest("[data-dact]");
+      if (!b) return;
+      var dact = b.getAttribute("data-dact");
+      if (dact === "close" || dact === "create-cancel" || dact === "edit-cancel") closeDrawer();
+      else if (dact === "spec-edit") openEditSpec(parseInt(b.getAttribute("data-si"), 10));
+      else if (dact === "create-save") saveCreate();
+      else if (dact === "edit-save") {
+        if (editState && editState.type === "basic") saveEditBasic();
+        else saveEditSpec();
+      }
+    });
+
+    // 新增药品抽屉内交互（委托，只绑定一次）
+    $("drawerBody").addEventListener("change", function (e) {
+      var t = e.target;
+      if (t.matches("[data-flag]")) {
+        var key = t.getAttribute("data-flag");
+        var sel = $("drawerBody").querySelector('[data-flag-level="' + key + '"]');
+        var item = $("drawerBody").querySelector('[data-flag-item="' + key + '"]');
+        if (sel) sel.disabled = !t.checked;
+        if (item) item.classList.toggle("is-on", t.checked);
+      }
+      // 编辑基本信息：特殊药品标识
+      if (t.matches("[data-ef]")) {
+        var fk = t.getAttribute("data-ef");
+        var cell = $("drawerBody").querySelector('[data-efcell="' + fk + '"]');
+        var lv = $("drawerBody").querySelector('[data-eflv="' + fk + '"]');
+        if (cell) cell.classList.toggle("is-on", t.checked);
+        if (lv) lv.disabled = !t.checked;
+      }
+      // 编辑规格：允许拆零 → 拆零字段
+      if (t.matches('[data-sk="splitOn"]')) {
+        var su = $("drawerBody").querySelector('[data-sk="splitUnit"]');
+        var sf = $("drawerBody").querySelector('[data-sk="splitFactor"]');
+        if (su) su.disabled = !t.checked;
+        if (sf) { sf.disabled = !t.checked; if (!t.checked) sf.value = ""; }
+      }
+      // 编辑规格：集采标识 → 集采类别
+      if (t.matches('[data-vk="centralized"]')) {
+        var vi1 = t.getAttribute("data-vi");
+        var ct = $("drawerBody").querySelector('[data-vi="' + vi1 + '"][data-vk="centralType"]');
+        if (ct) ct.disabled = !t.checked;
+      }
+      // 编辑规格：医保标识 → 医保药品代码
+      if (t.matches('[data-vk="ins"]')) {
+        var vi2 = t.getAttribute("data-vi");
+        var ic = $("drawerBody").querySelector('[data-vi="' + vi2 + '"][data-vk="insCode"]');
+        if (ic) { ic.disabled = !t.checked; if (!t.checked) ic.value = ""; }
+      }
+    });
+    $("drawerBody").addEventListener("click", function (e) {
+      if (e.target.id === "f_ins" || e.target.id === "e_ins") {
+        e.stopPropagation();
+        if (cascPanel) closeCascader(); else openCascader(e.target);
+        return;
+      }
+      var eb = e.target.closest("[data-eact]");
+      if (!eb) return;
+      var eact = eb.getAttribute("data-eact");
+      var vi = parseInt(eb.getAttribute("data-vi"), 10);
+      if (eact === "add-vendor") openVendorPicker();
+      else if (eact === "del-vendor") deleteVendor(vi);
+    });
+    $("drawerBody").addEventListener("scroll", closeCascader);
+
+    // 弹窗关闭
+    $("modalMask").addEventListener("click", function (e) {
+      if (e.target === $("modalMask")) closeModal();
+      if (e.target.closest("[data-close]")) closeModal();
+    });
+
+    // 全局：点空白关闭浮动菜单
+    document.addEventListener("click", function (e) {
+      if (activeMenu && !e.target.closest(".float-menu") && !e.target.closest(".di-more")) closeMenu();
+      if (cascPanel && !e.target.closest(".casc-panel") && !e.target.classList.contains("casc-input")) closeCascader();
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") { closeMenu(); closeModal(); closeCascader(); closeDrawer(); }
+    });
+    window.addEventListener("resize", closeMenu);
+
+    // 顶部按钮
+    $("btnAdd").addEventListener("click", function () {
+      location.href = "drug-create.html";
+    });
+
+    // 导航 / 标签
+    document.querySelectorAll("[data-nav]").forEach(function (el) {
+      el.addEventListener("click", function () {
+        var name = el.getAttribute("data-nav");
+        if (name === "首页") toast("「首页」页面待开发");
+        else if (el.classList.contains("nav-sub-item") && !el.classList.contains("active")) toast("「" + name + "」页面待开发");
+        else if (el.classList.contains("nav-item") && !el.querySelector(".nav-arrow")) toast("「" + name + "」页面待开发");
+      });
+    });
+    document.querySelector(".tab-close").addEventListener("click", function (e) {
+      e.stopPropagation();
+      toast("原型仅演示「药品目录管理」页");
+    });
+  }
+
+  init();
+})();
+</script>
+  <script src="nav.js"></script>
+</body>
+</html>

@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>机构药品目录 · 机构药房</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ========== 顶部导航 ========== -->
+<header class="app-header">
+  <div class="header-left">
+    <div class="header-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3.2" y="9.4" width="17.6" height="5.2" rx="2.6" transform="rotate(-45 12 12)"/>
+        <path d="M8.4 15.6L15.6 8.4"/>
+      </svg>
+    </div>
+    <div class="header-title">区域药房协同管理系统</div>
+  </div>
+  <div class="header-right">
+    <div class="header-user">
+      <div class="header-avatar">张</div>
+      <span class="header-user-name">张明远</span>
+    </div>
+  </div>
+</header>
+
+<div class="app-body">
+  <!-- ========== 左侧导航 ========== -->
+  <aside class="app-side" id="appSide"></aside>
+<!-- ========== 主区域 ========== -->
+  <main class="app-main">
+    <div class="tabbar">
+      <div class="tab" data-nav="首页">首页</div>
+      <div class="tab active">
+        机构药品目录
+        <button class="tab-close" title="关闭">
+          <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+            <path d="M5 5l14 14M19 5L5 19"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="page">
+      <!-- 标题行：机构下拉（左） + 选择药品按钮（右） -->
+      <div class="page-head">
+        <div class="page-head-left">
+          <label class="ph-label">机构</label>
+          <select class="select ph-org" id="orgSelect"></select>
+        </div>
+        <div class="page-acts">
+          <button class="btn btn-primary" id="btnSelect">选择药品</button>
+        </div>
+      </div>
+
+      <div class="page-body">
+        <!-- ---------- 左栏：筛选 + 药品列表（机构已选交集） ---------- -->
+        <section class="lbar">
+          <div class="lfilter">
+            <input class="input" id="kw" placeholder="药品名称 / 编码 / 拼音码" autocomplete="off">
+            <div class="lfilter-row">
+              <select class="select" id="kind">
+                <option value="">全部种类</option>
+              </select>
+              <select class="select" id="status">
+                <option value="">全部状态</option>
+                <option value="on">启用</option>
+                <option value="off">停用</option>
+              </select>
+            </div>
+            <div class="lfilter-acts">
+              <button class="btn btn-sm" id="btnReset">重置</button>
+              <button class="btn btn-primary btn-sm" id="btnSearch">查询</button>
+            </div>
+          </div>
+
+          <div class="llist" id="drugList"></div>
+          <div class="pager">
+            <span id="pagerInfo">共 0 条</span>
+            <span class="pager-ctrl">
+              <button class="pager-btn" id="prevPage" title="上一页">
+                <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M15 6l-6 6 6 6"/>
+                </svg>
+              </button>
+              <span class="pager-num" id="pagerNum">1</span>
+              <button class="pager-btn" id="nextPage" title="下一页">
+                <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M9 6l6 6-6 6"/>
+                </svg>
+              </button>
+            </span>
+          </div>
+        </section>
+
+        <!-- ---------- 右栏：药品详情（全只读） ---------- -->
+        <section class="rbar" id="detail"></section>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ========== 规格详情抽屉（只读） ========== -->
+<div class="drawer-mask" id="drawerMask"></div>
+<aside class="drawer" id="drawer">
+  <div class="drawer-head">
+    <span class="drawer-title" id="drawerTitle">规格详情</span>
+    <button class="drawer-close" id="drawerClose" title="关闭">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <path d="M5 5l14 14M19 5L5 19"/>
+      </svg>
+    </button>
+  </div>
+  <div class="drawer-body" id="drawerBody"></div>
+  <div class="drawer-foot" id="drawerFoot"></div>
+</aside>
+
+<!-- ========== 通用弹窗容器 ========== -->
+<div class="modal-mask" id="modalMask"></div>
+
+<!-- ========== Toast ========== -->
+<div class="toast" id="toast">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M20 6L9 17l-5-5"/>
+  </svg>
+  <span id="toastText"></span>
+</div>
+
+<script src="mock.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  var PAGE_SIZE = 5;
+  var state = { orgId: "", keyword: "", kind: "", status: "", page: 1, activeId: "" };
+  var filtered = [];
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  /* ---------------- 初始化 ---------------- */
+  function currentOrg() {
+    for (var i = 0; i < MOCK.orgs.length; i++) {
+      if (MOCK.orgs[i].current) return MOCK.orgs[i];
+    }
+    return MOCK.orgs[0];
+  }
+
+  function buildOrgSelect() {
+    var sel = $("orgSelect");
+    MOCK.orgs.forEach(function (o) {
+      var opt = document.createElement("option");
+      opt.value = o.id;
+      opt.textContent = o.name;
+      if (o.current) opt.selected = true;
+      sel.appendChild(opt);
+    });
+    state.orgId = currentOrg().id;
+  }
+
+  /* 返回当前机构已选的**药品ID去重集合**（按药品维度左栏展示，厂商行用于详情计数） */
+  function orgDrugIds(orgId) {
+    var keys = MOCK.orgDrugs[orgId] || [];
+    var set = {};
+    keys.forEach(function (k) {
+      var parts = k.split("_");
+      if (parts.length === 3) set[parts[0]] = true;
+    });
+    return Object.keys(set);
+  }
+
+  /* 某药品在该机构下的厂商行数 */
+  function orgDrugRowCount(orgId, drugId) {
+    var keys = MOCK.orgDrugs[orgId] || [];
+    var n = 0;
+    keys.forEach(function (k) {
+      if (k.indexOf(drugId + "_") === 0) n++;
+    });
+    return n;
+  }
+
+  function init() {
+    buildOrgSelect();
+
+    // 从选择药品页返回时自动刷新
+    var changed = sessionStorage.getItem("orgDrugChanged_" + state.orgId);
+    if (changed) {
+      sessionStorage.removeItem("orgDrugChanged_" + state.orgId);
+    }
+
+    MOCK.kinds.forEach(function (k) {
+      var o = document.createElement("option");
+      o.value = k; o.textContent = k;
+      $("kind").appendChild(o);
+    });
+
+    bindEvents();
+    doSearch(false);
+  }
+
+  /* ---------------- 筛选 + 列表 ---------------- */
+  function doSearch(resetPage) {
+    if (resetPage) state.page = 1;
+    state.keyword = $("kw").value.trim();
+    state.kind = $("kind").value;
+    state.status = $("status").value;
+
+    var kw = state.keyword.toLowerCase();
+    var allowed = orgDrugIds(state.orgId);  // 机构已选药品集合
+    filtered = MOCK.drugs.filter(function (d) {
+      if (allowed.indexOf(d.id) < 0) return false;
+      var hitKw = !kw ||
+        d.name.toLowerCase().indexOf(kw) > -1 ||
+        d.code.indexOf(kw) > -1 ||
+        d.py.toLowerCase().indexOf(kw) > -1;
+      var hitKind = !state.kind || d.kind === state.kind;
+      var hitStatus = !state.status || d.status === state.status;
+      return hitKw && hitKind && hitStatus;
+    });
+
+    var pages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+    if (state.page > pages) state.page = pages;
+
+    var exists = filtered.some(function (d) { return d.id === state.activeId; });
+    if (!exists && filtered.length) state.activeId = filtered[0].id;
+
+    renderList();
+    renderDetail();
+  }
+
+  function renderList() {
+    var box = $("drugList");
+    var start = (state.page - 1) * PAGE_SIZE;
+    var rows = filtered.slice(start, start + PAGE_SIZE);
+
+    if (!rows.length) {
+      box.innerHTML =
+        '<div class="empty">该机构暂未配置药品，点击右上角「选择药品」添加</div>';
+    } else {
+      box.innerHTML = rows.map(function (d) {
+        var active = d.id === state.activeId ? " active" : "";
+        var off = d.status === "off" ? " is-off" : "";
+        var dotCls = d.status === "on" ? "on" : "off";
+        return '<div class="drug-item' + active + off + '" data-id="' + d.id + '">' +
+          '<span class="dot ' + dotCls + '" title="' + (d.status === "on" ? "启用" : "停用") + '"></span>' +
+          '<span class="di-name" title="' + d.name + '">' + d.name + '</span>' +
+          '<button class="di-more" data-id="' + d.id + '" title="移出机构目录">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">' +
+              '<circle cx="5" cy="12" r="1.2" fill="currentColor" stroke="none"/>' +
+              '<circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none"/>' +
+              '<circle cx="19" cy="12" r="1.2" fill="currentColor" stroke="none"/>' +
+            '</svg>' +
+          '</button>' +
+        '</div>';
+      }).join("");
+    }
+
+    var pages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+    $("pagerInfo").textContent = "共 " + filtered.length + " 条";
+    $("pagerNum").textContent = state.page + " / " + pages;
+    $("prevPage").disabled = state.page <= 1;
+    $("nextPage").disabled = state.page >= pages;
+  }
+
+  /* ---------------- 右栏详情（只读裁剪版） ---------------- */
+  function renderDetail() {
+    var drug = MOCK.drugs.filter(function (d) { return d.id === state.activeId; })[0];
+    var box = $("detail");
+
+    if (!drug) {
+      box.innerHTML = '<div class="empty">请在左侧选择药品</div>';
+      return;
+    }
+
+    var tradeName = MOCK.tradeNames[drug.id];
+    var drugName = tradeName ? drug.name + "（" + tradeName + "）" : drug.name;
+    var ins = (MOCK.insMap && MOCK.insMap[drug.id]) || null;
+
+    var kv = [
+      ["品种编码", drug.code, true],
+      ["品种名称", drug.name, false],
+      ["药品名称", drugName, false],
+      ["药品拼音码", drug.py, true],
+      ["药品英文名", drug.en, false],
+      ["药品种类", drug.kind, false],
+      ["药品分类", drug.category, false],
+      ["剂型", drug.form, false],
+      ["医保药品分类", ins ? ins.leaf : drug.insClass, false, ins ? ins.path : ""],
+      ["DDD", drug.ddd ? drug.ddd + " " + drug.dddUnit : "—", false]
+    ];
+
+    var kvHtml = kv.map(function (item) {
+      return '<div class="kv"><span class="kv-label">' + item[0] + '：</span>' +
+        '<span class="kv-value' + (item[2] ? " mono" : "") + '" title="' + (item[3] || item[1]) + '">' + item[1] + '</span></div>';
+    }).join("");
+
+    var tagsHtml = buildMarks(drug.marks).map(function (t) {
+      return '<span class="tag ' + (t.on ? "is-on" : "is-off") + '">' + t.t + '</span>';
+    }).join("");
+
+    /* 规格卡：只展示**该机构已选的厂商行**对应的规格 */
+    var orgKeys = MOCK.orgDrugs[state.orgId] || [];
+    var specMap = {};  // specIdx → vendorIdx[]
+    orgKeys.forEach(function (k) {
+      var parts = k.split("_");
+      if (parts.length === 3 && parts[0] === drug.id) {
+        var si = parseInt(parts[1], 10), vi = parseInt(parts[2], 10);
+        if (!specMap[si]) specMap[si] = [];
+        specMap[si].push(vi);
+      }
+    });
+
+    var specsHtml = "";
+    var specCount = 0;
+    Object.keys(specMap).forEach(function (siStr) {
+      var si = parseInt(siStr, 10);
+      var spec = drug.specs[si];
+      if (!spec) return;
+      specCount++;
+      var viSet = {};
+      specMap[si].forEach(function (vi) { viSet[vi] = true; });
+
+      /* 只展示本机构已选的厂商行，meta 对齐原始格式 */
+      var vendHtml = spec.vendors.filter(function (v, vi) { return !!viSet[vi]; }).map(function (v) {
+        return '<div class="vend">' +
+          '<div class="vend-name" title="' + v.name + '">' + v.name + '</div>' +
+          '<div class="vend-meta">批准文号 ' + v.approval + '</div>' +
+        '</div>';
+      }).join("");
+
+      var off = spec.status === "off";
+      var statusTxt = off ? "已停用" : "启用中";
+
+      var flags = "";
+      if (spec.essential) flags += '<span class="flag flag-essential">基药</span>';
+
+      specsHtml +=
+        '<article class="spec-card' + (off ? " is-off" : "") + '">' +
+          '<div class="sc-top">' +
+            '<h3 class="sc-title">' + spec.title + '</h3>' +
+            (flags ? '<span class="sc-flags">' + flags + '</span>' : "") +
+          '</div>' +
+          '<div class="sc-code">品规编码 <span class="code">' + spec.code + '</span></div>' +
+          '<div class="sc-vend">' +
+            '<div class="sc-vend-head"><span>厂商 <b>' + Object.keys(viSet).length + '</b> 家</span></div>' +
+            '<div class="sc-vend-list">' + vendHtml + '</div>' +
+          '</div>' +
+          '<div class="sc-foot">' +
+            '<div class="sc-status" title="规格状态">' +
+              '<span class="sc-status-text' + (off ? " is-off" : "") + '">' + statusTxt + '</span>' +
+            '</div>' +
+            '<span class="sc-actions">' +
+              '<button class="link-btn" data-act="spec-detail" data-si="' + si + '">详情</button>' +
+            '</span>' +
+          '</div>' +
+        '</article>';
+    });
+
+    if (!specCount) {
+      specsHtml = '<div class="spec-empty">本机构未选择该药品的任何规格</div>';
+    }
+
+    box.innerHTML =
+      '<section class="block">' +
+        '<div class="block-head">' +
+          '<h2 class="block-title">基本信息</h2>' +
+          '<div class="block-acts">' +
+            '<button class="btn btn-sm btn-danger-text" data-act="remove">移出机构目录</button>' +
+          '</div>' +
+        '</div>' +
+        '<div class="kv-grid">' + kvHtml + '</div>' +
+      '</section>' +
+
+      '<section class="block">' +
+        '<div class="block-head">' +
+          '<h2 class="block-title">特殊药品标识</h2>' +
+        '</div>' +
+        '<div class="tag-group">' + tagsHtml + '</div>' +
+      '</section>' +
+
+      '<section class="block">' +
+        '<div class="block-head">' +
+          '<h2 class="block-title">药品规格 <span class="count">' + specCount + ' 个</span></h2>' +
+        '</div>' +
+        '<div class="spec-grid">' + specsHtml + '</div>' +
+      '</section>';
+  }
+
+  /* 特殊药品标识：固定 10 项，全量展示 */
+  function buildMarks(m) {
+    return [
+      { t: m.spirit ? "精神药品·" + m.spirit : "精神药品", on: !!m.spirit },
+      { t: "毒性药品", on: m.toxic },
+      { t: "麻醉药品", on: m.narcotic },
+      { t: m.antibiotic ? "抗菌药物·" + m.antibiotic : "抗菌药物", on: !!m.antibiotic },
+      { t: m.antitumor ? "抗肿瘤药物·" + m.antitumor : "抗肿瘤药物", on: !!m.antitumor },
+      { t: m.highAlert ? "高警示药品 " + m.highAlert + " 级" : "高警示药品", on: !!m.highAlert },
+      { t: m.allergy.length ? "过敏药物·" + m.allergy.join("/") : "过敏药物", on: m.allergy.length > 0 },
+      { t: "皮试", on: m.skinTest },
+      { t: "长处方", on: m.longTerm },
+      { t: "OTC", on: m.otc }
+    ];
+  }
+
+  /* ---------- 辅助函数（无外部依赖的版本） ---------- */
+  function esc(s) {
+    return String(s === null || s === undefined ? "" : s)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+  function egRead(label, val, mono) {
+    var v = (val === null || val === undefined || val === "") ? "—" : String(val);
+    return '<div class="eg-field">' +
+      '<span class="eg-label">' + label + '</span>' +
+      '<span class="eg-val' + (mono ? " mono" : "") + '" title="' + esc(v) + '">' + esc(v) + '</span></div>';
+  }
+  /* 与中心药房 drug-catalog.html 同口径：厂商药品编码 */
+  function vendorCode(v) {
+    if (v.drugCode) return v.drugCode;
+    var digits = (v.approval || "").replace(/\D/g, "");
+    if (!digits) return "—";
+    return "8690" + ("00000000" + digits).slice(-8);
+  }
+
+  /* 与中心药房同口径：厂商卡片 13 项字段 */
+  function vendorReadHtml(v, spec) {
+    var m = (MOCK.vendors || []).filter(function (x) { return x.name === v.name; })[0] || {};
+    var purchase = v.purchase || "";
+    var centralType = /集采/.test(purchase) ? (purchase.indexOf("国家") > -1 ? "国家集采" : "省集采") : "";
+    var ins = v.ins === undefined ? true : !!v.ins;
+    var insCode = v.insCode || spec.insCode || "";
+    return '<div class="vendor-item">' +
+      '<div class="vi-head"><span class="vi-name" title="' + esc(v.name) + '">' + esc(v.name) + '</span></div>' +
+      '<div class="eg-grid">' +
+        egRead("药品编码", vendorCode(v), true) +
+        egRead("国家药品名称", m.nationalName || "—") +
+        egRead("国家药品ID", m.nationalId, true) +
+        egRead("批准文号", v.approval, true) +
+        egRead("本位码", m.standardCode, true) +
+        egRead("进药价格", v.price ? v.price + " 元" : "—") +
+        egRead("进口标识", v.imported || "否") +
+        egRead("集采标识", centralType ? "是" : "否") +
+        egRead("集采类别", centralType || "—") +
+        egRead("采购类型", purchase || "阳光采购") +
+        egRead("国谈标识", v.negotiated ? "是" : "否") +
+        egRead("医保标识", ins ? "是" : "否") +
+        egRead("医保药品代码", ins ? insCode : "—") +
+      '</div>' +
+    '</div>';
+  }
+
+  /* ---------------- 规格详情抽屉（对齐中心药房 880px 只读版，去掉编辑） ---------------- */
+  function openDrawer(si) {
+    var drug = MOCK.drugs.filter(function (d) { return d.id === state.activeId; })[0];
+    if (!drug) return;
+    var spec = drug.specs[si];
+    if (!spec) return;
+
+    /* 与中心药房 specDraft 同口径的只读字段 */
+    var d = {
+      code: spec.code || "",
+      title: spec.title || "",
+      formSpec: spec.formSpec || "",
+      basicDose: spec.basicDose || "",
+      doseUnit: spec.doseUnit || "",
+      prepUnit: spec.prepUnit || "",
+      minFactor: spec.minFactor || spec.factor || "",
+      pkgSpec: spec.pkgSpec || "",
+      minPkgUnit: spec.minPkgUnit || "",
+      pkgFactor: spec.pkgFactor || "",
+      pkgUnit: spec.pkgUnit || "",
+      material: spec.pkgMaterial || spec.material || "",
+      essential: spec.essential !== undefined ? !!spec.essential : !!(drug.marks && drug.marks.essential),
+      splitOn: !!(spec.splitUnit && spec.splitUnit !== "—"),
+      splitUnit: (spec.splitUnit && spec.splitUnit !== "—") ? spec.splitUnit : "",
+      splitFactor: (spec.splitFactor && spec.splitFactor !== "—") ? spec.splitFactor : ""
+    };
+
+    /* 厂商口径与规格卡一致：只展示本机构已选的厂商行 */
+    var viSet = {};
+    (MOCK.orgDrugs[state.orgId] || []).forEach(function (k) {
+      var parts = k.split("_");
+      if (parts.length === 3 && parts[0] === drug.id && parseInt(parts[1], 10) === si) {
+        viSet[parseInt(parts[2], 10)] = true;
+      }
+    });
+    var orgVendors = (spec.vendors || []).filter(function (v, vi) { return !!viSet[vi]; });
+
+    $("drawerTitle").textContent = "规格详情";
+    $("drawer").className = "drawer is-wide";
+    $("drawerBody").innerHTML =
+      '<div class="drawer-section">' +
+        '<div class="drawer-section-title">规格属性</div>' +
+        '<div class="eg-grid">' +
+          egRead("品规编码", d.code, true) +
+          egRead("药品规格", d.title) +
+          egRead("制剂规格", d.formSpec) +
+          egRead("基本剂量", d.basicDose) +
+          egRead("剂量单位", d.doseUnit) +
+          egRead("制剂单位", d.prepUnit) +
+          egRead("最小换算系数", d.minFactor) +
+          egRead("包装规格", d.pkgSpec) +
+          egRead("最小包装单位", d.minPkgUnit) +
+          egRead("包装系数", d.pkgFactor) +
+          egRead("包装单位", d.pkgUnit) +
+          egRead("包装材质", d.material) +
+          egRead("基药标识", d.essential ? "是" : "否") +
+          egRead("允许拆零", d.splitOn ? "是" : "否") +
+          egRead("拆零-发药单位", d.splitOn ? d.splitUnit : "—") +
+          egRead("拆零-发药系数", d.splitOn ? d.splitFactor : "—") +
+        '</div>' +
+      '</div>' +
+      '<div class="drawer-section">' +
+        '<div class="drawer-section-title"><span>生产企业（' + orgVendors.length + '）</span></div>' +
+        (orgVendors.length
+          ? orgVendors.map(function (v) { return vendorReadHtml(v, spec); }).join("")
+          : '<div class="vi-none">暂无生产企业</div>') +
+      '</div>';
+
+    $("drawerFoot").innerHTML =
+      '<button class="btn" data-dact="close">关闭</button>';
+    document.body.classList.add("drawer-open");
+  }
+
+  function closeDrawer() {
+    document.body.classList.remove("drawer-open");
+  }
+
+  /* ---------------- 药品操作：移出机构目录 ---------------- */
+  function removeDrug() {
+    var drug = MOCK.drugs.filter(function (d) { return d.id === state.activeId; })[0];
+    if (!drug) return;
+
+    var keys = MOCK.orgDrugs[state.orgId] || [];
+    var filtered = keys.filter(function (k) { return k.indexOf(drug.id + "_") !== 0; });
+    MOCK.orgDrugs[state.orgId] = filtered;
+
+    state.activeId = "";
+    doSearch(false);
+    toast("「" + drug.name + "」已从本机构目录移出");
+  }
+
+  /* ---------------- 通用弹窗 ---------------- */
+  function openModal(html) {
+    var mask = $("modalMask");
+    mask.innerHTML = '<div class="modal">' + html + '</div>';
+    mask.classList.add("show");
+  }
+  function closeModal() {
+    var mask = $("modalMask");
+    mask.classList.remove("show");
+    mask.innerHTML = "";
+  }
+  function confirmDialog(opt) {
+    openModal(
+      '<div class="modal-head">' +
+        '<span class="modal-title">' + opt.title + '</span>' +
+        '<button class="drawer-close" data-close="1">' +
+          '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>' +
+        '</button>' +
+      '</div>' +
+      '<div class="modal-body"><p class="modal-text">' + opt.text + '</p></div>' +
+      '<div class="modal-foot">' +
+        '<button class="btn" data-close="1">取消</button>' +
+        '<button class="btn btn-primary" data-ok="1">' + (opt.okText || "确定") + '</button>' +
+      '</div>'
+    );
+    var mask = $("modalMask");
+    mask.querySelector("[data-ok]").addEventListener("click", function () {
+      closeModal();
+      if (opt.onOk) opt.onOk();
+    });
+  }
+
+  /* ---------------- Toast ---------------- */
+  var toastTimer = null;
+  function toast(msg) {
+    var el = $("toast");
+    $("toastText").textContent = msg;
+    el.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { el.classList.remove("show"); }, 2200);
+  }
+
+  /* ---------------- 浮动菜单（药品行更多操作：仅移出） ---------------- */
+  var activeMenu = null;
+  function closeMenu() {
+    if (activeMenu) { activeMenu.remove(); activeMenu = null; }
+  }
+  function openMenu(anchor, drug) {
+    closeMenu();
+    var menu = document.createElement("div");
+    menu.className = "float-menu";
+    menu.innerHTML = '<button data-menu="remove" class="is-danger">移出机构目录</button>';
+    document.body.appendChild(menu);
+    activeMenu = menu;
+
+    var r = anchor.getBoundingClientRect();
+    var mw = menu.offsetWidth, mh = menu.offsetHeight;
+    var left = Math.min(r.right - mw, window.innerWidth - mw - 8);
+    var top = r.bottom + 4;
+    if (top + mh > window.innerHeight - 8) top = r.top - mh - 4;
+    menu.style.left = Math.max(8, left) + "px";
+    menu.style.top = top + "px";
+
+    menu.addEventListener("click", function (e) {
+      var btn = e.target.closest("button[data-menu]");
+      if (!btn) return;
+      closeMenu();
+      confirmDialog({
+        title: "移出机构目录",
+        text: "确认将「" + drug.name + "」从本机构目录移出？移出后本机构不可再使用该药品，历史单据不受影响。",
+        okText: "移出",
+        onOk: function () { removeDrug(); }
+      });
+    });
+  }
+
+  /* ---------------- 事件绑定 ---------------- */
+  function bindEvents() {
+    // 机构切换
+    $("orgSelect").addEventListener("change", function () {
+      state.orgId = this.value;
+      state.activeId = "";
+      doSearch(true);
+    });
+
+    // 查询 / 重置 / 回车
+    $("btnSearch").addEventListener("click", function () { doSearch(true); });
+    $("btnReset").addEventListener("click", function () {
+      $("kw").value = ""; $("kind").value = ""; $("status").value = "";
+      doSearch(true);
+    });
+    $("kw").addEventListener("keydown", function (e) {
+      if (e.key === "Enter") doSearch(true);
+    });
+
+    // 列表点击
+    $("drugList").addEventListener("click", function (e) {
+      var more = e.target.closest(".di-more");
+      if (more) {
+        e.stopPropagation();
+        state.activeId = more.getAttribute("data-id");
+        var drug = MOCK.drugs.filter(function (d) { return d.id === state.activeId; })[0];
+        if (drug) openMenu(more, drug);
+        return;
+      }
+      var item = e.target.closest(".drug-item");
+      if (item) {
+        closeMenu();
+        state.activeId = item.getAttribute("data-id");
+        renderList();
+        renderDetail();
+      }
+    });
+
+    // 分页
+    $("prevPage").addEventListener("click", function () {
+      if (state.page > 1) { state.page--; renderList(); }
+    });
+    $("nextPage").addEventListener("click", function () {
+      var pages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+      if (state.page < pages) { state.page++; renderList(); }
+    });
+
+    // 右栏操作（仅移出 + 规格详情）
+    $("detail").addEventListener("click", function (e) {
+      var btn = e.target.closest("[data-act]");
+      if (!btn) return;
+      var act = btn.getAttribute("data-act");
+      var drug = MOCK.drugs.filter(function (d) { return d.id === state.activeId; })[0];
+      if (!drug) return;
+      if (act === "remove") {
+        confirmDialog({
+          title: "移出机构目录",
+          text: "确认将「" + drug.name + "」从本机构目录移出？移出后本机构不可再使用该药品，历史单据不受影响。",
+          okText: "移出",
+          onOk: function () { removeDrug(); }
+        });
+      } else if (act === "spec-detail") {
+        openDrawer(parseInt(btn.getAttribute("data-si"), 10));
+      }
+    });
+
+    // 抽屉
+    $("drawerMask").addEventListener("click", closeDrawer);
+    $("drawerClose").addEventListener("click", closeDrawer);
+    $("drawerFoot").addEventListener("click", function (e) {
+      var b = e.target.closest("[data-dact]");
+      if (!b) return;
+      if (b.getAttribute("data-dact") === "close") closeDrawer();
+    });
+
+    // 弹窗关闭
+    $("modalMask").addEventListener("click", function (e) {
+      if (e.target === $("modalMask")) closeModal();
+      if (e.target.closest("[data-close]")) closeModal();
+    });
+
+    // 全局：关闭浮动菜单
+    document.addEventListener("click", function (e) {
+      if (activeMenu && !e.target.closest(".float-menu") && !e.target.closest(".di-more")) closeMenu();
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") { closeMenu(); closeModal(); closeDrawer(); }
+    });
+    window.addEventListener("resize", closeMenu);
+
+    // 选择药品按钮
+    $("btnSelect").addEventListener("click", function () {
+      location.href = "org-drug-select.html?orgId=" + encodeURIComponent(state.orgId);
+    });
+
+    // 导航 / 页签
+    document.querySelectorAll("[data-nav]").forEach(function (el) {
+      el.addEventListener("click", function () {
+        var name = el.getAttribute("data-nav");
+        if (name === "药品目录管理") { location.href = "drug-catalog.html"; }
+        else if (name === "首页") toast("「首页」页面待开发");
+        else toast("「" + name + "」页面待开发");
+      });
+    });
+    document.querySelector(".tab-close").addEventListener("click", function (e) {
+      e.stopPropagation();
+      toast("原型仅演示「机构药品目录」页");
+    });
+  }
+
+  init();
+})();
+</script>
+  <script src="nav.js"></script>
+</body>
+</html>

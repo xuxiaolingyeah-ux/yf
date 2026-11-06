@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>盘点详情 · 区域药房协同管理系统</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ========== 顶部导航 ========== -->
+<header class="app-header">
+  <div class="header-left">
+    <div class="header-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3.2" y="9.4" width="17.6" height="5.2" rx="2.6" transform="rotate(-45 12 12)"/>
+        <path d="M8.4 15.6L15.6 8.4"/>
+      </svg>
+    </div>
+    <div class="header-title">区域药房协同管理系统</div>
+  </div>
+  <div class="header-right">
+    <div class="header-user" id="headerUser" title="点击退出登录">
+      <span class="header-avatar">药</span>
+      <span class="header-user-name">—</span>
+      <svg class="user-arrow" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+    </div>
+  </div>
+</header>
+
+<div class="app-body">
+  <!-- ========== 左侧导航 ========== -->
+  <aside class="app-side" id="appSide"></aside>
+<!-- ========== 主区域 ========== -->
+  <main class="app-main">
+    <div class="tabbar">
+      <div class="tab">首页</div>
+      <div class="tab active">
+        盘点详情
+        <button class="tab-close" id="tabClose" title="关闭">
+          <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="page sel-page">
+      <div class="sel-main">
+        <div class="page-head">
+          <div class="page-head-left">
+            <button class="back-btn" id="btnBack" title="返回盘点列表">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+            </button>
+            <h1 class="page-title">盘点详情</h1>
+            <span class="pa-code" id="codeLabel">盘点单号：—</span>
+          </div>
+          <span class="status-text" id="statusLabel"></span>
+        </div>
+
+        <div class="sel-card" id="detailCard">
+          <!-- 快速定位：点击页签滚动到对应区块（非切换页面） -->
+          <div class="page-tabs" id="jumpTabs">
+            <span class="page-tab active" data-jump="top">盘点信息</span>
+            <span class="page-tab" data-jump="records">审批记录</span>
+          </div>
+
+          <div class="card-body" id="detailBody" style="padding:16px;">
+
+            <!-- 基本信息 -->
+            <section class="block">
+              <div class="block-head"><h2 class="block-title">基本信息</h2></div>
+              <div class="form-grid-4">
+                <div class="form-item">
+                  <span class="form-label">盘点名称</span>
+                  <span class="text-value" id="dName">—</span>
+                </div>
+                <div class="form-item">
+                  <span class="form-label">机构</span>
+                  <span class="text-value" id="dOrg">—</span>
+                </div>
+                <div class="form-item">
+                  <span class="form-label">药房</span>
+                  <span class="text-value" id="dPharmacy">—</span>
+                </div>
+                <div class="form-item">
+                  <span class="form-label">库位</span>
+                  <span class="text-value" id="dLoc">—</span>
+                </div>
+                <div class="form-item">
+                  <span class="form-label">药品种类</span>
+                  <span class="text-value" id="dKind">—</span>
+                </div>
+                <div class="form-item">
+                  <span class="form-label">盘点时间</span>
+                  <span class="text-value" id="dTime">—</span>
+                </div>
+                <div class="form-item">
+                  <span class="form-label">创建人</span>
+                  <span class="text-value" id="dCreator">—</span>
+                </div>
+                <div class="form-item">
+                  <span class="form-label">创建时间</span>
+                  <span class="text-value" id="dCreatedAt">—</span>
+                </div>
+              </div>
+            </section>
+
+            <!-- 盘点明细 -->
+            <section class="block">
+              <div class="block-head">
+                <h2 class="block-title">盘点明细<span class="count" id="itemCount"></span></h2>
+              </div>
+              <div class="filter-bar sc-filter sc-detail-filter">
+                <div class="filter-item">
+                  <span class="filter-label">药品分类</span>
+                  <select class="select" id="fClass" style="width:200px;">
+                    <option value="">全部分类</option>
+                  </select>
+                </div>
+                <div class="filter-item">
+                  <label class="check-item"><input type="checkbox" id="fDiff"> 只展示盈亏</label>
+                </div>
+                <div class="filter-item">
+                  <label class="check-item"><input type="checkbox" id="fNoStock"> 过滤零库存</label>
+                </div>
+                <div class="filter-item">
+                  <label class="check-item"><input type="checkbox" id="fStop"> 过滤停用药品</label>
+                </div>
+                <div class="filter-acts">
+                  <button class="btn" id="btnReset">重置</button>
+                  <button class="btn btn-primary" id="btnQuery">查询</button>
+                </div>
+              </div>
+              <div class="sc-count-wrap">
+                <table class="data-table sc-count-table">
+                  <colgroup>
+                    <col style="width:140px;">
+                    <col style="width:72px;">
+                    <col style="width:170px;">
+                    <col style="width:200px;">
+                    <col style="width:96px;">
+                    <col style="width:92px;">
+                    <col style="width:190px;">
+                    <col style="width:100px;">
+                    <col style="width:82px;">
+                    <col style="width:82px;">
+                    <col style="width:72px;">
+                    <col style="width:72px;">
+                    <col style="width:124px;">
+                    <col style="width:124px;">
+                    <col style="width:112px;">
+                    <col style="width:96px;">
+                    <col style="width:108px;">
+                  </colgroup>
+                  <thead>
+                    <tr>
+                      <th class="col-drug">药品名称</th>
+                      <th>药品剂型</th>
+                      <th>药品规格</th>
+                      <th>生产企业</th>
+                      <th>批次号</th>
+                      <th>账面数量</th>
+                      <th>盘点数量</th>
+                      <th>盈亏数量</th>
+                      <th>停用数量</th>
+                      <th>预减数量</th>
+                      <th>进货价</th>
+                      <th>零售价</th>
+                      <th>盈亏进货金额</th>
+                      <th>盈亏零售金额</th>
+                      <th>有效期</th>
+                      <th>药品分类</th>
+                      <th>最小换算系数</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tbody"></tbody>
+                </table>
+              </div>
+              <!-- 合计行（独立于横向滚动） -->
+              <div class="sc-sum-bar" id="sumBar"></div>
+
+              <div class="pager">
+                <span id="pagerInfo"></span>
+                <div class="pager-ctrl">
+                  <button class="pager-btn" id="pgPrev" title="上一页">
+                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+                  </button>
+                  <span class="pager-num" id="pgNum">1</span>
+                  <button class="pager-btn" id="pgNext" title="下一页">
+                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>
+                  </button>
+                </div>
+              </div>
+            </section>
+
+            <!-- 关联单据 -->
+            <section class="block" id="secLink" style="display:none;">
+              <div class="block-head"><h2 class="block-title">关联单据</h2></div>
+              <div class="form-grid-4">
+                <div class="form-item">
+                  <span class="form-label">盘盈入库单</span>
+                  <span class="text-value" id="dInCode">—</span>
+                </div>
+                <div class="form-item">
+                  <span class="form-label">盘亏出库单</span>
+                  <span class="text-value" id="dOutCode">—</span>
+                </div>
+              </div>
+            </section>
+
+            <!-- 审批记录 -->
+            <section class="block" id="secRecords">
+              <div class="block-head"><h2 class="block-title">审批记录</h2></div>
+              <table class="data-table sc-record-table">
+                <thead>
+                  <tr>
+                    <th style="width:110px;">节点名称</th>
+                    <th style="width:90px;">审批人</th>
+                    <th style="width:180px;">审批机构</th>
+                    <th style="width:90px;">审批结果</th>
+                    <th>审批意见</th>
+                    <th style="width:160px;">审批时间</th>
+                  </tr>
+                </thead>
+                <tbody id="recordBody"></tbody>
+              </table>
+            </section>
+
+          </div>
+        </div>
+
+        <!-- 审批区（仅待审核 + 当前审核人）：必须是 .sel-main 的直接子元素且位于卡片之后 -->
+        <div class="page-foot" id="pageFoot"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="modal-mask" id="modalMask"></div>
+<div class="toast" id="toast">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+  <span id="toastText"></span>
+</div>
+
+<script src="mock.js"></script>
+<script src="selection-common.js"></script>
+<script src="stock-check-common.js"></script>
+<script>
+(function () {
+  var $ = SEL.$, esc = SEL.esc;
+
+  var user = SC.user();
+  if (!user) return;
+
+  var bill = null;
+  var mode = SEL.qs("mode") === "approve" ? "approve" : "view";
+
+  /* 明细筛选与分页状态（与核对页保持一致） */
+  var state = { page: 1, size: 10, classVal: "", diff: false, noStock: false, stop: false };
+
+  function init() {
+    var id = SEL.qs("id");
+    if (!id) { location.href = "stock-check.html"; return; }
+    var list = SC.load();
+    bill = SC.byId(list, id);
+    if (!bill) { SEL.toast("盘点单不存在"); location.href = "stock-check.html"; return; }
+
+    /* 仅在首次无明细时按账面库存生成，避免覆盖已录入的盘点数量 */
+    if (!bill.items || bill.items.length === 0) SC.fillItems(bill);
+    (bill.items || []).forEach(function (it) {
+      if (it.countBox == null) it.countBox = it.bookQty;
+      if (it.countSplit == null) it.countSplit = 0;
+      if (it.stop == null) it.stop = false;
+    });
+
+    $("codeLabel").textContent = "盘点单号：" + bill.code;
+    $("statusLabel").textContent = "审核状态：" + SC.AUDIT[bill.auditStatus];
+
+    $("dName").textContent = bill.name;
+    $("dOrg").textContent = bill.orgName;
+    $("dPharmacy").textContent = bill.pharmacy;
+    $("dLoc").textContent = bill.location;
+    $("dKind").textContent = bill.kind;
+    $("dTime").textContent = bill.checkTime;
+    $("dCreator").textContent = bill.creator;
+    $("dCreatedAt").textContent = bill.createdAt;
+    $("itemCount").textContent = "（" + (bill.items || []).length + "）";
+
+    if (bill.auditStatus === "approved" && bill.inCode) {
+      $("secLink").style.display = "";
+      $("dInCode").textContent = bill.inCode;
+      $("dOutCode").textContent = bill.outCode || "—";
+    }
+
+    /* 药品分类下拉：只列叶子节点 */
+    var fClass = $("fClass");
+    if (fClass) {
+      (MOCK.classTree || []).forEach(function (l1) {
+        (l1.children || []).forEach(function (l2) {
+          (l2.children || []).forEach(function (l3) {
+            var opt = document.createElement("option");
+            opt.value = l3.name;
+            opt.textContent = l3.name;
+            fClass.appendChild(opt);
+          });
+        });
+      });
+    }
+
+    renderItems();
+    renderRecords();
+    renderApprove();
+    bindFilter();
+  }
+
+  function filtered() {
+    return (bill.items || []).filter(function (it) {
+      if (state.classVal && it.drugCategory !== state.classVal) return false;
+      if (state.noStock && it.bookQty === 0) return false;
+      if (state.stop && it.stop === true) return false;
+      if (state.diff && SC.diffOf(it).pieces === 0) return false;
+      return true;
+    });
+  }
+
+  function sumBarHtml(s) {
+    return '<div class="sc-sum-row">' +
+      '<span class="sc-sum-total-label">合计</span>' +
+      '<span class="sc-sum-fill"></span>' +
+      '<span class="sc-sum-label">盈亏进货金额</span>' +
+      '<span class="num sc-sum-val">¥' + s.diffPurchase + '</span>' +
+      '<span class="sc-sum-label">盈亏零售金额</span>' +
+      '<span class="num sc-sum-val">¥' + s.diffRetail + '</span>' +
+      '<span class="sc-sum-book">账面进货金额 ¥' + s.bookPurchase + '　账面零售金额 ¥' + s.bookRetail + '</span>' +
+    '</div>';
+  }
+
+  function renderItems() {
+    var items = filtered();
+    var total = items.length;
+    var pages = Math.max(1, Math.ceil(total / state.size));
+    if (state.page > pages) state.page = pages;
+    var start = (state.page - 1) * state.size;
+    var slice = items.slice(start, start + state.size);
+
+    if (total === 0) {
+      $("tbody").innerHTML = '<tr class="sc-empty-row"><td colspan="17">没有符合条件的记录</td></tr>';
+    } else {
+      $("tbody").innerHTML = slice.map(function (it) {
+        var d = SC.diffOf(it);
+        var cls = d.pieces > 0 ? "is-gain" : d.pieces < 0 ? "is-loss" : "";
+        return "<tr>" +
+          "<td class='col-drug' title='" + esc(it.drugName) + "'>" + esc(it.drugName) + "</td>" +
+          "<td title='" + esc(it.drugForm) + "'>" + esc(it.drugForm) + "</td>" +
+          "<td title='" + esc(it.drugSpec) + "'>" + esc(it.drugSpec) + "</td>" +
+          "<td title='" + esc(it.vendor) + "'>" + esc(it.vendor) + "</td>" +
+          "<td>" + esc(it.batchNo) + "</td>" +
+          "<td>" + esc(SC.fmtBoxes(it.bookQty, it.unit)) + "</td>" +
+          "<td>" + esc(SC.fmtBoxes(it.countBox, it.unit)) + (it.splitUnit && it.countSplit ? esc(it.countSplit + it.splitUnit) : "") + "</td>" +
+          "<td class='" + cls + "'>" + esc(SC.fmtDiff(d.pieces, it.factor, it.unit, it.splitUnit)) + "</td>" +
+          "<td>" + esc(SC.fmtBoxes(it.stopQty, it.unit)) + "</td>" +
+          "<td>" + esc(SC.fmtBoxes(it.preReduce, it.unit)) + "</td>" +
+          "<td class='num'>¥" + it.purchase + "</td>" +
+          "<td class='num'>¥" + it.retail + "</td>" +
+          "<td class='num " + cls + "'>¥" + SC.diffPurchase(it) + "</td>" +
+          "<td class='num " + cls + "'>¥" + SC.diffRetail(it) + "</td>" +
+          "<td>" + esc(it.expDate) + "</td>" +
+          "<td title='" + esc(it.drugCategory) + "'>" + esc(it.drugCategory || "—") + "</td>" +
+          "<td>" + (it.minFactor || 1) + "</td>" +
+        "</tr>";
+      }).join("");
+    }
+
+    /* 合计按过滤后的全量数据计算，不随分页变化 */
+    var s = SC.sums({ items: items });
+    $("sumBar").innerHTML = sumBarHtml(s);
+
+    $("pagerInfo").textContent = "共 " + total + " 条";
+    $("pgNum").textContent = state.page + " / " + pages;
+    $("pgPrev").disabled = state.page <= 1;
+    $("pgNext").disabled = state.page >= pages;
+  }
+
+  function renderRecords() {
+    var rows = bill.records || [];
+    if (rows.length === 0) {
+      $("recordBody").innerHTML = '<tr><td colspan="6" class="sc-empty-row">暂无审批记录</td></tr>';
+      return;
+    }
+    $("recordBody").innerHTML = rows.map(function (r) {
+      return "<tr>" +
+        "<td>" + esc(r.node) + "</td>" +
+        "<td>" + esc(r.person) + "</td>" +
+        "<td title='" + esc(orgOf(r)) + "'>" + esc(orgOf(r)) + "</td>" +
+        "<td>" + esc(r.result) + "</td>" +
+        "<td title='" + esc(r.opinion) + "'>" + esc(r.opinion || "—") + "</td>" +
+        "<td>" + esc(r.time) + "</td>" +
+      "</tr>";
+    }).join("");
+  }
+
+  /* 审批机构：优先取记录自带机构，旧数据按操作人所属机构回填 */
+  function orgOf(r) {
+    if (r.org) return r.org;
+    for (var i = 0; i < MOCK.users.length; i++) {
+      if (MOCK.users[i].name === r.person) return MOCK.users[i].org;
+    }
+    return "—";
+  }
+
+  function renderApprove() {
+    var foot = $("pageFoot");
+    var canAudit = mode === "approve" && bill.auditStatus === "pending" && SC.isAuditor(bill, user);
+    if (!canAudit) {
+      foot.innerHTML = "";
+      $("detailCard").classList.remove("has-foot");
+      return;
+    }
+
+    $("detailCard").classList.add("has-foot");
+    foot.innerHTML =
+      '<div class="approve-row">' +
+        '<label class="radio"><input type="radio" name="ar" value="approve" checked><span>通过</span></label>' +
+        '<label class="radio"><input type="radio" name="ar" value="reject"><span>拒绝</span></label>' +
+      "</div>" +
+      '<div class="approve-row">' +
+        '<textarea class="textarea approve-single" id="opinion" placeholder="请输入审批意见（拒绝时必填）" maxlength="200"></textarea>' +
+      "</div>" +
+      '<div class="approve-row approve-btns">' +
+        '<button class="btn" id="btnAuditCancel">取消</button>' +
+        '<button class="btn btn-primary" id="btnAuditSubmit">提交</button>' +
+      "</div>";
+
+    $("btnAuditCancel").addEventListener("click", function () { location.href = "stock-check.html"; });
+    $("btnAuditSubmit").addEventListener("click", submitAudit);
+
+    document.querySelectorAll('input[name="ar"]').forEach(function (r) {
+      r.addEventListener("change", function () { $("opinion").classList.remove("is-invalid"); });
+    });
+    $("opinion").addEventListener("input", function () { this.classList.remove("is-invalid"); });
+  }
+
+  function submitAudit() {
+    var result = document.querySelector('input[name="ar"]:checked').value;
+    var opinion = $("opinion").value.trim();
+    if (result === "reject" && !opinion) {
+      $("opinion").classList.add("is-invalid");
+      SEL.toast("拒绝时请填写审批意见");
+      return;
+    }
+
+    var list = SC.load();
+    var b = SC.byId(list, bill.id);
+    if (!b) return;
+
+    if (result === "approve") {
+      b.auditStatus = "approved";
+      b.inCode = "RK" + b.code.slice(2);
+      b.outCode = "CK" + b.code.slice(2);
+      b.records.push({ node: "审核", person: user.name, org: user.org, result: "通过", opinion: opinion || "—", time: SEL.fmtNow() });
+    } else {
+      b.auditStatus = "rejected";
+      b.records.push({ node: "审核", person: user.name, org: user.org, result: "拒绝", opinion: opinion, time: SEL.fmtNow() });
+    }
+    SC.save(list);
+    SEL.toast(result === "approve" ? "审核通过，已生成盘盈入库单与盘亏出库单" : "已拒绝");
+    setTimeout(function () { location.href = "stock-check.html"; }, 500);
+  }
+
+  function bindFilter() {
+    var q = $("btnQuery"); if (!q) return;
+    q.addEventListener("click", function () {
+      state.classVal = $("fClass").value;
+      state.diff = $("fDiff").checked;
+      state.noStock = $("fNoStock").checked;
+      state.stop = $("fStop").checked;
+      state.page = 1;
+      renderItems();
+    });
+    $("btnReset").addEventListener("click", function () {
+      state.classVal = ""; state.diff = false; state.noStock = false; state.stop = false;
+      $("fClass").value = ""; $("fDiff").checked = false; $("fNoStock").checked = false; $("fStop").checked = false;
+      state.page = 1;
+      renderItems();
+    });
+
+    $("pgPrev").addEventListener("click", function () {
+      if (state.page <= 1) return;
+      state.page--;
+      renderItems();
+    });
+    $("pgNext").addEventListener("click", function () {
+      state.page++;
+      renderItems();
+    });
+  }
+
+  /* ---------------- 页签快速定位（同一页内滚动，非切换页面） ---------------- */
+  function setActiveJump(name) {
+    [].slice.call($("jumpTabs").children).forEach(function (t) {
+      t.classList.toggle("active", t.getAttribute("data-jump") === name);
+    });
+  }
+
+  function jumpTo(name) {
+    var body = $("detailBody");
+    var top = 0;
+    if (name === "records") {
+      top = $("secRecords").getBoundingClientRect().top
+        - body.getBoundingClientRect().top + body.scrollTop;
+    }
+    body.scrollTo({ top: top, behavior: "auto" });
+    setActiveJump(name);
+  }
+
+  $("jumpTabs").addEventListener("click", function (e) {
+    var tab = e.target.closest(".page-tab");
+    if (tab) jumpTo(tab.getAttribute("data-jump"));
+  });
+
+  $("detailBody").addEventListener("scroll", function () {
+    var body = $("detailBody");
+    var offset = $("secRecords").getBoundingClientRect().top - body.getBoundingClientRect().top;
+    var atBottom = body.scrollTop > 0 &&
+      body.scrollTop >= body.scrollHeight - body.clientHeight - 2;
+    setActiveJump(offset <= 24 || atBottom ? "records" : "top");
+  });
+
+  $("btnBack").addEventListener("click", function () { location.href = "stock-check.html"; });
+  $("tabClose").addEventListener("click", function () { location.href = "batch-management.html"; });
+  $("headerUser").addEventListener("click", function () {
+    SEL.confirmDialog({
+      title: "退出登录",
+      text: "确认退出当前账号「" + user.name + "」？",
+      okText: "退出",
+      onOk: function () { SC.logout(); }
+    });
+  });
+
+  SEL.renderHeaderUser(user);
+  SEL.bindNav();
+  init();
+})();
+</script>
+  <script src="nav.js"></script>
+</body>
+</html>

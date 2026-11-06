@@ -1,0 +1,1220 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>西药处方开具 · 中心药房</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+/* ===== 处方管理 · 西药处方开具 局部样式 ===== */
+.rx-card {
+  flex: 1; min-height: 0; margin: 12px;
+  display: flex; flex-direction: column;
+  background: var(--bg-white);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 1px 2px rgba(0,0,0,.04);
+  overflow: hidden;
+}
+
+/* 工具栏 */
+.rx-toolbar {
+  flex: none; height: 48px;
+  display: flex; align-items: center; gap: 2px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--border);
+}
+.rx-tool {
+  height: 30px; padding: 0 10px;
+  border: none; background: none; border-radius: var(--radius);
+  color: var(--primary-dark); font-size: 13px;
+  display: inline-flex; align-items: center; gap: 5px;
+  cursor: pointer; white-space: nowrap;
+  transition: background .15s, color .15s;
+}
+.rx-tool:hover { background: var(--primary-lighter); }
+.rx-tool:active { color: var(--primary); }
+.rx-tool:disabled { color: var(--text-placeholder); background: none; cursor: not-allowed; }
+.rx-tool svg { width: 14px; height: 14px; }
+.rx-tool .rx-key { font-size: 12px; opacity: .75; }
+.rx-tool-sep { width: 1px; height: 16px; background: var(--border); margin: 0 6px; }
+
+/* 表格 */
+.rx-tablewrap { flex: 1; min-height: 0; overflow: auto; }
+.rx-table {
+  width: 100%; min-width: 1482px;
+  border-collapse: separate; border-spacing: 0;
+  table-layout: fixed; font-size: 12px;
+}
+.rx-table thead th {
+  position: sticky; top: 0; z-index: 3;
+  height: 38px; padding: 0 8px;
+  background: var(--table-head);
+  border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  text-align: left; font-weight: 500; color: var(--text-secondary);
+  white-space: nowrap;
+}
+.rx-table tbody tr { background: var(--bg-white); }
+.rx-table tbody tr:nth-child(even) { background: var(--table-even); }
+.rx-table tbody tr:hover { background: var(--table-hover); }
+.rx-table tbody td {
+  height: 40px; padding: 0 8px;
+  background: inherit;
+  border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  color: var(--text-primary);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  vertical-align: middle;
+}
+.rx-table th:last-child, .rx-table td:last-child { border-right: none; }
+.rx-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.rx-table .c-chk { width: 32px; text-align: center; padding: 0; }
+.rx-table .c-status { width: 76px; }
+.rx-table .c-mark { width: 42px; }
+.rx-table .c-time { width: 148px; }
+.rx-table .c-content { width: 372px; }
+.rx-table .c-ins { width: 76px; }
+.rx-table .c-days { width: 44px; }
+.rx-table .c-total { width: 52px; }
+.rx-table .c-price { width: 72px; }
+.rx-table .c-amount { width: 72px; }
+.rx-table .c-loc { width: 104px; }
+.rx-table .c-code { width: 110px; }
+.rx-table .c-name { width: 92px; }
+.rx-table .c-note { width: 72px; }
+.rx-table .c-act { width: 120px; }
+.rx-table th.c-act, .rx-table td.c-act {
+  position: sticky; right: 0; z-index: 2;
+  background: inherit;
+  box-shadow: -6px 0 8px -8px rgba(0,0,0,.2);
+}
+.rx-table th.c-act { background: var(--table-head); z-index: 4; }
+.rx-table tr.is-void td { color: var(--text-tertiary); }
+.rx-table tr.is-void .rx-content { text-decoration: line-through; }
+
+.rx-dot {
+  display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+  margin-right: 6px; vertical-align: 1px;
+}
+.rx-dot.is-warn { background: var(--warning); }
+.rx-dot.is-danger { background: var(--danger); }
+.rx-dot.is-ok { background: var(--success); }
+.rx-dot.is-mute { background: var(--text-placeholder); }
+.rx-status.is-danger { color: var(--danger); }
+.rx-status.is-ok { color: var(--success); }
+.rx-status.is-mute { color: var(--text-tertiary); }
+
+.rx-mark {
+  display: inline-block; height: 20px; line-height: 18px; padding: 0 6px;
+  border: 1px solid #BEDAFF; border-radius: 3px;
+  background: var(--primary-light); color: var(--primary-dark);
+  font-size: 12px;
+}
+.rx-mark.is-cy { border-color: #FFD8A8; background: #FFF7E6; color: #D46B08; }
+.rx-act { display: flex; align-items: center; gap: 8px; }
+.rx-act a { color: var(--primary-dark); font-size: 13px; cursor: pointer; }
+.rx-act a:hover { text-decoration: underline; }
+.rx-act a.is-disabled { color: var(--text-placeholder); cursor: default; text-decoration: none; }
+
+.rx-empty { padding: 72px 0; text-align: center; color: var(--text-placeholder); font-size: 13px; }
+
+/* 费用汇总条 */
+.rx-sum {
+  flex: none; height: 34px;
+  display: flex; align-items: center; justify-content: flex-end; gap: 18px;
+  padding: 0 16px;
+  background: #EAF3FF;
+  border-top: 1px solid #D3E5FF;
+  font-size: 12px; color: var(--text-secondary);
+}
+.rx-sum b { font-weight: 500; color: var(--primary-dark); font-variant-numeric: tabular-nums; }
+.rx-info {
+  display: inline-grid; place-items: center;
+  width: 14px; height: 14px; border-radius: 50%;
+  border: 1px solid var(--text-placeholder); color: var(--text-tertiary);
+  font-size: 10px; font-style: normal; cursor: default; margin-left: -12px;
+}
+
+/* 医嘱录入区 */
+.rx-ed { flex: none; border-top: 1px solid var(--border); background: var(--bg-white); }
+.rx-ed.is-hidden { display: none; }
+.rx-ed-head {
+  height: 42px; display: flex; align-items: center;
+  padding: 0 16px 0 8px; gap: 12px;
+  background: #F7FAFF;
+  border-bottom: 1px solid var(--border-light);
+}
+.rx-ed-head .page-tabs { margin: 0; }
+.rx-ed-hint { font-size: 12px; color: var(--text-tertiary); }
+.rx-ed-close {
+  margin-left: auto; width: 26px; height: 26px;
+  border: none; background: none; border-radius: var(--radius);
+  color: var(--text-tertiary); display: grid; place-items: center; cursor: pointer;
+}
+.rx-ed-close:hover { background: rgba(0,0,0,.05); color: var(--text-secondary); }
+.rx-ed-close svg { width: 12px; height: 12px; }
+
+.rx-ed-body { padding: 8px 16px 10px; display: flex; flex-direction: column; gap: 8px; }
+.rx-ed-body.is-hidden { display: none; }
+.rx-erow { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.rx-lbl { font-size: 12px; color: var(--text-tertiary); white-space: nowrap; }
+
+.rx-ed { position: relative; }
+.rx-druginput { width: 300px; }
+.rx-chks { display: flex; align-items: center; gap: 14px; margin-left: 2px; }
+.rx-chk { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: var(--text-secondary); cursor: pointer; white-space: nowrap; }
+.rx-chk input { accent-color: var(--primary); width: 13px; height: 13px; margin: 0; }
+
+/* 药房下拉多选 */
+.rx-mselect { position: relative; }
+.rx-mselect-btn {
+  height: 32px; min-width: 150px; padding: 0 10px;
+  display: inline-flex; align-items: center; gap: 8px;
+  background: #fff; border: 1px solid var(--border-input); border-radius: var(--radius);
+  font-size: 13px; color: var(--text-primary); text-align: left; cursor: pointer;
+}
+.rx-mselect-btn:hover { border-color: var(--primary); }
+.rx-mselect-btn span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rx-mselect-btn svg { width: 10px; height: 10px; color: var(--text-tertiary); flex: none; }
+.rx-mselect-pop {
+  display: none; position: absolute; left: 0; top: 34px; z-index: 32;
+  min-width: 180px; padding: 6px 0;
+  background: #fff; border: 1px solid var(--border-input);
+  border-radius: var(--radius); box-shadow: var(--shadow-2);
+}
+.rx-mselect-pop.show { display: block; }
+.rx-mselect-pop label {
+  display: flex; align-items: center; gap: 8px;
+  height: 30px; padding: 0 12px; font-size: 13px; color: var(--text-primary); cursor: pointer;
+}
+.rx-mselect-pop label:hover { background: var(--primary-lighter); }
+.rx-mselect-pop input { accent-color: var(--primary); margin: 0; }
+
+/* 药品选择弹窗（锚定在医嘱编码输入框上方） */
+.rx-dpanel {
+  display: none; position: absolute; left: 16px; right: 16px; z-index: 30;
+  background: #fff; border: 1px solid var(--border-input);
+  border-radius: 6px; box-shadow: 0 8px 24px rgba(0,0,0,.14);
+  overflow: hidden; flex-direction: column;
+}
+.rx-dpanel.show { display: flex; }
+.rx-dpanel-head {
+  flex: none; height: 40px; display: flex; align-items: center; gap: 22px;
+  padding: 0 14px; border-bottom: 1px solid var(--border);
+}
+.rx-dp-tab {
+  height: 40px; display: inline-flex; align-items: center; position: relative;
+  font-size: 13px; color: var(--text-secondary); cursor: pointer; white-space: nowrap;
+}
+.rx-dp-tab:hover { color: var(--primary-dark); }
+.rx-dp-tab.active { color: var(--primary-dark); font-weight: 500; }
+.rx-dp-tab.active::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0;
+  height: 2px; background: var(--primary);
+}
+.rx-dp-count { margin-left: auto; font-size: 12px; color: var(--text-tertiary); }
+.rx-dpanel-body { flex: 1; min-height: 0; overflow: auto; }
+.rx-dtable {
+  width: 100%; min-width: 1094px; border-collapse: separate; border-spacing: 0;
+  table-layout: fixed; font-size: 12px;
+}
+.rx-dtable thead th {
+  position: sticky; top: 0; z-index: 2;
+  height: 34px; padding: 0 8px;
+  background: var(--table-head); color: var(--text-secondary);
+  text-align: left; font-weight: 500; white-space: nowrap;
+  border-bottom: 1px solid var(--border); border-right: 1px solid var(--border);
+}
+.rx-dtable tbody td {
+  height: 34px; padding: 0 8px;
+  border-bottom: 1px solid var(--border-light); border-right: 1px solid var(--border);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.rx-dtable tbody tr { background: #fff; }
+.rx-dtable tbody tr:nth-child(even) { background: var(--table-even); }
+.rx-dtable tbody tr:hover { background: var(--table-hover); cursor: pointer; }
+.rx-dtable th:last-child, .rx-dtable td:last-child { border-right: none; }
+.rx-dtable .num { text-align: right; font-variant-numeric: tabular-nums; }
+.rx-dtable .c-dname { width: 122px; }
+.rx-dtable .c-dspec { width: 112px; }
+.rx-dtable .c-dform { width: 60px; }
+.rx-dtable .c-dsplit { width: 42px; }
+.rx-dtable .c-dstock { width: 64px; }
+.rx-dtable .c-dprice { width: 62px; }
+.rx-dtable .c-dloc { width: 70px; }
+.rx-dtable .c-dattr { width: 46px; }
+.rx-dtable .c-danti { width: 78px; }
+.rx-dtable .c-dself { width: 58px; }
+.rx-dtable .c-dess { width: 42px; }
+.rx-dtable .c-dlevel { width: 58px; }
+.rx-dtable .c-ddesc { width: 72px; }
+.rx-dtable .c-dcode { width: 126px; }
+.rx-dtable .c-dinsname { width: 104px; }
+.rx-dp-none { padding: 20px; text-align: center; color: var(--text-placeholder); font-size: 12px; }
+
+.rx-money { margin-left: auto; font-size: 12px; color: var(--text-secondary); }
+.rx-money b { color: var(--text-primary); font-weight: 500; font-variant-numeric: tabular-nums; }
+.rx-money + .rx-money { margin-left: 0; }
+.rx-content-view { font-size: 13px; color: var(--text-primary); }
+.rx-content-view.is-empty { color: var(--text-placeholder); }
+
+.rx-fld { display: flex; align-items: center; gap: 6px; }
+.rx-fld .input { width: 64px; }
+.rx-fld .select { width: auto; min-width: 68px; }
+.rx-fld.w-lg .select { width: 104px; }
+.rx-fld .rx-suffix { font-size: 12px; color: var(--text-tertiary); white-space: nowrap; }
+.rx-fld .input.is-invalid { border-color: var(--danger) !important; }
+
+.rx-note-row { gap: 8px; }
+.rx-note-row .rx-note { flex: 1; min-width: 200px; }
+.rx-add-btn { margin-left: 8px; flex: none; }
+
+/* 费用信息页签 */
+.rx-fee { padding: 0; }
+.rx-fee-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.rx-fee-table th {
+  height: 32px; padding: 0 10px; background: var(--table-head);
+  color: var(--text-secondary); font-weight: 500; text-align: left;
+  border-bottom: 1px solid var(--border); white-space: nowrap;
+}
+.rx-fee-table td {
+  height: 32px; padding: 0 10px; border-bottom: 1px solid var(--border-light);
+  white-space: nowrap;
+}
+.rx-fee-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.rx-fee-table tfoot td { background: #F7FAFF; font-weight: 500; color: var(--text-primary); }
+.rx-fee-none { padding: 16px; text-align: center; color: var(--text-placeholder); font-size: 12px; }
+
+/* 弹窗 / toast */
+.rx-mask {
+  display: none; position: fixed; inset: 0; z-index: 400;
+  background: rgba(0,0,0,.35); align-items: center; justify-content: center;
+}
+.rx-mask.show { display: flex; }
+.rx-dlg {
+  width: 400px; background: #fff; border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-2); overflow: hidden;
+}
+.rx-dlg-title { padding: 18px 20px 8px; font-size: 15px; font-weight: 500; color: var(--text-primary); }
+.rx-dlg-body { padding: 0 20px 22px; font-size: 13px; line-height: 1.6; color: var(--text-secondary); }
+.rx-dlg-foot { padding: 12px 20px; display: flex; justify-content: flex-end; gap: 8px; border-top: 1px solid var(--border); }
+</style>
+</head>
+<body>
+
+<!-- ========== 顶部导航 ========== -->
+<header class="app-header">
+  <div class="header-left">
+    <div class="header-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z"></path></svg>
+    </div>
+    <div class="header-title">区域药房协同管理系统</div>
+  </div>
+  <div class="header-right">
+    <div class="header-user">
+      <div class="header-avatar">赵</div>
+      <div class="header-user-name">赵敏 · 中心药房</div>
+    </div>
+  </div>
+</header>
+
+<div class="app-body">
+
+  <!-- 左侧导航 -->
+  <aside class="app-side" id="appSide"></aside>
+<!-- 主区 -->
+  <main class="app-main">
+    <div class="tabbar">
+      <div class="tab" onclick="location.href='drug-catalog.html'">首页</div>
+      <div class="tab active">
+        西药处方开具
+        <button class="tab-close" title="关闭" onclick="location.href='drug-catalog.html'">
+          <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 5l14 14M19 5L5 19"></path></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="rx-card">
+
+      <!-- ========== 工具栏 ========== -->
+      <div class="rx-toolbar">
+        <button class="rx-tool" id="btnNew">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"></path></svg>
+          新增(<span class="rx-key">A</span>)
+        </button>
+        <button class="rx-tool" id="btnSend">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13"></path><path d="M22 2l-7 20-4-9-9-4z"></path></svg>
+          发送(<span class="rx-key">S</span>)
+        </button>
+        <span class="rx-tool-sep"></span>
+        <button class="rx-tool" id="btnDel" disabled="">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"></path></svg>
+          删除
+        </button>
+      </div>
+
+      <!-- ========== 门诊明细 ========== -->
+      <div class="rx-tablewrap">
+        <table class="rx-table">
+          <thead>
+            <tr>
+              <th class="c-chk"><input type="checkbox" id="chkAll" title="全选"></th>
+              <th class="c-status">状态</th>
+              <th class="c-mark">标识</th>
+              <th class="c-time">下达时间</th>
+              <th class="c-content">医嘱内容</th>
+              <th class="c-ins">报销标记</th>
+              <th class="c-days num">天数</th>
+              <th class="c-total num">总量</th>
+              <th class="c-price num">单价(元)</th>
+              <th class="c-amount num">金额(元)</th>
+              <th class="c-loc">库位/执行科室</th>
+              <th class="c-code">国家医保代码</th>
+              <th class="c-name">国家医保名称</th>
+              <th class="c-note">医生嘱托</th>
+              <th class="c-act">操作</th>
+            </tr>
+          </thead>
+          <tbody id="rxBody"><tr data-id="rxo1"><td class="c-chk"><input type="checkbox" data-chk="rxo1"></td><td><span class="rx-dot is-warn"></span><span class="rx-status ">未发送</span></td><td><span class="rx-mark is-cy">成药</span></td><td>2026-11-04 19:06:45</td><td title="六神丸（10粒*12支/盒）10 粒 口服 qd"><span class="rx-content">六神丸（10粒*12支/盒）10 粒 口服 qd</span></td><td>YB</td><td class="num">1</td><td class="num">1盒</td><td class="num">26.45</td><td class="num">26.45</td><td>中药房</td><td title="ZT04AAS0184010102766">ZT04AAS0184010102766</td><td title="六神丸">六神丸</td><td title="—">—</td><td class="c-act"><div class="rx-act"><a data-act="edit" data-id="rxo1" class="">编辑</a><a data-act="copy" data-id="rxo1">复用</a><a data-act="void" data-id="rxo1" class="">作废</a></div></td></tr><tr data-id="rxo2"><td class="c-chk"><input type="checkbox" data-chk="rxo2"></td><td><span class="rx-dot is-danger"></span><span class="rx-status is-danger">待审核</span></td><td><span class="rx-mark">西药</span></td><td>2026-11-04 19:07:59</td><td title="阿胶片（复方*20片/袋）5 片 口服 tid"><span class="rx-content" style="position: relative;">阿胶片（复方*20片/袋）5 片 口服 tid</span></td><td>YB</td><td class="num">5</td><td class="num">4袋</td><td class="num">12.12</td><td class="num">48.48</td><td>西药房</td><td title="XB03BAF0532010102766">XB03BAF0532010102766</td><td title="复方阿胶浆">复方阿胶浆</td><td title="—">—</td><td class="c-act"><div class="rx-act"><a data-act="edit" data-id="rxo2" class="">编辑</a><a data-act="copy" data-id="rxo2">复用</a><a data-act="void" data-id="rxo2" class="">作废</a></div></td></tr></tbody>
+        </table>
+      </div>
+
+      <!-- 汇总条 -->
+      <div class="rx-sum">
+        <span>当前费用：<b id="sumAll">74.93</b> 元<span class="rx-info" title="当前费用包含全部未作废医嘱">i</span></span>
+        <span>未发送费用：<b id="sumUnsent">74.93</b> 元</span>
+      </div>
+
+      <!-- ========== 医嘱录入区 ========== -->
+      <div class="rx-ed" id="rxEd">
+        <div class="rx-ed-head">
+          <div class="page-tabs" id="rxEdTabs">
+            <div class="page-tab active" data-tab="order">医嘱信息</div>
+            <div class="page-tab" data-tab="fee">费用信息</div>
+          </div>
+          
+          <button class="rx-ed-close" id="rxEdClose" title="收起录入区">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+          </button>
+        </div>
+
+        <!-- 医嘱信息 -->
+        <div class="rx-ed-body" id="paneOrder">
+          <div class="rx-erow">
+            <span class="rx-lbl">药房：</span>
+            <div class="rx-mselect" id="rxPharmSel">
+              <button type="button" class="rx-mselect-btn" id="rxPharmBtn">
+                <span id="rxPharmText">西药房</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"></path></svg>
+              </button>
+              <div class="rx-mselect-pop" id="rxPharmPop">
+                <label><input type="checkbox" value="西药房" checked>西药房</label>
+                <label><input type="checkbox" value="中药房">中药房</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="rx-erow">
+            <span class="rx-lbl">医嘱编码：</span>
+            <input class="input rx-druginput" id="rxDrugInput" placeholder="输入药品名称 / 拼音 / 编码" autocomplete="off">
+            <div class="rx-chks">
+              <label class="rx-chk"><input type="checkbox" id="rxOutside">外配</label>
+              <label class="rx-chk"><input type="checkbox" id="rxSkinTest">皮试</label>
+              <label class="rx-chk"><input type="checkbox" id="rxLongRx">长处方</label>
+            </div>
+            <span class="rx-money">单价：<b id="rxPrice">0.00</b> 元</span>
+            <span class="rx-money">总价：<b id="rxAmount">0.00</b> 元</span>
+          </div>
+
+          <div class="rx-erow">
+            <span class="rx-lbl">医嘱内容：</span>
+            <span class="rx-content-view is-empty" id="rxContent" style="position: relative;">请选择药品</span>
+          </div>
+
+          <div class="rx-erow">
+            <div class="rx-fld">
+              <span class="rx-lbl">分组号</span>
+              <input class="input" id="rxGroup" type="number" min="1" step="1" placeholder="—">
+            </div>
+            <div class="rx-fld">
+              <span class="rx-lbl">单次用量</span>
+              <input class="input" id="rxDose" type="number" min="0.01" step="0.01" value="1">
+              <select class="select" id="rxDoseUnit">
+                <option>片</option><option>粒</option><option>袋</option><option>支</option><option>ml</option><option>g</option><option>滴</option>
+              </select>
+            </div>
+            <div class="rx-fld w-lg">
+              <span class="rx-lbl">用次</span>
+              <select class="select" id="rxFreq"><option value="qd">qd</option><option value="bid">bid</option><option value="tid">tid</option><option value="qid">qid</option><option value="q8h">q8h</option><option value="q12h">q12h</option><option value="prn">prn</option></select>
+            </div>
+            <div class="rx-fld w-lg">
+              <span class="rx-lbl">用法</span>
+              <select class="select" id="rxRoute"><option>口服</option><option>外用</option><option>静脉输液</option><option>肌肉注射</option><option>皮下注射</option><option>雾化吸入</option><option>舌下含服</option></select>
+            </div>
+            <div class="rx-fld">
+              <span class="rx-lbl">用药天数</span>
+              <input class="input" id="rxDays" type="number" min="1" step="1" value="1">
+              <span class="rx-suffix">天</span>
+            </div>
+            <div class="rx-fld">
+              <span class="rx-lbl">滴速</span>
+              <input class="input" id="rxDrip" type="number" min="0" step="1" placeholder="—" disabled>
+              <select class="select" id="rxDripUnit" disabled><option>滴/分</option><option>ml/h</option></select>
+            </div>
+            <div class="rx-fld">
+              <span class="rx-lbl">总数</span>
+              <input class="input" id="rxTotal" type="number" min="1" step="1" value="1">
+              <select class="select" id="rxTotalUnit">
+                <option>盒</option><option>袋</option><option>瓶</option><option>支</option><option>片</option><option>粒</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="rx-erow rx-note-row">
+            <span class="rx-lbl">发药药房</span>
+            <select class="select" id="rxPharmacy" style="width:110px">
+              <option>西药房</option><option>中药房</option>
+            </select>
+            <span class="rx-lbl">医生嘱托</span>
+            <input class="input rx-note" id="rxNote" maxlength="60" placeholder="选填，最多60字">
+            <button class="btn btn-primary rx-add-btn" id="btnAdd">添加(<span class="rx-key">D</span>)</button>
+          </div>
+        </div>
+
+        <!-- 费用信息 -->
+        <div class="rx-ed-body is-hidden" id="paneFee">
+          <table class="rx-fee-table">
+            <thead>
+              <tr>
+                <th>药品名称</th><th>医保类别</th><th class="num">报销比例</th>
+                <th class="num">金额(元)</th><th class="num">医保支付(元)</th><th class="num">个人自付(元)</th>
+              </tr>
+            </thead>
+            <tbody id="rxFeeBody"><tr><td>六神丸（10粒*12支/盒）</td><td>甲类</td><td class="num">100%</td><td class="num">26.45</td><td class="num">26.45</td><td class="num">0.00</td></tr><tr><td>阿胶片（复方*20片/袋）</td><td>甲类</td><td class="num">100%</td><td class="num">48.48</td><td class="num">48.48</td><td class="num">0.00</td></tr></tbody>
+            <tfoot id="rxFeeFoot"><tr><td>合计</td><td>—</td><td class="num">—</td><td class="num">74.93</td><td class="num">74.93</td><td class="num">0.00</td></tr></tfoot>
+          </table>
+        </div>
+
+        <!-- 药品选择弹窗 -->
+        <div class="rx-dpanel" id="rxPanel" style="bottom: 197.5px; max-height: 300.5px;">
+          <div class="rx-dpanel-head">
+            <div class="rx-dp-tab active" data-tab="all">全部</div>
+            <div class="rx-dp-tab" data-tab="drug">药品</div>
+            <div class="rx-dp-tab" data-tab="treat">医疗</div>
+            <div class="rx-dp-tab" data-tab="psych">精神</div>
+            <span class="rx-dp-count" id="rxDpCount">共 10 条</span>
+          </div>
+          <div class="rx-dpanel-body">
+            <table class="rx-dtable">
+              <thead>
+                <tr>
+                  <th class="c-dname">名称</th>
+                  <th class="c-dspec">规格</th>
+                  <th class="c-dform">剂型</th>
+                  <th class="c-dsplit">拆零</th>
+                  <th class="c-dstock">库存量</th>
+                  <th class="c-dprice num">零售价</th>
+                  <th class="c-dloc">库位名称</th>
+                  <th class="c-dattr">属性</th>
+                  <th class="c-danti">抗菌素级别</th>
+                  <th class="c-dself">自付比例</th>
+                  <th class="c-dess">基药</th>
+                  <th class="c-dlevel">医保级别</th>
+                  <th class="c-ddesc">医保说明</th>
+                  <th class="c-dcode">国家医保代码</th>
+                  <th class="c-dinsname">国家医保名称</th>
+                </tr>
+              </thead>
+              <tbody id="rxDpBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- 确认弹窗 -->
+<div class="rx-mask" id="rxMask">
+  <div class="rx-dlg">
+    <div class="rx-dlg-title" id="rxDlgTitle">提示</div>
+    <div class="rx-dlg-body" id="rxDlgBody"></div>
+    <div class="rx-dlg-foot">
+      <button class="btn" id="rxDlgCancel">取消</button>
+      <button class="btn btn-primary" id="rxDlgOk">确定</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="rxToast"></div>
+
+<script src="mock.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  function $(id){ return document.getElementById(id); }
+  function esc(v){
+    if (v === null || v === undefined || v === "") return "—";
+    return String(v).replace(/[&<>"']/g, function(c){
+      return { "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c];
+    });
+  }
+  function money(n){ return (Math.round((Number(n) || 0) * 100) / 100).toFixed(2); }
+  function pad(n){ return n < 10 ? "0" + n : "" + n; }
+  function nowStr(){
+    var d = new Date();
+    return d.getFullYear() + "-" + pad(d.getMonth()+1) + "-" + pad(d.getDate()) + " "
+      + pad(d.getHours()) + ":" + pad(d.getMinutes()) + ":" + pad(d.getSeconds());
+  }
+
+  var KEY = "RX_WX_DATA_V1";
+  var FREQ = [
+    { v: "qd",  n: 1, t: "每日一次" }, { v: "bid", n: 2, t: "每日两次" },
+    { v: "tid", n: 3, t: "每日三次" }, { v: "qid", n: 4, t: "每日四次" },
+    { v: "q8h", n: 3, t: "每8小时一次" }, { v: "q12h", n: 2, t: "每12小时一次" },
+    { v: "prn", n: 1, t: "必要时" }
+  ];
+  var ROUTES = ["口服", "外用", "静脉输液", "肌肉注射", "皮下注射", "雾化吸入", "舌下含服"];
+  var STATUS = {
+    unsent:  { t: "未发送", dot: "is-warn",   cls: "" },
+    pending: { t: "待审核", dot: "is-danger", cls: "is-danger" },
+    sent:    { t: "已发送", dot: "is-ok",     cls: "is-ok" },
+    void:    { t: "已作废", dot: "is-mute",   cls: "is-mute" }
+  };
+
+  function drugOf(key){
+    for (var i = 0; i < MOCK.rxDrugs.length; i++){
+      if (MOCK.rxDrugs[i].key === key) return MOCK.rxDrugs[i];
+    }
+    return null;
+  }
+  function freqTimes(v){
+    for (var i = 0; i < FREQ.length; i++) if (FREQ[i].v === v) return FREQ[i].n;
+    return 1;
+  }
+  function freqLabel(v){
+    for (var i = 0; i < FREQ.length; i++) if (FREQ[i].v === v) return FREQ[i].t;
+    return "";
+  }
+
+  function blankDraft(){
+    return {
+      id: null, drugKey: "", groupNo: "", dose: "1", doseUnit: "片",
+      freq: "bid", route: "口服", days: "1", drip: "", dripUnit: "滴/分",
+      total: "1", totalUnit: "盒", pharmacy: "西药房", pharmacies: ["西药房"],
+      note: "", outside: false, skinTest: false, longRx: false, totalManual: false
+    };
+  }
+
+  function loadRows(){
+    try {
+      var raw = sessionStorage.getItem(KEY);
+      if (raw){
+        var data = JSON.parse(raw);
+        if (data && data.v === 1 && Array.isArray(data.rows)) return data.rows;
+      }
+    } catch(e){}
+    return JSON.parse(JSON.stringify(MOCK.rxOrders));
+  }
+  function persist(){
+    try { sessionStorage.setItem(KEY, JSON.stringify({ v: 1, rows: ST.rows })); } catch(e){}
+  }
+
+  var ST = {
+    rows: loadRows(),
+    checked: {},
+    editingId: null,
+    edOpen: true,
+    tab: "order",
+    panelTab: "all",
+    draft: blankDraft()
+  };
+
+  /* ---------------- 计算 ---------------- */
+  function calcDraftTotal(){
+    var d = ST.draft, drug = drugOf(d.drugKey);
+    if (!drug) return 0;
+    var dose = Number(d.dose) || 0;
+    var days = Number(d.days) || 0;
+    var qty = Math.ceil(dose * freqTimes(d.freq) * days / drug.pkgFactor);
+    return qty > 0 ? qty : 0;
+  }
+  function draftAmount(){
+    var drug = drugOf(ST.draft.drugKey);
+    if (!drug) return 0;
+    return (Number(drug.price) || 0) * (Number(ST.draft.total) || 0);
+  }
+  function contentOf(d){
+    var drug = drugOf(d.drugKey);
+    if (!drug) return "";
+    return drug.name + "（" + drug.spec + "）" + d.dose + d.doseUnit + " " + d.route
+      + " " + d.freq + "(" + freqLabel(d.freq) + ")";
+  }
+
+  /* ---------------- 表格渲染 ---------------- */
+  function renderTable(){
+    var body = $("rxBody");
+    if (!ST.rows.length){
+      body.innerHTML = '<tr><td colspan="15" class="rx-empty">暂无医嘱，点击「新增(A)」录入医嘱</td></tr>';
+      $("chkAll").checked = false;
+      $("chkAll").indeterminate = false;
+      $("btnDel").disabled = true;
+      return;
+    }
+    var html = "";
+    ST.rows.forEach(function(r){
+      var st = STATUS[r.status] || STATUS.unsent;
+      var canEdit = r.status === "unsent" || r.status === "pending";
+      var canVoid = canEdit;
+      html += '<tr data-id="' + r.id + '"' + (r.status === "void" ? ' class="is-void"' : '') + '>'
+        + '<td class="c-chk"><input type="checkbox" data-chk="' + r.id + '"' + (ST.checked[r.id] ? " checked" : "") + '></td>'
+        + '<td><span class="rx-dot ' + st.dot + '"></span><span class="rx-status ' + st.cls + '">' + st.t + '</span></td>'
+        + '<td><span class="rx-mark' + (r.mark === "成药" ? " is-cy" : "") + '">' + esc(r.mark) + '</span></td>'
+        + '<td>' + esc(r.time) + '</td>'
+        + '<td class="c-content" title="' + esc(contentOf(r)) + '"><span class="rx-content">' + esc(contentOf(r)) + '</span></td>'
+        + '<td>' + esc(r.insFlag) + '</td>'
+        + '<td class="num">' + r.days + '</td>'
+        + '<td class="num">' + r.total + r.totalUnit + '</td>'
+        + '<td class="num">' + money(r.price) + '</td>'
+        + '<td class="num">' + money(r.amount) + '</td>'
+        + '<td>' + esc(r.pharmacy) + '</td>'
+        + '<td title="' + esc(r.insCode) + '">' + esc(r.insCode) + '</td>'
+        + '<td title="' + esc(r.insName) + '">' + esc(r.insName) + '</td>'
+        + '<td title="' + esc(r.note) + '">' + esc(r.note) + '</td>'
+        + '<td class="c-act"><div class="rx-act">'
+          + '<a data-act="edit" data-id="' + r.id + '" class="' + (canEdit ? "" : "is-disabled") + '">编辑</a>'
+          + '<a data-act="copy" data-id="' + r.id + '">复用</a>'
+          + '<a data-act="void" data-id="' + r.id + '" class="' + (canVoid ? "" : "is-disabled") + '">作废</a>'
+        + '</div></td>'
+        + '</tr>';
+    });
+    body.innerHTML = html;
+    syncCheckAll();
+  }
+
+  function syncCheckAll(){
+    var ids = ST.rows.map(function(r){ return r.id; });
+    var n = 0;
+    ids.forEach(function(id){ if (ST.checked[id]) n++; });
+    $("chkAll").checked = ids.length > 0 && n === ids.length;
+    $("chkAll").indeterminate = n > 0 && n < ids.length;
+    $("btnDel").disabled = n === 0;
+  }
+
+  function renderSum(){
+    var all = 0, unsent = 0;
+    ST.rows.forEach(function(r){
+      if (r.status === "void") return;
+      all += Number(r.amount) || 0;
+      // 未发送费用：尚未发药（未发送 + 待审核）的费用
+      if (r.status !== "sent") unsent += Number(r.amount) || 0;
+    });
+    $("sumAll").textContent = money(all);
+    $("sumUnsent").textContent = money(unsent);
+  }
+
+  /* ---------------- 录入区 ---------------- */
+  function fillSelects(){
+    $("rxFreq").innerHTML = FREQ.map(function(f){
+      return '<option value="' + f.v + '">' + f.v + '</option>';
+    }).join("");
+    $("rxRoute").innerHTML = ROUTES.map(function(r){
+      return '<option>' + r + '</option>';
+    }).join("");
+  }
+
+  function syncEditor(){
+    var d = ST.draft, drug = drugOf(d.drugKey);
+
+    // 药房（多选）
+    if (!d.pharmacies || !d.pharmacies.length) d.pharmacies = ["西药房"];
+    $("rxPharmText").textContent = d.pharmacies.length ? d.pharmacies.join("、") : "请选择药房";
+    Array.prototype.forEach.call($("rxPharmPop").querySelectorAll("input"), function(el){
+      el.checked = d.pharmacies.indexOf(el.value) >= 0;
+    });
+
+    $("rxDrugInput").value = drug ? drug.specCode : "";
+    $("rxPrice").textContent = money(drug ? drug.price : 0);
+    $("rxAmount").textContent = money(draftAmount());
+    $("rxContent").textContent = drug ? contentOf(d) : "请选择药品";
+    $("rxContent").classList.toggle("is-empty", !drug);
+
+    $("rxGroup").value = d.groupNo;
+    $("rxDose").value = d.dose;
+    $("rxDoseUnit").value = d.doseUnit;
+    $("rxFreq").value = d.freq;
+    $("rxRoute").value = d.route;
+    $("rxDays").value = d.days;
+    $("rxDrip").value = d.drip;
+    $("rxDripUnit").value = d.dripUnit || "滴/分";
+    $("rxTotal").value = d.total;
+    $("rxTotalUnit").value = d.totalUnit;
+    $("rxPharmacy").value = d.pharmacy;
+    $("rxNote").value = d.note;
+    $("rxOutside").checked = !!d.outside;
+    $("rxSkinTest").checked = !!d.skinTest;
+    $("rxLongRx").checked = !!d.longRx;
+    syncDrip();
+
+    $("btnAdd").innerHTML = ST.editingId ? '保存修改(<span class="rx-key">D</span>)' : '添加(<span class="rx-key">D</span>)';
+
+    renderFee();
+  }
+
+  // 滴速仅在用法为「静脉输液」时可用
+  function syncDrip(){
+    var iv = ST.draft.route === "静脉输液";
+    var drip = $("rxDrip"), unit = $("rxDripUnit");
+    if (!iv) {
+      ST.draft.drip = "";
+      drip.value = "";
+    }
+    drip.disabled = !iv;
+    unit.disabled = !iv;
+  }
+
+  function recalcDraft(keepTotal){
+    if (!keepTotal) {
+      ST.draft.total = String(calcDraftTotal());
+    }
+    $("rxTotal").value = ST.draft.total;
+    $("rxAmount").textContent = money(draftAmount());
+    $("rxContent").textContent = drugOf(ST.draft.drugKey) ? contentOf(ST.draft) : "请选择药品";
+  }
+
+  function setInvalid(el, bad){
+    if (!el) return;
+    el.classList.toggle("is-invalid", !!bad);
+  }
+
+  function validateDraft(){
+    var d = ST.draft, errs = [], drug = drugOf(d.drugKey);
+    setInvalid($("rxDrugInput"), !drug);
+    if (!drug) errs.push("药品");
+    var dose = Number(d.dose);
+    setInvalid($("rxDose"), !(dose > 0));
+    if (!(dose > 0)) errs.push("单次用量");
+    var days = Number(d.days);
+    setInvalid($("rxDays"), !(days >= 1));
+    if (!(days >= 1)) errs.push("用药天数");
+    var total = Number(d.total);
+    setInvalid($("rxTotal"), !(total >= 1));
+    if (!(total >= 1)) errs.push("总数");
+    return errs;
+  }
+
+  function rowsFromDraft(){
+    var d = ST.draft, drug = drugOf(d.drugKey);
+    var pharms = (d.pharmacies && d.pharmacies.length) ? d.pharmacies.slice() : ["西药房"];
+    return {
+      drugKey: d.drugKey, drugName: drug.name, spec: drug.spec, specCode: drug.specCode,
+      groupNo: d.groupNo, dose: Number(d.dose), doseUnit: d.doseUnit,
+      freq: d.freq, route: d.route, days: Number(d.days),
+      drip: d.drip, dripUnit: d.dripUnit || "滴/分",
+      total: Number(d.total), totalUnit: d.totalUnit,
+      price: drug.price, amount: Number(money(drug.price * Number(d.total))),
+      pharmacy: pharms.join("、"), pharmacies: pharms,
+      outside: !!d.outside, skinTest: !!d.skinTest, longRx: !!d.longRx,
+      insFlag: drug.insFlag, insClass: drug.insClass,
+      insCode: drug.insCode, insName: drug.insName, note: d.note,
+      mark: drug.kind === "中成药" ? "成药" : drug.kind
+    };
+  }
+
+  function addOrder(){
+    var errs = validateDraft();
+    if (errs.length){
+      toast("请完善：" + errs.join("、"));
+      return;
+    }
+    var data = rowsFromDraft();
+    if (ST.editingId){
+      var row = null;
+      ST.rows.forEach(function(r){ if (r.id === ST.editingId) row = r; });
+      if (row){
+        Object.keys(data).forEach(function(k){ row[k] = data[k]; });
+      }
+      toast("医嘱已保存");
+    } else {
+      data.id = "rxo" + Date.now();
+      data.status = "unsent";
+      data.time = nowStr();
+      ST.rows.push(data);
+      toast("医嘱已添加，状态为未发送");
+    }
+    ST.editingId = null;
+    ST.draft = blankDraft();
+    persist();
+    renderTable(); renderSum(); syncEditor();
+    closePanel();
+  }
+
+  /* ---------------- 编辑 / 复用 / 作废 ---------------- */
+  function openEditor(){
+    ST.edOpen = true;
+    $("rxEd").classList.remove("is-hidden");
+  }
+  function draftFromRow(row, id){
+    var pharms = (row.pharmacies && row.pharmacies.length) ? row.pharmacies.slice() : [row.pharmacy || "西药房"];
+    return {
+      id: id, drugKey: row.drugKey, groupNo: row.groupNo || "", dose: String(row.dose),
+      doseUnit: row.doseUnit, freq: row.freq, route: row.route, days: String(row.days),
+      drip: row.drip || "", dripUnit: row.dripUnit || "滴/分",
+      total: String(row.total), totalUnit: row.totalUnit,
+      pharmacy: row.pharmacy || "西药房", pharmacies: pharms,
+      note: row.note || "", outside: !!row.outside, skinTest: !!row.skinTest,
+      longRx: !!row.longRx, totalManual: true
+    };
+  }
+  function startEdit(id){
+    var row = null;
+    ST.rows.forEach(function(r){ if (r.id === id) row = r; });
+    if (!row) return;
+    ST.editingId = id;
+    ST.draft = draftFromRow(row, id);
+    openEditor();
+    setTab("order");
+    syncEditor();
+  }
+  function copyOrder(id){
+    var row = null;
+    ST.rows.forEach(function(r){ if (r.id === id) row = r; });
+    if (!row) return;
+    ST.editingId = null;
+    ST.draft = draftFromRow(row, null);
+    openEditor();
+    setTab("order");
+    syncEditor();
+    toast("已复用该医嘱，确认后点击「添加」");
+  }
+  function voidOrder(id){
+    var row = null;
+    ST.rows.forEach(function(r){ if (r.id === id) row = r; });
+    if (!row) return;
+    confirmDialog("作废医嘱", "确认作废「" + row.drugName + "」这条医嘱吗？作废后不计入费用。", "作废", function(){
+      row.status = "void";
+      if (ST.editingId === id) ST.editingId = null;
+      persist(); renderTable(); renderSum(); syncEditor();
+      toast("医嘱已作废");
+    });
+  }
+
+  /* ---------------- 发送 / 删除 ---------------- */
+  function sendOrders(){
+    var list = ST.rows.filter(function(r){ return r.status === "unsent"; });
+    if (!list.length){
+      toast("没有待发送的医嘱");
+      return;
+    }
+    confirmDialog("发送医嘱", "将发送 " + list.length + " 条未发送医嘱，发送后进入待审核。", "发送", function(){
+      var t = nowStr();
+      list.forEach(function(r){ r.status = "pending"; r.time = t; });
+      persist(); renderTable(); renderSum(); syncEditor();
+      toast("已发送 " + list.length + " 条医嘱，等待审核");
+    });
+  }
+  function deleteChecked(){
+    var ids = Object.keys(ST.checked).filter(function(id){ return ST.checked[id]; });
+    if (!ids.length) return;
+    confirmDialog("删除医嘱", "确认删除选中的 " + ids.length + " 条医嘱吗？", "删除", function(){
+      ST.rows = ST.rows.filter(function(r){ return !ST.checked[r.id]; });
+      ST.checked = {};
+      if (ST.editingId && ids.indexOf(ST.editingId) >= 0) ST.editingId = null;
+      persist(); renderTable(); renderSum(); syncEditor();
+      toast("已删除 " + ids.length + " 条医嘱");
+    });
+  }
+
+  /* ---------------- 药品选择弹窗 ---------------- */
+  function matchDrug(d, q){
+    if (!q) return true;
+    q = q.toLowerCase();
+    return (d.name + d.py + d.specCode + d.insCode + d.insName + d.spec).toLowerCase().indexOf(q) >= 0;
+  }
+  function panelList(q){
+    if (ST.panelTab === "treat" || ST.panelTab === "psych") return [];
+    return MOCK.rxDrugs.filter(function(d){ return matchDrug(d, q); });
+  }
+  function renderPanel(q){
+    var list = panelList(q);
+    $("rxDpCount").textContent = "共 " + list.length + " 条";
+    if (!list.length){
+      $("rxDpBody").innerHTML = '<tr><td colspan="15" class="rx-dp-none">暂无数据</td></tr>';
+      return;
+    }
+    $("rxDpBody").innerHTML = list.map(function(d){
+      return '<tr data-key="' + d.key + '">'
+        + '<td title="' + esc(d.name) + '">' + esc(d.name) + '</td>'
+        + '<td title="' + esc(d.spec) + '">' + esc(d.spec) + '</td>'
+        + '<td>' + esc(d.form) + '</td>'
+        + '<td>' + esc(d.split) + '</td>'
+        + '<td class="num">' + d.stock + esc(d.pkgUnit) + '</td>'
+        + '<td class="num">' + money(d.price) + '</td>'
+        + '<td>' + esc(d.location) + '</td>'
+        + '<td>' + esc(d.attr) + '</td>'
+        + '<td>' + esc(d.antibiotic) + '</td>'
+        + '<td class="num">' + d.selfPay + '</td>'
+        + '<td>' + esc(d.essential) + '</td>'
+        + '<td>' + esc(d.insClass) + '</td>'
+        + '<td title="' + esc(d.insDesc) + '">' + esc(d.insDesc) + '</td>'
+        + '<td title="' + esc(d.insCode) + '">' + esc(d.insCode) + '</td>'
+        + '<td title="' + esc(d.insName) + '">' + esc(d.insName) + '</td>'
+        + '</tr>';
+    }).join("");
+  }
+  function openPanel(){
+    var input = $("rxDrugInput"), panel = $("rxPanel");
+    var ir = input.getBoundingClientRect(), er = $("rxEd").getBoundingClientRect();
+    panel.style.bottom = (er.bottom - ir.top + 8) + "px";
+    panel.style.maxHeight = Math.min(430, Math.max(180, ir.top - 64)) + "px";
+    renderPanel(input.value.trim());
+    panel.classList.add("show");
+  }
+  function closePanel(){ $("rxPanel").classList.remove("show"); }
+  function setPanelTab(tab){
+    ST.panelTab = tab;
+    Array.prototype.forEach.call($("rxPanel").querySelectorAll(".rx-dp-tab"), function(el){
+      el.classList.toggle("active", el.getAttribute("data-tab") === tab);
+    });
+    renderPanel($("rxDrugInput").value.trim());
+  }
+
+  function selectDrug(key){
+    var drug = drugOf(key);
+    if (!drug) return;
+    ST.draft.drugKey = key;
+    ST.draft.doseUnit = drug.doseUnit;
+    ST.draft.totalUnit = drug.pkgUnit;
+    ST.draft.pharmacy = drug.kind === "中药饮片" ? "中药房" : ST.draft.pharmacy;
+    ST.draft.totalManual = false;
+    ST.draft.total = String(calcDraftTotal());
+    closePanel();
+    syncEditor();
+    setInvalid($("rxDrugInput"), false);
+    $("rxDose").focus();
+  }
+
+  /* ---------------- 费用信息 ---------------- */
+  function rateOf(r){
+    if (r.insClass === "甲类") return 1;
+    if (r.insClass === "乙类") return 0.9;
+    return 0;
+  }
+  function renderFee(){
+    var rows = ST.rows.filter(function(r){ return r.status !== "void"; });
+    var body = $("rxFeeBody"), foot = $("rxFeeFoot");
+    if (!rows.length){
+      body.innerHTML = '<tr><td colspan="6" class="rx-fee-none">暂无费用数据</td></tr>';
+      foot.innerHTML = "";
+      return;
+    }
+    var total = 0, ins = 0, self = 0;
+    body.innerHTML = rows.map(function(r){
+      var rate = rateOf(r);
+      var a = Number(r.amount) || 0;
+      var pay = Math.round(a * rate * 100) / 100;
+      total += a; ins += pay; self += a - pay;
+      return '<tr>'
+        + '<td>' + esc(r.drugName) + '（' + esc(r.spec) + '）</td>'
+        + '<td>' + esc(r.insClass) + '</td>'
+        + '<td class="num">' + (rate * 100) + '%</td>'
+        + '<td class="num">' + money(a) + '</td>'
+        + '<td class="num">' + money(pay) + '</td>'
+        + '<td class="num">' + money(a - pay) + '</td>'
+        + '</tr>';
+    }).join("");
+    foot.innerHTML = '<tr>'
+      + '<td>合计</td><td>—</td><td class="num">—</td>'
+      + '<td class="num">' + money(total) + '</td>'
+      + '<td class="num">' + money(ins) + '</td>'
+      + '<td class="num">' + money(self) + '</td>'
+      + '</tr>';
+  }
+
+  /* ---------------- 页签 / 弹窗 / toast ---------------- */
+  function setTab(tab){
+    ST.tab = tab;
+    Array.prototype.forEach.call($("rxEdTabs").children, function(el){
+      el.classList.toggle("active", el.getAttribute("data-tab") === tab);
+    });
+    $("paneOrder").classList.toggle("is-hidden", tab !== "order");
+    $("paneFee").classList.toggle("is-hidden", tab !== "fee");
+    closePanel();
+  }
+
+  var dlgOk = null;
+  function confirmDialog(title, body, okText, onOk){
+    $("rxDlgTitle").textContent = title;
+    $("rxDlgBody").textContent = body;
+    $("rxDlgOk").textContent = okText || "确定";
+    dlgOk = onOk;
+    $("rxMask").classList.add("show");
+  }
+  function closeDialog(){
+    $("rxMask").classList.remove("show");
+    dlgOk = null;
+  }
+
+  var toastTimer = null;
+  function toast(msg){
+    var el = $("rxToast");
+    el.textContent = msg;
+    el.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ el.classList.remove("show"); }, 2200);
+  }
+
+  /* ---------------- 事件绑定 ---------------- */
+  function bind(){
+    $("btnNew").onclick = function(){
+      ST.editingId = null;
+      ST.draft = blankDraft();
+      openEditor(); setTab("order"); syncEditor();
+      $("rxDrugInput").focus();
+    };
+    $("btnSend").onclick = sendOrders;
+    $("btnDel").onclick = deleteChecked;
+    $("btnAdd").onclick = addOrder;
+
+    $("rxEdClose").onclick = function(){
+      ST.edOpen = false;
+      closePanel();
+      $("rxEd").classList.add("is-hidden");
+    };
+
+    // 页签
+    $("rxEdTabs").addEventListener("click", function(e){
+      var t = e.target.closest(".page-tab");
+      if (t) setTab(t.getAttribute("data-tab"));
+    });
+
+    // 药房下拉多选
+    $("rxPharmBtn").onclick = function(e){
+      e.stopPropagation();
+      $("rxPharmPop").classList.toggle("show");
+    };
+    $("rxPharmPop").addEventListener("change", function(){
+      var vals = Array.prototype.filter.call(this.querySelectorAll("input"), function(i){ return i.checked; })
+        .map(function(i){ return i.value; });
+      ST.draft.pharmacies = vals;
+      $("rxPharmText").textContent = vals.length ? vals.join("、") : "请选择药房";
+    });
+
+    // 外配 / 皮试 / 长处方
+    $("rxOutside").addEventListener("change", function(){ ST.draft.outside = this.checked; });
+    $("rxSkinTest").addEventListener("change", function(){ ST.draft.skinTest = this.checked; });
+    $("rxLongRx").addEventListener("change", function(){ ST.draft.longRx = this.checked; });
+
+    // 表格操作
+    $("rxBody").addEventListener("click", function(e){
+      var a = e.target.closest("a[data-act]");
+      if (a){
+        if (a.classList.contains("is-disabled")) return;
+        var id = a.getAttribute("data-id");
+        if (a.getAttribute("data-act") === "edit") startEdit(id);
+        else if (a.getAttribute("data-act") === "copy") copyOrder(id);
+        else voidOrder(id);
+        return;
+      }
+      var ck = e.target.closest("input[data-chk]");
+      if (ck){
+        ST.checked[ck.getAttribute("data-chk")] = ck.checked;
+        syncCheckAll();
+      }
+    });
+    $("chkAll").onchange = function(){
+      var val = this.checked;
+      ST.rows.forEach(function(r){ ST.checked[r.id] = val; });
+      renderTable();
+    };
+
+    // 药品选择弹窗
+    $("rxDrugInput").addEventListener("focus", openPanel);
+    $("rxDrugInput").addEventListener("input", function(){
+      ST.draft.drugKey = "";
+      openPanel();
+      $("rxContent").textContent = "请选择药品";
+      $("rxContent").classList.add("is-empty");
+      $("rxPrice").textContent = "0.00";
+      $("rxAmount").textContent = "0.00";
+    });
+    $("rxDpBody").addEventListener("click", function(e){
+      var tr = e.target.closest("tr[data-key]");
+      if (tr) selectDrug(tr.getAttribute("data-key"));
+    });
+    $("rxPanel").querySelector(".rx-dpanel-head").addEventListener("click", function(e){
+      var t = e.target.closest(".rx-dp-tab");
+      if (t) setPanelTab(t.getAttribute("data-tab"));
+    });
+    document.addEventListener("click", function(e){
+      if (!e.target.closest("#rxPanel") && !e.target.closest(".rx-druginput")) closePanel();
+      if (!e.target.closest("#rxPharmSel")) $("rxPharmPop").classList.remove("show");
+    });
+
+    // 录入字段
+    $("rxGroup").addEventListener("input", function(){ ST.draft.groupNo = this.value; });
+    $("rxDose").addEventListener("input", function(){
+      ST.draft.dose = this.value; ST.draft.totalManual = false;
+      recalcDraft(); setInvalid(this, false);
+    });
+    $("rxDoseUnit").addEventListener("change", function(){ ST.draft.doseUnit = this.value; recalcDraft(); });
+    $("rxFreq").addEventListener("change", function(){
+      ST.draft.freq = this.value; ST.draft.totalManual = false; recalcDraft();
+    });
+    $("rxRoute").addEventListener("change", function(){
+      ST.draft.route = this.value; syncDrip(); recalcDraft();
+    });
+    $("rxDays").addEventListener("input", function(){
+      ST.draft.days = this.value; ST.draft.totalManual = false;
+      recalcDraft(); setInvalid(this, false);
+    });
+    $("rxDrip").addEventListener("input", function(){ ST.draft.drip = this.value; });
+    $("rxDripUnit").addEventListener("change", function(){ ST.draft.dripUnit = this.value; });
+    $("rxTotal").addEventListener("input", function(){
+      ST.draft.total = this.value; ST.draft.totalManual = true;
+      $("rxAmount").textContent = money(draftAmount());
+      setInvalid(this, false);
+    });
+    $("rxTotalUnit").addEventListener("change", function(){ ST.draft.totalUnit = this.value; });
+    $("rxPharmacy").addEventListener("change", function(){ ST.draft.pharmacy = this.value; });
+    $("rxNote").addEventListener("input", function(){ ST.draft.note = this.value; });
+
+    // 快捷键 Alt+A / Alt+S / Alt+D
+    document.addEventListener("keydown", function(e){
+      if (e.altKey && !e.ctrlKey && !e.metaKey){
+        var k = (e.key || "").toLowerCase();
+        if (k === "a"){ e.preventDefault(); $("btnNew").click(); }
+        else if (k === "s"){ e.preventDefault(); sendOrders(); }
+        else if (k === "d"){ e.preventDefault(); addOrder(); }
+      }
+      if (e.key === "Escape"){
+        if ($("rxMask").classList.contains("show")) closeDialog();
+        else closePanel();
+      }
+    });
+
+    // 弹窗
+    $("rxDlgCancel").onclick = closeDialog;
+    $("rxDlgOk").onclick = function(){
+      var fn = dlgOk;
+      closeDialog();
+      if (fn) fn();
+    };
+    $("rxMask").addEventListener("click", function(e){
+      if (e.target === this) closeDialog();
+    });
+  }
+
+  /* ---------------- 初始化 ---------------- */
+  fillSelects();
+  bind();
+  renderTable();
+  renderSum();
+  syncEditor();
+})();
+</script>
+
+
+  <script src="nav.js"></script>
+</body></html>

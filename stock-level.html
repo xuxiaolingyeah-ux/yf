@@ -1,0 +1,1519 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>药品高低储设置 · 中心药房</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+/* ===== 药品高低储设置 局部样式 ===== */
+.sl-page { background: var(--bg-page); }
+.sl-card {
+  flex: 1; min-height: 0;
+  display: flex; flex-direction: column;
+  background: var(--bg-white);
+  margin: 12px;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 1px 2px rgba(0,0,0,.04);
+  overflow: hidden;
+}
+
+/* 标题行 */
+.sl-head {
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--border);
+}
+.sl-head-left { display: flex; align-items: center; gap: 16px; }
+.sl-head-title { font-size: 15px; font-weight: 500; color: var(--text-primary); }
+.sl-head-fis { display: flex; align-items: center; gap: 6px; }
+.sl-head-fis .sl-hlbl { font-size: 12px; color: var(--text-tertiary); white-space: nowrap; }
+.sl-head-fis .sl-hsel { width: 130px; height: 28px; }
+
+/* 筛选区（一行） */
+.sl-filter {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: nowrap;
+}
+.sl-fi { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+.sl-fi > .lbl { font-size: 12px; color: var(--text-tertiary); white-space: nowrap; }
+.sl-fi .input, .sl-fi .select { width: 160px; }
+.sl-fi .sl-name-input { width: 220px; }
+.sl-filter-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+
+/* Tab 区 */
+.sl-tabs-wrap { padding: 8px 16px 4px; }
+
+/* 批量操作栏 */
+.sl-batch-bar {
+  display: none;
+  align-items: center; gap: 8px;
+  padding: 10px 16px;
+  background: var(--primary-lighter);
+  border-bottom: 1px solid var(--border-light);
+  font-size: 12px; color: var(--primary-dark);
+}
+.sl-batch-bar.show { display: flex; }
+.sl-batch-bar b { color: var(--text-primary); font-weight: 500; }
+.sl-batch-bar .btn { margin-left: auto; }
+.sl-batch-bar .btn + .btn { margin-left: 8px; }
+
+/* 表格 */
+.sl-table-wrap { flex: 1; overflow: auto; min-height: 0; }
+.sl-table {
+  width: 100%; border-collapse: separate; border-spacing: 0;
+  font-size: 13px; table-layout: fixed;
+}
+.sl-table thead th {
+  position: sticky; top: 0; z-index: 3;
+  background: var(--table-head);
+  height: 40px;
+  padding: 0 10px;
+  text-align: left; font-weight: 500; color: var(--text-secondary);
+  white-space: nowrap;
+  border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  cursor: default;
+}
+.sl-table tbody td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  color: var(--text-primary); vertical-align: middle;
+  white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis;
+}
+.sl-table tbody tr:nth-child(even) { background: var(--table-even); }
+.sl-table tbody tr:hover td { background: var(--table-hover); }
+.sl-table tbody tr.is-selected td { background: var(--primary-lighter); }
+.sl-table td:last-child, .sl-table th:last-child { border-right: none; }
+.sl-table tbody tr:last-child td { border-bottom: none; }
+.sl-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.sl-table .sl-empty { padding: 64px 0; text-align: center; color: var(--text-placeholder); font-size: 13px; }
+
+/* 表格内联编辑控件 */
+.sl-table .cell-input {
+  width: 72px; height: 26px; padding: 0 6px;
+  border: 1px solid var(--border-input); border-radius: var(--radius);
+  font-size: 12px; text-align: right;
+}
+.sl-table .cell-input:focus { outline: none; border-color: var(--primary-dark); box-shadow: 0 0 0 2px rgba(43,127,255,.12); }
+.sl-table .cell-input.is-invalid { border-color: var(--danger); background: var(--danger-bg); }
+.sl-table .cell-select {
+  width: 100%; height: 26px; padding: 0 4px;
+  border: 1px solid var(--border-input); border-radius: var(--radius);
+  font-size: 12px; background: var(--bg-white);
+}
+.sl-table .cell-select:focus { outline: none; border-color: var(--primary-dark); }
+
+/* AI 建议单元（值 + ℹ️icon） */
+.sl-ai-cell { display: inline-flex; align-items: center; gap: 4px; }
+.sl-ai-icon {
+  width: 14px; height: 14px;
+  display: inline-flex; align-items: center; justify-content: center;
+  color: var(--primary);
+  cursor: pointer;
+  border-radius: 50%;
+  position: relative;
+}
+.sl-ai-icon:hover { color: var(--primary-dark); }
+.sl-ai-icon:hover::after {
+  content: attr(data-tip);
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 50%; transform: translateX(-50%);
+  padding: 4px 8px;
+  background: rgba(0,0,0,.75);
+  color: #fff; font-size: 12px; white-space: nowrap;
+  border-radius: 3px;
+  z-index: 20;
+  pointer-events: none;
+}
+
+/* 状态标签（更新方式） */
+.sl-mode-tag {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 2px;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.sl-mode-tag.manual { color: var(--text-secondary); }
+.sl-mode-tag.auto { color: var(--primary-dark); }
+.sl-mode-tag.ai { color: var(--warning); }
+
+/* 分页 */
+.sl-pager {
+  flex: none; height: 44px;
+  border-top: 1px solid var(--border);
+  padding: 0 16px;
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 12px; color: var(--text-secondary);
+}
+.sl-pager .sl-pager-left { display: flex; align-items: center; gap: 6px; }
+.sl-pager .sl-pager-left b { font-weight: 400; color: var(--text-primary); }
+.sl-pager .sl-pager-right { display: flex; align-items: center; gap: 6px; }
+.sl-pager .select { height: 28px; width: 84px; }
+.sl-pager .pager-btn {
+  width: 24px; height: 24px; border: 1px solid var(--border);
+  background: var(--bg-white); border-radius: var(--radius);
+  display: grid; place-items: center; color: var(--text-secondary); padding: 0;
+}
+.sl-pager .pager-btn:hover:not(:disabled) { border-color: var(--primary); color: var(--primary-dark); }
+.sl-pager .pager-btn:disabled { color: var(--text-placeholder); border-color: var(--border); cursor: not-allowed; }
+.sl-pager .pager-num { min-width: 24px; height: 24px; display: grid; place-items: center; }
+.sl-pager .pager-num.is-cur { background: var(--primary); border-radius: var(--radius); color: #fff; font-weight: 500; }
+.sl-pager .jump-input {
+  width: 48px; height: 28px; padding: 0 4px; text-align: center;
+  border: 1px solid var(--border-input); border-radius: var(--radius); font-size: 12px;
+}
+.sl-pager .jump-input:focus { outline: none; border-color: var(--primary-dark); box-shadow: 0 0 0 2px rgba(43,127,255,.12); }
+
+/* ===== 规则管理抽屉 ===== */
+.sl-rules-drawer .drawer-head { border-bottom: 1px solid var(--border); }
+.sl-rules-drawer .drawer-body { padding: 16px 20px; }
+
+/* 规则列表卡片 */
+.sl-rule-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  background: var(--bg-white);
+  display: flex; align-items: center; gap: 12px;
+  transition: border-color .15s;
+}
+.sl-rule-card:hover { border-color: var(--border-light); }
+.sl-rule-card-head { flex: 1; min-width: 0; }
+.sl-rule-card-name { font-size: 13px; font-weight: 500; color: var(--text-primary); margin-bottom: 4px; }
+.sl-rule-card-desc {
+  display: flex; flex-wrap: wrap; gap: 12px;
+  font-size: 12px; color: var(--text-secondary);
+}
+.sl-rule-card-desc span { display: inline-flex; align-items: center; gap: 4px; }
+.sl-rule-card-actions { display: flex; gap: 4px; flex-shrink: 0; }
+.sl-rule-card-actions .btn-text {
+  padding: 2px 8px; height: 24px; font-size: 12px;
+  border: none; background: none; color: var(--primary);
+  cursor: pointer; border-radius: var(--radius);
+}
+.sl-rule-card-actions .btn-text:hover { background: var(--primary-lighter); }
+.sl-rule-card-actions .btn-text.is-disabled { color: var(--text-placeholder); cursor: not-allowed; }
+.sl-rule-card-actions .btn-text.is-disabled:hover { background: none; }
+
+/* 新增按钮 */
+.sl-add-rule {
+  width: 100%;
+  height: 32px;
+  border: 1px dashed var(--border-input);
+  border-radius: var(--radius);
+  background: none;
+  color: var(--primary);
+  font-size: 13px;
+  cursor: pointer;
+  margin-top: 4px;
+  transition: border-color .15s, background .15s;
+}
+.sl-add-rule:hover { border-color: var(--primary); background: var(--primary-lighter); }
+
+/* 卡片内的引用数 */
+.sl-rule-card-ref {
+  font-size: 12px; color: var(--text-tertiary);
+  margin-top: 6px;
+}
+
+/* 编辑态卡片：原地展开 */
+.sl-rule-card.is-editing {
+  border-color: var(--primary);
+  background: var(--primary-lighter);
+  display: block;
+}
+.sl-rule-edit-head {
+  display: flex; align-items: center; gap: 6px;
+  margin-bottom: 14px;
+}
+.sl-rule-edit-close {
+  width: 20px; height: 20px; padding: 0;
+  border: none; background: none;
+  color: var(--text-tertiary); cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: var(--radius);
+}
+.sl-rule-edit-close:hover { color: var(--text-primary); background: rgba(0,0,0,.06); }
+.sl-rule-edit-title { font-size: 13px; font-weight: 500; color: var(--text-primary); }
+
+/* 编辑态表单：label 在左，2 列 */
+.sl-rule-form {
+  display: grid;
+  grid-template-columns: 96px 1fr;
+  gap: 12px 12px;
+  align-items: center;
+}
+.sl-rule-form .form-label {
+  font-size: 12px; color: var(--text-tertiary);
+  text-align: right; padding-right: 4px; white-space: nowrap;
+}
+.sl-rule-form .req { color: var(--danger); margin-right: 2px; }
+.sl-rule-form .input, .sl-rule-form .select { height: 32px; }
+
+/* 时间范围：全部一行 */
+.sl-rule-form .time-line {
+  display: flex; align-items: center; gap: 6px; flex-wrap: nowrap;
+  white-space: nowrap;
+}
+.sl-rule-form .time-line label {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 13px; color: var(--text-primary); cursor: pointer;
+  white-space: nowrap;
+}
+.sl-rule-form .time-line input[type="radio"] { margin: 0; }
+.sl-rule-form .time-line .input[type="number"] { width: 64px; }
+.sl-rule-form .time-line .input[type="date"] { width: 130px; }
+.sl-rule-form .time-line .time-unit { font-size: 12px; color: var(--text-tertiary); }
+.sl-rule-form .time-line .time-sep { margin-left: 10px; }
+.sl-rule-form .input:disabled { background: var(--bg-page); color: var(--text-placeholder); }
+
+/* 系数输入带说明 */
+.sl-rule-form .coef-field { display: flex; align-items: center; gap: 8px; }
+.sl-rule-form .coef-field .input { width: 100px; text-align: right; }
+.sl-rule-form .coef-field .field-suffix { font-size: 12px; color: var(--text-tertiary); }
+
+/* 编辑态底部按钮（卡片内） */
+.sl-rule-form-actions {
+  display: flex; justify-content: flex-end; gap: 8px;
+  margin-top: 16px;
+}
+
+/* AI 原因 Popover（定位在 icon 旁边） */
+.sl-ai-popover {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 50%; transform: translateX(-50%);
+  width: 360px; max-width: 380px;
+  background: #fff;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-2);
+  padding: 14px 16px;
+  z-index: 30;
+  pointer-events: auto;
+  line-height: 1.65;
+  font-size: 13px;
+  color: var(--text-primary);
+}
+.sl-ai-popover.is-hidden { display: none; }
+.sl-ai-popover::before {
+  content: "";
+  position: absolute;
+  top: -5px; left: 50%; transform: translateX(-50%) rotate(45deg);
+  width: 9px; height: 9px;
+  background: #fff;
+  border-left: 1px solid var(--border-light);
+  border-top: 1px solid var(--border-light);
+}
+.sl-ai-popover .sl-ai-summary {
+  background: var(--primary-lighter);
+  border-left: 3px solid var(--primary);
+  padding: 10px 12px;
+  border-radius: 0 var(--radius) var(--radius) 0;
+  font-size: 13px; color: var(--text-primary);
+  line-height: 1.65;
+  margin-bottom: 12px;
+}
+.sl-ai-popover .sl-ai-points-title {
+  font-size: 12px; font-weight: 500; color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+.sl-ai-popover .sl-ai-points { padding-left: 0; list-style: none; margin: 0; }
+.sl-ai-popover .sl-ai-points li {
+  position: relative;
+  padding-left: 16px;
+  font-size: 12px; color: var(--text-secondary);
+  line-height: 1.65;
+  margin-bottom: 4px;
+}
+.sl-ai-popover .sl-ai-points li::before {
+  content: "•";
+  position: absolute;
+  left: 4px; top: 0;
+  color: var(--primary);
+}
+
+/* 批量设置 Dialog */
+.sl-batch-dialog .modal-body { padding: 20px 24px; }
+.sl-batch-form { display: grid; grid-template-columns: 120px 1fr; gap: 14px 16px; align-items: center; }
+.sl-batch-form .form-label { font-size: 13px; color: var(--text-secondary); text-align: right; }
+.sl-batch-form .req { color: var(--danger); margin-right: 2px; }
+.sl-batch-form .input, .sl-batch-form .select { height: 32px; }
+.sl-batch-form .field-pair { display: flex; align-items: center; gap: 10px; }
+.sl-batch-form .field-pair .input { width: 120px; }
+.sl-batch-form .field-hint { font-size: 12px; color: var(--text-tertiary); margin-top: 4px; }
+
+/* 表单验证错误 */
+.is-invalid { border-color: var(--danger) !important; background: var(--danger-bg) !important; }
+
+/* Toast */
+.toast { position: fixed; top: 68px; left: 50%; }
+</style>
+</head>
+<body class="sl-page">
+
+<!-- ========== 顶部导航 ========== -->
+<header class="app-header">
+  <div class="header-left">
+    <div class="header-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z"/></svg>
+    </div>
+    <div class="header-title">区域药房协同管理系统</div>
+  </div>
+  <div class="header-right">
+    <div class="header-user">
+      <div class="header-avatar">赵</div>
+      <div class="header-user-name">赵敏 · 中心药房</div>
+    </div>
+  </div>
+</header>
+
+<!-- ========== 主体 ========== -->
+<div class="app-body">
+
+  <!-- 左侧导航 -->
+  <aside class="app-side" id="appSide"></aside>
+<!-- 主区 -->
+  <main class="app-main">
+    <div class="tabbar">
+      <div class="tab" onclick="location.href='drug-catalog.html'">首页</div>
+      <div class="tab active">
+        药品高低储设置
+        <button class="tab-close" title="关闭" onclick="location.href='drug-catalog.html'">
+          <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 5l14 14M19 5L5 19"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="sl-card">
+
+      <!-- ========== 标题行 ========== -->
+      <div class="sl-head">
+        <div class="sl-head-left">
+          <div class="sl-head-title">药品高低储设置</div>
+          <div class="sl-head-fis">
+            <span class="sl-hlbl">机构：</span>
+            <select class="select sl-hsel" id="hOrg"></select>
+            <span class="sl-hlbl">药房：</span>
+            <select class="select sl-hsel" id="hPharmacy"></select>
+            <span class="sl-hlbl">库位：</span>
+            <select class="select sl-hsel" id="hLocation"></select>
+          </div>
+        </div>
+        <div>
+          <button class="btn btn-sm" id="btnRules">规则管理</button>
+        </div>
+      </div>
+
+      <!-- ========== 筛选区 ========== -->
+      <div class="sl-filter">
+        <div class="sl-fi">
+          <span class="lbl">药品种类：</span>
+          <select class="select" id="fKind">
+            <option value="">全部</option>
+            <option value="西药">西药</option>
+            <option value="中成药">中成药</option>
+            <option value="中药饮片">中药饮片</option>
+            <option value="生物制品">生物制品</option>
+          </select>
+        </div>
+        <div class="sl-fi">
+          <span class="lbl">药品名称：</span>
+          <input class="input sl-name-input" id="fName" placeholder="名称 / 编码 / 拼音码" autocomplete="off">
+        </div>
+        <div class="sl-fi">
+          <span class="lbl">更新方式：</span>
+          <select class="select" id="fMode">
+            <option value="">全部</option>
+            <option value="manual">人工</option>
+            <option value="auto">自动计算</option>
+            <option value="ai">AI</option>
+          </select>
+        </div>
+        <div class="sl-filter-actions">
+          <button class="btn btn-sm" id="btnReset">重置</button>
+          <button class="btn btn-sm btn-primary" id="btnSearch">查询</button>
+        </div>
+      </div>
+
+      <!-- ========== Tab 切换 ========== -->
+      <div class="sl-tabs-wrap">
+        <div class="page-tabs" id="slMainTabs">
+          <div class="page-tab active" data-tab="spec">品规</div>
+          <div class="page-tab" data-tab="vendor">厂商</div>
+        </div>
+      </div>
+
+      <!-- ========== 批量操作栏 ========== -->
+      <div class="sl-batch-bar" id="batchBar">
+        <span>已选中 <b id="selCount">0</b> 项</span>
+        <button class="btn btn-sm btn-primary" id="btnBatchManual">人工设置</button>
+        <button class="btn btn-sm btn-primary" id="btnBatchRule">规则设置</button>
+        <button class="btn btn-sm btn-primary" id="btnBatchAI">AI设置</button>
+        <button class="btn btn-sm" id="btnClearSel">取消选择</button>
+      </div>
+
+      <!-- ========== 表格 ========== -->
+      <div class="sl-table-wrap">
+        <table class="sl-table" id="slTable">
+          <thead id="slThead"></thead>
+          <tbody id="slTbody"></tbody>
+        </table>
+      </div>
+
+      <!-- ========== 分页 ========== -->
+      <div class="sl-pager">
+        <div class="sl-pager-left">共 <b id="slTotal">0</b> 条</div>
+        <div class="sl-pager-right">
+          <select class="select" id="slPageSize">
+            <option value="10">10条/页</option>
+            <option value="20" selected>20条/页</option>
+            <option value="30">30条/页</option>
+            <option value="50">50条/页</option>
+          </select>
+          <button class="pager-btn" id="slPrev">‹</button>
+          <div id="slNums"></div>
+          <button class="pager-btn" id="slNext">›</button>
+          <span>跳至第</span>
+          <input class="jump-input" id="slJump" value="1">
+          <span>页</span>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ========== 规则管理抽屉 ========== -->
+<div class="drawer-mask" id="rulesMask"></div>
+<div class="drawer is-edit sl-rules-drawer" id="rulesDrawer">
+  <div class="drawer-head">
+    <div class="drawer-title">规则管理</div>
+    <button class="drawer-close" id="rulesClose" aria-label="关闭">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 5l14 14M19 5L5 19"/></svg>
+    </button>
+  </div>
+  <div class="drawer-body" id="rulesBody">
+    <div id="rulesList"></div>
+    <button class="sl-add-rule" id="btnAddRule">+ 新增规则</button>
+  </div>
+</div>
+
+<!-- ========== 通用 Dialog ========== -->
+<div class="modal-mask" id="genMask">
+  <div class="modal" id="genModal">
+    <div class="modal-head">
+      <div class="modal-title" id="genTitle"></div>
+      <button class="modal-close" id="genClose" aria-label="关闭">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 5l14 14M19 5L5 19"/></svg>
+      </button>
+    </div>
+    <div class="modal-body" id="genBody"></div>
+    <div class="modal-foot">
+      <div class="modal-foot-right" id="genFoot"></div>
+    </div>
+  </div>
+</div>
+
+<script src="mock.js"></script>
+<script>
+/* =============================================================================
+   药品高低储设置 · 内联脚本
+   ============================================================================= */
+(function(){
+  // ---- 工具 ----
+  // rowKey → specKey：spec row 直接返回；vendor row(d1_0_0) 截掉最后一段 → d1_0
+  function specKeyOf(rowKey){
+    var parts = rowKey.split("_");
+    if (parts.length >= 3) return parts[0] + "_" + parts[1];
+    return rowKey;
+  }
+  function $(id){ return document.getElementById(id); }
+  function esc(s){ if(s===null||s===undefined) return ''; return String(s).replace(/[&<>"']/g,function(c){ return { "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;" }[c]; }); }
+  function fmtNum(n){ return (n===null||n===undefined||isNaN(n))?0:Number(n); }
+  function showToast(msg, ok){
+    var t = document.createElement("div");
+    t.className = "toast show";
+    t.innerHTML = '<span style="display:inline-flex;align-items:center;gap:6px;">' +
+      '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="'+(ok===false?"var(--danger)":"var(--primary)")+'" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg>' +
+      esc(msg) + '</span>';
+    document.body.appendChild(t);
+    setTimeout(function(){ t.remove(); }, 2000);
+  }
+  function confirmDialog(title, msg, onOk, danger){
+    $("genTitle").textContent = title;
+    $("genBody").innerHTML = '<div class="modal-text">'+esc(msg)+'</div>';
+    $("genFoot").innerHTML =
+      '<button class="btn" id="genCancel">取消</button>' +
+      '<button class="btn '+(danger?'btn-danger-text':'btn-primary')+'" id="genOk">确定</button>';
+    $("genMask").classList.add("show");
+    $("genCancel").onclick = function(){ $("genMask").classList.remove("show"); };
+    $("genOk").onclick = function(){ $("genMask").classList.remove("show"); onOk && onOk(); };
+    $("genClose").onclick = function(){ $("genMask").classList.remove("show"); };
+  }
+  function closeGenDialog(){ $("genMask").classList.remove("show"); }
+
+  // ---- 状态 ----
+  var ST = {
+    tab: "spec",               // spec | vendor
+    page: 1, pageSize: 20,
+    selected: {},               // { rowKey: true }
+    filtered: [],               // 过滤+排序后的行
+    data: {},                   // 当前编辑中的高低储数据副本
+    rules: [],                  // 当前规则列表副本
+    editingRuleId: "",          // 抽屉里正在编辑的规则 id 或 "new"
+    ruleDraft: null             // 新增规则的草稿
+  };
+
+  // ---- 初始化数据 ----
+  function initData(){
+    // 深拷贝高低储数据（store 修改在副本上）
+    ST.data = {};
+    Object.keys(MOCK.stockLevels).forEach(function(k){
+      ST.data[k] = Object.assign({}, MOCK.stockLevels[k]);
+    });
+    // 深拷贝规则
+    ST.rules = MOCK.stockRules.map(function(r){ return Object.assign({}, r); });
+    // 初始化 品规 行
+    buildSpecRows();
+  }
+
+  // ---- 品规 行构造 ----
+  function buildSpecRows(){
+    var rows = [];
+    MOCK.drugs.forEach(function(d){
+      if (d.status !== "on") return;
+      d.specs.forEach(function(s, si){
+        if (s.status !== "on") return;
+        var key = d.id + "_" + si;
+        var sl = ST.data[key];
+        if (!sl) {
+          // 未初始化的品规也给一条基础数据
+          sl = { stock: 0, upper: 0, lower: 0, unit: s.pkgUnit||"盒", updateMode: "manual", ruleId: "", aiUpper: 0, aiLower: 0 };
+          ST.data[key] = sl;
+        }
+        rows.push({
+          rowKey: key, specKey: key, type: "spec",
+          drugId: d.id, si: si,
+          drugCode: d.code, specCode: s.code,
+          drugName: d.name, specTitle: s.title,
+          kind: d.kind,
+          unit: sl.unit,
+          stock: sl.stock, upper: sl.upper, lower: sl.lower,
+          updateMode: sl.updateMode, ruleId: sl.ruleId,
+          aiUpper: sl.aiUpper, aiLower: sl.aiLower
+        });
+      });
+    });
+    ST._specRows = rows;
+  }
+
+  // ---- 厂商 行构造 ----
+  function buildVendorRows(){
+    var rows = [];
+    MOCK.drugs.forEach(function(d){
+      if (d.status !== "on") return;
+      d.specs.forEach(function(s, si){
+        if (s.status !== "on") return;
+        s.vendors.forEach(function(v, vi){
+          // 厂商级高低储：复用同 spec 的 sl 数据（简化 demo）
+          var key = d.id + "_" + si;
+          var vkey = key + "_" + vi;
+          var sl = ST.data[key] || { stock: 0, upper: 0, lower: 0, unit: s.pkgUnit||"盒", updateMode: "manual", ruleId: "", aiUpper: 0, aiLower: 0 };
+          rows.push({
+            rowKey: vkey, specKey: key, type: "vendor",
+            drugId: d.id, si: si, vi: vi,
+            drugCode: d.code, vendor: v.name,
+            drugName: d.name, specTitle: s.title,
+            kind: d.kind,
+            unit: sl.unit,
+            stock: sl.stock, upper: sl.upper, lower: sl.lower,
+            updateMode: sl.updateMode, ruleId: sl.ruleId,
+            aiUpper: sl.aiUpper, aiLower: sl.aiLower
+          });
+        });
+      });
+    });
+    ST._vendorRows = rows;
+  }
+
+  // ---- 筛选 ----
+  function doFilter(){
+    // 确保数据源已构建（vendor tab 在首次切换前还没有 buildVendorRows）
+    if (ST.tab === "vendor" && !ST._vendorRows) buildVendorRows();
+    if (ST.tab === "spec" && !ST._specRows) buildSpecRows();
+
+    var kind = $("fKind").value;
+    var nameQ = $("fName").value.trim().toLowerCase();
+    var mode = $("fMode").value;
+
+    var src = ST.tab === "spec" ? ST._specRows : ST._vendorRows;
+    var rows = src.filter(function(r){
+      if (kind && r.kind !== kind) return false;
+      if (mode && r.updateMode !== mode) return false;
+      if (nameQ) {
+        var hit = (r.drugName && r.drugName.toLowerCase().indexOf(nameQ)>=0)
+               || (r.drugCode && r.drugCode.toLowerCase().indexOf(nameQ)>=0);
+        // 品规 tab 多匹配 specCode；厂商 tab 多匹配 vendor
+        if (ST.tab === "spec" && r.specCode) { hit = hit || r.specCode.toLowerCase().indexOf(nameQ)>=0; }
+        if (ST.tab === "vendor" && r.vendor) { hit = hit || r.vendor.toLowerCase().indexOf(nameQ)>=0; }
+        if (!hit) return false;
+      }
+      return true;
+    });
+    ST.filtered = rows;
+    ST.page = 1;
+    renderAll();
+  }
+
+  // =====================================================================
+  // 表头与渲染
+  // =====================================================================
+
+  // 品规 tab 列
+  var SPEC_COLS = [
+    { key: "check", label: "", width: 36, checkAll: true },
+    { key: "specCode", label: "品规编码", width: 110 },
+    { key: "drugName", label: "药品名称", width: 180 },
+    { key: "specTitle", label: "药品规格", width: 140 },
+    { key: "kind", label: "药品种类", width: 80 },
+    { key: "stock", label: "库存量", width: 80, num: true },
+    { key: "upper", label: "库存上限", width: 100 },
+    { key: "lower", label: "库存下限", width: 100 },
+    { key: "unit", label: "单位", width: 60 },
+    { key: "updateMode", label: "更新方式", width: 120 },
+    { key: "ruleName", label: "更新规则", width: 160 },
+    { key: "aiUpper", label: "AI建议上限", width: 120 },
+    { key: "aiLower", label: "AI建议下限", width: 120 }
+  ];
+
+  // 厂商 tab 列
+  var VENDOR_COLS = [
+    { key: "check", label: "", width: 36, checkAll: true },
+    { key: "drugCode", label: "药品编码", width: 110 },
+    { key: "drugName", label: "药品名称", width: 160 },
+    { key: "specTitle", label: "药品规格", width: 130 },
+    { key: "vendor", label: "生产企业", width: 180 },
+    { key: "kind", label: "药品种类", width: 80 },
+    { key: "stock", label: "库存量", width: 80, num: true },
+    { key: "upper", label: "库存上限", width: 100 },
+    { key: "lower", label: "库存下限", width: 100 },
+    { key: "unit", label: "单位", width: 60 },
+    { key: "updateMode", label: "更新方式", width: 120 },
+    { key: "ruleName", label: "更新规则", width: 160 },
+    { key: "aiUpper", label: "AI建议上限", width: 120 },
+    { key: "aiLower", label: "AI建议下限", width: 120 }
+  ];
+
+  function currentCols(){ return ST.tab === "spec" ? SPEC_COLS : VENDOR_COLS; }
+
+  function renderThead(){
+    var cols = currentCols();
+    var html = "<tr>";
+    cols.forEach(function(c){
+      var style = c.width ? ' style="width:'+c.width+'px"' : "";
+      if (c.checkAll) {
+        html += '<th'+style+'><input type="checkbox" id="thCheckAll"></th>';
+      } else {
+        html += '<th'+style+'>'+esc(c.label)+'</th>';
+      }
+    });
+    html += "</tr>";
+    $("slThead").innerHTML = html;
+
+    // 全选
+    $("thCheckAll").onchange = function(){
+      var rows = getPageRows();
+      var chk = this.checked;
+      rows.forEach(function(r){
+        if (chk) ST.selected[r.rowKey] = true;
+        else delete ST.selected[r.rowKey];
+      });
+      renderBatchBar();
+      renderTbody();
+    };
+  }
+
+  function getRuleName(id){
+    if (!id) return "";
+    var r = ST.rules.find(function(r){ return r.id === id; });
+    return r ? r.name : "";
+  }
+
+  function getPageRows(){
+    var ps = ST.pageSize;
+    var start = (ST.page-1) * ps;
+    return ST.filtered.slice(start, start+ps);
+  }
+
+  function renderTable(){
+    renderThead();
+    renderTbody();
+    renderPager();
+    renderBatchBar();
+  }
+
+  function renderTbody(){
+    var cols = currentCols();
+    var rows = getPageRows();
+    var tbody = $("slTbody");
+
+    if (rows.length === 0) {
+      var cspan = cols.length;
+      tbody.innerHTML = '<tr><td colspan="'+cspan+'"><div class="sl-empty">暂无数据</div></td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = rows.map(function(r){
+      var sl = ST.data[r.specKey] || {};
+      r.updateMode = sl.updateMode || "manual";
+      r.ruleId = sl.ruleId || "";
+      r.upper = sl.upper || 0;
+      r.lower = sl.lower || 0;
+
+      var selCls = ST.selected[r.rowKey] ? ' is-selected' : '';
+      return '<tr data-key="'+r.rowKey+'" class="'+selCls+'">' + cols.map(function(c){
+        return '<td class="'+(c.num?"num":"")+'">'+renderCell(r, c)+'</td>';
+      }).join("") + "</tr>";
+    }).join("");
+
+    // 绑定单元格事件
+    bindRowEvents();
+  }
+
+  function renderCell(r, col){
+    var sl = ST.data[r.specKey] || {};
+    switch(col.key){
+      case "check":
+        var checked = ST.selected[r.rowKey] ? "checked" : "";
+        return '<input type="checkbox" class="row-chk" data-key="'+r.rowKey+'" '+checked+'>';
+
+      case "specCode": return esc(r.specCode);
+      case "drugCode": return esc(r.drugCode);
+      case "drugName": return '<div title="'+esc(r.drugName)+'">'+esc(r.drugName)+'</div>';
+      case "specTitle": return '<div title="'+esc(r.specTitle)+'">'+esc(r.specTitle)+'</div>';
+      case "vendor": return '<div title="'+esc(r.vendor)+'">'+esc(r.vendor)+'</div>';
+      case "kind": return esc(r.kind);
+      case "stock": return r.stock;
+      case "unit": return esc(r.unit);
+
+      // 库存上限 / 下限：人工模式可编辑，其他模式只读
+      case "upper":
+      case "lower":
+        if (sl.updateMode === "manual") {
+          var val = col.key === "upper" ? r.upper : r.lower;
+          return '<input class="cell-input" data-act="'+col.key+'" data-key="'+r.rowKey+'" type="number" min="0" value="'+val+'">';
+        } else {
+          return (col.key === "upper" ? r.upper : r.lower);
+        }
+
+      // 更新方式：始终可下拉选择
+      case "updateMode":
+        return '<select class="cell-select" data-act="updateMode" data-key="'+r.rowKey+'">' +
+          '<option value="manual"'+(sl.updateMode==="manual"?" selected":"")+'>人工</option>' +
+          '<option value="auto"'+(sl.updateMode==="auto"?" selected":"")+'>自动计算</option>' +
+          '<option value="ai"'+(sl.updateMode==="ai"?" selected":"")+'>AI</option>' +
+          '</select>';
+
+      // 更新规则：auto 时可下拉，其他时显示"—"
+      case "ruleName":
+        if (sl.updateMode === "auto") {
+          var opts = '<option value="">请选择规则</option>' + ST.rules.map(function(rule){
+            return '<option value="'+rule.id+'"'+(sl.ruleId===rule.id?" selected":"")+'>'+esc(rule.name)+'</option>';
+          }).join("");
+          return '<select class="cell-select" data-act="ruleId" data-key="'+r.rowKey+'" style="width:100%">'+opts+'</select>';
+        } else {
+          return '<span style="color:var(--text-tertiary)">—</span>';
+        }
+
+      // AI 建议值：值 + ℹ️ icon
+      case "aiUpper":
+      case "aiLower": {
+        var val = col.key === "aiUpper" ? r.aiUpper : r.aiLower;
+        return '<div class="sl-ai-cell">'+val+
+          '<span class="sl-ai-icon" data-tip="查看原因" data-reason-key="'+r.rowKey+'" title="查看原因">' +
+          '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>' +
+          '</span>' +
+          '</div>';
+      }
+
+      default: return "";
+    }
+  }
+
+  function bindRowEvents(){
+    var tbody = $("slTbody");
+
+    // 复选框（行级）
+    tbody.querySelectorAll(".row-chk").forEach(function(cb){
+      cb.onchange = function(){
+        var key = this.getAttribute("data-key");
+        if (this.checked) ST.selected[key] = true;
+        else delete ST.selected[key];
+        renderBatchBar();
+        renderTbody();
+      };
+    });
+
+    // 更新方式 下拉
+    tbody.querySelectorAll('[data-act="updateMode"]').forEach(function(sel){
+      sel.onchange = function(){
+        var key = this.getAttribute("data-key");
+        var sk = specKeyOf(key);
+        var val = this.value;
+        var sl = ST.data[sk];
+        var oldMode = sl.updateMode;
+        sl.updateMode = val;
+
+        if (val === "ai") {
+          // 采纳 AI 建议
+          confirmDialog("采纳 AI 建议", "确定要采纳 AI 建议的库存上/下限吗？", function(){
+            sl.upper = sl.aiUpper;
+            sl.lower = sl.aiLower;
+            sl.ruleId = "";
+            showToast("已采纳 AI 建议");
+            renderAll();
+          });
+          // 不立即渲染，等用户确认
+          sl.updateMode = oldMode; // 先保持，等确认回调再真正切换
+        } else if (val === "manual") {
+          sl.ruleId = "";
+          renderTbody();
+        } else if (val === "auto") {
+          // 如果没有选规则，留空让用户选
+          if (!sl.ruleId) {
+            // 默认选第一条规则做 demo
+            if (ST.rules.length > 0) {
+              sl.ruleId = ST.rules[0].id;
+              // 模拟自动计算：upperCoef/lowerCoef 乘 一个假日均量
+              var upperCoef = ST.rules[0].upperCoef;
+              sl.upper = Math.round(10 * upperCoef);
+              sl.lower = Math.round(10 * ST.rules[0].lowerCoef);
+            }
+          } else {
+            // 根据已选规则计算
+            var rule = ST.rules.find(function(r){ return r.id === sl.ruleId; });
+            if (rule) {
+              sl.upper = Math.round(10 * rule.upperCoef);
+              sl.lower = Math.round(10 * rule.lowerCoef);
+            }
+          }
+          renderTbody();
+        }
+      };
+    });
+
+    // 更新规则 下拉（auto 模式下）
+    tbody.querySelectorAll('[data-act="ruleId"]').forEach(function(sel){
+      sel.onchange = function(){
+        var key = this.getAttribute("data-key");
+        var sk = specKeyOf(key);
+        var val = this.value;
+        var sl = ST.data[sk];
+        sl.ruleId = val;
+        // 重新根据规则计算上下限
+        var rule = ST.rules.find(function(r){ return r.id === val; });
+        if (rule) {
+          sl.upper = Math.round(10 * rule.upperCoef);
+          sl.lower = Math.round(10 * rule.lowerCoef);
+          showToast("已更新库存上下限");
+          renderTbody();
+        }
+      };
+    });
+
+    // 库存上/下限 输入框失焦保存
+    tbody.querySelectorAll('.cell-input[data-act="upper"], .cell-input[data-act="lower"]').forEach(function(inp){
+      var key = inp.getAttribute("data-key");
+      var sk = specKeyOf(key);
+      var act = inp.getAttribute("data-act");
+
+      function validateAndSave(){
+        var sl = ST.data[sk];
+        var rawVal = parseFloat(inp.value);
+        if (isNaN(rawVal) || rawVal < 0) {
+          inp.classList.add("is-invalid");
+          showToast("请输入 ≥0 的数字", false);
+          inp.focus();
+          return false;
+        }
+        // 本地临时值用于交叉校验
+        var tmpUpper = act === "upper" ? rawVal : sl.upper;
+        var tmpLower = act === "lower" ? rawVal : sl.lower;
+        if (tmpLower > tmpUpper) {
+          inp.classList.add("is-invalid");
+          showToast("库存下限不能大于上限", false);
+          inp.focus();
+          return false;
+        }
+        // 保存
+        if (act === "upper") sl.upper = rawVal;
+        else sl.lower = rawVal;
+        inp.classList.remove("is-invalid");
+        showToast("保存成功");
+        return true;
+      }
+
+      inp.addEventListener("blur", validateAndSave);
+      inp.addEventListener("keydown", function(e){
+        if (e.key === "Enter") { e.preventDefault(); validateAndSave(); }
+      });
+    });
+
+    // AI icon 点击 → popover（挂 body 避免被 table overflow 裁剪）
+    tbody.querySelectorAll(".sl-ai-icon").forEach(function(icon){
+      icon.onclick = function(e){
+        e.stopPropagation();
+        var key = this.getAttribute("data-reason-key");
+        var sk = specKeyOf(key);
+        var sl = ST.data[sk] || {};
+        // 如果同一个 icon 已显示 → 关闭
+        if (ST._activePopoverKey === key) { closeAllPopovers(); return; }
+        closeAllPopovers();
+        // 构造 popover
+        var popoverHTML = buildAIReasonHTML(key, sl);
+        var wrap = document.createElement("div");
+        wrap.innerHTML = popoverHTML;
+        var popover = wrap.firstElementChild;
+        // 定位：以 icon 为锚点，在 body 里绝对定位
+        var rect = this.getBoundingClientRect();
+        popover.style.position = "fixed";
+        popover.style.left = (rect.left + rect.width/2) + "px";
+        popover.style.top = (rect.bottom + 6) + "px";
+        popover.style.transform = "translateX(-50%)";
+        document.body.appendChild(popover);
+        ST._activePopoverKey = key;
+      };
+    });
+  }
+
+  function renderPager(){
+    var total = ST.filtered.length;
+    $("slTotal").textContent = total;
+    var ps = ST.pageSize;
+    var pageCount = Math.max(1, Math.ceil(total / ps));
+    if (ST.page > pageCount) ST.page = pageCount;
+    var nums = $("slNums");
+    var cur = ST.page;
+    var html = "";
+    for (var i = 1; i <= pageCount; i++) {
+      html += '<span class="pager-num'+ (i===cur?' is-cur':'') +'" data-p="'+i+'" style="cursor:pointer">'+i+'</span>';
+    }
+    nums.innerHTML = html;
+    $("slPrev").disabled = cur <= 1;
+    $("slNext").disabled = cur >= pageCount;
+  }
+
+  function renderBatchBar(){
+    var cnt = Object.keys(ST.selected).filter(function(k){ return ST.selected[k]; }).length;
+    if (cnt > 0) {
+      $("batchBar").classList.add("show");
+      $("selCount").textContent = cnt;
+    } else {
+      $("batchBar").classList.remove("show");
+    }
+  }
+
+  function renderAll(){
+    if (ST.tab === "vendor" && !ST._vendorRows) buildVendorRows();
+    renderTable();
+  }
+
+  // =====================================================================
+  // AI 原因 Popover（渲染在 tbody 里，icon 旁边）
+  // =====================================================================
+
+  // 渲染 AI popover 的 HTML 内容字符串
+  function buildAIReasonHTML(rowKey, sl){
+    var r = MOCK.aiReasons[rowKey];
+    if (!r) {
+      return '<div class="sl-ai-popover">' +
+        '<div class="sl-ai-summary">暂无 AI 建议原因数据。</div>' +
+      '</div>';
+    }
+    var tpl = MOCK.aiReasonTemplates[r.tpl];
+    var summary = tpl.summary;
+    var points = tpl.points.map(function(p){
+      return p.replace(/\{recent\}/g, r.recent).replace(/\{daily\}/g, r.daily)
+              .replace(/\{prevDaily\}/g, r.prevDaily).replace(/\{growth\}/g, r.growth)
+              .replace(/\{cycle\}/g, r.cycle).replace(/\{aiMax\}/g, r.aiMax)
+              .replace(/\{aiMin\}/g, r.aiMin)
+              .replace(/\{curMax\}/g, sl.upper).replace(/\{curMin\}/g, sl.lower);
+    });
+    return '<div class="sl-ai-popover">' +
+      '<div class="sl-ai-summary">'+esc(summary)+'</div>' +
+      '<div class="sl-ai-points-title">推荐依据</div>' +
+      '<ul class="sl-ai-points">' + points.map(function(p){ return '<li>'+esc(p)+'</li>'; }).join("") + '</ul>' +
+    '</div>';
+  }
+
+  // 关闭所有 popover（点击空白处或 ESC 触发）
+  function closeAllPopovers(){
+    document.querySelectorAll(".sl-ai-popover").forEach(function(p){ p.remove(); });
+    ST._activePopoverKey = "";
+  }
+
+  // =====================================================================
+  // 批量操作
+  // =====================================================================
+
+  function selectedKeys(){
+    return Object.keys(ST.selected).filter(function(k){ return ST.selected[k]; });
+  }
+  // 批量操作时把 rowKey 集合转成去重的 specKey 集合
+  function selectedSpecKeys(){
+    var keys = selectedKeys();
+    var set = {};
+    keys.forEach(function(k){ set[specKeyOf(k)] = true; });
+    return Object.keys(set);
+  }
+
+  function openBatchManual(){
+    $("genTitle").textContent = "人工设置库存上/下限";
+    $("genModal").style.width = "480px";
+    $("genBody").innerHTML =
+      '<div class="sl-batch-form">' +
+      '<div class="form-label"><span class="req">*</span>库存上限</div>' +
+      '<div><input class="input" id="bmUpper" type="number" min="0" placeholder="请输入库存上限"><div class="field-hint">≥ 0</div></div>' +
+      '<div class="form-label"><span class="req">*</span>库存下限</div>' +
+      '<div><input class="input" id="bmLower" type="number" min="0" placeholder="请输入库存下限"><div class="field-hint">≥ 0，且 ≤ 上限</div></div>' +
+      '</div>';
+    $("genFoot").innerHTML =
+      '<button class="btn" id="bmCancel">取消</button>' +
+      '<button class="btn btn-primary" id="bmOk">确定</button>';
+    $("genMask").classList.add("show");
+    $("bmCancel").onclick = closeGenDialog;
+    $("genClose").onclick = closeGenDialog;
+    $("bmOk").onclick = function(){
+      var upper = parseFloat($("bmUpper").value);
+      var lower = parseFloat($("bmLower").value);
+      if (isNaN(upper) || upper < 0) { showToast("请输入有效的库存上限", false); return; }
+      if (isNaN(lower) || lower < 0) { showToast("请输入有效的库存下限", false); return; }
+      if (lower > upper) { showToast("下限不能大于上限", false); return; }
+      var keys = selectedSpecKeys();
+      keys.forEach(function(k){
+        ST.data[k].updateMode = "manual";
+        ST.data[k].ruleId = "";
+        ST.data[k].upper = upper;
+        ST.data[k].lower = lower;
+      });
+      showToast("已批量设置 " + keys.length + " 条");
+      ST.selected = {};
+      closeGenDialog();
+      renderAll();
+    };
+  }
+
+  function openBatchRule(){
+    $("genTitle").textContent = "规则设置";
+    $("genModal").style.width = "480px";
+    var opts = ST.rules.map(function(r){ return '<option value="'+r.id+'">'+esc(r.name)+'</option>'; }).join("");
+    $("genBody").innerHTML =
+      '<div class="sl-batch-form">' +
+      '<div class="form-label"><span class="req">*</span>选择规则</div>' +
+      '<select class="select" id="brRule">'+opts+'</select>' +
+      '</div>';
+    $("genFoot").innerHTML =
+      '<button class="btn" id="brCancel">取消</button>' +
+      '<button class="btn btn-primary" id="brOk">确定</button>';
+    $("genMask").classList.add("show");
+    $("brCancel").onclick = closeGenDialog;
+    $("genClose").onclick = closeGenDialog;
+    $("brOk").onclick = function(){
+      var ruleId = $("brRule").value;
+      var rule = ST.rules.find(function(r){ return r.id === ruleId; });
+      if (!rule) return;
+      var keys = selectedSpecKeys();
+      keys.forEach(function(k){
+        ST.data[k].updateMode = "auto";
+        ST.data[k].ruleId = ruleId;
+        ST.data[k].upper = Math.round(10 * rule.upperCoef);
+        ST.data[k].lower = Math.round(10 * rule.lowerCoef);
+      });
+      // 更新引用计数（mock 用）
+      MOCK.ruleRefCount[ruleId] = (MOCK.ruleRefCount[ruleId]||0) + keys.length;
+      showToast("已切换为自动计算（规则：" + rule.name + "）");
+      ST.selected = {};
+      closeGenDialog();
+      renderAll();
+    };
+  }
+
+  function openBatchAI(){
+    confirmDialog("AI 设置", "确定要采纳所选 " + selectedKeys().length + " 条记录的 AI 建议库存上/下限吗？", function(){
+      var keys = selectedSpecKeys();
+      keys.forEach(function(k){
+        ST.data[k].updateMode = "ai";
+        ST.data[k].ruleId = "";
+        ST.data[k].upper = ST.data[k].aiUpper;
+        ST.data[k].lower = ST.data[k].aiLower;
+      });
+      showToast("已采纳 " + keys.length + " 条 AI 建议");
+      ST.selected = {};
+      renderAll();
+    });
+  }
+
+  // =====================================================================
+  // 规则管理抽屉
+  // =====================================================================
+
+  function openRulesDrawer(){
+    ST.editingRuleId = "";
+    ST.ruleDraft = null;
+    renderRulesList();
+    document.body.classList.add("drawer-open");
+  }
+  function closeRulesDrawer(){
+    document.body.classList.remove("drawer-open");
+    ST.editingRuleId = "";
+    ST.ruleDraft = null;
+  }
+
+  // 规则被引用数
+  function ruleRefCount(rid){ return MOCK.ruleRefCount[rid] || 0; }
+
+  function timeLabelOf(r){
+    return r.timeMode === "range"
+      ? (r.startDate + " 至 " + r.endDate)
+      : ("近 " + r.days + " 天");
+  }
+
+  // 展示态卡片
+  function viewCardHTML(r){
+    var useCount = ruleRefCount(r.id);
+    var delBtn = useCount > 0
+      ? '<button class="btn-text is-disabled" data-act="del" data-rid="'+r.id+'" title="有 '+useCount+' 条药品正在使用此规则，无法删除">删除</button>'
+      : '<button class="btn-text btn-danger-text" data-act="del" data-rid="'+r.id+'">删除</button>';
+    return '<div class="sl-rule-card" data-rid="'+r.id+'">' +
+      '<div class="sl-rule-card-head">' +
+        '<div class="sl-rule-card-name">'+esc(r.name)+'</div>' +
+        '<div class="sl-rule-card-desc">' +
+          '<span>'+esc(r.updateType === "sales" ? "根据销量更新" : r.updateType)+'</span>' +
+          '<span>时间范围：'+esc(timeLabelOf(r))+'</span>' +
+          '<span>上限系数：'+r.upperCoef+'</span>' +
+          '<span>下限系数：'+r.lowerCoef+'</span>' +
+        '</div>' +
+        '<div class="sl-rule-card-ref">被 '+useCount+' 条药品引用</div>' +
+      '</div>' +
+      '<div class="sl-rule-card-actions">' +
+        '<button class="btn-text" data-act="edit" data-rid="'+r.id+'">编辑</button>' +
+        delBtn +
+      '</div>' +
+    '</div>';
+  }
+
+  // 编辑态卡片（原地展开）
+  function editCardHTML(r){
+    var isNew = ST.editingRuleId === "new";
+    var mode = r.timeMode || "days";
+    var bothTime = mode === "range";
+    return '<div class="sl-rule-card is-editing">' +
+      '<div class="sl-rule-edit-head">' +
+        '<button class="sl-rule-edit-close" data-act="cancel" aria-label="取消">' +
+          '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 5l14 14M19 5L5 19"/></svg>' +
+        '</button>' +
+        '<span class="sl-rule-edit-title">'+(isNew ? "新增规则" : "编辑规则")+'</span>' +
+      '</div>' +
+      '<div class="sl-rule-form">' +
+        '<div class="form-label"><span class="req">*</span>规则名称</div>' +
+        '<input class="input" id="rfName" placeholder="请输入规则名称" maxlength="30" value="'+esc(r.name || "")+'">' +
+        '<div class="form-label"><span class="req">*</span>更新类型</div>' +
+        '<select class="select" id="rfType" style="width:200px"><option value="sales">根据销量更新</option></select>' +
+        '<div class="form-label">时间范围</div>' +
+        '<div class="time-line">' +
+          '<label><input type="radio" name="rfTimeMode" value="days"'+(bothTime ? "" : " checked")+'> 近</label>' +
+          '<input class="input" id="rfDays" type="number" min="1" value="'+(r.days || 30)+'"'+(bothTime ? " disabled" : "")+'>' +
+          '<span class="time-unit">天</span>' +
+          '<label class="time-sep"><input type="radio" name="rfTimeMode" value="range"'+(bothTime ? " checked" : "")+'> 日期区间</label>' +
+          '<input class="input" id="rfStart" type="date" value="'+esc(r.startDate || "")+'"'+(bothTime ? "" : " disabled")+'>' +
+          '<span class="time-unit">至</span>' +
+          '<input class="input" id="rfEnd" type="date" value="'+esc(r.endDate || "")+'"'+(bothTime ? "" : " disabled")+'>' +
+        '</div>' +
+        '<div class="form-label"><span class="req">*</span>库存上限</div>' +
+        '<div class="coef-field">' +
+          '<span class="field-suffix">日均销量 ×</span>' +
+          '<input class="input" id="rfUpper" type="number" min="0" step="0.1" value="'+(r.upperCoef !== undefined ? r.upperCoef : 4)+'">' +
+        '</div>' +
+        '<div class="form-label"><span class="req">*</span>库存下限</div>' +
+        '<div class="coef-field">' +
+          '<span class="field-suffix">日均销量 ×</span>' +
+          '<input class="input" id="rfLower" type="number" min="0" step="0.1" value="'+(r.lowerCoef !== undefined ? r.lowerCoef : 1.5)+'">' +
+        '</div>' +
+      '</div>' +
+      '<div class="sl-rule-form-actions">' +
+        '<button class="btn btn-sm" data-act="cancel">取消</button>' +
+        '<button class="btn btn-sm btn-primary" data-act="save">保存</button>' +
+      '</div>' +
+    '</div>';
+  }
+
+  function blankRule(){
+    return { name: "", updateType: "sales", timeMode: "days", days: 30, startDate: "", endDate: "", upperCoef: 4.0, lowerCoef: 1.5 };
+  }
+
+  function renderRulesList(){
+    var list = $("rulesList");
+    var html = "";
+    ST.rules.forEach(function(r){
+      html += (ST.editingRuleId === r.id) ? editCardHTML(r) : viewCardHTML(r);
+    });
+    if (ST.editingRuleId === "new") html += editCardHTML(ST.ruleDraft || blankRule());
+    if (!html) {
+      html = '<div class="sl-empty" style="padding:24px 0;">暂无规则，点击下方「新增规则」开始配置</div>';
+    }
+    list.innerHTML = html;
+    bindRuleEvents();
+  }
+
+  function bindRuleEvents(){
+    var list = $("rulesList");
+
+    // 编辑
+    list.querySelectorAll('[data-act="edit"]').forEach(function(b){
+      b.onclick = function(){
+        ST.editingRuleId = b.getAttribute("data-rid");
+        renderRulesList();
+      };
+    });
+
+    // 删除（被引用时禁止并提示）
+    list.querySelectorAll('[data-act="del"]').forEach(function(b){
+      b.onclick = function(){
+        var rid = b.getAttribute("data-rid");
+        var cnt = ruleRefCount(rid);
+        if (cnt > 0) {
+          showToast("有 " + cnt + " 条药品正在使用此规则，无法删除", false);
+          return;
+        }
+        var r = ST.rules.find(function(x){ return x.id === rid; });
+        confirmDialog("删除规则", "确定要删除规则「" + r.name + "」吗？此操作不可恢复。", function(){
+          ST.rules = ST.rules.filter(function(x){ return x.id !== rid; });
+          showToast("规则已删除");
+          renderRulesList();
+          renderAll();
+        }, true);
+      };
+    });
+
+    // 取消（返回展示态，丢弃草稿）
+    list.querySelectorAll('[data-act="cancel"]').forEach(function(b){
+      b.onclick = function(){
+        ST.editingRuleId = "";
+        ST.ruleDraft = null;
+        renderRulesList();
+      };
+    });
+
+    // 保存
+    list.querySelectorAll('[data-act="save"]').forEach(function(b){
+      b.onclick = saveRuleEdit;
+    });
+
+    // 时间范围：单选切换禁用态（两种方式始终占位）
+    list.querySelectorAll('input[name="rfTimeMode"]').forEach(function(rd){
+      rd.onchange = syncTimeRange;
+    });
+  }
+
+  function syncTimeRange(){
+    var mode = document.querySelector('input[name="rfTimeMode"]:checked');
+    var isDays = !mode || mode.value === "days";
+    var daysEl = $("rfDays"), startEl = $("rfStart"), endEl = $("rfEnd");
+    if (!daysEl || !startEl || !endEl) return;
+    daysEl.disabled = !isDays;
+    startEl.disabled = isDays;
+    endEl.disabled = isDays;
+  }
+
+  function saveRuleEdit(){
+    var nameEl = $("rfName");
+    if (!nameEl) return;
+    var upperEl = $("rfUpper"), lowerEl = $("rfLower");
+    var name = nameEl.value.trim();
+    var upperCoef = parseFloat(upperEl.value);
+    var lowerCoef = parseFloat(lowerEl.value);
+
+    if (!name) { nameEl.classList.add("is-invalid"); showToast("请输入规则名称", false); nameEl.focus(); return; }
+    nameEl.classList.remove("is-invalid");
+    if (isNaN(upperCoef) || upperCoef < 0) { showToast("请输入有效的库存上限系数（≥0）", false); upperEl.focus(); return; }
+    if (isNaN(lowerCoef) || lowerCoef < 0) { showToast("请输入有效的库存下限系数（≥0）", false); lowerEl.focus(); return; }
+    if (lowerCoef > upperCoef) { showToast("库存下限系数不能大于上限系数", false); return; }
+
+    var modeEl = document.querySelector('input[name="rfTimeMode"]:checked');
+    var timeMode = modeEl ? modeEl.value : "days";
+    var days = 0, startDate = "", endDate = "";
+    if (timeMode === "days") {
+      days = parseInt($("rfDays").value, 10);
+      if (isNaN(days) || days < 1) { showToast("请输入正确的天数（≥1）", false); $("rfDays").focus(); return; }
+    } else {
+      startDate = $("rfStart").value;
+      endDate = $("rfEnd").value;
+      if (!startDate || !endDate) { showToast("请选择完整的日期区间", false); return; }
+      if (startDate > endDate) { showToast("开始日期不能晚于结束日期", false); return; }
+    }
+
+    if (ST.editingRuleId === "new") {
+      var ids = ST.rules.map(function(r){ return r.id; });
+      var n = 1;
+      while (ids.indexOf("r"+n) >= 0) n++;
+      var newId = "r" + n;
+      ST.rules.push({ id: newId, name: name, updateType: "sales", timeMode: timeMode, days: days, startDate: startDate, endDate: endDate, upperCoef: upperCoef, lowerCoef: lowerCoef });
+      MOCK.ruleRefCount[newId] = 0;
+      showToast("规则已新增");
+    } else {
+      var r = ST.rules.find(function(x){ return x.id === ST.editingRuleId; });
+      if (r) {
+        r.name = name;
+        r.upperCoef = upperCoef;
+        r.lowerCoef = lowerCoef;
+        r.timeMode = timeMode;
+        r.days = days;
+        r.startDate = startDate;
+        r.endDate = endDate;
+        showToast("规则已保存");
+      }
+    }
+
+    ST.editingRuleId = "";
+    ST.ruleDraft = null;
+    renderRulesList();
+    renderAll();
+  }
+
+  // =====================================================================
+  // 事件绑定
+  // =====================================================================
+  function bindEvents(){
+    // 标题行 select 级联
+    $("hOrg").onchange = fillHeadPharmacy;
+    $("hPharmacy").onchange = fillHeadLocation;
+
+    // 筛选
+    $("btnSearch").onclick = function(){ doFilter(); };
+    $("btnReset").onclick = function(){
+      $("fKind").value = ""; $("fName").value = ""; $("fMode").value = "";
+      doFilter();
+    };
+    document.addEventListener("keydown", function(e){
+      if (e.key === "Enter") {
+        if (e.target && (e.target.id === "fName" || e.target.id === "fKind" || e.target.id === "fMode")) {
+          doFilter();
+        }
+      }
+    });
+
+    // 分页
+    $("slPageSize").onchange = function(){ ST.pageSize = parseInt(this.value,10); ST.page = 1; renderAll(); };
+    $("slPrev").onclick = function(){ if (ST.page > 1) { ST.page--; renderAll(); } };
+    $("slNext").onclick = function(){ ST.page++; renderAll(); };
+    $("slNums").addEventListener("click", function(e){
+      var t = e.target.closest(".pager-num"); if (!t) return;
+      ST.page = parseInt(t.getAttribute("data-p"),10); renderAll();
+    });
+    $("slJump").addEventListener("keydown", function(e){
+      if (e.key === "Enter") { var n = parseInt(this.value,10); if (n>0){ ST.page = n; renderAll(); } }
+    });
+
+    // Tab
+    document.querySelectorAll("#slMainTabs .page-tab").forEach(function(t){
+      t.onclick = function(){
+        document.querySelectorAll("#slMainTabs .page-tab").forEach(function(x){ x.classList.remove("active"); });
+        t.classList.add("active");
+        ST.tab = t.getAttribute("data-tab");
+        ST.selected = {};
+        doFilter();
+      };
+    });
+
+    // 批量操作
+    $("btnBatchManual").onclick = openBatchManual;
+    $("btnBatchRule").onclick = openBatchRule;
+    $("btnBatchAI").onclick = openBatchAI;
+    $("btnClearSel").onclick = function(){
+      ST.selected = {};
+      renderAll();
+    };
+
+    // 规则管理抽屉
+    $("btnRules").onclick = openRulesDrawer;
+    $("rulesClose").onclick = closeRulesDrawer;
+    $("rulesMask").onclick = closeRulesDrawer;
+
+    // 新增规则
+    $("btnAddRule").onclick = function(){
+      ST.editingRuleId = "new";
+      ST.ruleDraft = blankRule();
+      renderRulesList();
+    };
+
+    // AI popover：点击空白关闭 + ESC 关闭
+    document.addEventListener("click", function(e){
+      if (!e.target.closest(".sl-ai-popover") && !e.target.closest(".sl-ai-icon")) {
+        closeAllPopovers();
+      }
+    });
+    document.addEventListener("keydown", function(e){
+      if (e.key === "Escape") closeAllPopovers();
+    });
+  }
+
+  // ---- 初始化 标题行 select（机构→药房→库位，默认都选第一个有效值，不能为空） ----
+  function fillHeadSelects(){
+    var orgSel = $("hOrg");
+    MOCK.orgs.forEach(function(o){
+      var opt = document.createElement("option");
+      opt.value = o.id; opt.textContent = o.name;
+      orgSel.appendChild(opt);
+    });
+    // 默认选中心药房
+    orgSel.value = "org-c";
+    fillHeadPharmacy();
+  }
+  function fillHeadPharmacy(){
+    var orgId = $("hOrg").value;
+    var phSel = $("hPharmacy");
+    phSel.innerHTML = "";
+    var phs = MOCK.pharmacies[orgId] || [];
+    phs.forEach(function(p){
+      var opt = document.createElement("option");
+      opt.value = p.id; opt.textContent = p.name;
+      phSel.appendChild(opt);
+    });
+    // 默认选第一个
+    if (phs.length > 0) phSel.value = phs[0].id;
+    fillHeadLocation();
+  }
+  function fillHeadLocation(){
+    var phId = $("hPharmacy").value;
+    var locSel = $("hLocation");
+    locSel.innerHTML = "";
+    var locs = MOCK.locations[phId] || [];
+    locs.forEach(function(l){
+      var opt = document.createElement("option");
+      opt.value = l.id; opt.textContent = l.name;
+      locSel.appendChild(opt);
+    });
+    if (locs.length > 0) locSel.value = locs[0].id;
+  }
+
+  // ---- Init ----
+  initData();
+  buildSpecRows();
+  fillHeadSelects();
+  bindEvents();
+  doFilter();
+
+})();
+</script>
+  <script src="nav.js"></script>
+</body>
+</html>

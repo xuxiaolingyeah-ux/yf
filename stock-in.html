@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>药品入库 · 中心药房</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+/* ===== 药品入库列表页 局部样式 ===== */
+.si-page { background: var(--bg-page); }
+.si-card {
+  flex: 1; min-height: 0; display: flex; flex-direction: column;
+  background: var(--bg-white); margin: 12px; border-radius: var(--radius-lg);
+  box-shadow: 0 1px 2px rgba(0,0,0,.04); overflow: hidden;
+}
+/* 标题行 */
+.si-head {
+  flex: none; height: 56px; display: flex; align-items: center; justify-content: space-between;
+  padding: 0 20px; border-bottom: 1px solid var(--border); gap: 16px;
+}
+.si-head .page-title { font-size: 16px; font-weight: 500; }
+/* 筛选栏 */
+.si-filter { flex: none; display: flex; align-items: flex-end; gap: 14px; padding: 10px 20px 12px; border-bottom: 1px solid var(--border); }
+.si-fields { flex: 1; min-width: 0; display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 8px 12px; }
+.si-fi { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.si-fi .lbl { width: 72px; flex: none; text-align: right; font-size: 12px; color: var(--text-tertiary); white-space: nowrap; }
+.si-fi .ctrl { flex: 1; min-width: 0; display: flex; }
+.si-fi .input, .si-fi .select { width: 100%; }
+.si-filter.collapsed .si-fields .si-fi:nth-child(n+9) { display: none; }
+.si-filter-actions { flex: none; display: flex; align-items: center; gap: 8px; }
+.si-toggle { border: none; background: none; color: var(--primary-dark); font-size: 13px; cursor: pointer; padding: 0 4px; }
+.si-toggle:hover { color: var(--primary); }
+/* 入库时间：单控件区间 */
+.si-drange {
+  display: flex; align-items: center; gap: 4px; width: 100%; height: 32px;
+  border: 1px solid rgba(0,0,0,.2); border-radius: var(--radius);
+  padding: 0 8px; background: var(--bg-white); box-sizing: border-box;
+}
+.si-drange input { flex: 1; min-width: 0; border: none; outline: none; font-size: 12px; color: var(--text-primary); background: transparent; height: 100%; padding: 0; }
+.si-drange span { color: var(--text-placeholder); font-size: 12px; flex: none; }
+/* 表格 */
+.si-table-wrap { flex: 1; min-height: 0; overflow: auto; }
+.si-table { width: max-content; min-width: 100%; border-collapse: collapse; font-size: 13px; }
+.si-table th {
+  position: sticky; top: 0; z-index: 2; background: var(--table-head);
+  height: 40px; padding: 0 10px; text-align: left; font-weight: 500;
+  color: var(--text-secondary); white-space: nowrap; border-bottom: 1px solid var(--border);
+}
+.si-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); color: var(--text-primary); vertical-align: middle; white-space: nowrap; background: var(--bg-white); }
+.si-table tbody tr:nth-child(even) td { background: var(--table-even); }
+.si-table tbody tr:hover td { background: var(--table-hover); }
+.si-table .col-code { position: sticky; left: 0; z-index: 3; }
+/* 右侧三段冻结：审核状态 / 上传状态 / 操作 */
+.si-table .col-status, .si-table .col-upload, .si-table .col-acts { position: sticky; z-index: 3; }
+.si-table .col-status { right: 260px; box-shadow: -2px 0 4px rgba(0,0,0,.04); }
+.si-table .col-upload { right: 170px; }
+.si-table .col-acts { right: 0; }
+.si-table th.col-code, .si-table th.col-status, .si-table th.col-upload, .si-table th.col-acts { background: var(--table-head); z-index: 4; }
+.si-table td.col-code, .si-table td.col-status, .si-table td.col-upload, .si-table td.col-acts { background: var(--bg-white); }
+.si-table tbody tr:nth-child(even) td.col-code, .si-table tbody tr:nth-child(even) td.col-status,
+.si-table tbody tr:nth-child(even) td.col-upload, .si-table tbody tr:nth-child(even) td.col-acts { background: var(--table-even); }
+.si-table tbody tr:hover td.col-code, .si-table tbody tr:hover td.col-status,
+.si-table tbody tr:hover td.col-upload, .si-table tbody tr:hover td.col-acts { background: var(--table-hover); }
+.si-table .col-status, .si-table .col-upload { width: 90px; min-width: 90px; }
+.si-table .col-acts { width: 170px; min-width: 170px; }
+.si-table th.col-code, .si-table td.col-code { padding-left: 16px; }
+.si-table th.col-acts, .si-table td.col-acts { padding-right: 16px; }
+.si-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.si-table .link-btn + .link-btn { margin-left: 10px; }
+.si-empty { padding: 80px 0; text-align: center; color: var(--text-placeholder); font-size: 13px; }
+/* 分页 */
+.si-pager {
+  flex: none; height: 48px; display: flex; align-items: center; gap: 10px;
+  padding: 0 20px; border-top: 1px solid var(--border); font-size: 13px; color: var(--text-secondary);
+}
+.si-pager .total b { font-weight: 400; color: var(--text-primary); }
+.si-pager .pager-btn { height: 28px; min-width: 28px; padding: 0 8px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-white); color: var(--text-secondary); cursor: pointer; font-size: 13px; }
+.si-pager .pager-btn:hover:not(:disabled) { border-color: var(--primary); color: var(--primary-dark); }
+.si-pager .pager-btn:disabled { color: var(--text-placeholder); cursor: not-allowed; }
+.si-pager .pager-num { min-width: 28px; height: 28px; padding: 0 8px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid transparent; border-radius: var(--radius); cursor: pointer; color: var(--text-secondary); }
+.si-pager .pager-num.is-cur { background: var(--primary); color: #fff; border-color: var(--primary); }
+/* 顶栏角色切换 */
+.si-user { position: relative; }
+.si-user-menu {
+  display: none; position: absolute; top: 38px; right: 0; width: 220px;
+  background: var(--bg-white); border-radius: var(--radius-lg);
+  box-shadow: 0 4px 16px rgba(0,0,0,.12); padding: 6px; z-index: 900;
+}
+.si-user-menu.show { display: block; }
+.si-user-item { padding: 8px 10px; border-radius: var(--radius); cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+.si-user-item:hover { background: var(--primary-lighter); }
+.si-user-item .n { font-size: 13px; color: var(--text-primary); }
+.si-user-item .r { font-size: 12px; color: var(--text-tertiary); }
+.si-user-item.is-cur { background: var(--primary-lighter); }
+.si-user-item.is-cur .n { color: var(--primary-dark); }
+/* 确认弹窗 */
+.si-confirm .modal { width: 400px; }
+.si-confirm-desc { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
+</style>
+</head>
+<body>
+
+<!-- ========== 顶部导航 ========== -->
+<header class="app-header">
+  <div class="header-left">
+    <div class="header-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3.2" y="9.4" width="17.6" height="5.2" rx="2.6" transform="rotate(-45 12 12)"/>
+        <path d="M8.4 15.6L15.6 8.4"/>
+      </svg>
+    </div>
+    <div class="header-title">区域药房协同管理系统</div>
+    <span class="header-sub">中心药房</span>
+  </div>
+  <div class="header-right">
+    <div class="si-user">
+      <div class="header-user" id="userBtn">
+        <div class="header-avatar" id="userAvatar">王</div>
+        <span class="header-user-name" id="userName">王芳</span>
+      </div>
+      <div class="si-user-menu" id="userMenu"></div>
+    </div>
+  </div>
+</header>
+
+<div class="app-body">
+  <!-- ========== 左侧导航 ========== -->
+  <aside class="app-side" id="appSide"></aside>
+<!-- ========== 主区域 ========== -->
+  <main class="app-main">
+    <div class="tabbar">
+      <div class="tab" onclick="location.href='batch-management.html'">首页</div>
+      <div class="tab active">
+        药品入库
+        <button class="tab-close" title="关闭" onclick="location.href='batch-management.html'">
+          <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="page si-page">
+      <div class="si-card">
+        <!-- 标题行 -->
+        <div class="si-head">
+          <div class="page-title">药品入库</div>
+          <button class="btn btn-primary" id="btnAdd">新增入库</button>
+        </div>
+
+        <!-- 筛选栏 -->
+        <div class="si-filter collapsed" id="filterBar">
+          <div class="si-fields">
+            <div class="si-fi"><span class="lbl">入库单号：</span><div class="ctrl"><input class="input" id="fCode" placeholder="请输入入库单号" autocomplete="off"></div></div>
+            <div class="si-fi"><span class="lbl">入库时间：</span><div class="ctrl"><div class="si-drange"><input type="date" id="fT1"><span>~</span><input type="date" id="fT2"></div></div></div>
+            <div class="si-fi"><span class="lbl">入库机构：</span><div class="ctrl"><select class="select" id="fOrg"></select></div></div>
+            <div class="si-fi"><span class="lbl">入库药房：</span><div class="ctrl"><select class="select" id="fPharmacy"></select></div></div>
+            <div class="si-fi"><span class="lbl">入库库位：</span><div class="ctrl"><select class="select" id="fLocation"></select></div></div>
+            <div class="si-fi"><span class="lbl">入库方式：</span><div class="ctrl"><select class="select" id="fMethod"><option value="">全部</option></select></div></div>
+            <div class="si-fi"><span class="lbl">审核状态：</span><div class="ctrl"><select class="select" id="fStatus"><option value="">全部</option><option value="draft">草稿</option><option value="pending">待审核</option><option value="approved">审核通过</option><option value="rejected">已驳回</option></select></div></div>
+            <div class="si-fi"><span class="lbl">上传状态：</span><div class="ctrl"><select class="select" id="fUpload"><option value="">全部</option><option value="wait">未上传</option><option value="success">上传成功</option><option value="fail">上传失败</option></select></div></div>
+            <div class="si-fi"><span class="lbl">供应商：</span><div class="ctrl"><select class="select" id="fSupplier"><option value="">全部</option></select></div></div>
+            <div class="si-fi"><span class="lbl">发票号：</span><div class="ctrl"><input class="input" id="fInvoice" placeholder="请输入发票号" autocomplete="off"></div></div>
+          </div>
+          <div class="si-filter-actions">
+            <button class="si-toggle" id="btnToggle">展开 ▾</button>
+            <button class="btn btn-sm" id="btnReset">重置 ( R )</button>
+            <button class="btn btn-sm btn-primary" id="btnSearch">查询 ( Q )</button>
+          </div>
+        </div>
+
+        <!-- 表格 -->
+        <div class="si-table-wrap">
+          <table class="si-table">
+            <thead>
+              <tr>
+                <th class="col-code" style="width:130px">入库单号</th>
+                <th style="width:150px">入库机构</th>
+                <th style="width:110px">入库药房</th>
+                <th style="width:100px">入库库位</th>
+                <th style="width:130px">发票号</th>
+                <th style="width:150px">入库时间</th>
+                <th style="width:90px">入库方式</th>
+                <th style="width:120px">供应商</th>
+                <th style="width:110px" class="num">进货价金额合计</th>
+                <th style="width:110px" class="num">零售价金额合计</th>
+                <th style="width:140px">验收情况</th>
+                <th style="width:80px">提交人</th>
+                <th class="col-status">审核状态</th>
+                <th class="col-upload">上传状态</th>
+                <th class="col-acts" style="width:170px">操作</th>
+              </tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+          </table>
+          <div class="si-empty" id="empty" style="display:none">暂无符合条件的入库单</div>
+        </div>
+
+        <!-- 分页 -->
+        <div class="si-pager">
+          <span class="total">共 <b id="totalNum">0</b> 条</span>
+          <button class="pager-btn" id="pgPrev">‹</button>
+          <span id="pgNums"></span>
+          <button class="pager-btn" id="pgNext">›</button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ========== 确认弹窗 ========== -->
+<div class="modal-mask si-confirm" id="cfMask">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title" id="cfTitle">提示</div>
+      <button class="drawer-close" id="cfClose" title="关闭">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+      </button>
+    </div>
+    <div class="modal-body"><div class="si-confirm-desc" id="cfDesc"></div></div>
+    <div class="modal-foot">
+      <button class="btn" id="cfCancel">取消</button>
+      <button class="btn btn-primary" id="cfOk">确定</button>
+    </div>
+  </div>
+</div>
+
+<!-- toast -->
+<div id="toast" style="position:fixed;top:70px;left:50%;transform:translateX(-50%);padding:8px 16px;background:rgba(0,0,0,.78);color:#fff;border-radius:4px;font-size:13px;z-index:9999;display:none"></div>
+
+<script src="stock-in-common.js"></script>
+<script>
+(function(){
+  "use strict";
+  var SI = window.SI;
+  var $ = function(s,c){return (c||document).querySelector(s);};
+  var $$ = function(s,c){return Array.prototype.slice.call((c||document).querySelectorAll(s));};
+  function toast(msg){var t=$("#toast");t.textContent=msg;t.style.display="block";clearTimeout(t._t);t._t=setTimeout(function(){t.style.display="none";},1800);}
+
+  var user = SI.currentUser();
+  var list = SI.load();
+  var ST = { page:1, pageSize:20, filtered:list.slice() };
+
+  /* ===== 顶栏角色切换 ===== */
+  function renderUser(){
+    $("#userAvatar").textContent = user.name.charAt(0);
+    $("#userName").textContent = user.name;
+    $("#userMenu").innerHTML = SI.USERS.map(function(u){
+      return '<div class="si-user-item'+(u.id===user.id?' is-cur':'')+'" data-uid="'+u.id+'">'
+        +'<span class="n">'+SI.esc(u.name)+'</span><span class="r">'+SI.esc(u.roleName)+'</span></div>';
+    }).join("");
+    $$("#userMenu .si-user-item").forEach(function(el){
+      el.addEventListener("click",function(){
+        SI.setUser(el.getAttribute("data-uid"));
+        location.reload();
+      });
+    });
+  }
+  $("#userBtn").addEventListener("click",function(e){ e.stopPropagation(); $("#userMenu").classList.toggle("show"); });
+  document.addEventListener("click",function(){ $("#userMenu").classList.remove("show"); });
+
+  /* ===== 筛选下拉初始化 ===== */
+  function fillOrgs(sel, keepAll){
+    var h = keepAll ? '<option value="">全部</option>' : '';
+    h += SI.ORGS.map(function(o){return '<option value="'+o.id+'">'+SI.esc(o.name)+'</option>';}).join("");
+    sel.innerHTML = h;
+  }
+  function fillPharmacies(orgId){
+    var o = SI.orgOf(orgId);
+    var h = '<option value="">全部</option>' + (o ? o.pharmacies.map(function(p){return '<option value="'+p.id+'">'+SI.esc(p.name)+'</option>';}).join("") : '');
+    $("#fPharmacy").innerHTML = h;
+    fillLocations(orgId, "");
+  }
+  function fillLocations(orgId, pid){
+    var p = pid ? SI.pharmacyOf(orgId, pid) : null;
+    var locs = p ? p.locations : [];
+    if(!pid && orgId){ var o=SI.orgOf(orgId); locs=[]; o.pharmacies.forEach(function(x){ locs=locs.concat(x.locations); }); }
+    $("#fLocation").innerHTML = '<option value="">全部</option>' + locs.map(function(l){return '<option value="'+SI.esc(l)+'">'+SI.esc(l)+'</option>';}).join("");
+  }
+  fillOrgs($("#fOrg"), false);
+  $("#fOrg").value = user.orgId;              /* 默认当前机构 */
+  fillPharmacies(user.orgId);
+  $("#fMethod").innerHTML = '<option value="">全部</option>' + SI.METHODS.map(function(m){return '<option>'+m+'</option>';}).join("");
+  $("#fSupplier").innerHTML = '<option value="">全部</option>' + SI.SUPPLIERS.map(function(s){return '<option>'+s+'</option>';}).join("");
+  $("#fOrg").addEventListener("change",function(){ fillPharmacies(this.value); });
+  $("#fPharmacy").addEventListener("change",function(){ fillLocations($("#fOrg").value, this.value); });
+
+  /* ===== 查询 / 重置 ===== */
+  function applyFilter(){
+    var code = $("#fCode").value.trim(), t1 = $("#fT1").value, t2 = $("#fT2").value;
+    var org = $("#fOrg").value, ph = $("#fPharmacy").value, loc = $("#fLocation").value;
+    var m = $("#fMethod").value, st = $("#fStatus").value, up = $("#fUpload").value;
+    var sup = $("#fSupplier").value, inv = $("#fInvoice").value.trim();
+    ST.filtered = list.filter(function(b){
+      if(code && b.code.indexOf(code)<0) return false;
+      var d = (b.submitTime||"").slice(0,10);
+      if(t1 && d < t1) return false;
+      if(t2 && d > t2) return false;
+      if(org && b.orgId!==org) return false;
+      if(ph && b.pharmacyId!==ph) return false;
+      if(loc && b.location!==loc) return false;
+      if(m && b.method!==m) return false;
+      if(st && b.status!==st) return false;
+      if(up && b.uploadStatus!==up) return false;
+      if(sup && b.supplier!==sup) return false;
+      if(inv){
+        var hit = (b.invoiceNo||"").indexOf(inv)>=0;
+        if(!hit) hit = (b.items||[]).some(function(it){return (it.invoiceNo||"").indexOf(inv)>=0;});
+        if(!hit) return false;
+      }
+      return true;
+    });
+    ST.page = 1;
+    renderTable();
+  }
+  $("#btnSearch").addEventListener("click", applyFilter);
+  $("#btnReset").addEventListener("click", function(){
+    $("#fCode").value=""; $("#fT1").value=""; $("#fT2").value="";
+    $("#fOrg").value = user.orgId; fillPharmacies(user.orgId);
+    $("#fMethod").value=""; $("#fStatus").value=""; $("#fUpload").value="";
+    $("#fSupplier").value=""; $("#fInvoice").value="";
+    applyFilter();
+  });
+  $("#btnToggle").addEventListener("click", function(){
+    var bar = $("#filterBar"), c = bar.classList.toggle("collapsed");
+    this.textContent = c ? "展开 ▾" : "收起 ▴";
+  });
+  $("#fCode").addEventListener("keydown",function(e){ if(e.key==="Enter") applyFilter(); });
+  $("#fInvoice").addEventListener("keydown",function(e){ if(e.key==="Enter") applyFilter(); });
+
+  /* ===== 表格渲染 ===== */
+  function orgName(b){ var o=SI.orgOf(b.orgId); return o?o.name:"—"; }
+  function phName(b){ var p=SI.pharmacyOf(b.orgId,b.pharmacyId); return p?p.name:"—"; }
+  function invoiceOf(b){
+    if(b.invoiceMode==="detail"){ return "按明细"; }
+    return b.invoiceNo || "—";
+  }
+
+  function renderTable(){
+    var start = (ST.page-1)*ST.pageSize;
+    var rows = ST.filtered.slice(start, start+ST.pageSize);
+    $("#empty").style.display = rows.length ? "none" : "block";
+    $("#tbody").innerHTML = rows.map(function(b){
+      var s = SI.sums(b);
+      var ops = SI.opsFor(b, user).map(function(op){
+        return '<a class="link-btn'+(op.danger?' is-danger':'')+'" data-op="'+op.key+'" data-id="'+b.id+'">'+op.label+'</a>';
+      }).join("");
+      return '<tr>'
+        +'<td class="col-code">'+SI.esc(b.code)+'</td>'
+        +'<td>'+SI.esc(orgName(b))+'</td>'
+        +'<td>'+SI.esc(phName(b))+'</td>'
+        +'<td>'+SI.esc(b.location)+'</td>'
+        +'<td>'+SI.esc(invoiceOf(b))+'</td>'
+        +'<td>'+SI.esc((b.submitTime||"").slice(0,19))+'</td>'
+        +'<td>'+SI.esc(b.method)+'</td>'
+        +'<td>'+SI.esc(b.supplier)+'</td>'
+        +'<td class="num">'+SI.num2(s.purchase)+'</td>'
+        +'<td class="num">'+SI.num2(s.retail)+'</td>'
+        +'<td title="'+SI.esc(b.accept)+'">'+SI.esc(b.accept)+'</td>'
+        +'<td>'+SI.esc(b.creatorName)+'</td>'
+        +'<td class="col-status">'+SI.esc(SI.STATUS[b.status])+'</td>'
+        +'<td class="col-upload">'+SI.esc(SI.UPLOAD[b.uploadStatus])+'</td>'
+        +'<td class="col-acts">'+ops+'</td>'
+        +'</tr>';
+    }).join("");
+    $("#totalNum").textContent = ST.filtered.length;
+    renderPager();
+    $$("#tbody .link-btn").forEach(function(a){ a.addEventListener("click", onOp); });
+  }
+
+  function renderPager(){
+    var total = ST.filtered.length, pages = Math.max(1, Math.ceil(total/ST.pageSize));
+    $("#pgPrev").disabled = ST.page<=1;
+    $("#pgNext").disabled = ST.page>=pages;
+    var h="";
+    for(var i=1;i<=pages;i++) h += '<span class="pager-num'+(i===ST.page?' is-cur':'')+'" data-p="'+i+'">'+i+'</span>';
+    $("#pgNums").innerHTML = h;
+    $$("#pgNums .pager-num").forEach(function(el){ el.addEventListener("click",function(){ ST.page=parseInt(el.getAttribute("data-p"),10); renderTable(); }); });
+  }
+  $("#pgPrev").addEventListener("click",function(){ if(ST.page>1){ST.page--;renderTable();} });
+  $("#pgNext").addEventListener("click",function(){ var pages=Math.ceil(ST.filtered.length/ST.pageSize); if(ST.page<pages){ST.page++;renderTable();} });
+
+  /* ===== 确认弹窗 ===== */
+  var cfCb = null;
+  function confirmDlg(title, desc, okText, danger, cb){
+    $("#cfTitle").textContent = title;
+    $("#cfDesc").textContent = desc;
+    var ok = $("#cfOk"); ok.textContent = okText;
+    ok.className = danger ? "btn btn-danger" : "btn btn-primary";
+    cfCb = cb;
+    $("#cfMask").classList.add("show");
+  }
+  function closeCf(){ $("#cfMask").classList.remove("show"); cfCb=null; }
+  $("#cfCancel").addEventListener("click", closeCf);
+  $("#cfClose").addEventListener("click", closeCf);
+  $("#cfOk").addEventListener("click", function(){ var cb=cfCb; closeCf(); if(cb) cb(); });
+
+  /* ===== 操作 ===== */
+  function persist(){ SI.save(list); }
+  function onOp(){
+    var op = this.getAttribute("data-op"), id = this.getAttribute("data-id");
+    var b = list.filter(function(x){return x.id===id;})[0];
+    if(!b) return;
+    if(op==="view"){ location.href = "stock-in-detail.html?id="+id; return; }
+    if(op==="audit"){ location.href = "stock-in-detail.html?id="+id+"&mode=approve"; return; }
+    if(op==="edit"){ location.href = "stock-in-create.html?id="+id; return; }
+    if(op==="submit"){
+      confirmDlg("提交入库单", "提交后入库单将进入待审核状态，是否确认提交？", "提交", false, function(){
+        b.status = "pending"; b.submitTime = SI.fmtNow();
+        b.records.push({node:"提交", person:user.name, org:orgName(b), time:b.submitTime, result:"已提交", opinion:""});
+        persist(); renderTable(); toast("已提交，待审核");
+      });
+      return;
+    }
+    if(op==="withdraw"){
+      confirmDlg("撤回入库单", "撤回后入库单将回到草稿状态，是否确认撤回？", "撤回", false, function(){
+        b.status = "draft";
+        b.records.push({node:"撤回", person:user.name, org:orgName(b), time:SI.fmtNow(), result:"已撤回", opinion:""});
+        persist(); renderTable(); toast("已撤回");
+      });
+      return;
+    }
+    if(op==="del"){
+      confirmDlg("删除入库单", "删除后不可恢复，是否确认删除入库单 "+b.code+"？", "删除", true, function(){
+        list = list.filter(function(x){return x.id!==id;});
+        SI.save(list);
+        ST.filtered = ST.filtered.filter(function(x){return x.id!==id;});
+        renderTable(); toast("已删除");
+      });
+      return;
+    }
+    if(op==="upload"){
+      confirmDlg("上传入库单", "确认将入库单 "+b.code+" 上传至医保/监管平台？", "上传", false, function(){
+        b.uploadStatus = "success";
+        persist(); renderTable(); toast("上传成功");
+      });
+      return;
+    }
+  }
+
+  $("#btnAdd").addEventListener("click", function(){ location.href = "stock-in-create.html"; });
+
+  /* ===== 初始化 ===== */
+  renderUser();
+  applyFilter();
+})();
+</script>
+  <script src="nav.js"></script>
+</body>
+</html>

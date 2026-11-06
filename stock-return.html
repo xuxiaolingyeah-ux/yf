@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>药品退库 · 中心药房</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+/* ===== 药品退库列表页 局部样式 ===== */
+.sr-page { background: var(--bg-page); }
+.sr-card {
+  flex: 1; min-height: 0; display: flex; flex-direction: column;
+  background: var(--bg-white); margin: 12px; border-radius: var(--radius-lg);
+  box-shadow: 0 1px 2px rgba(0,0,0,.04); overflow: hidden;
+}
+/* 标题行 */
+.sr-head {
+  flex: none; height: 56px; display: flex; align-items: center; justify-content: flex-end;
+  padding: 0 20px; border-bottom: 1px solid var(--border); gap: 16px;
+}
+.sr-head .page-title {
+  margin-right: auto; font-size: 15px; font-weight: 500; color: var(--text-primary);
+}
+/* 筛选栏 */
+.sr-filter { flex: none; display: flex; align-items: flex-end; gap: 14px; padding: 12px 20px; border-bottom: 1px solid var(--border); }
+.sr-fields { flex: 1; min-width: 0; display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 8px 12px; }
+.sr-fi { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.sr-fi .lbl { width: 72px; flex: none; text-align: right; font-size: 12px; color: var(--text-tertiary); white-space: nowrap; }
+.sr-fi .ctrl { flex: 1; min-width: 0; display: flex; }
+.sr-fi .input, .sr-fi .select { width: 100%; }
+.sr-filter-actions { flex: none; display: flex; align-items: center; gap: 8px; }
+/* 退库时间：单控件区间 */
+.sr-drange {
+  display: flex; align-items: center; gap: 4px; width: 100%; height: 32px;
+  border: 1px solid rgba(0,0,0,.2); border-radius: var(--radius);
+  padding: 0 8px; background: var(--bg-white); box-sizing: border-box;
+}
+.sr-drange input { flex: 1; min-width: 0; border: none; outline: none; font-size: 12px; color: var(--text-primary); background: transparent; height: 100%; padding: 0; }
+.sr-drange span { color: var(--text-placeholder); font-size: 12px; flex: none; }
+/* 表格 */
+.sr-table-wrap { flex: 1; min-height: 0; overflow: auto; }
+.sr-table { width: max-content; min-width: 100%; border-collapse: collapse; font-size: 13px; }
+.sr-table th {
+  position: sticky; top: 0; z-index: 2; background: var(--table-head);
+  height: 40px; padding: 0 10px; text-align: left; font-weight: 500;
+  color: var(--text-secondary); white-space: nowrap; border-bottom: 1px solid var(--border);
+}
+.sr-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); color: var(--text-primary); vertical-align: middle; white-space: nowrap; background: var(--bg-white); }
+.sr-table tbody tr:nth-child(even) td { background: var(--table-even); }
+.sr-table tbody tr:hover td { background: var(--table-hover); }
+.sr-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.sr-table .link-btn + .link-btn { margin-left: 10px; }
+/* 操作列右固定 */
+.sr-table .col-acts { position: sticky; right: 0; z-index: 3; width: 180px; min-width: 180px; }
+.sr-table th.col-acts { background: var(--table-head); z-index: 4; box-shadow: -2px 0 4px rgba(0,0,0,.04); }
+.sr-table td.col-acts { background: var(--bg-white); box-shadow: -2px 0 4px rgba(0,0,0,.04); }
+.sr-table tbody tr:nth-child(even) td.col-acts { background: var(--table-even); }
+.sr-table tbody tr:hover td.col-acts { background: var(--table-hover); }
+.sr-table th.col-acts, .sr-table td.col-acts { padding-right: 16px; }
+.sr-empty { padding: 80px 0; text-align: center; color: var(--text-placeholder); font-size: 13px; }
+/* 分页 */
+.sr-pager {
+  flex: none; height: 48px; display: flex; align-items: center; gap: 10px;
+  padding: 0 20px; border-top: 1px solid var(--border); font-size: 13px; color: var(--text-secondary);
+}
+.sr-pager .total b { font-weight: 400; color: var(--text-primary); }
+.sr-pager .pager-btn { height: 28px; min-width: 28px; padding: 0 8px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-white); color: var(--text-secondary); cursor: pointer; font-size: 13px; }
+.sr-pager .pager-btn:hover:not(:disabled) { border-color: var(--primary); color: var(--primary-dark); }
+.sr-pager .pager-btn:disabled { color: var(--text-placeholder); cursor: not-allowed; }
+.sr-pager .pager-num { min-width: 28px; height: 28px; padding: 0 8px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid transparent; border-radius: var(--radius); cursor: pointer; color: var(--text-secondary); }
+.sr-pager .pager-num.is-cur { background: var(--primary); color: #fff; border-color: var(--primary); }
+/* 顶栏角色切换 */
+.sr-user { position: relative; }
+.sr-user-menu {
+  display: none; position: absolute; top: 38px; right: 0; width: 220px;
+  background: var(--bg-white); border-radius: var(--radius-lg);
+  box-shadow: 0 4px 16px rgba(0,0,0,.12); padding: 6px; z-index: 900;
+}
+.sr-user-menu.show { display: block; }
+.sr-user-item { padding: 8px 10px; border-radius: var(--radius); cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+.sr-user-item:hover { background: var(--primary-lighter); }
+.sr-user-item .n { font-size: 13px; color: var(--text-primary); }
+.sr-user-item .r { font-size: 12px; color: var(--text-tertiary); }
+.sr-user-item.is-cur { background: var(--primary-lighter); }
+.sr-user-item.is-cur .n { color: var(--primary-dark); }
+/* 确认弹窗 */
+.sr-confirm .modal { width: 400px; }
+.sr-confirm-desc { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
+</style>
+</head>
+<body>
+
+<!-- ========== 顶部导航 ========== -->
+<header class="app-header">
+  <div class="header-left">
+    <div class="header-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3.2" y="9.4" width="17.6" height="5.2" rx="2.6" transform="rotate(-45 12 12)"/>
+        <path d="M8.4 15.6L15.6 8.4"/>
+      </svg>
+    </div>
+    <div class="header-title">区域药房协同管理系统</div>
+    <span class="header-sub">中心药房</span>
+  </div>
+  <div class="header-right">
+    <div class="sr-user">
+      <div class="header-user" id="userBtn">
+        <div class="header-avatar" id="userAvatar">王</div>
+        <span class="header-user-name" id="userName">王芳</span>
+      </div>
+      <div class="sr-user-menu" id="userMenu"></div>
+    </div>
+  </div>
+</header>
+
+<div class="app-body">
+  <!-- ========== 左侧导航 ========== -->
+  <aside class="app-side" id="appSide"></aside>
+<!-- ========== 主区域 ========== -->
+  <main class="app-main">
+    <div class="tabbar">
+      <div class="tab" onclick="location.href='batch-management.html'">首页</div>
+      <div class="tab active">
+        药品退库
+        <button class="tab-close" title="关闭" onclick="location.href='batch-management.html'">
+          <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="page sr-page">
+      <div class="sr-card">
+        <!-- 标题行 -->
+        <div class="sr-head">
+          <div class="page-title">药品退库</div>
+          <button class="btn btn-primary" id="btnAdd">新增退库</button>
+        </div>
+
+        <!-- 筛选栏 -->
+        <div class="sr-filter">
+          <div class="sr-fields">
+            <div class="sr-fi"><span class="lbl">退库单号：</span><div class="ctrl"><input class="input" id="fCode" placeholder="请输入退库单号" autocomplete="off"></div></div>
+            <div class="sr-fi"><span class="lbl">退库机构：</span><div class="ctrl"><select class="select" id="fFromOrg"></select></div></div>
+            <div class="sr-fi"><span class="lbl">接收机构：</span><div class="ctrl"><select class="select" id="fToOrg"></select></div></div>
+            <div class="sr-fi"><span class="lbl">退库时间：</span><div class="ctrl"><div class="sr-drange"><input type="date" id="fT1"><span>~</span><input type="date" id="fT2"></div></div></div>
+            <div class="sr-fi"><span class="lbl">审核状态：</span><div class="ctrl"><select class="select" id="fAudit">
+              <option value="">全部</option><option value="draft">草稿</option><option value="upper">待上级审核</option><option value="receiver">待接收机构审核</option><option value="approved">审核通过</option><option value="rejected">已拒绝</option>
+            </select></div></div>
+            <div class="sr-fi"><span class="lbl">接收状态：</span><div class="ctrl"><select class="select" id="fRecv">
+              <option value="">全部</option><option value="out">待出库</option><option value="sign">待签收</option><option value="done">已完成</option>
+            </select></div></div>
+          </div>
+          <div class="sr-filter-actions">
+            <button class="btn btn-sm" id="btnReset">重置 ( R )</button>
+            <button class="btn btn-sm btn-primary" id="btnSearch">查询 ( Q )</button>
+          </div>
+        </div>
+
+        <!-- 表格 -->
+        <div class="sr-table-wrap">
+          <table class="sr-table">
+            <thead>
+              <tr>
+                <th style="width:132px">退库单号</th>
+                <th style="width:150px">退库机构</th>
+                <th style="width:150px">接收机构</th>
+                <th class="num" style="width:112px">进货价合计金额</th>
+                <th class="num" style="width:112px">零售价合计金额</th>
+                <th style="width:78px">提交人</th>
+                <th style="width:140px">提交时间</th>
+                <th style="width:112px">审核状态</th>
+                <th style="width:96px">接收状态</th>
+                <th class="col-acts">操作</th>
+              </tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+          </table>
+          <div class="sr-empty" id="empty" style="display:none">暂无符合条件的退库单</div>
+        </div>
+
+        <!-- 分页 -->
+        <div class="sr-pager">
+          <span class="total">共 <b id="totalNum">0</b> 条</span>
+          <button class="pager-btn" id="pgPrev">‹</button>
+          <span id="pgNums"></span>
+          <button class="pager-btn" id="pgNext">›</button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ========== 确认弹窗 ========== -->
+<div class="modal-mask sr-confirm" id="cfMask">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title" id="cfTitle">提示</div>
+      <button class="drawer-close" id="cfClose" title="关闭">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+      </button>
+    </div>
+    <div class="modal-body"><div class="sr-confirm-desc" id="cfDesc"></div></div>
+    <div class="modal-foot">
+      <button class="btn" id="cfCancel">取消</button>
+      <button class="btn btn-primary" id="cfOk">确定</button>
+    </div>
+  </div>
+</div>
+
+<!-- toast -->
+<div id="toast" style="position:fixed;top:70px;left:50%;transform:translateX(-50%);padding:8px 16px;background:rgba(0,0,0,.78);color:#fff;border-radius:4px;font-size:13px;z-index:9999;display:none"></div>
+
+<script src="stock-return-common.js"></script>
+<script>
+(function(){
+  "use strict";
+  var SR = window.SR;
+  var $ = function(s,c){return (c||document).querySelector(s);};
+  var $$ = function(s,c){return Array.prototype.slice.call((c||document).querySelectorAll(s));};
+  function toast(msg){var t=$("#toast");t.textContent=msg;t.style.display="block";clearTimeout(t._t);t._t=setTimeout(function(){t.style.display="none";},1800);}
+
+  var user = SR.currentUser();
+  var list = SR.load();
+  var ST = { page:1, pageSize:10, filtered:list.slice() };
+
+  /* ===== 顶栏角色切换 ===== */
+  function renderUser(){
+    $("#userAvatar").textContent = user.name.charAt(0);
+    $("#userName").textContent = user.name;
+    $("#userMenu").innerHTML = SR.USERS.map(function(u){
+      return '<div class="sr-user-item'+(u.id===user.id?' is-cur':'')+'" data-uid="'+u.id+'">'
+        +'<span class="n">'+SR.esc(u.name)+'</span><span class="r">'+SR.esc(u.roleName)+'</span></div>';
+    }).join("");
+    $$("#userMenu .sr-user-item").forEach(function(el){
+      el.addEventListener("click",function(){
+        SR.setUser(el.getAttribute("data-uid"));
+        location.reload();
+      });
+    });
+  }
+  $("#userBtn").addEventListener("click",function(e){ e.stopPropagation(); $("#userMenu").classList.toggle("show"); });
+  document.addEventListener("click",function(){ $("#userMenu").classList.remove("show"); });
+
+  /* ===== 筛选下拉初始化 ===== */
+  function fillOrgs(sel){
+    sel.innerHTML = '<option value="">全部</option>' + SR.ORGS.map(function(o){return '<option value="'+o.id+'">'+SR.esc(o.name)+'</option>';}).join("");
+  }
+  fillOrgs($("#fFromOrg"));
+  fillOrgs($("#fToOrg"));
+
+  /* ===== 查询 / 重置 ===== */
+  function applyFilter(){
+    var code = $("#fCode").value.trim(), t1 = $("#fT1").value, t2 = $("#fT2").value;
+    var fromOrg = $("#fFromOrg").value, toOrg = $("#fToOrg").value;
+    var audit = $("#fAudit").value, recv = $("#fRecv").value;
+    ST.filtered = list.filter(function(b){
+      if(code && b.code.indexOf(code)<0) return false;
+      var d = (b.submitTime||"").slice(0,10);
+      if(t1 && (!d || d < t1)) return false;
+      if(t2 && (!d || d > t2)) return false;
+      if(fromOrg && b.fromOrgId!==fromOrg) return false;
+      if(toOrg && b.toOrgId!==toOrg) return false;
+      if(audit && b.auditStatus!==audit) return false;
+      if(recv && b.receiveStatus!==recv) return false;
+      return true;
+    });
+    ST.filtered.sort(function(a,b){ return a.code < b.code ? 1 : -1; });
+    ST.page = 1;
+    renderTable();
+  }
+  $("#btnSearch").addEventListener("click", applyFilter);
+  $("#btnReset").addEventListener("click", function(){
+    $("#fCode").value=""; $("#fT1").value=""; $("#fT2").value="";
+    $("#fFromOrg").value=""; $("#fToOrg").value=""; $("#fAudit").value=""; $("#fRecv").value="";
+    applyFilter();
+  });
+  $("#fCode").addEventListener("keydown",function(e){ if(e.key==="Enter") applyFilter(); });
+
+  /* ===== 表格渲染 ===== */
+  function renderTable(){
+    var start = (ST.page-1)*ST.pageSize;
+    var rows = ST.filtered.slice(start, start+ST.pageSize);
+    $("#empty").style.display = rows.length ? "none" : "block";
+    $("#tbody").innerHTML = rows.map(function(b){
+      var s = SR.sums(b);
+      var ops = SR.opsFor(b, user).map(function(op){
+        return '<a class="link-btn'+(op.danger?' is-danger':'')+'" data-op="'+op.key+'" data-id="'+b.id+'">'+op.label+'</a>';
+      }).join("");
+      return '<tr>'
+        +'<td>'+SR.esc(b.code)+'</td>'
+        +'<td>'+SR.esc(SR.orgName(b.fromOrgId))+'</td>'
+        +'<td>'+SR.esc(SR.orgName(b.toOrgId))+'</td>'
+        +'<td class="num">'+SR.num2(s.purchase)+'</td>'
+        +'<td class="num">'+SR.num2(s.retail)+'</td>'
+        +'<td>'+SR.esc(b.creatorName)+'</td>'
+        +'<td>'+SR.esc(b.submitTime)+'</td>'
+        +'<td>'+SR.esc(SR.AUDIT_STATUS[b.auditStatus])+'</td>'
+        +'<td>'+SR.esc(SR.RECV[b.receiveStatus])+'</td>'
+        +'<td class="col-acts">'+ops+'</td>'
+        +'</tr>';
+    }).join("");
+    $("#totalNum").textContent = ST.filtered.length;
+    renderPager();
+    $$("#tbody .link-btn").forEach(function(a){ a.addEventListener("click", onOp); });
+  }
+
+  function renderPager(){
+    var total = ST.filtered.length, pages = Math.max(1, Math.ceil(total/ST.pageSize));
+    $("#pgPrev").disabled = ST.page<=1;
+    $("#pgNext").disabled = ST.page>=pages;
+    var h="";
+    for(var i=1;i<=pages;i++) h += '<span class="pager-num'+(i===ST.page?' is-cur':'')+'" data-p="'+i+'">'+i+'</span>';
+    $("#pgNums").innerHTML = h;
+    $$("#pgNums .pager-num").forEach(function(el){ el.addEventListener("click",function(){ ST.page=parseInt(el.getAttribute("data-p"),10); renderTable(); }); });
+  }
+  $("#pgPrev").addEventListener("click",function(){ if(ST.page>1){ST.page--;renderTable();} });
+  $("#pgNext").addEventListener("click",function(){ var pages=Math.ceil(ST.filtered.length/ST.pageSize); if(ST.page<pages){ST.page++;renderTable();} });
+
+  /* ===== 确认弹窗 ===== */
+  var cfCb = null;
+  function confirmDlg(title, desc, okText, danger, cb){
+    $("#cfTitle").textContent = title;
+    $("#cfDesc").textContent = desc;
+    var ok = $("#cfOk"); ok.textContent = okText;
+    ok.className = danger ? "btn btn-danger" : "btn btn-primary";
+    cfCb = cb;
+    $("#cfMask").classList.add("show");
+  }
+  function closeCf(){ $("#cfMask").classList.remove("show"); cfCb=null; }
+  $("#cfCancel").addEventListener("click", closeCf);
+  $("#cfClose").addEventListener("click", closeCf);
+  $("#cfOk").addEventListener("click", function(){ var cb=cfCb; closeCf(); if(cb) cb(); });
+
+  /* ===== 操作 ===== */
+  function persist(){ SR.save(list); }
+  function onOp(){
+    var op = this.getAttribute("data-op"), id = this.getAttribute("data-id");
+    var b = list.filter(function(x){return x.id===id;})[0];
+    if(!b) return;
+    if(op==="view" || op==="out" || op==="in"){ location.href = "stock-return-detail.html?id="+id; return; }
+    if(op==="audit"){ location.href = "stock-return-detail.html?id="+id+"&mode=approve"; return; }
+    if(op==="edit"){ location.href = "stock-return-create.html?id="+id; return; }
+    if(op==="submit"){
+      confirmDlg("提交退库单", "提交后退库单将进入审核流程，是否确认提交？", "提交", false, function(){
+        b.auditStatus = "upper"; b.submitTime = SR.fmtNow();
+        b.records.push({node:"提交", person:user.name, org:SR.orgName(b.fromOrgId), time:b.submitTime, result:"已提交", opinion:""});
+        persist(); renderTable(); toast("已提交，待上级审核");
+      });
+      return;
+    }
+    if(op==="withdraw"){
+      confirmDlg("撤回退库单", "撤回后退库单将回到草稿状态，是否确认撤回？", "撤回", false, function(){
+        b.auditStatus = "draft";
+        b.records.push({node:"撤回", person:user.name, org:SR.orgName(b.fromOrgId), time:SR.fmtNow(), result:"已撤回", opinion:""});
+        persist(); renderTable(); toast("已撤回");
+      });
+      return;
+    }
+    if(op==="del"){
+      confirmDlg("删除退库单", "删除后不可恢复，是否确认删除退库单 "+b.code+"？", "删除", true, function(){
+        list = list.filter(function(x){return x.id!==id;});
+        SR.save(list);
+        ST.filtered = ST.filtered.filter(function(x){return x.id!==id;});
+        renderTable(); toast("已删除");
+      });
+      return;
+    }
+  }
+
+  $("#btnAdd").addEventListener("click", function(){ location.href = "stock-return-create.html"; });
+
+  /* ===== 初始化 ===== */
+  renderUser();
+  applyFilter();
+})();
+</script>
+  <script src="nav.js"></script>
+</body>
+</html>

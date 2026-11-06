@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>药品批次管理 · 中心药房</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+/* ===== 药品批次管理页面 局部样式 ===== */
+.bm-page { background: var(--bg-page); }
+.bm-card {
+  flex: 1; min-height: 0;
+  display: flex; flex-direction: column;
+  background: var(--bg-white);
+  margin: 12px;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 1px 2px rgba(0,0,0,.04);
+  overflow: hidden;
+}
+/* 标题行 */
+.bm-head {
+  flex: none; height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 20px;
+  border-bottom: 1px solid var(--border);
+  gap: 16px;
+}
+.bm-head-left { display: flex; align-items: center; gap: 20px; min-width: 0; }
+.bm-head .page-title { font-size: 16px; font-weight: 500; flex: none; }
+.bm-ctx { display: flex; align-items: center; gap: 8px; }
+.bm-ctx .ctx-lbl { font-size: 12px; color: var(--text-tertiary); white-space: nowrap; }
+.bm-ctx .select { width: 150px; }
+.bm-acts { display: flex; gap: 8px; flex: none; }
+/* 未勾选记录时批量按钮置灰 */
+.bm-acts .btn:disabled,
+.bm-acts .btn:disabled:hover {
+  background: var(--bg-disabled);
+  border-color: var(--border);
+  color: var(--text-placeholder);
+  cursor: not-allowed;
+}
+
+/* 筛选栏：左侧筛选项（4 列网格，紧凑），右侧底部对齐操作按钮 */
+.bm-filter {
+  flex: none;
+  display: flex; align-items: flex-end; gap: 14px;
+  padding: 10px 20px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.bm-fields {
+  flex: 1; min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px 12px;
+}
+.bm-fi { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.bm-fi .lbl {
+  width: 72px; flex: none; text-align: right;
+  font-size: 12px; color: var(--text-tertiary); white-space: nowrap;
+}
+.bm-fi .ctrl { flex: 1; min-width: 0; display: flex; gap: 6px; }
+.bm-fi .input, .bm-fi .select { width: 100%; }
+.bm-fi .pk { width: 100%; }
+.bm-fi .pk .pk-input { width: 100%; }
+.bm-range { display: flex; gap: 6px; width: 100%; }
+.bm-range .select { width: 72px; flex: none; }
+.bm-range .input { flex: 1; min-width: 0; }
+/* 折叠：默认只显示 2 行（8 个筛选项） */
+.bm-filter.collapsed .bm-fields .bm-fi:nth-child(n+9) { display: none; }
+.bm-filter-actions {
+  flex: none;
+  display: flex; align-items: center; gap: 8px;
+}
+.bm-toggle {
+  border: none; background: none; color: var(--primary-dark);
+  font-size: 13px; cursor: pointer; padding: 0 4px;
+}
+.bm-toggle:hover { color: var(--primary); }
+
+/* 表格区域：横向滚动 */
+.bm-table-wrap { flex: 1; min-height: 0; overflow: auto; }
+.bm-table {
+  width: max-content; min-width: 100%;
+  border-collapse: collapse; font-size: 13px;
+}
+.bm-table th {
+  position: sticky; top: 0; z-index: 2;
+  background: var(--table-head);
+  height: 40px; padding: 0 10px;
+  text-align: left; font-weight: 500; color: var(--text-secondary);
+  white-space: nowrap;
+  border-bottom: 1px solid var(--border);
+}
+.bm-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-primary);
+  vertical-align: middle;
+  white-space: nowrap;
+  background: var(--bg-white);
+}
+.bm-table tbody tr:nth-child(even) td { background: var(--table-even); }
+.bm-table tbody tr:hover td { background: var(--table-hover); }
+/* 固定列：勾选(左0)、状态(左1)、药品名称(左2)、操作(右) */
+.bm-table .col-check { position: sticky; left: 0; z-index: 3; }
+.bm-table .col-status { position: sticky; left: 48px; z-index: 3; }
+.bm-table .col-name { position: sticky; left: 118px; z-index: 3; }
+.bm-table .col-acts { position: sticky; right: 0; z-index: 3; box-shadow: -2px 0 4px rgba(0,0,0,.04); }
+/* 固定列背景（覆盖 zebra/hover，确保不透明） */
+.bm-table th.col-check, .bm-table th.col-status, .bm-table th.col-name, .bm-table th.col-acts { background: var(--table-head); z-index: 4; }
+.bm-table td.col-check, .bm-table td.col-status, .bm-table td.col-name, .bm-table td.col-acts { background: var(--bg-white); }
+.bm-table tbody tr:nth-child(even) td.col-check,
+.bm-table tbody tr:nth-child(even) td.col-status,
+.bm-table tbody tr:nth-child(even) td.col-name,
+.bm-table tbody tr:nth-child(even) td.col-acts { background: var(--table-even); }
+.bm-table tbody tr:hover td.col-check,
+.bm-table tbody tr:hover td.col-status,
+.bm-table tbody tr:hover td.col-name,
+.bm-table tbody tr:hover td.col-acts { background: var(--table-hover); }
+/* 列表内容与左右边缘留白 */
+.bm-table th.col-check, .bm-table td.col-check { padding-left: 16px; }
+.bm-table th.col-acts, .bm-table td.col-acts { padding-right: 16px; }
+
+.bm-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.bm-table .name-cell { max-width: 180px; overflow: hidden; text-overflow: ellipsis; }
+.bm-table .status-tag { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; }
+.bm-table .status-tag .dot { width: 6px; height: 6px; border-radius: 50%; }
+.bm-table .status-tag.on .dot { background: var(--success); }
+.bm-table .status-tag.off .dot { background: var(--text-placeholder); }
+.bm-table .link-btn + .link-btn { margin-left: 10px; }
+
+/* 分页 */
+.bm-pager {
+  flex: none; height: 48px;
+  display: flex; align-items: center; gap: 10px;
+  padding: 0 20px;
+  border-top: 1px solid var(--border);
+  font-size: 13px; color: var(--text-secondary);
+}
+.bm-pager .total b { font-weight: 400; color: var(--text-primary); }
+.bm-pager .select { width: 92px; height: 28px; font-size: 12px; }
+.bm-pager .pager-btn {
+  height: 28px; min-width: 28px; padding: 0 8px;
+  border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--bg-white); color: var(--text-secondary);
+  cursor: pointer; font-size: 13px;
+}
+.bm-pager .pager-btn:hover:not(:disabled) { border-color: var(--primary); color: var(--primary-dark); }
+.bm-pager .pager-btn:disabled { color: var(--text-placeholder); cursor: not-allowed; }
+.bm-pager .pager-num {
+  min-width: 28px; height: 28px; padding: 0 8px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid transparent; border-radius: var(--radius);
+  cursor: pointer; color: var(--text-secondary);
+}
+.bm-pager .pager-num:hover { border-color: var(--primary); color: var(--primary-dark); }
+.bm-pager .pager-num.is-cur { background: var(--primary); color: #fff; border-color: var(--primary); }
+.bm-pager .jump-input { width: 46px; height: 28px; padding: 0 4px; text-align: center; font-size: 12px; }
+
+.bm-empty { padding: 80px 0; text-align: center; color: var(--text-placeholder); font-size: 13px; }
+
+/* 通用抽屉（新增/编辑批次、批量拆零、批量优先出库） */
+.bm-drawer-mask {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,.45); z-index: 800;
+}
+.bm-drawer-mask.show { display: block; }
+.bm-drawer {
+  position: fixed; top: 0; right: 0; bottom: 0;
+  width: 880px; background: var(--bg-white);
+  display: flex; flex-direction: column;
+  box-shadow: -4px 0 16px rgba(0,0,0,.12);
+  z-index: 801;
+  transform: translateX(100%);
+  transition: transform .25s ease;
+}
+.bm-drawer.show { transform: translateX(0); }
+.bm-drawer-head {
+  flex: none; height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 20px;
+  border-bottom: 1px solid var(--border);
+}
+.bm-drawer-title { font-size: 15px; font-weight: 500; }
+.bm-drawer-body { flex: 1; min-height: 0; overflow: auto; padding: 16px 20px; }
+.bm-drawer-foot {
+  flex: none; height: 60px;
+  display: flex; align-items: center; justify-content: flex-end; gap: 8px;
+  padding: 0 20px;
+  border-top: 1px solid var(--border);
+}
+
+/* 批次表单：3 列紧凑 */
+.bm-sec + .bm-sec { margin-top: 20px; }
+.bm-sec-title {
+  font-size: 13px; font-weight: 500; color: var(--text-primary);
+  padding-left: 8px; margin-bottom: 12px;
+  border-left: 3px solid var(--primary);
+}
+.bm-form {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px 16px;
+}
+.bm-form .fi { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.bm-form .fi .lbl {
+  width: 84px; flex: none; text-align: right;
+  font-size: 12px; color: var(--text-tertiary); white-space: nowrap;
+}
+.bm-form .fi .ctrl { flex: 1; min-width: 0; }
+.bm-form .fi .ctrl .input, .bm-form .fi .ctrl .select { width: 100%; }
+/* 表单内下拉控件与文本框等宽 */
+.bm-form .fi .ctrl .pk { width: 100%; min-width: 0; }
+.bm-form .fi .ctrl .pk .pk-input { width: 100%; }
+.bm-form .fi .ctrl .pk .pk-menu { left: 0; right: 0; width: auto; min-width: 0; }
+.bm-form .fi .ctrl .pk .pk-menu.is-grid { width: 620px; right: auto; }
+.bm-form .req { color: var(--danger); margin-right: 2px; }
+.bm-form .is-readonly { background: var(--bg-disabled); color: var(--text-secondary); cursor: default; }
+
+/* 批量操作表格 */
+.bm-act-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.bm-act-table th {
+  position: sticky; top: 0; background: #F0F5FF;
+  height: 38px; padding: 0 10px; text-align: left; font-weight: 500; color: var(--text-secondary);
+  border-bottom: 1px solid var(--border);
+}
+.bm-act-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); }
+.bm-act-table tbody tr:hover { background: var(--table-hover); }
+.bm-act-search { margin-bottom: 10px; }
+.bm-act-search .input { width: 240px; height: 30px; }
+</style>
+</head>
+<body>
+
+<!-- ========== 顶部导航 ========== -->
+<header class="app-header">
+  <div class="header-left">
+    <div class="header-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3.2" y="9.4" width="17.6" height="5.2" rx="2.6" transform="rotate(-45 12 12)"/>
+        <path d="M8.4 15.6L15.6 8.4"/>
+      </svg>
+    </div>
+    <div class="header-title">区域药房协同管理系统</div>
+    <span class="header-sub">中心药房</span>
+  </div>
+  <div class="header-right">
+    <div class="header-user">
+      <div class="header-avatar">林</div>
+      <span class="header-user-name">林落落</span>
+    </div>
+  </div>
+</header>
+
+<div class="app-body">
+  <!-- ========== 左侧导航 ========== -->
+  <aside class="app-side" id="appSide"></aside>
+<!-- ========== 主区域 ========== -->
+  <main class="app-main">
+    <div class="tabbar">
+      <div class="tab" onclick="location.href='drug-catalog.html'">首页</div>
+      <div class="tab active">
+        药品批次管理
+        <button class="tab-close" title="关闭" onclick="location.href='drug-catalog.html'">
+          <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="page bm-page">
+      <div class="bm-card">
+        <!-- 标题行：标题 + 药房/库位 + 操作按钮 -->
+        <div class="bm-head">
+          <div class="bm-head-left">
+            <div class="page-title">药品批次管理</div>
+            <div class="bm-ctx">
+              <span class="ctx-lbl">药房：</span>
+              <select class="select" id="selPharmacy">
+                <option>山东大学齐鲁医院药房</option>
+                <option>中心药房</option>
+                <option>门诊药房</option>
+                <option>住院药房</option>
+              </select>
+              <span class="ctx-lbl">库位：</span>
+              <select class="select" id="selLocation">
+                <option>全部库位</option>
+                <option>村卫生室药房</option>
+                <option>A 区库房</option>
+                <option>B 区库房</option>
+              </select>
+            </div>
+          </div>
+          <div class="bm-acts">
+            <button class="btn" id="btnExport">导出</button>
+            <button class="btn" id="btnSplit">批量拆零</button>
+            <button class="btn" id="btnPriority">批量优先出库</button>
+            <button class="btn btn-primary" id="btnAddBatch">新增批次</button>
+          </div>
+        </div>
+
+        <!-- 筛选栏 -->
+        <div class="bm-filter collapsed" id="filterBar">
+          <div class="bm-fields">
+            <div class="bm-fi">
+              <span class="lbl">药品名称：</span>
+              <div class="ctrl"><input class="input" id="fName" placeholder="名称/编码/拼音码" autocomplete="off"></div>
+            </div>
+            <div class="bm-fi">
+              <span class="lbl">生产企业：</span>
+              <div class="ctrl">
+                <div class="pk" id="pkVendor">
+                  <input class="pk-input input" id="pkVendorInput" placeholder="请选择生产企业" autocomplete="off" readonly>
+                  <svg class="pk-caret" viewBox="0 0 10 6" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M1 1l4 4 4-4"/></svg>
+                  <div class="pk-menu"><div class="pk-list" id="pkVendorList"></div></div>
+                </div>
+              </div>
+            </div>
+            <div class="bm-fi">
+              <span class="lbl">药品分类：</span>
+              <div class="ctrl"><select class="select" id="fClass"><option value="">药品分类</option></select></div>
+            </div>
+            <div class="bm-fi">
+              <span class="lbl">药品种类：</span>
+              <div class="ctrl"><select class="select" id="fKind"><option value="">药品种类</option></select></div>
+            </div>
+            <div class="bm-fi">
+              <span class="lbl">状态：</span>
+              <div class="ctrl">
+                <select class="select" id="fStatus">
+                  <option value="">全部</option>
+                  <option value="on">启用</option>
+                  <option value="off">停用</option>
+                </select>
+              </div>
+            </div>
+            <div class="bm-fi">
+              <span class="lbl">拆零：</span>
+              <div class="ctrl">
+                <select class="select" id="fSplit">
+                  <option value="">全部</option>
+                  <option value="1">拆零</option>
+                  <option value="0">不拆零</option>
+                </select>
+              </div>
+            </div>
+            <div class="bm-fi">
+              <span class="lbl">供货商：</span>
+              <div class="ctrl">
+                <div class="pk" id="pkSupplier">
+                  <input class="pk-input input" id="pkSupplierInput" placeholder="请选择供货商" autocomplete="off" readonly>
+                  <svg class="pk-caret" viewBox="0 0 10 6" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M1 1l4 4 4-4"/></svg>
+                  <div class="pk-menu"><div class="pk-list" id="pkSupplierList"></div></div>
+                </div>
+              </div>
+            </div>
+            <div class="bm-fi">
+              <span class="lbl">库存量：</span>
+              <div class="ctrl">
+                <div class="bm-range">
+                  <select class="select" id="fStockOp"><option value="gt">大于</option><option value="eq">等于</option><option value="lt">小于</option></select>
+                  <input class="input" id="fStockVal" type="number" placeholder="数值">
+                </div>
+              </div>
+            </div>
+            <div class="bm-fi">
+              <span class="lbl">国家基本药物：</span>
+              <div class="ctrl"><select class="select" id="fEssential"><option value="">请选择</option><option value="1">是</option><option value="0">否</option></select></div>
+            </div>
+            <div class="bm-fi">
+              <span class="lbl">集采标识：</span>
+              <div class="ctrl"><select class="select" id="fVolume"><option value="">全部</option><option value="1">是</option><option value="0">否</option></select></div>
+            </div>
+            <div class="bm-fi">
+              <span class="lbl">国家谈判药物：</span>
+              <div class="ctrl"><select class="select" id="fNegotiated"><option value="">全部</option><option value="1">是</option><option value="0">否</option></select></div>
+            </div>
+            <div class="bm-fi">
+              <span class="lbl">毒麻标志：</span>
+              <div class="ctrl"><select class="select" id="fToxic"><option value="">请选择</option><option>麻醉药品</option><option>毒性药品</option><option>否</option></select></div>
+            </div>
+            <div class="bm-fi">
+              <span class="lbl">精神标志：</span>
+              <div class="ctrl"><select class="select" id="fSpirit"><option value="">请选择</option><option>第一类精神药品</option><option>第二类精神药品</option><option>否</option></select></div>
+            </div>
+            <div class="bm-fi">
+              <span class="lbl">剂型：</span>
+              <div class="ctrl"><select class="select" id="fForm"><option value="">请选择剂型</option></select></div>
+            </div>
+          </div>
+          <div class="bm-filter-actions">
+            <button class="bm-toggle" id="btnToggle">展开 ▾</button>
+            <button class="btn btn-sm" id="btnReset">重置 ( R )</button>
+            <button class="btn btn-sm btn-primary" id="btnSearch">查询 ( Q )</button>
+          </div>
+        </div>
+
+        <!-- 表格 -->
+        <div class="bm-table-wrap">
+          <table class="bm-table">
+            <thead>
+              <tr>
+                <th class="col-check" style="width:48px"><input type="checkbox" id="checkAll" title="全选本页"></th>
+                <th class="col-status" style="width:70px">状态</th>
+                <th class="col-name" style="width:160px">药品名称</th>
+                <th style="width:110px">药品编码</th>
+                <th style="width:80px">药品种类</th>
+                <th style="width:140px">药品规格</th>
+                <th style="width:90px" class="num">最小换算系数</th>
+                <th style="width:90px" class="num">可用数量</th>
+                <th style="width:90px" class="num">发药数量</th>
+                <th style="width:80px">发药单位</th>
+                <th style="width:110px">批号</th>
+                <th style="width:100px">有效期</th>
+                <th style="width:90px" class="num">零售价</th>
+                <th style="width:100px" class="num">拆零零售价</th>
+                <th style="width:90px" class="num">库存数量</th>
+                <th style="width:110px" class="num">库存量(大包装)</th>
+                <th style="width:90px" class="num">停用数量</th>
+                <th style="width:90px" class="num">预减数量</th>
+                <th style="width:180px">生产企业</th>
+                <th style="width:90px" class="num">进货价</th>
+                <th style="width:100px" class="num">拆零进货价</th>
+                <th style="width:100px" class="num">零售价总额</th>
+                <th style="width:140px">供应商</th>
+                <th style="width:130px">批准文号</th>
+                <th style="width:60px">基药</th>
+                <th style="width:100px">国家谈判药物</th>
+                <th style="width:80px">集采标识</th>
+                <th style="width:140px">入库时间</th>
+                <th style="width:130px">入库单号</th>
+                <th style="width:80px">制剂单位</th>
+                <th style="width:100px">最小包装单位</th>
+                <th style="width:90px">毒麻标志</th>
+                <th style="width:110px">精神标志</th>
+                <th style="width:80px">剂型</th>
+                <th style="width:130px">国家医保编码</th>
+                <th style="width:130px">国家医保名称</th>
+                <th style="width:80px">拆零标志</th>
+                <th style="width:80px">优先出库</th>
+                <th class="col-acts" style="width:150px">操作</th>
+              </tr>
+            </thead>
+            <tbody id="listBody"></tbody>
+          </table>
+        </div>
+
+        <!-- 分页 -->
+        <div class="bm-pager">
+          <span class="total">共 <b id="totalNum">0</b> 条</span>
+          <select class="select" id="pageSize">
+            <option value="10">10条/页</option>
+            <option value="20" selected>20条/页</option>
+            <option value="30">30条/页</option>
+            <option value="50">50条/页</option>
+            <option value="100">100条/页</option>
+          </select>
+          <button class="pager-btn" id="pagePrev">‹</button>
+          <span id="pageNums"></span>
+          <button class="pager-btn" id="pageNext">›</button>
+          <span>跳至第</span>
+          <input class="input jump-input" id="pageJump" value="1">
+          <span>页</span>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ========== 抽屉：新增/编辑批次 ========== -->
+<div class="bm-drawer-mask" id="batchMask"></div>
+<div class="bm-drawer" id="batchDrawer">
+  <div class="bm-drawer-head">
+    <div class="bm-drawer-title" id="batchTitle">新增批次</div>
+    <button class="drawer-close" id="batchClose" title="关闭">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+    </button>
+  </div>
+  <div class="bm-drawer-body">
+    <!-- 药品信息 -->
+    <div class="bm-sec">
+      <div class="bm-sec-title">药品信息</div>
+      <div class="bm-form">
+        <div class="fi">
+          <span class="lbl"><span class="req">*</span>药品编码：</span>
+          <div class="ctrl">
+            <div class="pk" id="pkDrug">
+              <input class="pk-input input" id="pkDrugInput" placeholder="请选择药品" autocomplete="off" readonly>
+              <svg class="pk-caret" viewBox="0 0 10 6" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M1 1l4 4 4-4"/></svg>
+              <div class="pk-menu is-grid">
+                <div class="pk-search"><input class="input" id="pkDrugSearch" placeholder="名称/编码/拼音码"></div>
+                <div class="pk-grid-head">
+                  <span>药品名称</span><span>药品规格</span><span>药品编码</span><span>生产企业</span><span>批准文号</span>
+                </div>
+                <div class="pk-list" id="pkDrugList"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="fi">
+          <span class="lbl">药品名称：</span>
+          <div class="ctrl"><input class="input is-readonly" id="fDrugName" readonly></div>
+        </div>
+        <div class="fi">
+          <span class="lbl">药品规格：</span>
+          <div class="ctrl"><input class="input is-readonly" id="fSpec" readonly></div>
+        </div>
+        <div class="fi">
+          <span class="lbl">药品包装：</span>
+          <div class="ctrl"><input class="input is-readonly" id="fPkg" readonly></div>
+        </div>
+        <div class="fi">
+          <span class="lbl">生产企业：</span>
+          <div class="ctrl"><input class="input is-readonly" id="fVendor" readonly></div>
+        </div>
+        <div class="fi">
+          <span class="lbl">批准文号：</span>
+          <div class="ctrl"><input class="input is-readonly" id="fApproval" readonly></div>
+        </div>
+      </div>
+    </div>
+    <!-- 批次信息 -->
+    <div class="bm-sec">
+      <div class="bm-sec-title">批次信息</div>
+      <div class="bm-form">
+        <div class="fi">
+          <span class="lbl"><span class="req">*</span>批号：</span>
+          <div class="ctrl"><input class="input" id="fBatchNo" placeholder="请输入批号" autocomplete="off"></div>
+        </div>
+        <div class="fi">
+          <span class="lbl"><span class="req">*</span>有效期：</span>
+          <div class="ctrl"><input class="input" type="date" id="fExpire"></div>
+        </div>
+        <div class="fi">
+          <span class="lbl"><span class="req">*</span>生产日期：</span>
+          <div class="ctrl"><input class="input" type="date" id="fProduce"></div>
+        </div>
+        <div class="fi">
+          <span class="lbl"><span class="req">*</span>进货价：</span>
+          <div class="ctrl"><input class="input" type="number" step="0.01" id="fInPrice" placeholder="请输入进货价"></div>
+        </div>
+        <div class="fi">
+          <span class="lbl"><span class="req">*</span>零售价：</span>
+          <div class="ctrl"><input class="input" type="number" step="0.01" id="fOutPrice" placeholder="请输入零售价"></div>
+        </div>
+        <div class="fi">
+          <span class="lbl"><span class="req">*</span>供应商：</span>
+          <div class="ctrl">
+            <div class="pk" id="pkSup">
+              <input class="pk-input input" id="pkSupInput" placeholder="请选择供应商" autocomplete="off" readonly>
+              <svg class="pk-caret" viewBox="0 0 10 6" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M1 1l4 4 4-4"/></svg>
+              <div class="pk-menu"><div class="pk-list" id="pkSupList"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="bm-drawer-foot">
+    <button class="btn" id="btnSaveContinue">保存并继续</button>
+    <button class="btn btn-primary" id="btnSave">保存</button>
+    <button class="btn" id="btnCancel">取消</button>
+  </div>
+</div>
+
+<!-- ========== 抽屉：批量拆零 / 批量优先出库 ========== -->
+<div class="bm-drawer-mask" id="actMask"></div>
+<div class="bm-drawer" id="actDrawer">
+  <div class="bm-drawer-head">
+    <div class="bm-drawer-title" id="actTitle">批量拆零</div>
+    <button class="drawer-close" id="actClose" title="关闭">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+    </button>
+  </div>
+  <div class="bm-drawer-body">
+    <div class="bm-act-search">
+      <input class="input" id="actSearch" placeholder="名称/编码/拼音码" autocomplete="off">
+    </div>
+    <table class="bm-act-table">
+      <thead>
+        <tr>
+          <th style="width:40px"><input type="checkbox" id="actCheckAll"></th>
+          <th>药品名称</th>
+          <th>药品规格</th>
+          <th>药品编码</th>
+          <th>当前状态</th>
+        </tr>
+      </thead>
+      <tbody id="actBody"></tbody>
+    </table>
+  </div>
+  <div class="bm-drawer-foot">
+    <span id="actSelTip" style="margin-right:auto;font-size:12px;color:var(--text-tertiary)">已选 0 项</span>
+    <button class="btn btn-primary" id="actConfirm">批量拆零</button>
+    <button class="btn" id="actCancel">取消</button>
+  </div>
+</div>
+
+<!-- ========== 弹窗：停用/启用数量录入 ========== -->
+<div class="modal-mask" id="qtyMask">
+  <div class="modal" style="width:420px">
+    <div class="modal-head">
+      <div class="modal-title" id="qtyTitle">停用</div>
+      <button class="drawer-close" id="qtyClose" title="关闭">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 0">
+        <span style="width:96px;text-align:right;font-size:13px;color:var(--text-primary)" id="qtyLabel">停用数量：</span>
+        <input class="input" id="qtyInput" type="number" style="flex:1" placeholder="请输入数量">
+        <span id="qtyUnit" style="font-size:13px;color:var(--text-secondary);white-space:nowrap">盒</span>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" id="qtyCancel">取消</button>
+      <button class="btn btn-primary" id="qtySave">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- toast -->
+<div id="toast" style="position:fixed;top:70px;left:50%;transform:translateX(-50%);padding:8px 16px;background:rgba(0,0,0,.78);color:#fff;border-radius:4px;font-size:13px;z-index:9999;display:none"></div>
+
+<script>
+(function(){
+  "use strict";
+  var $ = function(s,c){return (c||document).querySelector(s);};
+  var $$ = function(s,c){return Array.prototype.slice.call((c||document).querySelectorAll(s));};
+  function esc(v){return v==null||v===""?"—":String(v).replace(/[&<>"']/g,function(m){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m];});}
+  function toast(msg){var t=$("#toast");t.textContent=msg;t.style.display="block";clearTimeout(t._t);t._t=setTimeout(function(){t.style.display="none";},1800);}
+
+  /* ===== Mock 批次数据 ===== */
+  var BATCHES = [
+    {status:"on",name:"阿莫西林胶囊",code:"1210500301",kind:"西药",spec:"0.25g*24粒/盒",minFactor:24,availQty:480,sendQty:480,sendUnit:"粒",batchNo:"20260101",expire:"2028-01-01",outPrice:12.50,splitOutPrice:0.52,stockQty:480,stockBig:20,stopQty:0,preQty:0,vendor:"华北制药股份有限公司",inPrice:8.20,splitInPrice:0.34,outTotal:6000.00,supplier:"山东医药集团",approval:"H13023917",essential:"是",negotiated:"否",volume:"是",inTime:"2026-01-05 09:20:11",inNo:"RK20260105001",prepUnit:"粒",minPkgUnit:"盒",toxic:"否",spirit:"否",form:"胶囊剂",insCode:"XJ01CA0401010101032",insName:"阿莫西林",split:"是",priority:"是"},
+    {status:"on",name:"阿莫西林胶囊",code:"1210500301",kind:"西药",spec:"0.5g*12粒/盒",minFactor:12,availQty:240,sendQty:240,sendUnit:"粒",batchNo:"20260115",expire:"2028-01-14",outPrice:18.80,splitOutPrice:1.57,stockQty:240,stockBig:20,stopQty:0,preQty:0,vendor:"石药集团中诺药业（石家庄）有限公司",inPrice:12.50,splitInPrice:1.04,outTotal:4512.00,supplier:"济南医药供应站",approval:"H20033293",essential:"是",negotiated:"否",volume:"否",inTime:"2026-01-16 14:05:33",inNo:"RK20260116003",prepUnit:"粒",minPkgUnit:"盒",toxic:"否",spirit:"否",form:"胶囊剂",insCode:"XJ01CA0401010102032",insName:"阿莫西林",split:"是",priority:"否"},
+    {status:"on",name:"头孢克肟分散片",code:"1210500501",kind:"西药",spec:"0.1g*6片/盒",minFactor:6,availQty:180,sendQty:180,sendUnit:"片",batchNo:"20260201",expire:"2028-01-31",outPrice:24.60,splitOutPrice:4.10,stockQty:180,stockBig:30,stopQty:0,preQty:0,vendor:"上海信谊药厂有限公司",inPrice:16.80,splitInPrice:2.80,outTotal:4428.00,supplier:"上海医药分销",approval:"H31020315",essential:"否",negotiated:"是",volume:"否",inTime:"2026-02-02 10:12:45",inNo:"RK20260202001",prepUnit:"片",minPkgUnit:"盒",toxic:"否",spirit:"否",form:"片剂",insCode:"XJ01DD0401010101032",insName:"头孢克肟",split:"是",priority:"是"},
+    {status:"off",name:"布洛芬缓释胶囊",code:"1210500601",kind:"西药",spec:"0.3g*20粒/盒",minFactor:20,availQty:0,sendQty:0,sendUnit:"粒",batchNo:"20251201",expire:"2027-11-30",outPrice:22.00,splitOutPrice:1.10,stockQty:0,stockBig:0,stopQty:60,preQty:0,vendor:"中美天津史克制药有限公司",inPrice:15.00,splitInPrice:0.75,outTotal:0,supplier:"天津医药集团",approval:"H10900089",essential:"是",negotiated:"否",volume:"否",inTime:"2025-12-05 08:30:00",inNo:"RK20251205002",prepUnit:"粒",minPkgUnit:"盒",toxic:"否",spirit:"否",form:"胶囊剂",insCode:"XJ02CA0301010101032",insName:"布洛芬",split:"是",priority:"否"},
+    {status:"on",name:"奥美拉唑肠溶胶囊",code:"1210500901",kind:"西药",spec:"20mg*14粒/盒",minFactor:14,availQty:280,sendQty:280,sendUnit:"粒",batchNo:"20260301",expire:"2028-02-28",outPrice:35.80,splitOutPrice:2.56,stockQty:280,stockBig:20,stopQty:0,preQty:0,vendor:"常州四药制药有限公司",inPrice:24.00,splitInPrice:1.71,outTotal:10024.00,supplier:"常州药业股份",approval:"H10950185",essential:"是",negotiated:"是",volume:"是",inTime:"2026-03-02 16:40:20",inNo:"RK20260302005",prepUnit:"粒",minPkgUnit:"盒",toxic:"否",spirit:"否",form:"胶囊剂",insCode:"XA02BC0101010101032",insName:"奥美拉唑",split:"是",priority:"是"},
+    {status:"on",name:"复方甘草片",code:"1210501101",kind:"中成药",spec:"100片/瓶",minFactor:100,availQty:500,sendQty:500,sendUnit:"片",batchNo:"20260215",expire:"2027-08-14",outPrice:8.50,splitOutPrice:0.085,stockQty:500,stockBig:5,stopQty:0,preQty:0,vendor:"广州白云山制药股份有限公司",inPrice:5.20,splitInPrice:0.052,outTotal:4250.00,supplier:"广州医药集团",approval:"Z44021234",essential:"否",negotiated:"否",volume:"否",inTime:"2026-02-16 11:22:10",inNo:"RK20260216002",prepUnit:"片",minPkgUnit:"瓶",toxic:"否",spirit:"否",form:"片剂",insCode:"ZC09AA0101010101032",insName:"复方甘草",split:"否",priority:"否"},
+    {status:"on",name:"硝苯地平控释片",code:"1210501201",kind:"西药",spec:"30mg*7片/盒",minFactor:7,availQty:210,sendQty:210,sendUnit:"片",batchNo:"20260310",expire:"2028-03-09",outPrice:29.80,splitOutPrice:4.26,stockQty:210,stockBig:30,stopQty:0,preQty:0,vendor:"拜耳医药保健有限公司",inPrice:20.50,splitInPrice:2.93,outTotal:6258.00,supplier:"拜耳医药保健",approval:"J20180015",essential:"是",negotiated:"是",volume:"否",inTime:"2026-03-11 09:15:00",inNo:"RK20260311001",prepUnit:"片",minPkgUnit:"盒",toxic:"否",spirit:"否",form:"片剂",insCode:"XC08CA0101010101032",insName:"硝苯地平",split:"是",priority:"是"},
+    {status:"on",name:"盐酸二甲双胍片",code:"1210501301",kind:"西药",spec:"0.5g*20片/盒",minFactor:20,availQty:400,sendQty:400,sendUnit:"片",batchNo:"20260120",expire:"2028-01-19",outPrice:15.60,splitOutPrice:0.78,stockQty:400,stockBig:20,stopQty:0,preQty:0,vendor:"中美上海施贵宝制药有限公司",inPrice:10.20,splitInPrice:0.51,outTotal:6240.00,supplier:"上海施贵宝",approval:"H31020246",essential:"是",negotiated:"否",volume:"是",inTime:"2026-01-21 13:50:33",inNo:"RK20260121004",prepUnit:"片",minPkgUnit:"盒",toxic:"否",spirit:"否",form:"片剂",insCode:"XA10BA0101010101032",insName:"二甲双胍",split:"是",priority:"否"},
+    {status:"on",name:"左氧氟沙星片",code:"1210501401",kind:"西药",spec:"0.5g*4片/盒",minFactor:4,availQty:120,sendQty:120,sendUnit:"片",batchNo:"20260220",expire:"2028-02-19",outPrice:32.00,splitOutPrice:8.00,stockQty:120,stockBig:30,stopQty:0,preQty:0,vendor:"第一三共制药（北京）有限公司",inPrice:22.00,splitInPrice:5.50,outTotal:3840.00,supplier:"第一三共制药",approval:"H20000567",essential:"否",negotiated:"否",volume:"否",inTime:"2026-02-21 15:30:00",inNo:"RK20260221002",prepUnit:"片",minPkgUnit:"盒",toxic:"否",spirit:"否",form:"片剂",insCode:"XJ01MA0101010101032",insName:"左氧氟沙星",split:"是",priority:"是"},
+    {status:"on",name:"双歧杆菌三联活菌胶囊",code:"1210501501",kind:"生物制品",spec:"0.21g*24粒/盒",minFactor:24,availQty:192,sendQty:192,sendUnit:"粒",batchNo:"20260305",expire:"2027-09-04",outPrice:26.50,splitOutPrice:1.10,stockQty:192,stockBig:8,stopQty:0,preQty:0,vendor:"上海上药信谊药厂有限公司",inPrice:18.00,splitInPrice:0.75,outTotal:5088.00,supplier:"上海信谊",approval:"S10950031",essential:"否",negotiated:"否",volume:"否",inTime:"2026-03-06 10:00:00",inNo:"RK20260306001",prepUnit:"粒",minPkgUnit:"盒",toxic:"否",spirit:"否",form:"胶囊剂",insCode:"XA07FA0101010101032",insName:"双歧杆菌",split:"否",priority:"否"},
+    {status:"on",name:"阿托伐他汀钙片",code:"1210501601",kind:"西药",spec:"20mg*7片/盒",minFactor:7,availQty:350,sendQty:350,sendUnit:"片",batchNo:"20260208",expire:"2028-02-07",outPrice:38.90,splitOutPrice:5.56,stockQty:350,stockBig:50,stopQty:0,preQty:0,vendor:"辉瑞制药有限公司",inPrice:26.50,splitInPrice:3.79,outTotal:13615.00,supplier:"辉瑞制药",approval:"H20051408",essential:"是",negotiated:"是",volume:"是",inTime:"2026-02-09 09:45:20",inNo:"RK20260209002",prepUnit:"片",minPkgUnit:"盒",toxic:"否",spirit:"否",form:"片剂",insCode:"XC10AA0101010101032",insName:"阿托伐他汀",split:"是",priority:"是"},
+    {status:"on",name:"氯雷他定片",code:"1210501701",kind:"西药",spec:"10mg*6片/盒",minFactor:6,availQty:150,sendQty:150,sendUnit:"片",batchNo:"20260315",expire:"2028-03-14",outPrice:16.80,splitOutPrice:2.80,stockQty:150,stockBig:25,stopQty:0,preQty:0,vendor:"扬子江药业集团",inPrice:11.20,splitInPrice:1.87,outTotal:2520.00,supplier:"扬子江药业",approval:"H20040785",essential:"否",negotiated:"否",volume:"否",inTime:"2026-03-16 14:20:00",inNo:"RK20260316003",prepUnit:"片",minPkgUnit:"盒",toxic:"否",spirit:"否",form:"片剂",insCode:"XR02A0101010101032",insName:"氯雷他定",split:"是",priority:"否"}
+  ];
+
+  var VENDORS = ["华北制药股份有限公司","哈药集团制药总厂","石药集团中诺药业（石家庄）有限公司","山东鲁抗医药股份有限公司","珠海联邦制药股份有限公司中山分公司","上海信谊药厂有限公司","广州白云山制药股份有限公司","中美天津史克制药有限公司","常州四药制药有限公司","拜耳医药保健有限公司","中美上海施贵宝制药有限公司","第一三共制药（北京）有限公司","上海上药信谊药厂有限公司","辉瑞制药有限公司","扬子江药业集团"];
+  var SUPPLIERS = ["山东医药集团","济南医药供应站","上海医药分销","天津医药集团","常州药业股份","广州医药集团","拜耳医药保健","上海施贵宝","第一三共制药","上海信谊","辉瑞制药","扬子江药业"];
+  var DRUG_KINDS = ["西药","中成药","中药饮片","生物制品","疫苗"];
+  var FORMS = ["片剂","胶囊剂","颗粒剂","注射剂","丸剂","口服液","软膏剂","贴剂"];
+  var CLASSES = ["化学药品","中成药","生物制品","中药饮片"];
+
+  var ST = { page:1, pageSize:20, filtered:BATCHES.slice(), editId:null };
+  var listSel = new Set();   // 列表中已勾选的批次（存对象引用）
+
+  function initSelects(){
+    DRUG_KINDS.forEach(function(k){var o=document.createElement("option");o.value=k;o.textContent=k;$("#fKind").appendChild(o);});
+    FORMS.forEach(function(f){var o=document.createElement("option");o.value=f;o.textContent=f;$("#fForm").appendChild(o);});
+    CLASSES.forEach(function(c){var o=document.createElement("option");o.value=c;o.textContent=c;$("#fClass").appendChild(o);});
+  }
+
+  /* ===== 渲染表格 ===== */
+  function renderTable(){
+    var start = (ST.page-1)*ST.pageSize;
+    var rows = ST.filtered.slice(start, start+ST.pageSize);
+    var tbody = $("#listBody");
+    if(rows.length===0){
+      tbody.innerHTML = '<tr><td colspan="38" class="col-status"><div class="bm-empty">暂无数据</div></td></tr>';
+    } else {
+      tbody.innerHTML = rows.map(function(r,i){
+        var idx = start+i;
+        var canStop = (r.availQty||0)!==0;   // 可用数量不为零 → 可继续停用
+        var canStart = (r.stopQty||0)>0;     // 停用数量大于零 → 可启用
+        return '<tr>'+
+          '<td class="col-check"><input type="checkbox" class="row-check" data-idx="'+idx+'"'+(listSel.has(r)?" checked":"")+'></td>'+
+          '<td class="col-status"><span class="status-tag '+(r.status==="on"?"on":"off")+'"><span class="dot"></span>'+(r.status==="on"?"启用":"停用")+'</span></td>'+
+          '<td class="col-name name-cell" title="'+esc(r.name)+'">'+esc(r.name)+'</td>'+
+          '<td>'+esc(r.code)+'</td>'+
+          '<td>'+esc(r.kind)+'</td>'+
+          '<td>'+esc(r.spec)+'</td>'+
+          '<td class="num">'+r.minFactor+'</td>'+
+          '<td class="num">'+r.availQty+'</td>'+
+          '<td class="num">'+r.sendQty+'</td>'+
+          '<td>'+esc(r.sendUnit)+'</td>'+
+          '<td>'+esc(r.batchNo)+'</td>'+
+          '<td>'+esc(r.expire)+'</td>'+
+          '<td class="num">'+r.outPrice.toFixed(2)+'</td>'+
+          '<td class="num">'+r.splitOutPrice.toFixed(2)+'</td>'+
+          '<td class="num">'+r.stockQty+'</td>'+
+          '<td class="num">'+r.stockBig+'</td>'+
+          '<td class="num">'+r.stopQty+'</td>'+
+          '<td class="num">'+r.preQty+'</td>'+
+          '<td class="name-cell" title="'+esc(r.vendor)+'">'+esc(r.vendor)+'</td>'+
+          '<td class="num">'+r.inPrice.toFixed(2)+'</td>'+
+          '<td class="num">'+r.splitInPrice.toFixed(2)+'</td>'+
+          '<td class="num">'+r.outTotal.toFixed(2)+'</td>'+
+          '<td class="name-cell" title="'+esc(r.supplier)+'">'+esc(r.supplier)+'</td>'+
+          '<td>'+esc(r.approval)+'</td>'+
+          '<td>'+esc(r.essential)+'</td>'+
+          '<td>'+esc(r.negotiated)+'</td>'+
+          '<td>'+esc(r.volume)+'</td>'+
+          '<td>'+esc(r.inTime)+'</td>'+
+          '<td>'+esc(r.inNo)+'</td>'+
+          '<td>'+esc(r.prepUnit)+'</td>'+
+          '<td>'+esc(r.minPkgUnit)+'</td>'+
+          '<td>'+esc(r.toxic)+'</td>'+
+          '<td>'+esc(r.spirit)+'</td>'+
+          '<td>'+esc(r.form)+'</td>'+
+          '<td>'+esc(r.insCode)+'</td>'+
+          '<td>'+esc(r.insName)+'</td>'+
+          '<td>'+esc(r.split)+'</td>'+
+          '<td>'+esc(r.priority)+'</td>'+
+          '<td class="col-acts">'+
+            '<button class="link-btn" data-act="edit" data-idx="'+idx+'">编辑</button>'+
+            (canStop?'<button class="link-btn" data-act="stop" data-idx="'+idx+'">停用</button>':'')+
+            (canStart?'<button class="link-btn" data-act="start" data-idx="'+idx+'">启用</button>':'')+
+            '<button class="link-btn" data-act="del" data-idx="'+idx+'" style="color:var(--danger)">删除</button>'+
+          '</td>'+
+        '</tr>';
+      }).join("");
+    }
+    $("#totalNum").textContent = ST.filtered.length;
+    syncCheckAll();
+    renderPager();
+  }
+
+  /* 表头全选：只统计当前页可见行 */
+  function syncCheckAll(){
+    var boxes = $$("#listBody .row-check");
+    var checkedCount = boxes.filter(function(cb){return cb.checked;}).length;
+    var head = $("#checkAll");
+    head.checked = boxes.length>0 && checkedCount===boxes.length;
+    head.indeterminate = checkedCount>0 && checkedCount<boxes.length;
+    // 未勾选记录时，批量拆零/批量优先出库置灰不可点
+    var hasSel = listSel.size>0;
+    $("#btnSplit").disabled = !hasSel;
+    $("#btnPriority").disabled = !hasSel;
+  }
+
+  function renderPager(){
+    var total = ST.filtered.length;
+    var totalPages = Math.max(1, Math.ceil(total/ST.pageSize));
+    if(ST.page>totalPages) ST.page=totalPages;
+    var html="", s=Math.max(1,ST.page-2), e=Math.min(totalPages,ST.page+2);
+    for(var i=s;i<=e;i++) html += '<span class="pager-num '+(i===ST.page?"is-cur":"")+'" data-p="'+i+'">'+i+'</span>';
+    $("#pageNums").innerHTML = html;
+    $("#pagePrev").disabled = ST.page<=1;
+    $("#pageNext").disabled = ST.page>=totalPages;
+    $("#pageJump").value = ST.page;
+  }
+
+  /* ===== 筛选 ===== */
+  function doFilter(){
+    var name=$("#fName").value.trim().toLowerCase(), vendor=$("#pkVendorInput").value.trim();
+    var cls=$("#fClass").value, kind=$("#fKind").value, status=$("#fStatus").value, split=$("#fSplit").value;
+    var supplier=$("#pkSupplierInput").value.trim(), stockOp=$("#fStockOp").value, stockVal=parseFloat($("#fStockVal").value);
+    var essential=$("#fEssential").value, volume=$("#fVolume").value, negotiated=$("#fNegotiated").value;
+    var toxic=$("#fToxic").value, spirit=$("#fSpirit").value, form=$("#fForm").value;
+
+    ST.filtered = BATCHES.filter(function(r){
+      if(name && r.name.toLowerCase().indexOf(name)<0 && r.code.toLowerCase().indexOf(name)<0) return false;
+      if(vendor && r.vendor!==vendor) return false;
+      if(kind && r.kind!==kind) return false;
+      if(status && r.status!==status) return false;
+      if(split==="1" && r.split!=="是") return false;
+      if(split==="0" && r.split!=="否") return false;
+      if(supplier && r.supplier!==supplier) return false;
+      if(!isNaN(stockVal)){
+        if(stockOp==="gt" && !(r.stockQty>stockVal)) return false;
+        if(stockOp==="eq" && r.stockQty!==stockVal) return false;
+        if(stockOp==="lt" && !(r.stockQty<stockVal)) return false;
+      }
+      if(essential==="1" && r.essential!=="是") return false;
+      if(essential==="0" && r.essential!=="否") return false;
+      if(volume==="1" && r.volume!=="是") return false;
+      if(volume==="0" && r.volume!=="否") return false;
+      if(negotiated==="1" && r.negotiated!=="是") return false;
+      if(negotiated==="0" && r.negotiated!=="否") return false;
+      if(toxic && r.toxic!==toxic && !(toxic==="否"&&r.toxic==="否")) return false;
+      if(spirit && r.spirit!==spirit && !(spirit==="否"&&r.spirit==="否")) return false;
+      if(form && r.form!==form) return false;
+      return true;
+    });
+    ST.page=1; renderTable();
+  }
+
+  function resetFilter(){
+    $("#fName").value="";
+    $("#pkVendorInput").value=""; $("#pkVendorInput").classList.remove("is-filled");
+    $("#pkSupplierInput").value=""; $("#pkSupplierInput").classList.remove("is-filled");
+    $$("#filterBar select").forEach(function(s){if(s.id!=="fStockOp") s.value="";});
+    $("#fStockVal").value="";
+    ST.filtered=BATCHES.slice(); ST.page=1; renderTable();
+  }
+
+  /* ===== pk 选择器 ===== */
+  function bindPk(id, list, onPick, gridCols){
+    var pk=$("#"+id), input=$(".pk-input",pk), menu=$(".pk-menu",pk), listEl=$(".pk-list",pk);
+    function render(kw){
+      var kwl=(kw||"").toLowerCase();
+      var items=list.filter(function(it){var n=typeof it==="string"?it:(it.name||"");return !kwl||n.toLowerCase().indexOf(kwl)>=0;});
+      if(items.length===0){listEl.innerHTML='<div class="pk-empty">无匹配项</div>';return;}
+      listEl.innerHTML=items.map(function(it){
+        if(gridCols){
+          return '<div class="pk-item is-grid" data-v="'+esc(it.name)+'">'+
+            '<span class="pc">'+esc(it.name)+'</span><span class="pc">'+esc(it.spec||"")+'</span>'+
+            '<span class="pc">'+esc(it.code||"")+'</span><span class="pc">'+esc(it.vendor||"")+'</span>'+
+            '<span class="pc">'+esc(it.approval||"")+'</span></div>';
+        }
+        return '<div class="pk-item" data-v="'+esc(typeof it==="string"?it:it.name)+'">'+esc(typeof it==="string"?it:it.name)+'</div>';
+      }).join("");
+      $$(".pk-item",listEl).forEach(function(el){
+        el.addEventListener("click",function(){
+          var v=el.getAttribute("data-v");
+          input.value=v; input.classList.add("is-filled"); pk.classList.remove("is-open");
+          if(onPick) onPick(v, list.find(function(it){return (typeof it==="string"?it:it.name)===v;}));
+        });
+      });
+    }
+    input.addEventListener("click",function(e){e.stopPropagation();closeAllPk();pk.classList.add("is-open");render($(".pk-search input",menu)?$(".pk-search input",menu).value:"");});
+    var search=$(".pk-search input",menu);
+    if(search) search.addEventListener("input",function(){render(search.value);});
+    return {render:render};
+  }
+  function closeAllPk(){$$(".pk.is-open").forEach(function(p){p.classList.remove("is-open");});}
+  document.addEventListener("click",function(){closeAllPk();});
+
+  /* ===== 批次抽屉（新增/编辑） ===== */
+  var batchForm={drug:null};
+  function openBatchDrawer(editIdx){
+    ST.editId=editIdx!=null?editIdx:null;
+    $("#batchTitle").textContent=editIdx!=null?"编辑批次":"新增批次";
+    batchForm.drug=null;
+    $("#pkDrugInput").value=""; $("#pkDrugInput").classList.remove("is-filled");
+    $("#pkDrugInput").readOnly=false;
+    $("#pkDrugInput").classList.remove("is-readonly");
+    $("#pkDrug").style.pointerEvents="auto";
+    ["fDrugName","fSpec","fPkg","fVendor","fApproval","fBatchNo","fExpire","fProduce","fInPrice","fOutPrice"].forEach(function(id){$("#"+id).value="";});
+    $("#pkSupInput").value=""; $("#pkSupInput").classList.remove("is-filled");
+    if(editIdx!=null){
+      var r=ST.filtered[editIdx];
+      $("#pkDrugInput").value=r.code; $("#pkDrugInput").classList.add("is-filled");
+      $("#pkDrugInput").readOnly=true;                  // 编辑时药品编码只读
+      $("#pkDrugInput").classList.add("is-readonly");   // 灰底只读样式
+      $("#pkDrug").style.pointerEvents="none";          // 禁止点开选择器
+      $("#fDrugName").value=r.name;
+      $("#fSpec").value=r.spec;
+      var parts=r.spec.split("*");
+      $("#fPkg").value=parts[parts.length-1];
+      $("#fVendor").value=r.vendor;
+      $("#fApproval").value=r.approval;
+      $("#fBatchNo").value=r.batchNo;
+      $("#fExpire").value=r.expire;
+      $("#fProduce").value=r.inTime.split(" ")[0];
+      $("#fInPrice").value=r.inPrice;
+      $("#fOutPrice").value=r.outPrice;
+      $("#pkSupInput").value=r.supplier; $("#pkSupInput").classList.add("is-filled");
+      batchForm.drug=r;
+    }
+    $("#batchMask").classList.add("show");
+    $("#batchDrawer").classList.add("show");
+  }
+  function closeBatchDrawer(){$("#batchMask").classList.remove("show");$("#batchDrawer").classList.remove("show");}
+
+  /* ===== 停用/启用 数量弹窗 ===== */
+  var qtyCtx={act:null,idx:null};
+  function openQtyDialog(act, idx){
+    var r=ST.filtered[idx];
+    qtyCtx={act:act,idx:idx};
+    var isStop = act==="stop";
+    $("#qtyTitle").textContent = isStop?"停用":"启用";
+    $("#qtyLabel").textContent = (isStop?"停用数量：":"启用数量：");
+    $("#qtyUnit").textContent = r.minPkgUnit || "盒";
+    $("#qtyInput").value = "";
+    $("#qtyMask").classList.add("show");
+    setTimeout(function(){$("#qtyInput").focus();},50);
+  }
+  function closeQtyDialog(){$("#qtyMask").classList.remove("show");}
+
+  /* ===== 批量操作抽屉（拆零 / 优先出库） ===== */
+  var actCtx={mode:"split", selected:new Set()};
+  function openActDrawer(mode){
+    actCtx={mode:mode, selected:new Set()};
+    $("#actTitle").textContent = mode==="split"?"批量拆零":"批量优先出库";
+    $("#actConfirm").textContent = mode==="split"?"批量拆零":"批量优先出库";
+    renderActTable();
+    $("#actMask").classList.add("show");
+    $("#actDrawer").classList.add("show");
+  }
+  function closeActDrawer(){$("#actMask").classList.remove("show");$("#actDrawer").classList.remove("show");}
+  function renderActTable(){
+    var kw=$("#actSearch").value.toLowerCase();
+    var stateField = actCtx.mode==="split"?"split":"priority";
+    var stateText = actCtx.mode==="split"?["是","否"]:["是","否"];
+    var list = BATCHES.map(function(r,i){return {i:i,name:r.name,spec:r.spec,code:r.code,state:r[stateField]};})
+      .filter(function(r){return !kw||r.name.toLowerCase().indexOf(kw)>=0||r.code.toLowerCase().indexOf(kw)>=0;});
+    $("#actBody").innerHTML = list.map(function(r){
+      var checked = actCtx.selected.has(r.i)?"checked":"";
+      return '<tr><td><input type="checkbox" data-idx="'+r.i+'" '+checked+'></td>'+
+        '<td>'+esc(r.name)+'</td><td>'+esc(r.spec)+'</td><td>'+esc(r.code)+'</td>'+
+        '<td>'+esc(r.state)+'</td></tr>';
+    }).join("") || '<tr><td colspan="5" style="text-align:center;color:var(--text-placeholder);padding:30px">暂无数据</td></tr>';
+    $("#actSelTip").textContent = "已选 "+actCtx.selected.size+" 项";
+    $("#actCheckAll").checked = list.length>0 && list.every(function(r){return actCtx.selected.has(r.i);});
+  }
+
+  /* ===== 事件绑定 ===== */
+  function bindEvents(){
+    $("#btnSearch").addEventListener("click", doFilter);
+    $("#btnReset").addEventListener("click", resetFilter);
+    $("#btnExport").addEventListener("click", function(){toast("导出成功（模拟）");});
+    $("#btnAddBatch").addEventListener("click", function(){openBatchDrawer(null);});
+
+    // 筛选展开/收起
+    $("#btnToggle").addEventListener("click", function(){
+      var bar=$("#filterBar");
+      var collapsed=bar.classList.toggle("collapsed");
+      $("#btnToggle").textContent = collapsed?"展开 ▾":"收起 ▴";
+    });
+
+    // 行操作
+    $("#listBody").addEventListener("click", function(e){
+      var btn=e.target.closest(".link-btn"); if(!btn) return;
+      var act=btn.getAttribute("data-act"), idx=parseInt(btn.getAttribute("data-idx"),10);
+      if(act==="edit"){openBatchDrawer(idx);}
+      else if(act==="stop"){openQtyDialog("stop",idx);}
+      else if(act==="start"){openQtyDialog("start",idx);}
+      else if(act==="del"){
+        if(confirm("确定删除该批次吗？")){
+          var r=ST.filtered[idx], realIdx=BATCHES.indexOf(r);
+          if(realIdx>=0) BATCHES.splice(realIdx,1);
+          ST.filtered.splice(idx,1);
+          toast("已删除"); renderTable();
+        }
+      }
+    });
+
+    // 列表勾选
+    $("#listBody").addEventListener("change", function(e){
+      var cb=e.target.closest(".row-check"); if(!cb) return;
+      var idx=parseInt(cb.getAttribute("data-idx"),10), r=ST.filtered[idx];
+      if(!r) return;
+      if(cb.checked) listSel.add(r); else listSel.delete(r);
+      syncCheckAll();
+    });
+    $("#checkAll").addEventListener("change", function(){
+      var checked=this.checked;
+      $$("#listBody .row-check").forEach(function(cb){
+        var idx=parseInt(cb.getAttribute("data-idx"),10), r=ST.filtered[idx];
+        cb.checked=checked;
+        if(!r) return;
+        if(checked) listSel.add(r); else listSel.delete(r);
+      });
+      this.indeterminate=false;
+      syncCheckAll();   // 全选/取消全选后同步批量按钮可用状态
+    });
+
+    // 分页
+    $("#pagePrev").addEventListener("click",function(){if(ST.page>1){ST.page--;renderTable();}});
+    $("#pageNext").addEventListener("click",function(){ST.page++;renderTable();});
+    $("#pageNums").addEventListener("click",function(e){var n=e.target.closest(".pager-num");if(!n)return;ST.page=parseInt(n.getAttribute("data-p"),10);renderTable();});
+    $("#pageSize").addEventListener("change",function(){ST.pageSize=parseInt(this.value,10);ST.page=1;renderTable();});
+    $("#pageJump").addEventListener("keydown",function(e){if(e.key==="Enter"){var p=parseInt(this.value,10);if(p>0){ST.page=p;renderTable();}}});
+
+    // 批次抽屉
+    $("#batchClose").addEventListener("click",closeBatchDrawer);
+    $("#btnCancel").addEventListener("click",closeBatchDrawer);
+    $("#batchMask").addEventListener("click",function(e){if(e.target===this)closeBatchDrawer();});
+
+    var drugList=BATCHES.map(function(r){return {name:r.name,spec:r.spec,code:r.code,vendor:r.vendor,approval:r.approval};});
+    var seen={}; drugList=drugList.filter(function(d){var k=d.name+d.spec;if(seen[k])return false;seen[k]=true;return true;});
+    bindPk("pkDrug", drugList, function(v,item){
+      batchForm.drug=item;
+      $("#fDrugName").value=item.name;
+      $("#fSpec").value=item.spec;
+      var parts=item.spec.split("*");
+      $("#fPkg").value=parts[parts.length-1];
+      $("#fVendor").value=item.vendor;
+      $("#fApproval").value=item.approval;
+    }, true);
+    bindPk("pkVendor", VENDORS);
+    bindPk("pkSupplier", SUPPLIERS);
+    bindPk("pkSup", SUPPLIERS);
+
+    // 保存批次
+    function saveBatch(continueFlag){
+      if(!batchForm.drug){toast("请选择药品");return;}
+      var batchNo=$("#fBatchNo").value.trim();
+      var expire=$("#fExpire").value, produce=$("#fProduce").value;
+      var inPrice=parseFloat($("#fInPrice").value), outPrice=parseFloat($("#fOutPrice").value);
+      var sup=$("#pkSupInput").value.trim();
+      if(!batchNo){toast("请输入批号");return;}
+      if(!expire){toast("请选择有效期");return;}
+      if(!produce){toast("请选择生产日期");return;}
+      if(isNaN(inPrice)){toast("请输入进货价");return;}
+      if(isNaN(outPrice)){toast("请输入零售价");return;}
+      if(!sup){toast("请选择供应商");return;}
+      var d=batchForm.drug;
+      var factor=parseInt(d.minFactor)||24;
+      if(ST.editId!=null){
+        var r=ST.filtered[ST.editId];
+        Object.assign(r,{batchNo:batchNo,expire:expire,inPrice:inPrice,outPrice:outPrice,
+          splitOutPrice:+(outPrice/factor).toFixed(2),splitInPrice:+(inPrice/factor).toFixed(2),supplier:sup});
+        toast("保存成功");
+      }else{
+        var newRec={
+          status:"on",name:d.name,code:d.code,kind:"西药",spec:d.spec,minFactor:factor,
+          availQty:0,sendQty:0,sendUnit:"盒",batchNo:batchNo,expire:expire,
+          outPrice:outPrice,splitOutPrice:+(outPrice/factor).toFixed(2),stockQty:0,stockBig:0,
+          stopQty:0,preQty:0,vendor:d.vendor,inPrice:inPrice,splitInPrice:+(inPrice/factor).toFixed(2),
+          outTotal:0,supplier:sup,approval:d.approval,essential:"否",
+          negotiated:"否",volume:"否",inTime:new Date().toLocaleString("zh-CN",{hour12:false}).replace(/\//g,"-"),
+          inNo:"RK"+Date.now().toString().slice(-10),prepUnit:"盒",minPkgUnit:"盒",
+          toxic:"否",spirit:"否",form:"—",insCode:"—",insName:d.name,split:"否",priority:"否"
+        };
+        BATCHES.unshift(newRec);
+        ST.filtered=BATCHES.slice();
+        toast("保存成功");
+      }
+      closeBatchDrawer();
+      renderTable();
+      if(continueFlag && ST.editId==null){setTimeout(function(){openBatchDrawer(null);},100);}
+    }
+    $("#btnSave").addEventListener("click",function(){saveBatch(false);});
+    $("#btnSaveContinue").addEventListener("click",function(){saveBatch(true);});
+
+    // 停用/启用 数量弹窗
+    $("#qtyClose").addEventListener("click",closeQtyDialog);
+    $("#qtyCancel").addEventListener("click",closeQtyDialog);
+    $("#qtyMask").addEventListener("click",function(e){if(e.target===this)closeQtyDialog();});
+    $("#qtySave").addEventListener("click",function(){
+      var qty=parseFloat($("#qtyInput").value);
+      if(isNaN(qty)||qty<=0){toast("请输入有效数量");return;}
+      var r=ST.filtered[qtyCtx.idx];
+      if(qtyCtx.act==="stop"){
+        r.stopQty = (r.stopQty||0) + qty;
+        r.stockQty = Math.max(0, (r.stockQty||0) - qty);
+        r.availQty = Math.max(0, (r.availQty||0) - qty);
+        r.status = r.availQty<=0 ? "off" : "on";   // 可用数量为 0 才算停用
+        toast("已停用 "+qty+" "+r.minPkgUnit);
+      }else{
+        r.stopQty = Math.max(0, (r.stopQty||0) - qty);
+        r.stockQty = (r.stockQty||0) + qty;
+        r.availQty = (r.availQty||0) + qty;
+        if(r.stopQty<=0){ r.status="on"; }
+        toast("已启用 "+qty+" "+r.minPkgUnit);
+      }
+      closeQtyDialog();
+      renderTable();
+    });
+
+    // 批量操作：已勾选则直接设置；未勾选则打开选择抽屉
+    $("#btnSplit").addEventListener("click",function(){batchApply("split","拆零");});
+    $("#btnPriority").addEventListener("click",function(){batchApply("priority","优先出库");});
+    function batchApply(field, label){
+      if(listSel.size===0){ openActDrawer(field==="split"?"split":"priority"); return; }
+      var n=listSel.size;
+      listSel.forEach(function(r){ r[field]="是"; });
+      listSel.clear();
+      toast("已将 "+n+" 个批次设为"+label);
+      renderTable();
+    }
+    $("#actClose").addEventListener("click",closeActDrawer);
+    $("#actCancel").addEventListener("click",closeActDrawer);
+    $("#actMask").addEventListener("click",function(e){if(e.target===this)closeActDrawer();});
+    $("#actSearch").addEventListener("input",renderActTable);
+    $("#actBody").addEventListener("change",function(e){
+      var cb=e.target.closest('input[type="checkbox"]'); if(!cb) return;
+      var i=parseInt(cb.getAttribute("data-idx"),10);
+      if(cb.checked) actCtx.selected.add(i); else actCtx.selected.delete(i);
+      $("#actSelTip").textContent="已选 "+actCtx.selected.size+" 项";
+    });
+    $("#actCheckAll").addEventListener("change",function(){
+      var checked=this.checked;
+      $$('#actBody input[type="checkbox"]').forEach(function(cb){
+        var i=parseInt(cb.getAttribute("data-idx"),10);
+        cb.checked=checked;
+        if(checked) actCtx.selected.add(i); else actCtx.selected.delete(i);
+      });
+      $("#actSelTip").textContent="已选 "+actCtx.selected.size+" 项";
+    });
+    $("#actConfirm").addEventListener("click",function(){
+      if(actCtx.selected.size===0){toast("请至少选择一项");return;}
+      var field = actCtx.mode==="split"?"split":"priority";
+      var label = actCtx.mode==="split"?"拆零":"优先出库";
+      actCtx.selected.forEach(function(i){
+        if(BATCHES[i]) BATCHES[i][field]="是";
+      });
+      ST.filtered=BATCHES.slice();
+      toast("已将 "+actCtx.selected.size+" 项设为"+label);
+      closeActDrawer();
+      renderTable();
+    });
+
+    // 快捷键
+    document.addEventListener("keydown",function(e){
+      if(e.target.tagName==="INPUT"||e.target.tagName==="SELECT"||e.target.tagName==="TEXTAREA") return;
+      if(e.key==="q"||e.key==="Q"){doFilter();}
+      if(e.key==="r"||e.key==="R"){resetFilter();}
+    });
+  }
+
+  initSelects();
+  bindEvents();
+  renderTable();
+})();
+</script>
+  <script src="nav.js"></script>
+</body>
+</html>

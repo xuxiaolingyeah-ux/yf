@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>增损详情 · 中心药房</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+/* ===== 药品增损 · 详情/审核页 局部样式 ===== */
+.sa-page { background: var(--bg-page); }
+.sa-card { flex: 1; min-height: 0; display: flex; flex-direction: column;
+  background: var(--bg-white); margin: 12px; border-radius: var(--radius-lg);
+  box-shadow: 0 1px 2px rgba(0,0,0,.04); overflow: hidden; }
+.sa-card.has-foot { border-radius: 0; }
+/* 标题行 */
+.sa-head { flex: none; height: 56px; display: flex; align-items: center; gap: 10px; padding: 0 20px; border-bottom: 1px solid var(--border); }
+.sa-head .page-title { font-size: 16px; font-weight: 500; }
+.sa-head .sa-code { font-size: 12px; color: var(--text-tertiary); }
+.sa-head .status-text { margin-left: auto; font-size: 13px; color: var(--text-secondary); }
+/* 胶囊页签 */
+.sa-tabs { flex: none; padding: 0; }
+.sa-tabs .page-tabs { margin: 10px 20px 0; }
+/* 内容区 */
+.sa-body { flex: 1; min-height: 0; overflow: auto; padding: 16px 20px; }
+.sa-sec + .sa-sec { margin-top: 20px; }
+.sa-sec-title { font-size: 13px; font-weight: 500; color: var(--text-primary); padding-left: 8px; margin-bottom: 12px; border-left: 3px solid var(--primary); }
+/* 只读键值：4 列 */
+.sa-view { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px 16px; max-width: 1280px; }
+.sa-view .fi { display: flex; align-items: flex-start; gap: 6px; min-width: 0; }
+.sa-view .fi .lbl { width: 104px; flex: none; text-align: right; font-size: 13px; color: var(--text-secondary); white-space: nowrap; line-height: 22px; }
+.sa-view .fi .val { flex: 1; min-width: 0; font-size: 13px; color: var(--text-primary); line-height: 22px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sa-view .fi .val.is-wrap { white-space: normal; max-height: 44px; }
+/* 药品明细只读宽表 */
+.sa-items-wrap { border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: auto; }
+.sa-items { width: max-content; min-width: 100%; border-collapse: collapse; font-size: 13px; }
+.sa-items th { position: sticky; top: 0; z-index: 2; background: var(--table-head); height: 38px; padding: 0 8px; text-align: left; font-weight: 500; color: var(--text-secondary); white-space: nowrap; border-bottom: 1px solid var(--border); }
+.sa-items td { padding: 7px 8px; border-bottom: 1px solid var(--border); white-space: nowrap; vertical-align: middle; }
+.sa-items tbody tr:nth-child(even) td { background: var(--table-even); }
+.sa-items .num { text-align: right; font-variant-numeric: tabular-nums; }
+.sa-items .col-acts { position: sticky; right: 0; z-index: 3; background: var(--bg-white); }
+.sa-items th.col-acts { background: var(--table-head); z-index: 4; }
+/* 追溯码弹窗 */
+.sa-trace .modal { width: 720px; max-width: 92vw; }
+.sa-trace-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.sa-trace-table th { background: var(--table-head); height: 36px; padding: 0 10px; text-align: left; font-weight: 500; color: var(--text-secondary); white-space: nowrap; border-bottom: 1px solid var(--border); }
+.sa-trace-table td { padding: 7px 10px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+/* 审核记录表格（节点 / 操作人 / 机构 / 审核结果 / 审核意见 / 审核时间） */
+.sa-rec { width: 100%; border-collapse: collapse; font-size: 13px; }
+.sa-rec th { background: var(--table-head); height: 38px; padding: 0 10px; text-align: left; font-weight: 500; color: var(--text-secondary); border-bottom: 1px solid var(--border); white-space: nowrap; }
+.sa-rec td { padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.sa-rec tbody tr:nth-child(even) td { background: var(--table-even); }
+.sa-rec .op-cell { max-width: 320px; white-space: normal; line-height: 1.5; }
+.sa-empty { padding: 32px 0; text-align: center; color: var(--text-placeholder); font-size: 13px; }
+/* 审核区 */
+.sa-foot { flex: none; display: flex; flex-direction: column; gap: 10px; padding: 12px 20px; border-top: 1px solid var(--border); background: var(--bg-white); border-radius: 0 0 var(--radius-lg) var(--radius-lg); box-shadow: 0 -2px 8px rgba(0,0,0,.06); }
+.sa-foot:empty { display: none; }
+.sa-foot .ap-radios { display: flex; gap: 20px; }
+.sa-foot .ap-btns { display: flex; justify-content: flex-end; gap: 8px; }
+.sa-foot textarea { width: 100%; }
+/* 胶囊页签 */
+.page-tabs {
+  display: inline-flex; background: var(--bg-page);
+  padding: 3px; border-radius: 6px; gap: 3px;
+}
+.page-tabs .page-tab {
+  padding: 6px 16px; border-radius: 6px; cursor: pointer;
+  font-size: 13px; color: var(--text-secondary); transition: all .15s;
+}
+.page-tabs .page-tab.active {
+  background: var(--bg-white); color: var(--primary-dark);
+  box-shadow: 0 1px 2px rgba(0,0,0,.06); font-weight: 500;
+}
+</style>
+</head>
+<body>
+
+<!-- ========== 顶部导航 ========== -->
+<header class="app-header">
+  <div class="header-left">
+    <div class="header-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3.2" y="9.4" width="17.6" height="5.2" rx="2.6" transform="rotate(-45 12 12)"/>
+        <path d="M8.4 15.6L15.6 8.4"/>
+      </svg>
+    </div>
+    <div class="header-title">区域药房协同管理系统</div>
+    <span class="header-sub">中心药房</span>
+  </div>
+  <div class="header-right">
+    <div class="header-user">
+      <div class="header-avatar" id="userAvatar">王</div>
+      <span class="header-user-name" id="userName">王芳</span>
+    </div>
+  </div>
+</header>
+
+<div class="app-body">
+  <!-- ========== 左侧导航 ========== -->
+  <aside class="app-side" id="appSide"></aside>
+<!-- ========== 主区域 ========== -->
+  <main class="app-main">
+    <div class="tabbar">
+      <div class="tab" onclick="location.href='batch-management.html'">首页</div>
+      <div class="tab" onclick="location.href='stock-adjust.html'">药品增损</div>
+      <div class="tab active">
+        <span id="tabTitle">增损详情</span>
+        <button class="tab-close" title="关闭" onclick="location.href='stock-adjust.html'">
+          <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="page sa-page">
+      <div class="sa-card" id="mainCard">
+        <!-- 标题行 -->
+        <div class="sa-head">
+          <button class="back-btn" id="btnBack" title="返回">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+          </button>
+          <div class="page-title" id="pageTitle">增损详情</div>
+          <span class="sa-code" id="headCode"></span>
+          <span class="status-text" id="headStatus"></span>
+        </div>
+
+        <!-- 胶囊页签（快速定位，非 pane 切换） -->
+        <div class="sa-tabs">
+          <div class="page-tabs" id="pageTabs">
+            <div class="page-tab active" data-sec="secInfo">增损详情</div>
+            <div class="page-tab" data-sec="secRec">审核记录</div>
+          </div>
+        </div>
+
+        <!-- 内容区 -->
+        <div class="sa-body" id="detailBody">
+          <!-- 基本信息 -->
+          <div class="sa-sec" id="secInfo">
+            <div class="sa-sec-title">增损信息</div>
+            <div class="sa-view">
+              <div class="fi"><span class="lbl">机构：</span><span class="val" id="vOrg"></span></div>
+              <div class="fi"><span class="lbl">药房：</span><span class="val" id="vPh"></span></div>
+              <div class="fi"><span class="lbl">库位：</span><span class="val" id="vLoc"></span></div>
+              <div class="fi"><span class="lbl">增损方式：</span><span class="val" id="vMethod"></span></div>
+              <div class="fi"><span class="lbl">增损原因：</span><span class="val" id="vReason"></span></div>
+              <div class="fi"><span class="lbl">提交人：</span><span class="val" id="vCreator"></span></div>
+              <div class="fi"><span class="lbl">提交时间：</span><span class="val" id="vTime"></span></div>
+              <div class="fi"><span class="lbl">出/入库单号：</span><span class="val" id="vInout"></span></div>
+              <div class="fi"><span class="lbl">说明：</span><span class="val is-wrap" id="vRemark"></span></div>
+            </div>
+          </div>
+
+          <!-- 药品明细 -->
+          <div class="sa-sec">
+            <div class="sa-sec-title">药品明细</div>
+            <div class="sa-items-wrap">
+              <table class="sa-items" id="itemsTable">
+                <thead>
+                  <tr>
+                    <th>药品名称</th><th>药品编码</th><th>药品规格</th><th>生产企业</th>
+                    <th>批次号</th><th style="width:80px">有效期</th>
+                    <th class="num" style="width:80px">增损数量</th><th>单位</th>
+                    <th class="num" style="width:80px">库存量</th>
+                    <th class="num" style="width:70px">进货价</th>
+                    <th class="num" style="width:70px">零售价</th>
+                    <th class="num" style="width:90px">进价合计</th>
+                    <th class="num" style="width:90px">售价合计</th>
+                    <th>供应商</th><th>批准文号</th>
+                    <th class="col-acts" style="width:70px">操作</th>
+                  </tr>
+                </thead>
+                <tbody id="itemsBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- 审核记录 -->
+          <div class="sa-sec" id="secRec">
+            <div class="sa-sec-title">审核记录</div>
+            <table class="sa-rec">
+              <thead>
+                <tr>
+                  <th style="width:80px">节点</th>
+                  <th style="width:90px">操作人</th>
+                  <th style="width:160px">机构</th>
+                  <th style="width:90px">审核结果</th>
+                  <th>审核意见</th>
+                  <th style="width:170px">审核时间</th>
+                </tr>
+              </thead>
+              <tbody id="recBody"></tbody>
+            </table>
+            <div class="sa-empty" id="recEmpty" style="display:none">暂无审核记录</div>
+          </div>
+        </div>
+
+        <!-- 审核区（固定底部） -->
+        <div class="sa-foot" id="pageFoot"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ========== 追溯码弹窗（详情只读） ========== -->
+<div class="modal-mask sa-trace" id="traceMask">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title" id="traceTitle">追溯码清单</div>
+      <button class="drawer-close" id="traceClose" title="关闭">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div id="traceBody" style="display:none">
+        <table class="sa-trace-table">
+          <thead><tr><th>追溯码</th><th>药品名称</th><th>药品规格</th><th>生产企业</th><th>批准文号</th></tr></thead>
+          <tbody id="traceList"></tbody>
+        </table>
+      </div>
+      <div class="sa-empty" id="traceEmpty">暂无追溯码</div>
+    </div>
+  </div>
+</div>
+
+<!-- toast -->
+<div id="toast" style="position:fixed;top:70px;left:50%;transform:translateX(-50%);padding:8px 16px;background:rgba(0,0,0,.78);color:#fff;border-radius:4px;font-size:13px;z-index:9999;display:none"></div>
+
+<script src="stock-adjust-common.js"></script>
+<script>
+(function(){
+  "use strict";
+  var SA = window.SA;
+  var $ = function(s,c){return (c||document).querySelector(s);};
+  var $$ = function(s,c){return Array.prototype.slice.call((c||document).querySelectorAll(s));};
+  function toast(msg){var t=$("#toast");t.textContent=msg;t.style.display="block";clearTimeout(t._t);t._t=setTimeout(function(){t.style.display="none";},2200);}
+
+  var user = SA.currentUser();
+  $("#userAvatar").textContent = user.name.charAt(0);
+  $("#userName").textContent = user.name;
+
+  var editId = SA.qs("id");
+  var mode = SA.qs("mode") === "approve" ? "approve" : "view";
+  var list = SA.load();
+  /* 必须从已加载的 list 中取同一对象，否则修改后 save(list) 写回的不是改过的那份 */
+  var bill = editId ? list.filter(function(b){ return b.id === editId; })[0] : null;
+  if(!bill){ location.href = "stock-adjust.html"; return; }
+
+  /* ===== 标题 / 标签 ===== */
+  $("#tabTitle").textContent = mode === "approve" ? "增损审核" : "增损详情";
+  $("#pageTitle").textContent = mode === "approve" ? "增损审核" : "增损详情";
+  $("#headCode").textContent = "增损单号：" + bill.code;
+  $("#headStatus").textContent = "审核状态：" + SA.STATUS[bill.status];
+
+  /* ===== 基本信息 ===== */
+  var orgName = (SA.orgOf(bill.orgId)||{}).name || "—";
+  var phName = (SA.pharmacyOf(bill.orgId, bill.pharmacyId)||{}).name || "—";
+  document.title = (mode === "approve" ? "增损审核" : "增损详情") + " · 中心药房";
+  $("#vOrg").textContent = orgName;
+  $("#vPh").textContent = phName;
+  $("#vLoc").textContent = bill.location || "—";
+  $("#vMethod").textContent = bill.method || "—";
+  $("#vReason").textContent = bill.reason || "—";
+  $("#vCreator").textContent = bill.creatorName || "—";
+  $("#vTime").textContent = bill.submitTime || "—";
+  /* 审核通过后自动生成出/入库单号，未通过时展示占位符 */
+  $("#vInout").textContent = bill.inoutCode || "—";
+  $("#vRemark").textContent = bill.remark || "—";
+
+  /* ===== 药品明细（只读） ===== */
+  function renderItems(){
+    $("#itemsBody").innerHTML = (bill.items||[]).map(function(it){
+      var unit = it.packUnit || "";
+      return '<tr>'
+        +'<td title="'+SA.esc(it.name)+'">'+SA.esc(it.name)+'</td>'
+        +'<td>'+SA.esc(it.code)+'</td>'
+        +'<td>'+SA.esc(it.spec)+'</td>'
+        +'<td title="'+SA.esc(it.vendor)+'">'+SA.esc(it.vendor)+'</td>'
+        +'<td>'+SA.esc(it.batch)+'</td>'
+        +'<td>'+SA.esc(it.expiry)+'</td>'
+        +'<td class="num">'+SA.num2(it.qty)+'</td>'
+        +'<td>'+unit+'</td>'
+        +'<td class="num">'+SA.num2(it.stockQty)+'</td>'
+        +'<td class="num">'+SA.num2(it.purchase)+'</td>'
+        +'<td class="num">'+SA.num2(it.retail)+'</td>'
+        +'<td class="num">'+SA.num2(SA.purchaseAmt(it))+'</td>'
+        +'<td class="num">'+SA.num2(SA.retailAmt(it))+'</td>'
+        +'<td title="'+SA.esc(it.supplier)+'">'+SA.esc(it.supplier)+'</td>'
+        +'<td title="'+SA.esc(it.approval)+'">'+SA.esc(it.approval)+'</td>'
+        +'<td class="col-acts"><a class="link-btn" data-act="trace">追溯码</a></td>'
+        +'</tr>';
+    }).join("");
+    $$("#itemsBody .link-btn[data-act='trace']").forEach(function(a, i){
+      a.addEventListener("click", function(){ openTrace(i); });
+    });
+  }
+  function renderSums(){
+    var s = SA.sums(bill);
+    /* 合计行 tfoot 暂不渲染，纯展示即可 */
+  }
+  renderItems();
+
+  /* ===== 追溯码弹窗（只读查看） ===== */
+  var traceIdx = -1;
+  function openTrace(i){
+    var it = bill.items[i];
+    if(!it || !it.traces || !it.traces.length){ toast("该行暂无追溯码"); return; }
+    traceIdx = i;
+    $("#traceTitle").textContent = "追溯码清单 — " + it.name + " " + it.spec;
+    $("#traceList").innerHTML = it.traces.map(function(t){
+      return '<tr><td>'+SA.esc(t.code)+'</td><td>'+SA.esc(t.name)+'</td><td>'+SA.esc(t.spec)+'</td><td>'+SA.esc(t.vendor)+'</td><td>'+SA.esc(t.approval)+'</td></tr>';
+    }).join("");
+    $("#traceBody").style.display = "";
+    $("#traceEmpty").style.display = "none";
+    $("#traceMask").classList.add("show");
+  }
+  function closeTrace(){ $("#traceMask").classList.remove("show"); }
+  $("#traceClose").addEventListener("click", closeTrace);
+
+  /* ===== 审核记录（节点 / 操作人 / 机构 / 审核结果 / 审核意见 / 审核时间） ===== */
+  function renderRecords(){
+    var recs = bill.records || [];
+    $("#recEmpty").style.display = recs.length ? "none" : "block";
+    $("#recBody").innerHTML = recs.map(function(r){
+      return '<tr>'
+        +'<td>'+SA.esc(r.node)+'</td>'
+        +'<td>'+SA.esc(r.person)+'</td>'
+        +'<td>'+SA.esc(r.org)+'</td>'
+        +'<td>'+SA.esc(r.result)+'</td>'
+        +'<td class="op-cell">'+SA.esc(r.opinion)+'</td>'
+        +'<td>'+SA.esc(r.time)+'</td>'
+        +'</tr>';
+    }).join("");
+  }
+  renderRecords();
+
+  /* ===== 胶囊页签快速定位 ===== */
+  var detailBody = $("#detailBody");
+  function scrollTo(id){
+    var el = $("#" + id);
+    if(!el) return;
+    var pos = el.offsetTop - detailBody.offsetTop;
+    detailBody.scrollTo({ top: pos, behavior: "auto" });
+    $$("#pageTabs .page-tab").forEach(function(t){ t.classList.remove("active"); });
+    $$("#pageTabs .page-tab").forEach(function(t){ if(t.getAttribute("data-sec")===id) t.classList.add("active"); });
+  }
+  $$("#pageTabs .page-tab").forEach(function(t){
+    t.addEventListener("click", function(){ scrollTo(this.getAttribute("data-sec")); });
+  });
+  /* 滚动高亮 */
+  detailBody.addEventListener("scroll", function(){
+    var scrollTop = this.scrollTop, h = this.clientHeight, sh = this.scrollHeight;
+    var tabs = $$("#pageTabs .page-tab");
+    var ids = tabs.map(function(t){ return t.getAttribute("data-sec"); });
+    var actIdx = 0;
+    for(var i=0;i<ids.length;i++){
+      var el = $("#"+ids[i]); if(!el) continue;
+      var pos = el.offsetTop - detailBody.offsetTop;
+      if(pos <= scrollTop + 20) actIdx = i;
+    }
+    if(scrollTop + h >= sh - 2){ actIdx = ids.length - 1; }
+    tabs.forEach(function(t,i){ t.classList.toggle("active", i===actIdx); });
+  });
+
+  /* ===== 审核区 ===== */
+  function renderAuditArea(){
+    $("#pageFoot").innerHTML = "";
+    if(mode !== "approve") return;
+    if(!SA.canAudit(bill, user)) return;
+    if(bill.status !== "pending") return;
+
+    $("#mainCard").classList.add("has-foot");
+    $("#pageFoot").innerHTML =
+      '<div class="ap-radios">'+
+        '<label class="radio"><input type="radio" name="auditResult" value="pass" checked> <span>通过</span></label>'+
+        '<label class="radio"><input type="radio" name="auditResult" value="reject"> <span>拒绝</span></label>'+
+      '</div>'+
+      '<textarea class="textarea" id="auditOpinion" placeholder="请输入审核意见（拒绝必填）" style="height:64px"></textarea>'+
+      '<div class="ap-btns">'+
+        '<button class="btn" id="btnAuditCancel">取消</button>'+
+        '<button class="btn btn-primary" id="btnAuditOk">提交</button>'+
+      '</div>';
+
+    var result = "pass", opinion = "";
+    $$('input[name="auditResult"]').forEach(function(r){
+      r.addEventListener("change", function(){
+        result = this.value;
+        var ta = $("#auditOpinion");
+        if(ta){ ta.classList.remove("is-invalid"); }
+      });
+    });
+    $("#auditOpinion").addEventListener("input", function(){ opinion = this.value; this.classList.remove("is-invalid"); });
+
+    $("#btnAuditCancel").addEventListener("click", function(){ location.href = "stock-adjust.html"; });
+    $("#btnAuditOk").addEventListener("click", function(){
+      if(result === "reject" && !opinion.trim()){
+        var ta = $("#auditOpinion");
+        ta.classList.add("is-invalid");
+        toast("拒绝必须填写审核意见");
+        return;
+      }
+      var now = SA.fmtNow();
+      var orgName = (SA.orgOf(user.orgId)||{}).name || "";
+      if(result === "pass"){
+        bill.status = "approved";
+        /* 审核通过即自动生成对应的出/入库单号，实现增损单与出入库记录关联 */
+        if(!bill.inoutCode) bill.inoutCode = SA.makeInoutCode(bill, list);
+        bill.records.push({ node:"审核", person:user.name, org:orgName, time:now, result:"通过", opinion:opinion.trim() });
+      } else {
+        bill.status = "rejected";
+        bill.records.push({ node:"审核", person:user.name, org:orgName, time:now, result:"拒绝", opinion:opinion.trim() });
+      }
+      SA.save(list);
+      toast("审核已提交");
+      setTimeout(function(){
+        location.href = "stock-adjust.html";
+      }, 600);
+    });
+  }
+  renderAuditArea();
+
+  /* ===== 底部按钮 ===== */
+  $("#btnBack").addEventListener("click", function(){ location.href = "stock-adjust.html"; });
+})();
+</script>
+  <script src="nav.js"></script>
+</body>
+</html>

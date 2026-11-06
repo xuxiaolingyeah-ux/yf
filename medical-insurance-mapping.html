@@ -1,0 +1,1131 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>医保对码 · 中心药房</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ========== 顶部导航 ========== -->
+<header class="app-header">
+  <div class="header-left">
+    <div class="header-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3.2" y="9.4" width="17.6" height="5.2" rx="2.6" transform="rotate(-45 12 12)"></rect>
+        <path d="M8.4 15.6L15.6 8.4"></path>
+      </svg>
+    </div>
+    <div class="header-title">区域药房协同管理系统</div>
+  </div>
+  <div class="header-right">
+    <div class="header-user">
+      <div class="header-avatar">张</div>
+      <span class="header-user-name">张明远</span>
+    </div>
+  </div>
+</header>
+
+<div class="app-body">
+  <!-- ========== 左侧导航 ========== -->
+  <aside class="app-side" id="appSide"></aside>
+<!-- ========== 主区域 ========== -->
+  <main class="app-main">
+    <div class="tabbar">
+      <div class="tab" data-nav="首页">首页</div>
+      <div class="tab active">
+        医保对码
+        <button class="tab-close" title="关闭">
+          <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+            <path d="M5 5l14 14M19 5L5 19"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="page">
+      <!-- 标题行：收费种类 + 目录类别（左），快捷对照 / 药品对照上传（右） -->
+      <div class="page-head">
+        <div class="page-head-left">
+          <label class="ph-label">收费种类</label>
+          <select class="select mi-sel" id="feeType">
+            <option value="国家医保">国家医保</option>
+            <option value="省医保">省医保</option>
+          </select>
+          <label class="ph-label">目录类别</label>
+          <select class="select mi-sel" id="catType">
+            <option value="">全部</option>
+            <option value="西成药">西成药</option>
+            <option value="中成药">中成药</option>
+            <option value="中药饮片">中药饮片</option>
+          </select>
+        </div>
+        <div class="page-acts">
+          <button class="btn btn-primary" id="btnQuick">快捷对照</button>
+          
+        </div>
+      </div>
+
+      <div class="page-body mi-body">
+        <!-- 行内筛选 -->
+        <!-- 上半区标题 -->
+        <div class="mi-sec-head">
+          <span class="mi-sec-bar"></span>
+          <span class="mi-sec-title">医院目录</span>
+        </div>
+        <div class="mi-toolbar">
+          <input class="input mi-kw" id="kw" placeholder="药品名称 / 拼音码 / 生产企业" autocomplete="off" style="position: relative;">
+          <select class="select mi-sel" id="mapStatus">
+            <option value="">全部对照状态</option>
+            <option value="none">未对照</option>
+            <option value="mapped">已对照</option>
+            <option value="exception">异常</option>
+          </select>
+          <select class="select mi-sel" id="uploadStatus">
+            <option value="">全部上传状态</option>
+            <option value="none">未上传</option>
+            <option value="done">已上传</option>
+            <option value="fail">上传失败</option>
+          </select>
+          <label class="mi-switch" title="开启后仅展示启用的药品规格">
+            <span class="switch">
+              <input type="checkbox" id="onlyOn">
+              <span class="track"></span>
+            </span>
+            <span class="mi-switch-txt">仅看启用</span>
+          </label>
+          <div class="mi-toolbar-right">
+            <span class="mi-picked" id="pickedTxt"></span>
+            <button class="btn btn-sm" id="btnReset">重置</button>
+            <button class="btn btn-sm" id="btnBatchUpload" disabled="">批量上传</button>
+          </div>
+        </div>
+
+        <!-- 医院目录（系统药品，厂商级一行） -->
+        <div class="mi-table-wrap">
+          <table class="mi-table mi-main-table">
+            <thead>
+              <tr>
+                <th class="c-check">
+                  <label class="check">
+                    <input type="checkbox" id="pickAll">
+                    <span class="check-box"></span>
+                  </label>
+                </th>
+                <th class="mi-c-vcode">药品编码</th>
+                <th class="mi-c-name">药品名称</th>
+                <th class="mi-c-spec">药品规格</th>
+                <th class="mi-c-form">剂型</th>
+                <th class="mi-c-unit">最小包装单位</th>
+                <th class="mi-c-factor">系数</th>
+                <th class="mi-c-vendor">生产企业</th>
+                <th class="mi-c-approval">批准文号</th>
+                <th class="mi-c-inscode">医保编码</th>
+                <th class="mi-c-insname">医保名称</th>
+                <th class="mi-c-insspec">医保药品规格</th>
+                <th class="mi-c-insvendor">医保生产企业</th>
+                <th class="mi-c-insform">医保剂型</th>
+                <th class="mi-c-insappr">医保批准文号</th>
+                <th class="mi-c-inslevel">医保级别</th>
+                <th class="mi-c-insconv">医保系数</th>
+                <th class="mi-c-status mi-c-mapst">对照状态</th>
+                <th class="mi-c-status mi-c-upst">上传状态</th>
+                <th class="mi-c-ops">操作</th>
+              </tr>
+            </thead>
+            <tbody id="rows"></tbody>
+          </table>
+        </div>
+
+        <div class="mi-pager" id="topPager"><span class="mi-pager-total">共 27 条</span><button class="mi-page-btn" data-pg="prev" title="上一页" disabled="">‹</button><button class="mi-page-btn is-active" data-pg="1">1</button><button class="mi-page-btn" data-pg="2">2</button><button class="mi-page-btn" data-pg="3">3</button><button class="mi-page-btn" data-pg="next" title="下一页">›</button><select class="select mi-page-size" data-size=""><option value="5">5 条/页</option><option value="10" selected="">10 条/页</option><option value="20">20 条/页</option><option value="50">50 条/页</option></select><span class="mi-page-jump">跳至第 <input class="input mi-page-input" data-jump="" value="1"> 页</span></div>
+
+        <!-- 医保目录（下半区）：与上方医院目录联动对照 -->
+        <div class="mi-ins-panel" id="insPanel">
+          <div class="mi-ins-head">
+            <div class="mi-ins-titlebar">
+              <span class="mi-sec-bar"></span>
+              <span class="mi-sec-title">医保目录</span>
+              <span class="mi-tip" tabindex="0" data-tip="在上方医院目录选择药品后按匹配规则过滤，勾选多个时，需全部与上方所选药品完全相等才显示">
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 8h.01M12 11v5"></path></svg>
+              </span>
+              <button class="btn btn-primary" id="btnMap" disabled="">对照</button>
+            </div>
+            <div class="mi-ins-rules" id="insRules">
+              <span class="mi-rule-label">匹配规则</span>
+              <label class="check mi-rule is-check"><input type="checkbox" data-rfield="name" checked=""><span class="check-box"></span><span class="mi-rule-txt">药品名称</span></label>
+              <label class="check mi-rule is-check"><input type="checkbox" data-rfield="spec" checked=""><span class="check-box"></span><span class="mi-rule-txt">药品规格</span></label>
+              <label class="check mi-rule"><input type="checkbox" data-rfield="form"><span class="check-box"></span><span class="mi-rule-txt">剂型</span></label>
+              <label class="check mi-rule"><input type="checkbox" data-rfield="unit"><span class="check-box"></span><span class="mi-rule-txt">最小包装单位</span></label>
+              <label class="check mi-rule"><input type="checkbox" data-rfield="conv"><span class="check-box"></span><span class="mi-rule-txt">系数</span></label>
+              <label class="check mi-rule is-check"><input type="checkbox" data-rfield="vendor" checked=""><span class="check-box"></span><span class="mi-rule-txt">生产企业</span></label>
+              <label class="check mi-rule"><input type="checkbox" data-rfield="approval"><span class="check-box"></span><span class="mi-rule-txt">批准文号</span></label>
+              
+            </div>
+          </div>
+          <div class="mi-ins-table-wrap">
+            <table class="mi-table mi-ins-table">
+              <thead>
+                <tr>
+                  <th class="mi-c-inscode">医保编码</th>
+                  <th class="mi-c-name">医保名称</th>
+                  <th class="mi-c-spec">规格</th>
+                  <th class="mi-c-form">剂型</th>
+                  <th class="mi-c-unit">最小包装单位</th>
+                  <th class="mi-c-factor">系数</th>
+                  <th class="mi-c-vendor">生产企业</th>
+                  <th class="mi-c-approval">批准文号</th>
+                  <th>医保级别</th>
+                  <th>包装材质</th>
+                  <th>限制标志</th>
+                  <th class="mi-c-vendor">限制使用范围</th>
+                  <th>自付比例</th>
+                  <th>版本号</th>
+                </tr>
+              </thead>
+              <tbody id="insBody"></tbody>
+            </table>
+          </div>
+          <div class="mi-pager mi-ins-pager" id="insPager"><span class="mi-pager-total">共 20 条</span><button class="mi-page-btn" data-pg="prev" title="上一页" disabled="">‹</button><button class="mi-page-btn is-active" data-pg="1">1</button><button class="mi-page-btn" data-pg="2">2</button><button class="mi-page-btn" data-pg="next" title="下一页">›</button><select class="select mi-page-size" data-size=""><option value="5">5 条/页</option><option value="10" selected="">10 条/页</option><option value="20">20 条/页</option><option value="50">50 条/页</option></select><span class="mi-page-jump">跳至第 <input class="input mi-page-input" data-jump="" value="1"> 页</span></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ========== 通用弹窗容器 ========== -->
+<div class="modal-mask" id="modalMask"></div>
+
+<!-- ========== Toast ========== -->
+<div class="toast" id="toast">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M20 6L9 17l-5-5"></path>
+  </svg>
+  <span id="toastText"></span>
+</div>
+
+<script src="mock.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  var KIND_CAT = { "西药": "西成药", "中成药": "中成药", "中药饮片": "中药饮片" };
+  var FIELDS = [
+    { id: "name", sys: "药品名称", ins: "医保名称" },
+    { id: "spec", sys: "药品规格", ins: "医保规格" },
+    { id: "vendor", sys: "生产企业", ins: "生产企业" },
+    { id: "approval", sys: "批准文号", ins: "批准文号" },
+    { id: "form", sys: "剂型", ins: "剂型" }
+  ];
+
+  /* 对码关系副本（按收费种类分开）：vkey -> { insCode, upload, exception, reason, failReason, failOnce } */
+  var MAPS = {
+    "国家医保": JSON.parse(JSON.stringify(MOCK.miMaps || {})),
+    "省医保": {}
+  };
+
+  var state = {
+    fee: "国家医保",
+    cat: "",
+    kw: "",
+    mapStatus: "",
+    uploadStatus: "",
+    onlyOn: false,
+    page: 1,
+    picked: {},
+    quick: null,   /* { step, fields, fieldsUsed, list, counts } */
+    selKey: "",    /* 上半区选中的药品行 key（单选，联动下半区过滤） */
+    insCode: "",   /* 下半区选中的医保记录编码（单选） */
+    rule: { name: true, spec: true, form: false, unit: false, conv: false, vendor: true, approval: false },
+    size: 10,      /* 上半区每页条数 */
+    insPage: 1,    /* 下半区当前页 */
+    insSize: 10    /* 下半区每页条数 */
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  /* 当前收费种类下的对码关系表 */
+  function mt() { return MAPS[state.fee]; }
+
+  /* ---------------- 基础数据 ---------------- */
+  function esc(s) {
+    return String(s === null || s === undefined ? "" : s)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+
+  /* 与中心药房同口径：厂商级药品编码（按批准文号派生，仅演示） */
+  function vendorCode(v) {
+    if (v.drugCode) return v.drugCode;
+    var digits = (v.approval || "").replace(/\D/g, "");
+    if (!digits) return "—";
+    return "8690" + ("00000000" + digits).slice(-8);
+  }
+
+  var BASE = (function () {
+    var out = [];
+    MOCK.drugs.forEach(function (d) {
+      d.specs.forEach(function (s, si) {
+        s.vendors.forEach(function (v, vi) {
+          out.push({
+            key: MOCK.vkey(d.id, si, vi),
+            drug: d, spec: s, vendor: v, si: si, vi: vi,
+            vcode: vendorCode(v),
+            cat: KIND_CAT[d.kind] || ""
+          });
+        });
+      });
+    });
+    return out;
+  })();
+
+  function rowOf(key) {
+    for (var i = 0; i < BASE.length; i++) if (BASE[i].key === key) return BASE[i];
+    return null;
+  }
+
+  function mapStatus(r) {
+    var m = mt()[r.key];
+    if (!m) return "none";
+    if (m.exception) return "exception";
+    return m.insCode ? "mapped" : "none";
+  }
+
+  function upStatus(r) {
+    var m = mt()[r.key];
+    if (!m || !m.insCode) return "";
+    return m.upload || "none";
+  }
+
+  /* ---------------- 医保目录池（受页面级筛选影响） ---------------- */
+  function insPool() {
+    return (MOCK.insCatalog || []).filter(function (x) {
+      if (x.feeType !== state.fee) return false;
+      if (state.cat && x.category !== state.cat) return false;
+      return true;
+    });
+  }
+
+  /* ---------------- 主列表 ---------------- */
+  function insOf(code) {
+    if (!code) return null;
+    var arr = MOCK.insCatalog || [];
+    for (var i = 0; i < arr.length; i++) if (arr[i].code === code) return arr[i];
+    return null;
+  }
+
+  function insCells(code) {
+    var x = insOf(code);
+    var cols = [
+      { cls: "mi-c-insname", v: x && x.name },
+      { cls: "mi-c-insspec", v: x && x.spec },
+      { cls: "mi-c-insvendor", v: x && x.vendor },
+      { cls: "mi-c-insform", v: x && x.form },
+      { cls: "mi-c-insappr", v: x && x.approval },
+      { cls: "mi-c-inslevel", v: x && x.level },
+      { cls: "mi-c-insconv", v: x && x.conv }
+    ];
+    return cols.map(function (c) {
+      if (c.v === undefined || c.v === null || c.v === "") {
+        return '<td class="' + c.cls + '"><span class="sub">—</span></td>';
+      }
+      return '<td class="' + c.cls + '" title="' + esc(c.v) + '">' + esc(c.v) + '</td>';
+    }).join("");
+  }
+
+  function filteredRows() {
+    var kw = state.kw.trim().toLowerCase();
+    return BASE.filter(function (r) {
+      if (state.cat && r.cat !== state.cat) return false;
+      if (state.onlyOn && r.spec.status === "off") return false;
+      if (state.mapStatus && mapStatus(r) !== state.mapStatus) return false;
+      if (state.uploadStatus && upStatus(r) !== state.uploadStatus) return false;
+      if (kw) {
+        var hit = r.drug.name.toLowerCase().indexOf(kw) > -1 ||
+          (r.drug.py || "").toLowerCase().indexOf(kw) > -1 ||
+          r.vendor.name.toLowerCase().indexOf(kw) > -1;
+        if (!hit) return false;
+      }
+      return true;
+    });
+  }
+
+  function mapStatusHtml(r) {
+    var st = mapStatus(r);
+    if (st === "mapped") return '<span class="mi-st"><i class="dot on"></i>已对照</span>';
+    if (st === "exception") {
+      var reason = (mt()[r.key] && mt()[r.key].reason) || "多条候选，需人工确认";
+      return '<span class="mi-st" title="' + esc(reason) + '"><i class="dot warn"></i>异常</span>';
+    }
+    return '<span class="mi-st"><i class="dot off"></i>未对照</span>';
+  }
+
+  function upStatusHtml(r) {
+    var us = upStatus(r);
+    if (!us) return '<span class="sub">—</span>';
+    if (us === "done") return '<span class="mi-st"><i class="dot on"></i>已上传</span>';
+    if (us === "fail") {
+      var reason = (mt()[r.key] && mt()[r.key].failReason) || "上传失败";
+      return '<span class="mi-st" title="' + esc(reason) + '"><i class="dot warn"></i>上传失败</span>';
+    }
+    return '<span class="mi-st"><i class="dot danger"></i>未上传</span>';
+  }
+
+  function rowHtml(r) {
+    var m = mt()[r.key] || null;
+    var st = mapStatus(r);
+    var us = upStatus(r);
+    var checked = state.picked[r.key] ? " checked" : "";
+
+    var ops = "";
+    if (st === "mapped") {
+      ops += '<button class="link-btn" data-act="cancel" data-key="' + r.key + '">取消对照</button>';
+      if (us === "fail") {
+        ops += '<button class="link-btn" data-act="upload" data-key="' + r.key + '">重试</button>';
+      } else if (us === "none") {
+        ops += '<button class="link-btn" data-act="upload" data-key="' + r.key + '">上传</button>';
+      }
+    }
+
+    return '<tr class="' + (state.picked[r.key] ? "is-picked" : "") + (state.selKey === r.key ? " is-sel" : "") + '" data-row="' + r.key + '">' +
+      '<td class="c-check"><label class="check"><input type="checkbox" data-pick="' + r.key + '"' + checked + '><span class="check-box"></span></label></td>' +
+      '<td class="mono">' + esc(r.vcode) + '</td>' +
+      '<td title="' + esc(r.drug.name) + '">' + esc(r.drug.name) + '</td>' +
+      '<td title="' + esc(r.spec.title) + '">' + esc(r.spec.title) + '</td>' +
+      '<td title="' + esc(r.drug.form) + '">' + esc(r.drug.form) + '</td>' +
+      '<td>' + esc(r.spec.pkgUnit || "—") + '</td>' +
+      '<td>' + esc(r.spec.pkgFactor || "—") + '</td>' +
+      '<td title="' + esc(r.vendor.name) + '">' + esc(r.vendor.name) + '</td>' +
+      '<td class="mono">' + esc(r.vendor.approval || "—") + '</td>' +
+      '<td class="mono" title="' + esc(m && m.insCode ? m.insCode : "") + '">' +
+        (m && m.insCode ? esc(m.insCode) : '<span class="sub">—</span>') + '</td>' +
+      insCells(m && m.insCode) +
+      '<td class="mi-c-mapst">' + mapStatusHtml(r) + '</td>' +
+      '<td class="mi-c-upst">' + upStatusHtml(r) + '</td>' +
+      '<td class="mi-c-ops-td"><div class="mi-ops">' + ops + '</div></td>' +
+    '</tr>';
+  }
+
+  function render() {
+    var list = filteredRows();
+    var pages = Math.max(1, Math.ceil(list.length / state.size));
+    if (state.page > pages) state.page = pages;
+    var start = (state.page - 1) * state.size;
+    var rows = list.slice(start, start + state.size);
+
+    $("rows").innerHTML = rows.length
+      ? rows.map(rowHtml).join("")
+      : '<tr><td colspan="20" class="empty-cell">没有符合条件的数据</td></tr>';
+
+    $("topPager").innerHTML = pagerHtml(list.length, state.page, state.size);
+
+    var allPicked = rows.length > 0 && rows.every(function (r) { return !!state.picked[r.key]; });
+    $("pickAll").checked = allPicked;
+    $("pickAll").disabled = rows.length === 0;
+
+    renderPicked();
+    renderIns();
+    syncStickyRight();
+  }
+
+  /* 右侧固定三列：按表头实测宽度算出粘附偏移，避免列重叠或留缝 */
+  function syncStickyRight() {
+    var table = document.querySelector(".mi-main-table");
+    if (!table) return;
+    var thOps = table.querySelector("thead th.mi-c-ops");
+    var thUp = table.querySelector("thead th.mi-c-upst");
+    if (!thOps || !thUp) return;
+    table.style.setProperty("--mi-upst-r", thOps.offsetWidth + "px");
+    table.style.setProperty("--mi-mapst-r", (thOps.offsetWidth + thUp.offsetWidth) + "px");
+  }
+
+  /* 分页组件：共 N 条 + 页码（省略号折叠）+ 每页条数 + 跳至第 N 页 */
+  function pageSeq(cur, tp) {
+    if (tp <= 7) { var a = []; for (var i = 1; i <= tp; i++) a.push(i); return a; }
+    var out = [1];
+    var lo = Math.max(2, cur - 1), hi = Math.min(tp - 1, cur + 1);
+    if (lo > 2) out.push("…");
+    for (var i2 = lo; i2 <= hi; i2++) out.push(i2);
+    if (hi < tp - 1) out.push("…");
+    out.push(tp);
+    return out;
+  }
+
+  function pagerHtml(total, cur, size) {
+    var tp = Math.max(1, Math.ceil(total / size));
+    var html = '<span class="mi-pager-total">共 ' + total + ' 条</span>' +
+      '<button class="mi-page-btn" data-pg="prev" title="上一页"' + (cur <= 1 ? " disabled" : "") + '>‹</button>';
+    pageSeq(cur, tp).forEach(function (p) {
+      html += p === "…"
+        ? '<span class="mi-page-ellipsis">…</span>'
+        : '<button class="mi-page-btn' + (p === cur ? " is-active" : "") + '" data-pg="' + p + '">' + p + '</button>';
+    });
+    html += '<button class="mi-page-btn" data-pg="next" title="下一页"' + (cur >= tp ? " disabled" : "") + '>›</button>' +
+      '<select class="select mi-page-size" data-size>' +
+      [5, 10, 20, 50].map(function (n) { return '<option value="' + n + '"' + (n === size ? " selected" : "") + '>' + n + ' 条/页</option>'; }).join("") +
+      '</select>' +
+      '<span class="mi-page-jump">跳至第 <input class="input mi-page-input" data-jump value="' + cur + '"> 页</span>';
+    return html;
+  }
+
+  /* 分页交互（事件委托，上/下两个分页复用） */
+  function bindPager(el, get, set) {
+    function jump(inp) {
+      var s = get();
+      var tp = Math.max(1, Math.ceil(s.total / s.size));
+      var p = parseInt(inp.value, 10);
+      if (isNaN(p)) { inp.value = s.page; return; }
+      p = Math.min(tp, Math.max(1, p));
+      if (p === s.page) { inp.value = s.page; return; }
+      set({ page: p });
+      render();
+    }
+    el.addEventListener("click", function (e) {
+      var btn = e.target.closest("[data-pg]");
+      if (!btn || btn.disabled) return;
+      var s = get();
+      var tp = Math.max(1, Math.ceil(s.total / s.size));
+      var v = btn.getAttribute("data-pg");
+      var p = v === "prev" ? s.page - 1 : v === "next" ? s.page + 1 : parseInt(v, 10);
+      if (p < 1 || p > tp || p === s.page) return;
+      set({ page: p });
+      render();
+    });
+    el.addEventListener("change", function (e) {
+      var sel = e.target.closest("[data-size]");
+      if (sel) { set({ page: 1, size: parseInt(sel.value, 10) }); render(); return; }
+      var inp = e.target.closest("[data-jump]");
+      if (inp) jump(inp);
+    });
+    el.addEventListener("keydown", function (e) {
+      var inp = e.target.closest("[data-jump]");
+      if (inp && e.key === "Enter") jump(inp);
+    });
+  }
+
+  function pickedKeys() {
+    return Object.keys(state.picked).filter(function (k) { return !!state.picked[k]; });
+  }
+
+  function renderPicked() {
+    var n = pickedKeys().length;
+    $("pickedTxt").innerHTML = n ? "已选中 <b>" + n + "</b> 条" : "";
+    $("btnBatchUpload").disabled = n === 0;
+  }
+
+  /* ---------------- 通用弹窗 / Toast ---------------- */
+  function openModal(html, extraCls) {
+    var mask = $("modalMask");
+    mask.innerHTML = '<div class="modal' + (extraCls ? " " + extraCls : "") + '">' + html + '</div>';
+    mask.classList.add("show");
+  }
+  function closeModal() {
+    var mask = $("modalMask");
+    mask.classList.remove("show");
+    mask.innerHTML = "";
+    state.quick = null;
+  }
+
+  var toastTimer = null;
+  function toast(msg) {
+    var el = $("toast");
+    $("toastText").textContent = msg;
+    el.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { el.classList.remove("show"); }, 2400);
+  }
+
+  function confirmDialog(opt) {
+    openModal(
+      '<div class="modal-head">' +
+        '<span class="modal-title">' + esc(opt.title) + '</span>' +
+        '<button class="drawer-close" data-close="1">' +
+          '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>' +
+        '</button>' +
+      '</div>' +
+      '<div class="modal-body"><p class="modal-text">' + opt.text + '</p></div>' +
+      '<div class="modal-foot">' +
+        '<button class="btn" data-close="1">取消</button>' +
+        '<button class="btn btn-primary" data-confirm="1">' + esc(opt.okText || "确定") + '</button>' +
+      '</div>'
+    );
+    $("modalMask").querySelector("[data-confirm]").addEventListener("click", function () {
+      closeModal();
+      if (opt.onOk) opt.onOk();
+    });
+  }
+
+  /* ---------------- 快捷对照 ---------------- */
+  function quickScope() {
+    return BASE.filter(function (r) {
+      var st = mapStatus(r);
+      if (st === "exception") return false;
+      if (st === "mapped" && upStatus(r) !== "none") return false;
+      return true;
+    });
+  }
+
+  function useFields() {
+    return FIELDS.filter(function (f) { return state.quick.fields[f.id]; }).map(function (f) { return f.id; });
+  }
+
+  function norm(v) { return String(v === null || v === undefined ? "" : v).trim(); }
+
+  function sameField(fid, r, x) {
+    if (fid === "name") return norm(r.drug.name) === norm(x.name);
+    if (fid === "spec") return norm(r.spec.title) === norm(x.spec);
+    if (fid === "vendor") return norm(r.vendor.name) === norm(x.vendor);
+    if (fid === "approval") return norm(r.vendor.approval) === norm(x.approval);
+    if (fid === "form") return norm(r.drug.form) === norm(x.form);
+    if (fid === "unit") return norm(r.spec.pkgUnit) === norm(x.pkgUnit);
+    if (fid === "conv") return norm(r.spec.pkgFactor) === norm(x.conv);
+    return false;
+  }
+
+  function sysVal(fid, r) {
+    if (fid === "name") return r.drug.name;
+    if (fid === "spec") return r.spec.title;
+    if (fid === "vendor") return r.vendor.name;
+    if (fid === "approval") return r.vendor.approval;
+    if (fid === "form") return r.drug.form;
+    return "";
+  }
+
+  function insVal(fid, x) {
+    if (fid === "name") return x.name;
+    if (fid === "spec") return x.spec;
+    if (fid === "vendor") return x.vendor;
+    if (fid === "approval") return x.approval;
+    if (fid === "form") return x.form;
+    return "";
+  }
+
+  function openQuick() {
+    state.quick = {
+      step: 1,
+      fields: { name: true, spec: true, vendor: true, approval: false, form: false },
+      fieldsUsed: [],
+      list: null,
+      counts: null
+    };
+    renderQuick();
+  }
+
+  function quickStepBar(step) {
+    function cls(n) {
+      if (n < step) return "step is-done";
+      if (n === step) return "step is-active";
+      return "step";
+    }
+    return '<div class="stepbar mi-steps">' +
+      '<div class="' + cls(1) + '"><span class="step-idx">' + (step > 1 ? "✓" : "1") + '</span><span>选择比对字段</span></div>' +
+      '<span class="step-line"></span>' +
+      '<div class="' + cls(2) + '"><span class="step-idx">2</span><span>匹配预览</span></div>' +
+    '</div>';
+  }
+
+  function quickFoot(step) {
+    if (step === 1) {
+      return '<button class="btn" data-qact="close">取消</button>' +
+        '<button class="btn btn-primary" data-qact="next">下一步</button>';
+    }
+    return '<button class="btn" data-qact="close">取消</button>' +
+      '<button class="btn" data-qact="prev">上一步</button>' +
+      '<button class="btn btn-primary" data-qact="exec">开始对照</button>';
+  }
+
+  function renderQuick() {
+    var q = state.quick;
+    var panel = "";
+
+    if (q.step === 1) {
+      var scopeN = quickScope().length;
+      panel =
+        '<div class="mi-step-panel">' +
+          '<div class="mi-sec-title">选择参与比对的字段 <span class="count">（医保侧对应字段固定）</span></div>' +
+          '<div class="mi-pairs">' +
+            FIELDS.map(function (f) {
+              return '<div class="mi-pair' + (q.fields[f.id] ? " is-check" : "") + '">' +
+                '<label class="check"><input type="checkbox" data-field="' + f.id + '"' + (q.fields[f.id] ? " checked" : "") + '><span class="check-box"></span></label>' +
+                '<span class="mi-pair-field">' + f.sys + '</span>' +
+                '<span class="mi-pair-arrow">↔</span>' +
+                '<span class="mi-pair-ins">' + f.ins + '</span>' +
+              '</div>';
+            }).join("") +
+          '</div>' +
+          '<p class="mi-note">匹配口径：所选字段<b>全部完全相等</b>（仅去除首尾空格）才命中；任一字段不一致即不命中。</p>' +
+          '<p class="mi-note">处理范围：仅处理「未对照」与「已对照未上传」的记录，共 <b>' + scopeN + '</b> 条；已上传记录不参与，避免覆盖已生效的对照关系。</p>' +
+        '</div>';
+    } else if (q.step === 2) {
+      var fids = q.fieldsUsed;
+      var flt = q.resFilter || "";
+      var heads = fids.map(function (fid) {
+        var f = FIELDS.filter(function (x) { return x.id === fid; })[0];
+        return '<th>系统 · ' + f.sys + '</th><th>医保 · ' + f.ins + '</th>';
+      }).join("");
+      var vlist = q.list.filter(function (it) {
+        var t = it.cands.length === 1 ? "ok" : (it.cands.length > 1 ? "multi" : "none");
+        return !flt || t === flt;
+      });
+      var body = vlist.map(function (it) {
+        var c = it.cands[0] || null;
+        var cells = fids.map(function (fid) {
+          return '<td title="' + esc(sysVal(fid, it.row)) + '">' + esc(sysVal(fid, it.row) || "—") + '</td>' +
+            '<td title="' + esc(c ? insVal(fid, c) : "") + '">' + (c ? esc(insVal(fid, c) || "—") : '<span class="sub">—</span>') + '</td>';
+        }).join("");
+        var res;
+        if (it.cands.length === 1) res = '<span class="mi-result-txt is-ok">唯一命中</span>';
+        else if (it.cands.length > 1) res = '<span class="mi-result-txt is-warn">多条候选（' + it.cands.length + '）</span>';
+        else res = '<span class="mi-result-txt is-none">未命中</span>';
+        return '<tr><td class="mi-sticky">' + res + '</td><td>' + esc(it.row.drug.name) + '</td>' + cells + '</tr>';
+      }).join("");
+      if (!vlist.length) {
+        body = '<tr><td colspan="' + (fids.length * 2 + 2) + '" class="empty-cell">没有该匹配结果的数据</td></tr>';
+      }
+
+      panel =
+        '<div class="mi-step-panel">' +
+          '<div class="mi-stats">' +
+            '<div class="mi-stat is-ok"><div class="mi-stat-label">唯一命中（可自动对照）</div><div class="mi-stat-val">' + q.counts.ok + '</div></div>' +
+            '<div class="mi-stat is-warn"><div class="mi-stat-label">多条候选（保持未对照）</div><div class="mi-stat-val">' + q.counts.multi + '</div></div>' +
+            '<div class="mi-stat is-none"><div class="mi-stat-label">未命中（保持未对照）</div><div class="mi-stat-val">' + q.counts.none + '</div></div>' +
+          '</div>' +
+          '<div class="mi-preview-wrap"><table class="mi-table">' +
+            '<thead><tr>' +
+              '<th class="mi-sticky mi-c-res">匹配结果' +
+                '<button type="button" class="mi-res-filter-btn' + (flt ? " is-on" : "") + '" data-rf="toggle" title="筛选匹配结果">' +
+                  '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h18l-7 8v6l-4 2v-8L3 4z"/></svg>' +
+                '</button>' +
+                (q.resMenu ?
+                  '<div class="mi-res-menu">' +
+                    '<button type="button" class="mi-res-item' + (!flt ? " is-on" : "") + '" data-rf="">全部</button>' +
+                    '<button type="button" class="mi-res-item' + (flt === "ok" ? " is-on" : "") + '" data-rf="ok">唯一命中</button>' +
+                    '<button type="button" class="mi-res-item' + (flt === "multi" ? " is-on" : "") + '" data-rf="multi">多条候选</button>' +
+                    '<button type="button" class="mi-res-item' + (flt === "none" ? " is-on" : "") + '" data-rf="none">未命中</button>' +
+                  '</div>' : "") +
+              '</th>' +
+              '<th class="mi-c-name">药品名称</th>' + heads +
+            '</tr></thead>' +
+            '<tbody>' + body + '</tbody>' +
+          '</table></div>' +
+          '<p class="mi-note">确认后按唯一命中结果统一对码，多条候选与未命中不做改动。</p>' +
+        '</div>';
+    }
+
+    openModal(
+      '<div class="modal-head">' +
+        '<span class="modal-title">快捷对照</span>' +
+        '<button class="drawer-close" data-qact="close">' +
+          '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>' +
+        '</button>' +
+      '</div>' +
+      '<div class="modal-body">' + quickStepBar(q.step) + panel + '</div>' +
+      '<div class="modal-foot">' + quickFoot(q.step) + '</div>',
+      "mi-lg"
+    );
+  }
+
+  function quickMatch() {
+    var fids = useFields();
+    if (!fids.length) { toast("请至少选择一个比对字段"); return false; }
+    var pool = insPool();
+    var list = quickScope().map(function (r) {
+      var cands = pool.filter(function (x) {
+        for (var i = 0; i < fids.length; i++) if (!sameField(fids[i], r, x)) return false;
+        return true;
+      });
+      return { row: r, cands: cands };
+    });
+    var counts = { ok: 0, multi: 0, none: 0 };
+    list.forEach(function (it) {
+      if (it.cands.length === 1) counts.ok++;
+      else if (it.cands.length > 1) counts.multi++;
+      else counts.none++;
+    });
+    state.quick.fieldsUsed = fids;
+    state.quick.list = list;
+    state.quick.counts = counts;
+    return true;
+  }
+
+  function quickExecute() {
+    var q = state.quick;
+    var done = 0;
+    q.list.forEach(function (it) {
+      var r = it.row;
+      if (it.cands.length === 1) {
+        mt()[r.key] = { insCode: it.cands[0].code, upload: "none" };
+        done++;
+      } else if (it.cands.length > 1 && !mt()[r.key]) {
+        mt()[r.key] = { exception: true, reason: "多条候选（" + it.cands.length + " 条），需人工确认" };
+      }
+    });
+    var multi = q.counts.multi;
+    var none = q.counts.none;
+    closeModal();
+    state.page = 1;
+    render();
+    toast("已统一对码 " + done + " 条；异常 " + multi + " 条、未命中 " + none + " 条待人工处理");
+  }
+
+  /* ---------------- 下半区：医保目录（联动对照） ---------------- */
+  var RULE_FIELDS = [
+    { id: "name", label: "药品名称" },
+    { id: "spec", label: "药品规格" },
+    { id: "form", label: "剂型" },
+    { id: "unit", label: "最小包装单位" },
+    { id: "conv", label: "系数" },
+    { id: "vendor", label: "生产企业" },
+    { id: "approval", label: "批准文号" }
+  ];
+
+  function ruleFields() {
+    return RULE_FIELDS.filter(function (f) { return state.rule[f.id]; }).map(function (f) { return f.id; });
+  }
+
+  /* 上半区选中一行后，按勾选字段全部完全相等（仅去首尾空格）实时过滤 */
+  function insFiltered() {
+    var pool = insPool();
+    var r = state.selKey ? rowOf(state.selKey) : null;
+    if (!r) return pool;
+    var fids = ruleFields();
+    if (!fids.length) return pool;
+    return pool.filter(function (x) {
+      for (var i = 0; i < fids.length; i++) if (!sameField(fids[i], r, x)) return false;
+      return true;
+    });
+  }
+
+  function renderIns() {
+    var list = insFiltered();
+
+    /* 已选医保记录被过滤掉时清掉选择 */
+    if (state.insCode && !list.some(function (x) { return x.code === state.insCode; })) state.insCode = "";
+
+    /* 下半区分页 */
+    var ipages = Math.max(1, Math.ceil(list.length / state.insSize));
+    if (state.insPage > ipages) state.insPage = ipages;
+    var istart = (state.insPage - 1) * state.insSize;
+    var pageList = list.slice(istart, istart + state.insSize);
+
+    $("insBody").innerHTML = pageList.length ? pageList.map(function (x) {
+      var on = state.insCode === x.code;
+      return '<tr class="' + (on ? "is-picked" : "") + '" data-ins="' + esc(x.code) + '">' +
+        '<td class="mono" title="' + esc(x.code) + '">' + esc(x.code) + '</td>' +
+        '<td title="' + esc(x.name) + '">' + esc(x.name) + '</td>' +
+        '<td title="' + esc(x.spec) + '">' + esc(x.spec) + '</td>' +
+        '<td>' + esc(x.form) + '</td>' +
+        '<td>' + esc(x.pkgUnit || "—") + '</td>' +
+        '<td>' + esc(x.conv) + '</td>' +
+        '<td title="' + esc(x.vendor) + '">' + esc(x.vendor) + '</td>' +
+        '<td class="mono">' + esc(x.approval) + '</td>' +
+        '<td>' + esc(x.level) + '</td>' +
+        '<td>' + esc(x.packMat || "—") + '</td>' +
+        '<td>' + (x.limitFlag === "1" ? "是" : "否") + '</td>' +
+        '<td title="' + esc(x.limitScope) + '">' + esc(x.limitScope) + '</td>' +
+        '<td>' + esc(x.selfPay || "—") + '</td>' +
+        '<td>' + esc(x.version || "—") + '</td>' +
+      '</tr>';
+    }).join("") : '<tr><td colspan="14" class="empty-cell">没有符合匹配规则的医保药品，可调整匹配规则后重试</td></tr>';
+
+    $("insPager").innerHTML = pagerHtml(list.length, state.insPage, state.insSize);
+    $("btnMap").disabled = !(state.selKey && state.insCode);
+  }
+
+  /* 点击行选中该行（单选高亮）并联动下半区 */
+  function selectRow(key) {
+    var r = rowOf(key);
+    if (!r) return;
+    state.selKey = key;
+    var m = mt()[key];
+    state.insCode = m && m.insCode ? m.insCode : "";
+    state.insPage = 1;
+    render();
+  }
+
+  /* 对照：上、下各选中一条后写入对码关系；允许覆盖已对码记录，覆盖后上传状态重置为未上传 */
+  function doMap() {
+    var r = rowOf(state.selKey);
+    if (!r || !state.insCode) return;
+    var prev = mt()[r.key];
+    var overwritten = !!(prev && prev.insCode);
+    mt()[r.key] = { insCode: state.insCode, upload: "none" };
+    render();
+    toast(overwritten ? "已覆盖原对照关系，上传状态重置为未上传" : "「" + r.drug.name + "」已对照，待上传");
+  }
+
+  /* ---------------- 上传 ---------------- */
+  function uploadKeys(keys) {
+    var ok = 0, fails = [];
+    keys.forEach(function (k) {
+      var m = mt()[k];
+      if (!m || !m.insCode) return;
+      if (m.failOnce) {
+        m.failOnce = false;
+        m.upload = "fail";
+        m.failReason = m.failReason || "医保平台接口超时（错误码 YB-9999）";
+        fails.push({ key: k, reason: m.failReason });
+        return;
+      }
+      m.upload = "done";
+      delete m.failReason;
+      ok++;
+    });
+    return { total: keys.length, ok: ok, fails: fails };
+  }
+
+  function pendingUploadKeys(keys) {
+    return keys.filter(function (k) {
+      var m = mt()[k];
+      return m && m.insCode && (m.upload === "none" || m.upload === "fail");
+    });
+  }
+
+  function showUploadResult(res) {
+    var failHtml = res.fails.map(function (f) {
+      var r = rowOf(f.key);
+      return '<div>' + esc(r ? r.drug.name + "（" + r.spec.title + "）· " + r.vendor.name : f.key) + '：' + esc(f.reason) + '</div>';
+    }).join("");
+    openModal(
+      '<div class="modal-head">' +
+        '<span class="modal-title">上传结果</span>' +
+        '<button class="drawer-close" data-close="1">' +
+          '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>' +
+        '</button>' +
+      '</div>' +
+      '<div class="modal-body">' +
+        '<p class="mi-result-line">共提交 <b>' + res.total + '</b> 条，成功 <b>' + res.ok + '</b> 条，失败 <b>' + res.fails.length + '</b> 条。</p>' +
+        (res.fails.length
+          ? '<div class="mi-fail-list">' + failHtml + '<div style="margin-top:6px">可在列表中点击「重试」再次上传。</div></div>'
+          : '<p class="mi-note">全部上传成功。</p>') +
+      '</div>' +
+      '<div class="modal-foot"><button class="btn btn-primary" data-close="1">知道了</button></div>'
+    );
+  }
+
+  function doUpload(keys) {
+    var target = pendingUploadKeys(keys);
+    if (!target.length) { toast("所选记录暂无待上传的对码关系"); return; }
+    var res = uploadKeys(target);
+    render();
+    if (res.fails.length) showUploadResult(res);
+    else toast("上传成功 " + res.ok + " 条");
+  }
+
+  /* ---------------- 事件绑定 ---------------- */
+  function bindEvents() {
+    $("feeType").addEventListener("change", function () {
+      state.fee = this.value;
+      state.picked = {};
+      state.selKey = ""; state.insCode = ""; state.insPage = 1;
+      state.page = 1;
+      render();
+    });
+
+    $("catType").addEventListener("change", function () {
+      state.cat = this.value;
+      state.picked = {};
+      state.selKey = ""; state.insCode = ""; state.insPage = 1;
+      state.page = 1;
+      render();
+    });
+
+    $("kw").addEventListener("input", function () {
+      state.kw = this.value;
+      state.page = 1;
+      render();
+    });
+
+    $("mapStatus").addEventListener("change", function () {
+      state.mapStatus = this.value;
+      state.page = 1;
+      render();
+    });
+
+    $("uploadStatus").addEventListener("change", function () {
+      state.uploadStatus = this.value;
+      state.page = 1;
+      render();
+    });
+
+    $("onlyOn").addEventListener("change", function () {
+      state.onlyOn = this.checked;
+      state.page = 1;
+      render();
+    });
+
+    $("btnReset").addEventListener("click", function () {
+      state.kw = ""; state.mapStatus = ""; state.uploadStatus = ""; state.onlyOn = false; state.page = 1;
+      $("kw").value = ""; $("mapStatus").value = ""; $("uploadStatus").value = ""; $("onlyOn").checked = false;
+      render();
+    });
+
+    $("pickAll").addEventListener("change", function () {
+      var checked = this.checked;
+      var start = (state.page - 1) * state.size;
+      filteredRows().slice(start, start + state.size).forEach(function (r) {
+        if (checked) state.picked[r.key] = true;
+        else delete state.picked[r.key];
+      });
+      render();
+    });
+
+    $("rows").addEventListener("change", function (e) {
+      var cb = e.target.closest("[data-pick]");
+      if (!cb) return;
+      var key = cb.getAttribute("data-pick");
+      if (cb.checked) state.picked[key] = true;
+      else delete state.picked[key];
+      render();
+    });
+
+    bindPager($("topPager"),
+      function () { return { total: filteredRows().length, page: state.page, size: state.size }; },
+      function (o) { if (o.page != null) state.page = o.page; if (o.size != null) state.size = o.size; });
+
+    bindPager($("insPager"),
+      function () { return { total: insFiltered().length, page: state.insPage, size: state.insSize }; },
+      function (o) { if (o.page != null) state.insPage = o.page; if (o.size != null) state.insSize = o.size; });
+
+    $("rows").addEventListener("click", function (e) {
+      var btn = e.target.closest("[data-act]");
+      if (btn) {
+        var key = btn.getAttribute("data-key");
+        var act = btn.getAttribute("data-act");
+        if (act === "cancel") cancelMapping(key);
+        else if (act === "upload") doUpload([key]);
+        return;
+      }
+      /* 点击行任意位置选中该行并联动下半区（勾选 checkbox 除外） */
+      if (e.target.closest(".check")) return;
+      var tr = e.target.closest("tr[data-row]");
+      if (tr) selectRow(tr.getAttribute("data-row"));
+    });
+
+    $("btnQuick").addEventListener("click", openQuick);
+    $("btnBatchUpload").addEventListener("click", function () {
+      doUpload(pickedKeys());
+    });
+
+    /* 下半区：匹配规则勾选（实时过滤） */
+    $("insRules").addEventListener("change", function (e) {
+      var cb = e.target.closest("[data-rfield]");
+      if (!cb) return;
+      state.rule[cb.getAttribute("data-rfield")] = cb.checked;
+      cb.closest(".mi-rule").classList.toggle("is-check", cb.checked);
+      state.insPage = 1;
+      renderIns();
+    });
+
+    /* 下半区：医保目录选行（单选） */
+    $("insBody").addEventListener("click", function (e) {
+      var tr = e.target.closest("[data-ins]");
+      if (!tr) return;
+      state.insCode = tr.getAttribute("data-ins");
+      renderIns();
+    });
+
+    /* 下半区：对照 */
+    $("btnMap").addEventListener("click", doMap);
+
+    /* 弹窗内统一事件 */
+    $("modalMask").addEventListener("click", function (e) {
+      if (e.target === $("modalMask")) { closeModal(); return; }
+      if (e.target.closest("[data-close]")) { closeModal(); return; }
+
+      /* 匹配结果筛选：图标开关菜单 / 点击选项 / 点击他处收起 */
+      var rf = e.target.closest("[data-rf]");
+      if (rf && state.quick) {
+        var v = rf.getAttribute("data-rf");
+        if (v === "toggle") state.quick.resMenu = !state.quick.resMenu;
+        else { state.quick.resFilter = v; state.quick.resMenu = false; }
+        renderQuick();
+        return;
+      }
+      if (state.quick && state.quick.resMenu) {
+        state.quick.resMenu = false;
+        renderQuick();
+      }
+
+      var qbtn = e.target.closest("[data-qact]");
+      if (qbtn) {
+        var qa = qbtn.getAttribute("data-qact");
+        if (!state.quick) return;
+        if (qa === "close") { closeModal(); return; }
+        if (qa === "prev") { state.quick.step--; renderQuick(); return; }
+        if (qa === "next") {
+          if (state.quick.step === 1 && !quickMatch()) return;
+          state.quick.step = 2;
+          renderQuick();
+          return;
+        }
+        if (qa === "exec") { quickExecute(); return; }
+        return;
+      }
+
+      /* 字段勾选 */
+      var fcb = e.target.closest("[data-field]");
+      if (fcb && state.quick) {
+        state.quick.fields[fcb.getAttribute("data-field")] = fcb.checked;
+        renderQuick();
+        return;
+      }
+    });
+
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && $("modalMask").classList.contains("show")) closeModal();
+    });
+
+    window.addEventListener("resize", syncStickyRight);
+
+    /* 导航 / 页签 */
+    document.querySelectorAll("[data-nav]").forEach(function (el) {
+      el.addEventListener("click", function () {
+        var name = el.getAttribute("data-nav");
+        if (name === "药品目录管理") location.href = "drug-catalog.html";
+        else if (name === "机构药品目录") location.href = "org-drug-catalog.html";
+        else if (name === "首页") toast("「首页」页面待开发");
+        else toast("「" + name + "」页面待开发");
+      });
+    });
+    document.querySelector(".tab-close").addEventListener("click", function (e) {
+      e.stopPropagation();
+      location.href = "drug-catalog.html";
+    });
+  }
+
+  function cancelMapping(key) {
+    var r = rowOf(key);
+    if (!r) return;
+    var m = mt()[key] || {};
+    var uploaded = m.upload === "done";
+    confirmDialog({
+      title: "取消对照",
+      text: "确认取消「" + esc(r.drug.name) + "（" + esc(r.spec.title) + "）· " + esc(r.vendor.name) + "」与医保编码 " + esc(m.insCode || "—") + " 的对应关系？" +
+        (uploaded ? "该关系已上传至医保平台，取消后需重新上传变更。" : "取消后该记录回到未对照状态。"),
+      okText: "取消对照",
+      onOk: function () {
+        delete mt()[key];
+        render();
+        toast("已取消对照");
+      }
+    });
+  }
+
+  /* ---------------- 初始化 ---------------- */
+  function init() {
+    bindEvents();
+    render();
+  }
+
+  init();
+})();
+</script>
+
+
+
+
+
+
+
+  <script src="nav.js"></script>
+</body></html>

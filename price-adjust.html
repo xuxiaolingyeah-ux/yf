@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>药品调价 · 区域药房协同管理系统</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ========== 顶部导航 ========== -->
+<header class="app-header">
+  <div class="header-left">
+    <div class="header-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3.2" y="9.4" width="17.6" height="5.2" rx="2.6" transform="rotate(-45 12 12)"/>
+        <path d="M8.4 15.6L15.6 8.4"/>
+      </svg>
+    </div>
+    <div class="header-title">区域药房协同管理系统</div>
+  </div>
+  <div class="header-right">
+    <div class="header-user" id="headerUser" title="点击退出登录">
+      <span class="header-avatar">药</span>
+      <span class="header-user-name">—</span>
+      <svg class="user-arrow" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+    </div>
+  </div>
+</header>
+
+<div class="app-body">
+  <!-- ========== 左侧导航 ========== -->
+  <aside class="app-side" id="appSide"></aside>
+<!-- ========== 主区域 ========== -->
+  <main class="app-main">
+    <div class="tabbar">
+      <div class="tab">首页</div>
+      <div class="tab active">
+        药品调价
+        <button class="tab-close" id="tabClose" title="关闭">
+          <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="page sel-page">
+      <div class="sel-main">
+        <!-- 标题行 -->
+        <div class="page-head">
+          <h1 class="page-title">药品调价</h1>
+          <div class="page-acts">
+            <button class="btn btn-primary" id="btnCreate">新增调价</button>
+          </div>
+        </div>
+
+        <div class="sel-card">
+          <!-- 范围页签 -->
+          <div class="page-tabs" id="scopeTabs">
+            <span class="page-tab" data-scope="mine">我的申请</span>
+            <span class="page-tab" data-scope="audit">待我审核</span>
+            <span class="page-tab" data-scope="history">历史审核</span>
+          </div>
+
+          <!-- 筛选 -->
+          <div class="filter-bar">
+            <div class="filter-item">
+              <span class="filter-label">调价单号</span>
+              <input class="input" id="fCode" placeholder="请输入调价单号" style="width:160px;">
+            </div>
+            <div class="filter-item">
+              <span class="filter-label">计划调价时间</span>
+              <input class="input" type="date" id="fPlanFrom">
+              <span class="filter-sep">至</span>
+              <input class="input" type="date" id="fPlanTo">
+            </div>
+            <div class="filter-item">
+              <span class="filter-label">创建人</span>
+              <input class="input" id="fCreator" placeholder="请输入创建人" style="width:120px;">
+            </div>
+            <div class="filter-item">
+              <span class="filter-label">审核状态</span>
+              <select class="select" id="fAudit" style="width:130px;">
+                <option value="">全部</option>
+                <option value="draft">草稿</option>
+                <option value="pending">待审核</option>
+                <option value="approved">审核通过</option>
+                <option value="rejected">已拒绝</option>
+              </select>
+            </div>
+            <div class="filter-item">
+              <span class="filter-label">调价状态</span>
+              <select class="select" id="fAdjust" style="width:120px;">
+                <option value="">全部</option>
+                <option value="adjusted">已调价</option>
+                <option value="pending">未调价</option>
+              </select>
+            </div>
+            <div class="filter-acts">
+              <button class="btn" id="btnReset">重置</button>
+              <button class="btn btn-primary" id="btnQuery">查询</button>
+            </div>
+          </div>
+
+          <!-- 列表 -->
+          <div class="pa-list-wrap">
+            <table class="data-table pa-list-table">
+              <thead>
+                <tr>
+                  <th style="width:140px;">调价单号</th>
+                  <th style="width:150px;">计划调价时间</th>
+                  <th style="width:150px;">实际调价时间</th>
+                  <th style="width:100px;">调价原因</th>
+                  <th style="width:120px;" class="num">进货价差价合计</th>
+                  <th style="width:120px;" class="num">零售价差价合计</th>
+                  <th style="width:130px;">涉及药品批次数量</th>
+                  <th style="width:90px;">创建人</th>
+                  <th style="width:150px;">创建时间</th>
+                  <th style="width:90px;">审核状态</th>
+                  <th style="width:90px;">调价状态</th>
+                  <th class="col-acts">操作</th>
+                </tr>
+              </thead>
+              <tbody id="tbody"></tbody>
+            </table>
+            <div class="table-empty" id="tableEmpty" style="display:none;">暂无数据</div>
+          </div>
+
+          <div class="pager">
+            <span id="pagerInfo"></span>
+            <div class="pager-ctrl">
+              <button class="pager-btn" id="pgPrev" title="上一页">
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+              </button>
+              <span class="pager-num" id="pgNum">1</span>
+              <button class="pager-btn" id="pgNext" title="下一页">
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="modal-mask" id="modalMask"></div>
+<div class="toast" id="toast">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+  <span id="toastText"></span>
+</div>
+
+<script src="mock.js"></script>
+<script src="selection-common.js"></script>
+<script src="price-adjust-common.js"></script>
+<script>
+(function () {
+  var $ = SEL.$, esc = SEL.esc;
+
+  var user = PA.user();
+  if (!user) return;
+
+  var state = {
+    scope: PA.isAuditor(user) ? "audit" : "mine",
+    code: "", planFrom: "", planTo: "", creator: "",
+    audit: "", adjust: "",
+    page: 1, size: 10
+  };
+
+  /* 页签范围：我的申请 / 待我审核 / 历史审核 */
+  function inScope(b) {
+    if (state.scope === "mine") {
+      return b.creatorId === user.id;
+    }
+    if (state.scope === "audit") {
+      return b.auditStatus === "pending" && PA.isAuditor(user);
+    }
+    return (b.auditStatus === "approved" || b.auditStatus === "rejected") &&
+      b.records.some(function (r) { return r.node === "审核" && r.person === user.name; });
+  }
+
+  function renderTabs() {
+    document.querySelectorAll("#scopeTabs .page-tab").forEach(function (t) {
+      t.classList.toggle("active", t.getAttribute("data-scope") === state.scope);
+    });
+  }
+
+  /* ---------------- 列表 ---------------- */
+  function filtered() {
+    var list = PA.load();
+    PA.tick(list);
+    return list.filter(function (b) {
+      if (!inScope(b)) return false;
+      if (state.code && b.code.toLowerCase().indexOf(state.code.toLowerCase()) < 0) return false;
+      if (state.creator && b.creator.indexOf(state.creator) < 0) return false;
+      if (state.audit && b.auditStatus !== state.audit) return false;
+      if (state.adjust && b.adjustStatus !== state.adjust) return false;
+      if (state.planFrom || state.planTo) {
+        var day = b.effectType === "scheduled" ? b.planTime.slice(0, 10) : "";
+        if (!day) return false;
+        if (state.planFrom && day < state.planFrom) return false;
+        if (state.planTo && day > state.planTo) return false;
+      }
+      return true;
+    }).sort(function (x, y) {
+      if (x.createdAt === y.createdAt) return 0;
+      return x.createdAt < y.createdAt ? 1 : -1;
+    });
+  }
+
+  function actionHtml(b) {
+    var acts = ['<button class="link-btn" data-act="view" data-id="' + b.id + '">查看</button>'];
+    var mine = PA.isCreator(b, user);
+    if (b.auditStatus === "draft" || b.auditStatus === "rejected") {
+      if (mine) {
+        acts.push('<button class="link-btn" data-act="edit" data-id="' + b.id + '">编辑</button>');
+        acts.push('<button class="link-btn" data-act="submit" data-id="' + b.id + '">提交</button>');
+        acts.push('<button class="link-btn is-danger" data-act="del" data-id="' + b.id + '">删除</button>');
+      }
+    } else if (b.auditStatus === "pending") {
+      if (mine) acts.push('<button class="link-btn" data-act="withdraw" data-id="' + b.id + '">撤回</button>');
+      if (PA.isAuditor(user)) acts.push('<button class="link-btn" data-act="audit" data-id="' + b.id + '">审核</button>');
+    }
+    return acts.join("");
+  }
+
+  function renderTable() {
+    var rows = filtered();
+    var total = rows.length;
+    var pages = Math.max(1, Math.ceil(total / state.size));
+    if (state.page > pages) state.page = pages;
+    var start = (state.page - 1) * state.size;
+    var slice = rows.slice(start, start + state.size);
+
+    $("tbody").innerHTML = slice.map(function (b) {
+      var s = PA.sums(b);
+      return "<tr>" +
+        "<td>" + esc(b.code) + "</td>" +
+        "<td>" + (b.effectType === "scheduled" ? esc(b.planTime) : "--") + "</td>" +
+        "<td>" + (b.actualTime ? esc(b.actualTime) : "--") + "</td>" +
+        "<td>" + esc(b.reason) + "</td>" +
+        '<td class="num">' + s.purchase + "</td>" +
+        '<td class="num">' + s.retail + "</td>" +
+        "<td>" + b.items.length + "</td>" +
+        "<td>" + esc(b.creator) + "</td>" +
+        "<td>" + esc(b.createdAt) + "</td>" +
+        '<td><span class="status-text">' + esc(PA.AUDIT[b.auditStatus]) + "</span></td>" +
+        '<td><span class="status-text">' + esc(PA.ADJUST[b.adjustStatus]) + "</span></td>" +
+        '<td class="col-acts">' + actionHtml(b) + "</td>" +
+      "</tr>";
+    }).join("");
+
+    $("tableEmpty").style.display = total ? "none" : "block";
+    $("pagerInfo").textContent = "共 " + total + " 条";
+    $("pgNum").textContent = state.page + " / " + pages;
+    $("pgPrev").disabled = state.page <= 1;
+    $("pgNext").disabled = state.page >= pages;
+  }
+
+  /* ---------------- 操作 ---------------- */
+  function doSubmit(id) {
+    var list = PA.load();
+    var b = PA.byId(list, id);
+    if (!b) return;
+    SEL.confirmDialog({
+      title: "提交审核",
+      text: "确认提交调价单「" + b.code + "」？提交后进入审核，期间不可编辑。",
+      okText: "提交",
+      onOk: function () {
+        b.auditStatus = "pending";
+        b.records.push({ node: "提交", person: b.creator, result: "已提交", opinion: "—", time: SEL.fmtNow() });
+        PA.save(list);
+        SEL.toast("已提交审核");
+        renderTable();
+      }
+    });
+  }
+
+  function doWithdraw(id) {
+    var list = PA.load();
+    var b = PA.byId(list, id);
+    if (!b) return;
+    SEL.confirmDialog({
+      title: "撤回",
+      text: "确认撤回调价单「" + b.code + "」？撤回后回到草稿，可重新编辑提交。",
+      okText: "撤回",
+      onOk: function () {
+        b.auditStatus = "draft";
+        b.records.push({ node: "撤回", person: b.creator, result: "已撤回", opinion: "—", time: SEL.fmtNow() });
+        PA.save(list);
+        SEL.toast("已撤回");
+        renderTable();
+      }
+    });
+  }
+
+  function doDelete(id) {
+    var list = PA.load();
+    var b = PA.byId(list, id);
+    if (!b) return;
+    SEL.confirmDialog({
+      title: "删除调价单",
+      text: "确认删除调价单「" + b.code + "」？删除后不可恢复。",
+      okText: "删除",
+      onOk: function () {
+        PA.save(list.filter(function (x) { return x.id !== id; }));
+        SEL.toast("已删除");
+        renderTable();
+      }
+    });
+  }
+
+  /* ---------------- 事件 ---------------- */
+  $("btnCreate").addEventListener("click", function () {
+    location.href = "price-adjust-create.html";
+  });
+
+  function doQuery() {
+    state.code = $("fCode").value.trim();
+    state.planFrom = $("fPlanFrom").value;
+    state.planTo = $("fPlanTo").value;
+    state.creator = $("fCreator").value.trim();
+    state.audit = $("fAudit").value;
+    state.adjust = $("fAdjust").value;
+    state.page = 1;
+    renderTable();
+  }
+  $("btnQuery").addEventListener("click", doQuery);
+  $("fCode").addEventListener("keydown", function (e) { if (e.key === "Enter") doQuery(); });
+  $("fCreator").addEventListener("keydown", function (e) { if (e.key === "Enter") doQuery(); });
+
+  $("btnReset").addEventListener("click", function () {
+    state.code = ""; state.planFrom = ""; state.planTo = ""; state.creator = "";
+    state.audit = ""; state.adjust = ""; state.page = 1;
+    $("fCode").value = ""; $("fPlanFrom").value = ""; $("fPlanTo").value = "";
+    $("fCreator").value = ""; $("fAudit").value = ""; $("fAdjust").value = "";
+    renderTable();
+  });
+
+  $("pgPrev").addEventListener("click", function () { state.page--; renderTable(); });
+  $("pgNext").addEventListener("click", function () { state.page++; renderTable(); });
+
+  $("scopeTabs").addEventListener("click", function (e) {
+    var t = e.target.closest("[data-scope]");
+    if (!t || t.getAttribute("data-scope") === state.scope) return;
+    state.scope = t.getAttribute("data-scope");
+    state.page = 1;
+    renderTabs();
+    renderTable();
+  });
+
+  $("tbody").addEventListener("click", function (e) {
+    var btn = e.target.closest("[data-id]");
+    if (!btn) return;
+    var id = btn.getAttribute("data-id");
+    var act = btn.getAttribute("data-act") || "view";
+    if (act === "view") location.href = "price-adjust-detail.html?id=" + id;
+    else if (act === "edit") location.href = "price-adjust-create.html?id=" + id;
+    else if (act === "audit") location.href = "price-adjust-detail.html?id=" + id + "&mode=audit";
+    else if (act === "submit") doSubmit(id);
+    else if (act === "withdraw") doWithdraw(id);
+    else if (act === "del") doDelete(id);
+  });
+
+  $("tabClose").addEventListener("click", function () { location.href = "batch-management.html"; });
+  $("headerUser").addEventListener("click", function () {
+    SEL.confirmDialog({
+      title: "退出登录",
+      text: "确认退出当前账号「" + user.name + "」？",
+      okText: "退出",
+      onOk: function () { SEL.logout(); }
+    });
+  });
+
+  SEL.renderHeaderUser(user);
+  SEL.bindNav();
+  renderTabs();
+  renderTable();
+})();
+</script>
+  <script src="nav.js"></script>
+</body>
+</html>

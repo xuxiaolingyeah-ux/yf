@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>调拨详情 · 区域药房协同管理系统</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="app-header">
+  <div class="header-left">
+    <div class="header-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3.2" y="9.4" width="17.6" height="5.2" rx="2.6" transform="rotate(-45 12 12)"/>
+        <path d="M8.4 15.6L15.6 8.4"/>
+      </svg>
+    </div>
+    <div class="header-title">区域药房协同管理系统</div>
+  </div>
+  <div class="header-right">
+    <div class="header-user" id="headerUser" title="点击退出登录">
+      <span class="header-avatar">药</span>
+      <span class="header-user-name">—</span>
+      <svg class="user-arrow" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+    </div>
+  </div>
+</header>
+
+<div class="app-body">
+  <aside class="app-side" id="appSide"></aside>
+<main class="app-main">
+    <div class="tabbar">
+      <div class="tab">首页</div>
+      <div class="tab" data-href="transfer.html">调拨管理</div>
+      <div class="tab active">
+        <span>调拨详情</span>
+        <button class="tab-close" id="tabClose" title="关闭">
+          <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="page sel-page tr-detail">
+      <div class="sel-main">
+        <div class="page-head">
+          <div class="head-back">
+            <button class="back-btn" id="btnBack" title="返回调拨列表">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+            </button>
+            <h1 class="page-title">调拨详情</h1>
+            <span class="pa-code" id="headCode">调拨单号：—</span>
+          </div>
+          <span class="status-text" id="headStatus"></span>
+        </div>
+
+        <div class="sel-card">
+          <div class="page-tabs" id="jumpTabs">
+            <span class="page-tab active" data-jump="top">申请详情</span>
+            <span class="page-tab" data-jump="records">审批记录</span>
+          </div>
+
+          <div class="card-body" id="detailBody" style="padding:16px;">
+            <div class="form-wrap">
+
+              <section class="block" id="secInfo">
+                <div class="block-head"><h2 class="block-title">申请信息</h2></div>
+                <div class="form-grid-4" id="infoGrid"></div>
+              </section>
+
+              <section class="block" id="secOut" style="display:none;">
+                <div class="block-head"><h2 class="block-title">出库信息</h2></div>
+                <div class="form-grid-4" id="outGrid"></div>
+              </section>
+
+              <section class="block" id="secIn" style="display:none;">
+                <div class="block-head"><h2 class="block-title">入库信息</h2></div>
+                <div class="form-grid-4" id="inGrid"></div>
+              </section>
+
+              <section class="block" id="secItems">
+                <div class="block-head">
+                  <h2 class="block-title" id="itemsTitle">药品明细</h2>
+                </div>
+                <div class="tr-stage-table is-scroll">
+                  <table class="data-table" id="itemsTable">
+                    <thead id="itemsHead"></thead>
+                    <tbody id="itemsBody"></tbody>
+                  </table>
+                </div>
+                <div class="tr-sum-line" id="itemsSum"></div>
+              </section>
+
+              <section class="block" id="secRecords">
+                <div class="block-head"><h2 class="block-title">审批记录</h2></div>
+                <div class="tr-stage-table">
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <th style="width:140px;">节点名称</th>
+                        <th style="width:100px;">操作人</th>
+                        <th style="width:180px;">所属机构</th>
+                        <th style="width:100px;">审批结果</th>
+                        <th>审批意见</th>
+                        <th style="width:150px;">时间</th>
+                      </tr>
+                    </thead>
+                    <tbody id="recordBody"></tbody>
+                  </table>
+                </div>
+              </section>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="modal-mask" id="modalMask"></div>
+<div class="drawer-mask" id="drawerMask"></div>
+<div class="toast" id="toast">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+  <span id="toastText"></span>
+</div>
+
+<script src="mock.js"></script>
+<script src="selection-common.js"></script>
+<script src="transfer-common.js"></script>
+<script>
+(function () {
+  var $ = SEL.$, esc = SEL.esc;
+  var user = TR.user();
+  if (!user) return;
+
+  var bill = SEL.qs("id") ? TR.byId(TR.load(), SEL.qs("id")) : null;
+  if (!bill || !TR.related(bill, user)) { location.href = "transfer.html"; return; }
+
+  function infoItem(l, v) {
+    return '<div class="form-item"><span class="form-label">' + esc(l) + '</span>' +
+      '<span class="text-value">' + esc(v || "—") + "</span></div>";
+  }
+
+  function renderInfo() {
+    $("infoGrid").innerHTML =
+      infoItem("申请机构", bill.applyOrgName) +
+      infoItem("申请药房", bill.applyPharmacyName) +
+      infoItem("申请库位", bill.applyLocationName) +
+      infoItem("提交人", bill.creator) +
+      infoItem("提交时间", bill.submitTime) +
+      infoItem("审核状态", TR.AUDIT[bill.auditStatus]) +
+      infoItem("出库单号", bill.outCode) +
+      infoItem("入库单号", bill.inCode) +
+      '<div class="form-item span-2of4"><span class="form-label">缺药说明</span>' +
+        '<span class="text-value">' + esc(bill.shortageDesc || "—") + "</span></div>";
+
+    if (bill.outCode || bill.transferStatus === "in" || bill.transferStatus === "done") {
+      $("secOut").style.display = "";
+      $("outGrid").innerHTML =
+        infoItem("出库机构", bill.outOrgName) +
+        infoItem("出库药房", bill.outPharmacyName) +
+        infoItem("出库库位", bill.outLocationName) +
+        infoItem("出库单号", bill.outCode) +
+        infoItem("出库时间", bill.outTime);
+    }
+    if (bill.transferStatus === "done") {
+      var inUser = bill.inUser || "";
+      (bill.records || []).forEach(function (r) {
+        if (!inUser && r.node === "入库") inUser = r.person;
+      });
+      $("secIn").style.display = "";
+      $("inGrid").innerHTML =
+        infoItem("入库单号", bill.inCode) +
+        infoItem("入库人", inUser) +
+        infoItem("入库时间", bill.inTime);
+    }
+  }
+
+  var expanded = {};
+  var traceGi = -1;
+
+  function isOpen(g) { return expanded[g.key] !== undefined ? expanded[g.key] : true; }
+  function badCount(g) {
+    var n = 0;
+    (g.rows || []).forEach(function (r) { n += (r.badCodes || []).length; });
+    return n;
+  }
+  function groupMoney(g) {
+    var p = 0, rt = 0;
+    (g.rows || []).forEach(function (r) {
+      var good = Math.max(0, (Number(r.inQty) || 0) - (Number(r.badQty) || 0));
+      p += good * (Number(r.purchase) || 0);
+      rt += good * (Number(r.retail) || 0);
+    });
+    return { purchase: TR.money(p), retail: TR.money(rt) };
+  }
+
+  function renderItems() {
+    var stage = bill.transferStatus === "done" ? "in" : (bill.transferStatus === "in" ? "out" : "apply");
+    var head = $("itemsHead"), body = $("itemsBody"), sum = $("itemsSum");
+    var tbl = $("itemsTable");
+    tbl.className = "data-table";
+    tbl.style.minWidth = "";
+
+    if (stage === "apply") {
+      $("itemsTitle").textContent = "申请明细";
+      head.innerHTML = "<tr>" +
+        '<th style="width:230px;">药品名称</th><th style="width:140px;">药品编码</th>' +
+        '<th style="width:200px;">规格</th><th style="width:110px;" class="num">机构库存</th>' +
+        '<th style="width:110px;" class="num">申请数量</th></tr>';
+      body.innerHTML = bill.items.map(function (it) {
+        return "<tr><td>" + esc(it.drugName) + "</td><td>" + esc(it.drugCode) + "</td>" +
+          "<td>" + esc(it.spec) + '</td><td class="num">' + it.stock + '</td><td class="num">' + it.applyQty + "</td></tr>";
+      }).join("");
+      var applyTotal = 0;
+      bill.items.forEach(function (it) { applyTotal += Number(it.applyQty) || 0; });
+      sum.innerHTML = '<span class="item">申请合计<b>' + applyTotal + "</b></span>";
+    } else if (stage === "out") {
+      $("itemsTitle").textContent = "出库批次明细";
+      head.innerHTML = "<tr>" +
+        '<th style="width:120px;">批次号</th><th>生产企业</th>' +
+        '<th style="width:90px;" class="num">出库数量</th>' +
+        '<th style="width:90px;" class="num">进货价</th>' +
+        '<th style="width:90px;" class="num">零售价</th>' +
+        '<th style="width:100px;">有效期</th>' +
+        '<th style="width:140px;">追溯码</th></tr>';
+      body.innerHTML = (bill.batches || []).map(function (g) {
+        var rows = (g.rows || []).map(function (r) {
+          var scanned = (r.traceCodes || []).length;
+          return '<tr class="tr-batch-row">' +
+            "<td>" + esc(r.batchNo) + "</td>" +
+            "<td>" + esc(r.vendor) + "</td>" +
+            '<td class="num">' + r.outQty + "</td>" +
+            '<td class="num">' + TR.money(r.purchase) + "</td>" +
+            '<td class="num">' + TR.money(r.retail) + "</td>" +
+            "<td>" + esc(r.expDate) + "</td>" +
+            "<td>" + '<span class="tr-code-progress ' + (scanned === r.outQty ? "is-ok" : "is-bad") + '">已扫 ' + scanned + " / " + r.outQty + "</span></td>" +
+          "</tr>";
+        }).join("");
+        return '<tr class="tr-spec-row"><td colspan="7">' + esc(g.drugName) + '<span class="sub">' + esc(g.spec) +
+          " · 申请 " + g.applyQty + " · 调拨 " + TR.allocated(g) + "</span></td></tr>" + rows;
+      }).join("");
+      var so = TR.outSums(bill);
+      sum.innerHTML =
+        '<span class="item">调拨合计<b>' + so.qty + "</b></span>" +
+        '<span class="item">进货价合计<b>' + so.purchase + "</b></span>" +
+        '<span class="item">零售价合计<b>' + so.retail + "</b></span>";
+    } else {
+      $("itemsTitle").textContent = "药品明细";
+      tbl.classList.add("tr-in-tree");
+      head.innerHTML = "<tr>" +
+        '<th style="width:124px;">药品名称</th>' +
+        '<th style="width:108px;">药品规格</th>' +
+        '<th style="width:88px;">药品编码</th>' +
+        '<th style="width:70px;" class="num">申请数量</th>' +
+        '<th style="width:70px;" class="num">调拨数量</th>' +
+        '<th style="width:46px;" class="num">差额</th>' +
+        '<th style="width:82px;" class="num">入库数量</th>' +
+        '<th style="width:92px;" class="num">不合格数量</th>' +
+        '<th style="width:92px;">不合格原因</th>' +
+        '<th style="width:108px;" class="num">进货价金额合计</th>' +
+        '<th style="width:108px;" class="num">零售价金额合计</th>' +
+        '<th style="width:90px;">操作</th></tr>';
+      body.innerHTML = (bill.batches || []).map(function (g, idx) {
+        var rows = g.rows || [];
+        var open = isOpen(g);
+        var inQty = 0;
+        rows.forEach(function (r) { inQty += Number(r.inQty) || 0; });
+        var m = groupMoney(g);
+        var html = '<tr class="tr-tree-parent">' +
+          '<td><button class="tr-expander' + (open ? " is-open" : "") + '" data-toggle="' + idx + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>' + esc(g.drugName) + "</td>" +
+          "<td>" + esc(g.spec) + "</td>" +
+          "<td>" + esc(g.drugCode) + "</td>" +
+          '<td class="num">' + g.applyQty + "</td>" +
+          '<td class="num">' + TR.allocated(g) + "</td>" +
+          '<td class="num">' + (g.applyQty - TR.allocated(g)) + "</td>" +
+          '<td class="num">' + inQty + "</td>" +
+          '<td class="num">' + badCount(g) + "</td>" +
+          "<td>" + esc(g.badReason || "—") + "</td>" +
+          '<td class="num">' + m.purchase + "</td>" +
+          '<td class="num">' + m.retail + "</td>" +
+          '<td><button class="link-btn" data-trace="' + idx + '">查看追溯码</button></td>' +
+        "</tr>";
+        if (open) {
+          html += '<tr class="tr-child-wrap"><td colspan="12"><table class="tr-child-table"><thead><tr>' +
+            '<th style="width:120px;">批次号</th>' +
+            '<th style="width:170px;">生产企业</th>' +
+            '<th style="width:95px;">有效期</th>' +
+            '<th style="width:85px;" class="num">进货价</th>' +
+            '<th style="width:85px;" class="num">零售价</th>' +
+            '<th style="width:95px;" class="num">出库数量</th>' +
+            '<th style="width:95px;" class="num">入库数量</th>' +
+            '<th style="width:95px;" class="num">不合格数量</th>' +
+            '<th style="width:110px;" class="num">进货价金额合计</th>' +
+            '<th style="width:110px;" class="num">零售价金额合计</th>' +
+          "</tr></thead><tbody>" +
+          (rows.length ? rows.map(function (r) {
+            var good = Math.max(0, (Number(r.inQty) || 0) - (Number(r.badQty) || 0));
+            return "<tr>" +
+              "<td>" + esc(r.batchNo) + "</td>" +
+              "<td>" + esc(r.vendor) + "</td>" +
+              "<td>" + esc(r.expDate) + "</td>" +
+              '<td class="num">' + TR.money(r.purchase) + "</td>" +
+              '<td class="num">' + TR.money(r.retail) + "</td>" +
+              '<td class="num">' + r.outQty + "</td>" +
+              '<td class="num">' + (Number(r.inQty) || 0) + "</td>" +
+              '<td class="num">' + (r.badCodes || []).length + "</td>" +
+              '<td class="num">' + TR.money(good * (Number(r.purchase) || 0)) + "</td>" +
+              '<td class="num">' + TR.money(good * (Number(r.retail) || 0)) + "</td>" +
+            "</tr>";
+          }).join("") : '<tr class="tr-child-empty"><td colspan="10">暂无批次明细</td></tr>') +
+          "</tbody></table></td></tr>";
+        }
+        return html;
+      }).join("");
+      var si = TR.inSums(bill);
+      sum.innerHTML =
+        '<span class="item">入库总量<b>' + si.totalIn + "</b></span>" +
+        '<span class="item">不合格总量<b class="is-bad">' + si.totalBad + "</b></span>" +
+        '<span class="item">合格入库量<b>' + si.good + "</b></span>" +
+        '<span class="item">进货价合计<b>' + si.purchase + "</b></span>" +
+        '<span class="item">零售价合计<b>' + si.retail + "</b></span>";
+    }
+
+    if (!body.innerHTML) {
+      body.innerHTML = '<tr><td colspan="8" class="tr-empty-cell">暂无明细</td></tr>';
+    }
+  }
+
+  /* 追溯码查看（只读） */
+  function closeDrawer() {
+    document.body.classList.remove("drawer-open");
+    $("drawerMask").innerHTML = "";
+    traceGi = -1;
+  }
+
+  function openTrace(idx) {
+    traceGi = idx;
+    var g = bill.batches[idx];
+    var mask = $("drawerMask");
+    mask.innerHTML =
+      '<div class="drawer is-pa">' +
+        '<div class="drawer-head">' +
+          '<span class="drawer-title">追溯码 · ' + esc(g.drugName) + "</span>" +
+          '<button class="drawer-close" data-drawer-close="1"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg></button>' +
+        "</div>" +
+        '<div class="drawer-body tr-scan-body" id="traceBody"></div>' +
+        '<div class="drawer-foot"><button class="btn" data-drawer-close="1">关闭</button></div>' +
+      "</div>";
+    document.body.classList.add("drawer-open");
+    var body = $("traceBody");
+    body.innerHTML =
+      '<div class="tr-scan-headline">' +
+        '<span class="name">' + esc(g.drugName) + "</span>" +
+        '<span class="meta">' + esc(g.spec) + "</span>" +
+        '<span class="meta">调拨 ' + TR.allocated(g) + " 个</span>" +
+        '<span class="meta">不合格 ' + badCount(g) + " 个</span>" +
+      "</div>" +
+      ((g.rows || []).length ? g.rows.map(function (r) {
+        var codes = r.traceCodes || [];
+        var bad = r.badCodes || [];
+        return '<div class="tr-code-group">' +
+          '<div class="tr-code-head"><b>批次 ' + esc(r.batchNo) + "</b>" +
+            '<span class="count ' + (bad.length ? "is-bad" : "") + '">合格 ' + (codes.length - bad.length) + " / 不合格 " + bad.length + "</span></div>" +
+          '<div class="tr-code-chips">' + (codes.length ? codes.map(function (c) {
+            var isBad = bad.indexOf(c) >= 0;
+            return '<span class="tr-code-chip' + (isBad ? " is-bad" : "") + '">' + esc(c) + "</span>";
+          }).join("") : '<span class="tr-code-empty">该批次暂无追溯码</span>') + "</div>" +
+        "</div>";
+      }).join("") : '<div class="tr-code-empty">暂无批次明细</div>');
+  }
+
+  function renderRecords() {
+    $("recordBody").innerHTML = bill.records.length ? bill.records.map(function (r) {
+      return "<tr><td>" + esc(r.node) + "</td><td>" + esc(r.person) + "</td><td>" + esc(r.org) + "</td>" +
+        "<td>" + esc(r.result) + '</td><td><div class="cell-ellipsis" title="' + esc(r.opinion) + '">' +
+        esc(r.opinion) + "</div></td><td>" + esc(r.time) + "</td></tr>";
+    }).join("") : '<tr><td colspan="6" class="tr-empty-cell">暂无审批记录</td></tr>';
+  }
+
+  $("headCode").textContent = "调拨单号：" + bill.code;
+  var status = "审核状态：" + TR.AUDIT[bill.auditStatus];
+  if (bill.transferStatus) status += " · 调拨状态：" + TR.TRANSFER[bill.transferStatus];
+  $("headStatus").textContent = status;
+  document.title = "调拨详情 " + bill.code + " · 区域药房协同管理系统";
+
+  $("btnBack").addEventListener("click", function () { location.href = "transfer.html"; });
+  $("tabClose").addEventListener("click", function () { location.href = "transfer.html"; });
+  $("headerUser").addEventListener("click", function () {
+    SEL.confirmDialog({
+      title: "退出登录",
+      text: "确认退出当前账号「" + user.name + "」？",
+      okText: "退出",
+      onOk: function () { SEL.logout(); }
+    });
+  });
+
+  $("itemsBody").addEventListener("click", function (e) {
+    var t = e.target.closest("[data-toggle]");
+    if (t) {
+      var g = bill.batches[parseInt(t.getAttribute("data-toggle"), 10)];
+      expanded[g.key] = !isOpen(g);
+      renderItems();
+      return;
+    }
+    var tr = e.target.closest("[data-trace]");
+    if (tr) { openTrace(parseInt(tr.getAttribute("data-trace"), 10)); }
+  });
+
+  $("drawerMask").addEventListener("click", function (e) {
+    if (e.target.closest("[data-drawer-close]") || e.target === this) closeDrawer();
+  });
+
+  renderInfo();
+  renderItems();
+  renderRecords();
+  TR.bindJump();
+  SEL.renderHeaderUser(user);
+  SEL.bindNav();
+})();
+</script>
+  <script src="nav.js"></script>
+</body>
+</html>

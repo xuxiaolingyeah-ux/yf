@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>药品增损 · 中心药房</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+/* ===== 药品增损 · 列表页 局部样式 ===== */
+.sa-page { background: var(--bg-page); }
+.sa-card { flex: 1; min-height: 0; display: flex; flex-direction: column;
+  background: var(--bg-white); margin: 12px; border-radius: var(--radius-lg);
+  box-shadow: 0 1px 2px rgba(0,0,0,.04); overflow: hidden; }
+/* 标题行 */
+.sa-head { flex: none; height: 56px; display: flex; align-items: center; justify-content: space-between;
+  padding: 0 20px; border-bottom: 1px solid var(--border); gap: 16px; }
+.sa-head .page-title { font-size: 16px; font-weight: 500; }
+/* 筛选栏（默认展示前 2 行共 8 项，点击展开才显示第 3 行） */
+.sa-filter { flex: none; display: flex; align-items: flex-end; gap: 14px; padding: 10px 20px 12px; border-bottom: 1px solid var(--border); }
+.sa-fields { flex: 1; min-width: 0; display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 8px 16px; }
+.sa-filter.collapsed .sa-fields .sa-fi:nth-child(n+9) { display: none; }
+.sa-fi { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.sa-fi .lbl { width: 84px; flex: none; text-align: right; font-size: 12px; color: var(--text-tertiary); white-space: nowrap; }
+.sa-fi .ctrl { flex: 1; min-width: 0; display: flex; }
+.sa-fi .input, .sa-fi .select { width: 100%; }
+/* 日期区间：单控件 */
+.sa-drange {
+  display: flex; align-items: center; gap: 4px; width: 100%; height: 32px;
+  border: 1px solid rgba(0,0,0,.2); border-radius: var(--radius);
+  padding: 0 8px; background: var(--bg-white); box-sizing: border-box;
+}
+.sa-drange input { flex: 1; min-width: 0; border: none; outline: none; font-size: 12px; color: var(--text-primary); background: transparent; height: 100%; padding: 0; }
+.sa-drange span { color: var(--text-placeholder); font-size: 12px; flex: none; }
+/* 筛选操作区 */
+.sa-filter-actions { flex: none; display: flex; align-items: center; gap: 8px; }
+/* 表格 */
+.sa-table-wrap { flex: 1; min-height: 0; overflow: auto; }
+.sa-table { width: max-content; min-width: 100%; border-collapse: collapse; font-size: 13px; }
+.sa-table th {
+  position: sticky; top: 0; z-index: 2; background: var(--table-head);
+  height: 40px; padding: 0 10px; text-align: left; font-weight: 500;
+  color: var(--text-secondary); white-space: nowrap; border-bottom: 1px solid var(--border);
+}
+.sa-table th.sortable { cursor: pointer; user-select: none; }
+.sa-table th .sort-ico { margin-left: 4px; font-size: 10px; color: var(--text-placeholder); display: inline-block; }
+.sa-table th.sortable.is-sort .sort-ico { color: var(--primary-dark); }
+.sa-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); color: var(--text-primary); vertical-align: middle; white-space: nowrap; background: var(--bg-white); }
+.sa-table tbody tr:nth-child(even) td { background: var(--table-even); }
+.sa-table tbody tr:hover td { background: var(--table-hover); }
+/* 列冻结 */
+.sa-table .col-code { position: sticky; left: 0; z-index: 3; }
+.sa-table .col-status, .sa-table .col-upload, .sa-table .col-acts { position: sticky; z-index: 3; }
+.sa-table .col-status { right: 290px; box-shadow: -2px 0 4px rgba(0,0,0,.04); }
+.sa-table .col-upload { right: 200px; }
+.sa-table .col-acts { right: 0; }
+.sa-table th.col-code, .sa-table th.col-status, .sa-table th.col-upload, .sa-table th.col-acts { background: var(--table-head); z-index: 4; }
+.sa-table td.col-code, .sa-table td.col-status, .sa-table td.col-upload, .sa-table td.col-acts { background: var(--bg-white); }
+.sa-table tbody tr:nth-child(even) td.col-code, .sa-table tbody tr:nth-child(even) td.col-status,
+.sa-table tbody tr:nth-child(even) td.col-upload, .sa-table tbody tr:nth-child(even) td.col-acts { background: var(--table-even); }
+.sa-table tbody tr:hover td.col-code, .sa-table tbody tr:hover td.col-status,
+.sa-table tbody tr:hover td.col-upload, .sa-table tbody tr:hover td.col-acts { background: var(--table-hover); }
+.sa-table .col-status, .sa-table .col-upload { width: 90px; min-width: 90px; }
+.sa-table .col-acts { width: 200px; min-width: 200px; }
+.sa-table th.col-code, .sa-table td.col-code { padding-left: 16px; }
+.sa-table th.col-acts, .sa-table td.col-acts { padding-right: 16px; }
+.sa-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.sa-table .link-btn + .link-btn { margin-left: 10px; }
+.sa-empty { padding: 80px 0; text-align: center; color: var(--text-placeholder); font-size: 13px; }
+/* 分页 */
+.sa-pager { flex: none; height: 48px; display: flex; align-items: center; gap: 10px;
+  padding: 0 20px; border-top: 1px solid var(--border); font-size: 13px; color: var(--text-secondary); }
+.sa-pager .total b { font-weight: 400; color: var(--text-primary); }
+.sa-pager .pager-btn { height: 28px; min-width: 28px; padding: 0 8px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-white); color: var(--text-secondary); cursor: pointer; font-size: 13px; }
+.sa-pager .pager-btn:hover:not(:disabled) { border-color: var(--primary); color: var(--primary-dark); }
+.sa-pager .pager-btn:disabled { color: var(--text-placeholder); cursor: not-allowed; }
+.sa-pager .pager-num { min-width: 28px; height: 28px; padding: 0 8px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid transparent; border-radius: var(--radius); cursor: pointer; color: var(--text-secondary); }
+.sa-pager .pager-num.is-cur { background: var(--primary); color: #fff; border-color: var(--primary); }
+/* 顶栏用户菜单 */
+.sa-user { position: relative; }
+.sa-user-menu { display: none; position: absolute; top: 38px; right: 0; width: 220px;
+  background: var(--bg-white); border-radius: var(--radius-lg);
+  box-shadow: 0 4px 16px rgba(0,0,0,.12); padding: 6px; z-index: 900; }
+.sa-user-menu.show { display: block; }
+.sa-user-item { padding: 8px 10px; border-radius: var(--radius); cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+.sa-user-item:hover { background: var(--primary-lighter); }
+.sa-user-item .n { font-size: 13px; color: var(--text-primary); }
+.sa-user-item .r { font-size: 12px; color: var(--text-tertiary); }
+.sa-user-item.is-cur { background: var(--primary-lighter); }
+.sa-user-item.is-cur .n { color: var(--primary-dark); }
+/* 确认弹窗 */
+.sa-confirm .modal { width: 400px; }
+.sa-confirm-desc { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
+</style>
+</head>
+<body>
+
+<!-- ========== 顶部导航 ========== -->
+<header class="app-header">
+  <div class="header-left">
+    <div class="header-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3.2" y="9.4" width="17.6" height="5.2" rx="2.6" transform="rotate(-45 12 12)"/>
+        <path d="M8.4 15.6L15.6 8.4"/>
+      </svg>
+    </div>
+    <div class="header-title">区域药房协同管理系统</div>
+    <span class="header-sub">中心药房</span>
+  </div>
+  <div class="header-right">
+    <div class="sa-user">
+      <div class="header-user" id="userBtn">
+        <div class="header-avatar" id="userAvatar">王</div>
+        <span class="header-user-name" id="userName">王芳</span>
+      </div>
+      <div class="sa-user-menu" id="userMenu"></div>
+    </div>
+  </div>
+</header>
+
+<div class="app-body">
+  <!-- ========== 左侧导航 ========== -->
+  <aside class="app-side" id="appSide"></aside>
+<!-- ========== 主区域 ========== -->
+  <main class="app-main">
+    <div class="tabbar">
+      <div class="tab" onclick="location.href='batch-management.html'">首页</div>
+      <div class="tab active">
+        药品增损
+        <button class="tab-close" title="关闭" onclick="location.href='batch-management.html'">
+          <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="page sa-page">
+      <div class="sa-card">
+        <!-- 标题行 -->
+        <div class="sa-head">
+          <div class="page-title">药品增损</div>
+          <button class="btn btn-primary" id="btnAdd">新增增损</button>
+        </div>
+
+        <!-- 筛选栏 -->
+        <div class="sa-filter collapsed" id="filterBar">
+          <div class="sa-fields">
+            <div class="sa-fi"><span class="lbl">增损单号：</span><div class="ctrl"><input class="input" id="fCode" placeholder="请输入增损单号" autocomplete="off"></div></div>
+            <div class="sa-fi"><span class="lbl">机构：</span><div class="ctrl"><select class="select" id="fOrg"></select></div></div>
+            <div class="sa-fi"><span class="lbl">药房：</span><div class="ctrl"><select class="select" id="fPharmacy"><option value="">全部</option></select></div></div>
+            <div class="sa-fi"><span class="lbl">库位：</span><div class="ctrl"><select class="select" id="fLocation"><option value="">全部</option></select></div></div>
+            <div class="sa-fi"><span class="lbl">增损方式：</span><div class="ctrl"><select class="select" id="fMethod"><option value="">全部</option></select></div></div>
+            <div class="sa-fi"><span class="lbl">增损时间：</span><div class="ctrl"><div class="sa-drange"><input type="date" id="fT1"><span>~</span><input type="date" id="fT2"></div></div></div>
+            <div class="sa-fi"><span class="lbl">审核状态：</span><div class="ctrl"><select class="select" id="fStatus"></select></div></div>
+            <div class="sa-fi"><span class="lbl">上传状态：</span><div class="ctrl"><select class="select" id="fUpload"></select></div></div>
+            <div class="sa-fi"><span class="lbl">提交人：</span><div class="ctrl"><select class="select" id="fCreator"></select></div></div>
+          </div>
+          <div class="sa-filter-actions">
+            <button class="btn btn-sm btn-link" id="btnToggle" style="color:var(--primary-dark)">展开 ▾</button>
+            <button class="btn btn-sm" id="btnReset">重置</button>
+            <button class="btn btn-sm btn-primary" id="btnSearch">查询</button>
+          </div>
+        </div>
+
+        <!-- 表格 -->
+        <div class="sa-table-wrap">
+          <table class="sa-table" id="mainTable">
+            <thead>
+              <tr>
+                <th class="col-code sortable" data-sort="code">增损单号 <span class="sort-ico">▾</span></th>
+                <th style="width:90px">增损方式</th>
+                <th style="width:150px">机构</th>
+                <th style="width:110px">药房</th>
+                <th style="width:100px">库位</th>
+                <th style="width:120px">增损原因</th>
+                <th style="width:170px" class="sortable" data-sort="submitTime">增损时间 <span class="sort-ico">▼</span></th>
+                <th style="width:110px" class="num">进货价合计</th>
+                <th style="width:110px" class="num">零售价合计</th>
+                <th style="width:80px">提交人</th>
+                <th class="col-status">审核状态</th>
+                <th class="col-inout" style="width:140px">出/入库单号</th>
+                <th class="col-upload">上传状态</th>
+                <th class="col-acts" style="width:200px">操作</th>
+              </tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+          </table>
+          <div class="sa-empty" id="empty" style="display:none">暂无符合条件的增损单</div>
+        </div>
+
+        <!-- 分页 -->
+        <div class="sa-pager">
+          <span class="total">共 <b id="totalNum">0</b> 条</span>
+          <button class="pager-btn" id="pgPrev">‹</button>
+          <span id="pgNums"></span>
+          <button class="pager-btn" id="pgNext">›</button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ========== 确认弹窗 ========== -->
+<div class="modal-mask sa-confirm" id="cfMask">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title" id="cfTitle">提示</div>
+      <button class="drawer-close" id="cfClose" title="关闭">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+      </button>
+    </div>
+    <div class="modal-body"><div class="sa-confirm-desc" id="cfDesc"></div></div>
+    <div class="modal-foot">
+      <button class="btn" id="cfCancel">取消</button>
+      <button class="btn btn-primary" id="cfOk">确定</button>
+    </div>
+  </div>
+</div>
+
+<!-- toast -->
+<div id="toast" style="position:fixed;top:70px;left:50%;transform:translateX(-50%);padding:8px 16px;background:rgba(0,0,0,.78);color:#fff;border-radius:4px;font-size:13px;z-index:9999;display:none"></div>
+
+<script src="stock-adjust-common.js"></script>
+<script>
+(function(){
+  "use strict";
+  var SA = window.SA;
+  var $ = function(s,c){return (c||document).querySelector(s);};
+  var $$ = function(s,c){return Array.prototype.slice.call((c||document).querySelectorAll(s));};
+  function toast(msg){var t=$("#toast");t.textContent=msg;t.style.display="block";clearTimeout(t._t);t._t=setTimeout(function(){t.style.display="none";},1800);}
+
+  var user = SA.currentUser();
+  var list = SA.load();
+
+  /* ---------- 状态：筛选 + 排序 + 分页 ---------- */
+  var ST = {
+    page: 1, pageSize: 20, filtered: [],
+    sortBy: "submitTime", sortDir: "desc"
+  };
+
+  /* ===== 顶栏角色切换 ===== */
+  function renderUser(){
+    $("#userAvatar").textContent = user.name.charAt(0);
+    $("#userName").textContent = user.name;
+    $("#userMenu").innerHTML = SA.USERS.map(function(u){
+      return '<div class="sa-user-item'+(u.id===user.id?' is-cur':'')+'" data-uid="'+u.id+'">'
+        +'<span class="n">'+SA.esc(u.name)+'</span><span class="r">'+SA.esc(u.roleName)+'</span></div>';
+    }).join("");
+    $$("#userMenu .sa-user-item").forEach(function(el){
+      el.addEventListener("click",function(){
+        SA.setUser(el.getAttribute("data-uid")); location.reload();
+      });
+    });
+  }
+  $("#userBtn").addEventListener("click",function(e){ e.stopPropagation(); $("#userMenu").classList.toggle("show"); });
+  document.addEventListener("click",function(){ $("#userMenu").classList.remove("show"); });
+
+  /* ===== 下拉初始化 ===== */
+  function fillPharmacies(orgId){
+    var o = SA.orgOf(orgId);
+    var opts = '<option value="">全部</option>';
+    opts += o ? o.pharmacies.map(function(p){return '<option value="'+p.id+'">'+SA.esc(p.name)+'</option>';}).join("") : "";
+    $("#fPharmacy").innerHTML = opts;
+    fillLocations(orgId, "");
+  }
+  function fillLocations(orgId, pid){
+    var p = pid ? SA.pharmacyOf(orgId, pid) : null;
+    var locs = p ? p.locations : [];
+    if(!pid && orgId){
+      var o = SA.orgOf(orgId); locs = [];
+      o.pharmacies.forEach(function(x){ locs = locs.concat(x.locations); });
+    }
+    $("#fLocation").innerHTML = '<option value="">全部</option>' + locs.map(function(l){return '<option>'+SA.esc(l)+'</option>';}).join("");
+  }
+  var orgHtml = '<option value="">全部</option>';
+  var seenOrg = {};
+  SA.ORGS.forEach(function(o){ if(!seenOrg[o.id]){ seenOrg[o.id]=1; orgHtml += '<option value="'+o.id+'">'+SA.esc(o.name)+'</option>'; } });
+  $("#fOrg").innerHTML = orgHtml;
+  /* 村室默认只看本机构；成员机构/中心药房是审核方，需跨机构查看待审核单，默认「全部」 */
+  var defaultOrg = user.role === "village" ? user.orgId : "";
+  $("#fOrg").value = defaultOrg;
+  fillPharmacies(defaultOrg);
+
+  $("#fMethod").innerHTML = '<option value="">全部</option><option value="add">报增入库</option><option value="minus">报损出库</option>';
+  $("#fStatus").innerHTML = '<option value="">全部</option><option value="draft">草稿</option><option value="pending">待审核</option><option value="approved">审核通过</option><option value="rejected">已驳回</option>';
+  $("#fUpload").innerHTML = '<option value="">全部</option><option value="none">—</option><option value="wait">未上传</option><option value="success">上传成功</option><option value="fail">上传失败</option>';
+  $("#fCreator").innerHTML = '<option value="">全部</option>' + SA.USERS.map(function(u){return '<option value="'+u.id+'">'+SA.esc(u.name)+'</option>';}).join("");
+
+  $("#fOrg").addEventListener("change",function(){ fillPharmacies(this.value); });
+  $("#fPharmacy").addEventListener("change",function(){ fillLocations($("#fOrg").value, this.value); });
+
+  /* ===== 查询 / 重置 ===== */
+  function applyFilter(){
+    var code = $("#fCode").value.trim(), t1 = $("#fT1").value, t2 = $("#fT2").value;
+    var org = $("#fOrg").value, ph = $("#fPharmacy").value, loc = $("#fLocation").value;
+    var m = $("#fMethod").value, st = $("#fStatus").value, up = $("#fUpload").value, cr = $("#fCreator").value;
+    ST.filtered = list.filter(function(b){
+      if(code && b.code.indexOf(code)<0) return false;
+      var d = (b.submitTime||"").slice(0,10);
+      if(t1 && d < t1) return false;
+      if(t2 && d > t2) return false;
+      if(org && b.orgId!==org) return false;
+      if(ph && b.pharmacyId!==ph) return false;
+      if(loc && b.location!==loc) return false;
+      if(m){ var want = SA.METHODS[m]; if(b.method!==want) return false; }
+      if(st && b.status!==st) return false;
+      if(up){ if(b.uploadStatus!==up) return false; }
+      if(cr && b.creatorId!==cr) return false;
+      return true;
+    });
+    sortList();
+    ST.page = 1;
+    renderTable();
+  }
+  $("#btnSearch").addEventListener("click", applyFilter);
+  $("#btnToggle").addEventListener("click", function(){
+    var c = $("#filterBar").classList.toggle("collapsed");
+    this.textContent = c ? "展开 ▾" : "收起 ▴";
+  });
+  $("#btnReset").addEventListener("click", function(){
+    $("#fCode").value=""; $("#fT1").value=""; $("#fT2").value="";
+    $("#fOrg").value = user.orgId; fillPharmacies(user.orgId);
+    $("#fMethod").value=""; $("#fStatus").value=""; $("#fUpload").value=""; $("#fCreator").value="";
+    applyFilter();
+  });
+  $("#fCode").addEventListener("keydown",function(e){ if(e.key==="Enter") applyFilter(); });
+
+  /* ===== 排序 ===== */
+  function sortList(){
+    var f = ST.sortBy, d = ST.sortDir === "asc" ? 1 : -1;
+    ST.filtered.sort(function(a,b){
+      var va = a[f] === undefined || a[f] === null ? "" : a[f];
+      var vb = b[f] === undefined || b[f] === null ? "" : b[f];
+      if(va < vb) return -1 * d;
+      if(va > vb) return  1 * d;
+      return 0;
+    });
+  }
+  $$("#mainTable th.sortable").forEach(function(th){
+    th.addEventListener("click",function(){
+      var by = this.getAttribute("data-sort");
+      if(ST.sortBy === by){
+        ST.sortDir = ST.sortDir === "asc" ? "desc" : "asc";
+      } else {
+        ST.sortBy = by; ST.sortDir = "desc";
+      }
+      // 更新所有表头三角
+      $$("#mainTable th.sortable").forEach(function(h){
+        var ico = h.querySelector(".sort-ico");
+        h.classList.remove("is-sort");
+        ico.textContent = h.getAttribute("data-sort") === "submitTime" ? "▼" : "▾";
+      });
+      var cur = this.querySelector(".sort-ico");
+      cur.textContent = ST.sortDir === "asc" ? "▲" : "▼";
+      this.classList.add("is-sort");
+      sortList(); ST.page = 1; renderTable();
+    });
+  });
+
+  /* ===== 表格渲染 ===== */
+  function orgName(b){ var o=SA.orgOf(b.orgId); return o?o.name:"—"; }
+  function phName(b){ var p=SA.pharmacyOf(b.orgId,b.pharmacyId); return p?p.name:"—"; }
+
+  function renderTable(){
+    var start = (ST.page-1)*ST.pageSize;
+    var rows = ST.filtered.slice(start, start+ST.pageSize);
+    $("#empty").style.display = rows.length ? "none" : "block";
+    $("#tbody").innerHTML = rows.map(function(b){
+      var s = SA.sums(b);
+      var ops = SA.opsFor(b, user).map(function(op){
+        return '<a class="link-btn'+(op.danger?' is-danger':'')+'" data-op="'+op.key+'" data-id="'+b.id+'">'+op.label+'</a>';
+      }).join("");
+      return '<tr>'
+        +'<td class="col-code">'+SA.esc(b.code)+'</td>'
+        +'<td>'+SA.esc(b.method)+'</td>'
+        +'<td title="'+SA.esc(orgName(b))+'">'+SA.esc(orgName(b))+'</td>'
+        +'<td title="'+SA.esc(phName(b))+'">'+SA.esc(phName(b))+'</td>'
+        +'<td>'+SA.esc(b.location)+'</td>'
+        +'<td title="'+SA.esc(b.reason)+'">'+SA.esc(b.reason)+'</td>'
+        +'<td>'+SA.esc((b.submitTime||"").slice(0,19))+'</td>'
+        +'<td class="num">'+SA.num2(s.purchase)+'</td>'
+        +'<td class="num">'+SA.num2(s.retail)+'</td>'
+        +'<td>'+SA.esc(b.creatorName)+'</td>'
+        +'<td class="col-status">'+SA.esc(SA.STATUS[b.status])+'</td>'
+        +'<td class="col-inout" title="'+SA.esc(b.inoutCode||"")+'">'+SA.esc(b.inoutCode || "—")+'</td>'
+        +'<td class="col-upload">'+SA.esc(SA.UPLOAD[b.uploadStatus])+'</td>'
+        +'<td class="col-acts">'+ops+'</td>'
+        +'</tr>';
+    }).join("");
+    $("#totalNum").textContent = ST.filtered.length;
+    renderPager();
+    $$("#tbody .link-btn").forEach(function(a){ a.addEventListener("click", onOp); });
+  }
+
+  function renderPager(){
+    var total = ST.filtered.length, pages = Math.max(1, Math.ceil(total/ST.pageSize));
+    $("#pgPrev").disabled = ST.page<=1;
+    $("#pgNext").disabled = ST.page>=pages;
+    var h="";
+    for(var i=1;i<=pages;i++) h += '<span class="pager-num'+(i===ST.page?' is-cur':'')+'" data-p="'+i+'">'+i+'</span>';
+    $("#pgNums").innerHTML = h;
+    $$("#pgNums .pager-num").forEach(function(el){ el.addEventListener("click",function(){ ST.page=parseInt(el.getAttribute("data-p"),10); renderTable(); }); });
+  }
+  $("#pgPrev").addEventListener("click",function(){ if(ST.page>1){ST.page--;renderTable();} });
+  $("#pgNext").addEventListener("click",function(){ var pages=Math.ceil(ST.filtered.length/ST.pageSize); if(ST.page<pages){ST.page++;renderTable();} });
+
+  /* ===== 确认弹窗 ===== */
+  var cfCb = null;
+  function confirmDlg(title, desc, okText, danger, cb){
+    $("#cfTitle").textContent = title;
+    $("#cfDesc").textContent = desc;
+    var ok = $("#cfOk"); ok.textContent = okText;
+    ok.className = danger ? "btn btn-danger" : "btn btn-primary";
+    cfCb = cb; $("#cfMask").classList.add("show");
+  }
+  function closeCf(){ $("#cfMask").classList.remove("show"); cfCb=null; }
+  $("#cfCancel").addEventListener("click", closeCf);
+  $("#cfClose").addEventListener("click", closeCf);
+  $("#cfOk").addEventListener("click", function(){ var cb=cfCb; closeCf(); if(cb) cb(); });
+
+  /* ===== 操作 ===== */
+  function persist(){ SA.save(list); }
+  function onOp(){
+    var op = this.getAttribute("data-op"), id = this.getAttribute("data-id");
+    var b = list.filter(function(x){return x.id===id;})[0];
+    if(!b) return;
+    if(op==="view"){ location.href = "stock-adjust-detail.html?id="+id; return; }
+    if(op==="audit"){ location.href = "stock-adjust-detail.html?id="+id+"&mode=approve"; return; }
+    if(op==="edit"){ location.href = "stock-adjust-create.html?id="+id; return; }
+    if(op==="submit"){
+      confirmDlg("提交增损单", "提交后增损单将进入待审核状态，是否确认提交？", "提交", false, function(){
+        b.status = "pending"; b.submitTime = SA.fmtNow();
+        b.records.push({node:"提交", person:user.name, org:orgName(b), time:b.submitTime, result:"已提交", opinion:""});
+        persist(); renderTable(); toast("已提交，待审核");
+      });
+      return;
+    }
+    if(op==="withdraw"){
+      confirmDlg("撤回增损单", "撤回后增损单将回到草稿状态，是否确认撤回？", "撤回", false, function(){
+        b.status = "draft";
+        b.records.push({node:"撤回", person:user.name, org:orgName(b), time:SA.fmtNow(), result:"已撤回", opinion:""});
+        persist(); renderTable(); toast("已撤回");
+      });
+      return;
+    }
+    if(op==="del"){
+      confirmDlg("删除增损单", "删除后不可恢复，是否确认删除增损单 "+b.code+"？", "删除", true, function(){
+        list = list.filter(function(x){return x.id!==id;});
+        SA.save(list);
+        ST.filtered = ST.filtered.filter(function(x){return x.id!==id;});
+        renderTable(); toast("已删除");
+      });
+      return;
+    }
+    if(op==="upload"){
+      confirmDlg("上传增损单", "确认将增损单 "+b.code+" 上传至医保/监管平台？", "上传", false, function(){
+        b.uploadStatus = "success";
+        persist(); renderTable(); toast("上传成功");
+      });
+      return;
+    }
+  }
+
+  $("#btnAdd").addEventListener("click", function(){ location.href = "stock-adjust-create.html"; });
+
+  /* ===== 初始化 ===== */
+  renderUser();
+  applyFilter();
+})();
+</script>
+
+  <script src="nav.js"></script>
+</body>
+</html>

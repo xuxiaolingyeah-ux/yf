@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>预减管理 · 中心药房</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+/* ===== 预减管理页面 局部样式 ===== */
+.pd-page { background: var(--bg-page); }
+.pd-card {
+  flex: 1; min-height: 0;
+  display: flex; flex-direction: column;
+  background: var(--bg-white);
+  margin: 12px;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 1px 2px rgba(0,0,0,.04);
+  overflow: hidden;
+}
+/* 标题行 */
+.pd-head {
+  flex: none; height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 20px;
+  border-bottom: 1px solid var(--border);
+  gap: 16px;
+}
+.pd-head .page-title { font-size: 16px; font-weight: 500; flex: none; }
+.pd-acts { display: flex; gap: 8px; flex: none; }
+.pd-acts .btn:disabled,
+.pd-acts .btn:disabled:hover {
+  background: var(--bg-disabled);
+  border-color: var(--border);
+  color: var(--text-placeholder);
+  cursor: not-allowed;
+}
+
+/* 筛选栏 */
+.pd-filter {
+  flex: none;
+  display: flex; align-items: flex-end; gap: 14px;
+  padding: 10px 20px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.pd-fields {
+  flex: 1; min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px 12px;
+}
+.pd-fi { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.pd-fi .lbl {
+  width: 72px; flex: none; text-align: right;
+  font-size: 12px; color: var(--text-tertiary); white-space: nowrap;
+}
+.pd-fi .ctrl { flex: 1; min-width: 0; display: flex; gap: 6px; }
+.pd-fi .input, .pd-fi .select { width: 100%; }
+.pd-range { display: flex; gap: 6px; width: 100%; align-items: center; }
+.pd-range .sep { color: var(--text-tertiary); font-size: 12px; flex: none; }
+.pd-range .input { flex: 1; min-width: 0; }
+
+/* 折叠：默认只显示 2 行（8 个筛选项），展开后显示全部 */
+.pd-filter.collapsed .pd-fields .pd-fi:nth-child(n+9) { display: none; }
+.pd-filter-actions {
+  flex: none;
+  display: flex; align-items: center; gap: 8px;
+}
+.pd-toggle {
+  border: none; background: none; color: var(--primary-dark);
+  font-size: 13px; cursor: pointer; padding: 0 4px;
+}
+.pd-toggle:hover { color: var(--primary); }
+
+/* 表格区域：横向滚动 */
+.pd-table-wrap { flex: 1; min-height: 0; overflow: auto; }
+.pd-table {
+  width: max-content; min-width: 100%;
+  border-collapse: collapse; font-size: 13px;
+}
+.pd-table th {
+  position: sticky; top: 0; z-index: 2;
+  background: var(--table-head);
+  height: 40px; padding: 0 10px;
+  text-align: left; font-weight: 500; color: var(--text-secondary);
+  white-space: nowrap;
+  border-bottom: 1px solid var(--border);
+}
+.pd-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-primary);
+  vertical-align: middle;
+  white-space: nowrap;
+  background: var(--bg-white);
+}
+.pd-table tbody tr:nth-child(even) td { background: var(--table-even); }
+.pd-table tbody tr:hover td { background: var(--table-hover); }
+/* 固定列：勾选(左0)、操作(右) */
+.pd-table .col-check { position: sticky; left: 0; z-index: 3; }
+.pd-table .col-acts { position: sticky; right: 0; z-index: 3; box-shadow: -2px 0 4px rgba(0,0,0,.04); }
+.pd-table th.col-check, .pd-table th.col-acts { background: var(--table-head); z-index: 4; }
+.pd-table td.col-check, .pd-table td.col-acts { background: var(--bg-white); }
+.pd-table tbody tr:nth-child(even) td.col-check,
+.pd-table tbody tr:nth-child(even) td.col-acts { background: var(--table-even); }
+.pd-table tbody tr:hover td.col-check,
+.pd-table tbody tr:hover td.col-acts { background: var(--table-hover); }
+.pd-table th.col-check, .pd-table td.col-check { padding-left: 16px; }
+.pd-table th.col-acts, .pd-table td.col-acts { padding-right: 16px; }
+
+.pd-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.pd-table .name-cell { max-width: 180px; overflow: hidden; text-overflow: ellipsis; }
+
+/* 多选下拉（库位） */
+.pd-multi-select {
+  flex: 1; min-width: 0; position: relative;
+}
+.pd-multi-trigger {
+  width: 100%; height: 32px;
+  border: 1px solid var(--border-input);
+  border-radius: var(--radius);
+  background: var(--bg-white);
+  padding: 0 8px;
+  display: flex; align-items: center; gap: 4px;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  position: relative;
+}
+.pd-multi-trigger:hover { border-color: var(--primary-dark); }
+.pd-multi-trigger.is-open {
+  border-color: var(--primary-dark);
+  box-shadow: 0 0 0 2px rgba(43, 127, 255, 0.12);
+}
+.pd-multi-trigger .pd-multi-text {
+  flex: 1; min-width: 0;
+  font-size: 13px; color: var(--text-placeholder);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.pd-multi-trigger .pd-multi-text.has-val { color: var(--text-primary); }
+.pd-multi-trigger .pd-multi-caret {
+  width: 10px; height: 6px; flex: none;
+  color: var(--text-tertiary);
+}
+.pd-multi-menu {
+  position: absolute; top: 34px; left: 0; right: 0;
+  background: var(--bg-white);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-2);
+  z-index: 10;
+  display: none;
+  max-height: 240px; overflow-y: auto;
+}
+.pd-multi-menu.show { display: block; }
+.pd-multi-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px;
+  font-size: 13px; color: var(--text-primary);
+  cursor: pointer;
+  border-bottom: 1px solid var(--border);
+}
+.pd-multi-item:last-child { border-bottom: none; }
+.pd-multi-item:hover { background: var(--primary-lighter); }
+.pd-multi-item input { margin: 0; }
+
+/* 分页 */
+.pd-pager {
+  flex: none; height: 48px;
+  display: flex; align-items: center; gap: 10px;
+  padding: 0 20px;
+  border-top: 1px solid var(--border);
+  font-size: 13px; color: var(--text-secondary);
+}
+.pd-pager .total b { font-weight: 400; color: var(--text-primary); }
+.pd-pager .select { width: 92px; height: 28px; font-size: 12px; }
+.pd-pager .pager-btn {
+  height: 28px; min-width: 28px; padding: 0 8px;
+  border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--bg-white); color: var(--text-secondary);
+  cursor: pointer; font-size: 13px;
+}
+.pd-pager .pager-btn:hover:not(:disabled) { border-color: var(--primary); color: var(--primary-dark); }
+.pd-pager .pager-btn:disabled { color: var(--text-placeholder); cursor: not-allowed; }
+.pd-pager .pager-num {
+  min-width: 28px; height: 28px; padding: 0 8px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid transparent; border-radius: var(--radius);
+  cursor: pointer; color: var(--text-secondary);
+}
+.pd-pager .pager-num:hover { border-color: var(--primary); color: var(--primary-dark); }
+.pd-pager .pager-num.is-cur { background: var(--primary); color: #fff; border-color: var(--primary); }
+.pd-pager .jump-input { width: 46px; height: 28px; padding: 0 4px; text-align: center; font-size: 12px; }
+
+.pd-empty { padding: 80px 0; text-align: center; color: var(--text-placeholder); font-size: 13px; }
+
+/* 确认弹窗 */
+.pd-del-modal .modal { width: 420px; }
+</style>
+</head>
+<body>
+
+<!-- ========== 顶部导航 ========== -->
+<header class="app-header">
+  <div class="header-left">
+    <div class="header-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3.2" y="9.4" width="17.6" height="5.2" rx="2.6" transform="rotate(-45 12 12)"/>
+        <path d="M8.4 15.6L15.6 8.4"/>
+      </svg>
+    </div>
+    <div class="header-title">区域药房协同管理系统</div>
+    <span class="header-sub">中心药房</span>
+  </div>
+  <div class="header-right">
+    <div class="header-user">
+      <div class="header-avatar">林</div>
+      <span class="header-user-name">林落落</span>
+    </div>
+  </div>
+</header>
+
+<div class="app-body">
+  <!-- ========== 左侧导航 ========== -->
+  <aside class="app-side" id="appSide"></aside>
+<!-- ========== 主区域 ========== -->
+  <main class="app-main">
+    <div class="tabbar">
+      <div class="tab" onclick="location.href='drug-catalog.html'">首页</div>
+      <div class="tab active">
+        预减管理
+        <button class="tab-close" title="关闭" onclick="location.href='drug-catalog.html'">
+          <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="page pd-page">
+      <div class="pd-card">
+        <!-- 标题行 -->
+        <div class="pd-head">
+          <div class="page-title">预减管理</div>
+          <div class="pd-acts">
+            <button class="btn btn-danger-text" id="btnBatchDelete" disabled>删除</button>
+          </div>
+        </div>
+
+        <!-- 筛选栏 -->
+        <div class="pd-filter collapsed" id="filterBar">
+          <div class="pd-fields">
+            <div class="pd-fi">
+              <span class="lbl">机构：</span>
+              <div class="ctrl">
+                <select class="select" id="fOrg">
+                  <option value="">全部机构</option>
+                  <option value="org-c">中心药房</option>
+                  <option value="org-a1">XX 社区卫生服务中心</option>
+                  <option value="org-a2">YY 人民医院</option>
+                  <option value="org-a3">ZZ 中西医结合医院</option>
+                </select>
+              </div>
+            </div>
+            <div class="pd-fi">
+              <span class="lbl">库位：</span>
+              <div class="ctrl">
+                <div class="pd-multi-select" id="multiLocation">
+                  <div class="pd-multi-trigger" id="multiLocTrigger">
+                    <span class="pd-multi-text" id="multiLocText">全部库位</span>
+                    <svg class="pd-multi-caret" viewBox="0 0 10 6" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M1 1l4 4 4-4"/></svg>
+                  </div>
+                  <div class="pd-multi-menu" id="multiLocMenu"></div>
+                </div>
+              </div>
+            </div>
+            <div class="pd-fi">
+              <span class="lbl">预减时间：</span>
+              <div class="ctrl">
+                <div class="pd-range">
+                  <input class="input" type="date" id="fTimeStart">
+                  <span class="sep">至</span>
+                  <input class="input" type="date" id="fTimeEnd">
+                </div>
+              </div>
+            </div>
+            <div class="pd-fi">
+              <span class="lbl">处方单号：</span>
+              <div class="ctrl"><input class="input" id="fPrescNo" placeholder="请输入处方单号" autocomplete="off"></div>
+            </div>
+            <div class="pd-fi">
+              <span class="lbl">病人：</span>
+              <div class="ctrl"><input class="input" id="fPatient" placeholder="姓名/医疗卡号" autocomplete="off"></div>
+            </div>
+            <div class="pd-fi">
+              <span class="lbl">药品名称：</span>
+              <div class="ctrl"><input class="input" id="fDrug" placeholder="药品编码/名称/拼音码" autocomplete="off"></div>
+            </div>
+            <div class="pd-fi">
+              <span class="lbl">批次号：</span>
+              <div class="ctrl"><input class="input" id="fBatchNo" placeholder="请输入批次号" autocomplete="off"></div>
+            </div>
+            <div class="pd-fi">
+              <span class="lbl">开单医生：</span>
+              <div class="ctrl"><input class="input" id="fDoctor" placeholder="请输入开单医生" autocomplete="off"></div>
+            </div>
+            <div class="pd-fi">
+              <span class="lbl">开单科室：</span>
+              <div class="ctrl">
+                <select class="select" id="fDept">
+                  <option value="">全部科室</option>
+                  <option>内科</option>
+                  <option>外科</option>
+                  <option>儿科</option>
+                  <option>妇产科</option>
+                  <option>急诊科</option>
+                  <option>中医科</option>
+                  <option>皮肤科</option>
+                  <option>眼科</option>
+                </select>
+              </div>
+            </div>
+            <div class="pd-fi">
+              <span class="lbl">生产企业：</span>
+              <div class="ctrl"><input class="input" id="fVendor" placeholder="请输入生产企业" autocomplete="off"></div>
+            </div>
+          </div>
+          <div class="pd-filter-actions">
+            <button class="pd-toggle" id="btnToggle">展开 ▾</button>
+            <button class="btn btn-sm" id="btnReset">重置</button>
+            <button class="btn btn-sm btn-primary" id="btnSearch">查询</button>
+          </div>
+        </div>
+
+        <!-- 表格 -->
+        <div class="pd-table-wrap">
+          <table class="pd-table">
+            <thead>
+              <tr>
+                <th class="col-check" style="width:48px"><input type="checkbox" id="checkAll" title="全选本页"></th>
+                <th style="width:150px">预减时间</th>
+                <th style="width:140px">处方单号</th>
+                <th style="width:100px">开单医生</th>
+                <th style="width:100px">开单科室</th>
+                <th style="width:100px">病人姓名</th>
+                <th style="width:130px">病人医疗卡号</th>
+                <th style="width:160px">药品名称</th>
+                <th style="width:110px">药品编码</th>
+                <th style="width:140px">药品规格</th>
+                <th style="width:90px" class="num">预减数量</th>
+                <th style="width:80px">预减单位</th>
+                <th style="width:120px">库位</th>
+                <th style="width:110px">批次号</th>
+                <th style="width:180px">生产企业</th>
+                <th style="width:110px">生产日期</th>
+                <th style="width:110px">有效期</th>
+                <th style="width:90px" class="num">最小换算系数</th>
+                <th style="width:80px">拆零标记</th>
+                <th class="col-acts" style="width:80px">操作</th>
+              </tr>
+            </thead>
+            <tbody id="listBody"></tbody>
+          </table>
+        </div>
+
+        <!-- 分页 -->
+        <div class="pd-pager">
+          <span class="total">共 <b id="totalNum">0</b> 条</span>
+          <select class="select" id="pageSize">
+            <option value="10">10条/页</option>
+            <option value="20" selected>20条/页</option>
+            <option value="30">30条/页</option>
+            <option value="50">50条/页</option>
+            <option value="100">100条/页</option>
+          </select>
+          <button class="pager-btn" id="pagePrev">‹</button>
+          <span id="pageNums"></span>
+          <button class="pager-btn" id="pageNext">›</button>
+          <span>跳至第</span>
+          <input class="input jump-input" id="pageJump" value="1">
+          <span>页</span>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ========== 弹窗：批量删除确认 ========== -->
+<div class="modal-mask pd-del-modal" id="delMask">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">删除确认</div>
+      <button class="drawer-close" id="delClose" title="关闭">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-text" id="delText">确定要删除选中的 <b id="delCount">0</b> 条预减明细吗？删除后无法恢复。</div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" id="delCancel">取消</button>
+      <button class="btn btn-danger-text btn-primary" id="delConfirm" style="background:var(--danger);border-color:var(--danger);color:#fff">删除</button>
+    </div>
+  </div>
+</div>
+
+<!-- toast -->
+<div id="toast" style="position:fixed;top:70px;left:50%;transform:translateX(-50%);padding:8px 16px;background:rgba(0,0,0,.78);color:#fff;border-radius:4px;font-size:13px;z-index:9999;display:none"></div>
+
+<script>
+(function(){
+  "use strict";
+  var $ = function(s,c){return (c||document).querySelector(s);};
+  var $$ = function(s,c){return Array.prototype.slice.call((c||document).querySelectorAll(s));};
+  function esc(v){return v==null||v===""?"—":String(v).replace(/[&<>"']/g,function(m){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m];});}
+  function toast(msg){var t=$("#toast");t.textContent=msg;t.style.display="block";clearTimeout(t._t);t._t=setTimeout(function(){t.style.display="none";},1800);}
+  function todayStr(){var d=new Date();var m=String(d.getMonth()+1).padStart(2,"0");var day=String(d.getDate()).padStart(2,"0");return d.getFullYear()+"-"+m+"-"+day;}
+
+  /* ===== 机构、库位字典 ===== */
+  var ORGS = [
+    { id: "org-c", name: "中心药房" },
+    { id: "org-a1", name: "XX 社区卫生服务中心" },
+    { id: "org-a2", name: "YY 人民医院" },
+    { id: "org-a3", name: "ZZ 中西医结合医院" }
+  ];
+  var LOCATIONS = [
+    { id: "loc-1", name: "中心药房 A 区库房" },
+    { id: "loc-2", name: "中心药房 B 区库房" },
+    { id: "loc-3", name: "中心药房 冷藏库" },
+    { id: "loc-4", name: "XX 社区药库" },
+    { id: "loc-5", name: "YY 人民医院西药库" },
+    { id: "loc-6", name: "YY 人民医院中药库" },
+    { id: "loc-7", name: "ZZ 中西医结合医院药库" }
+  ];
+
+  /* ===== Mock 预减数据（以当天为基准生成一些前后日期的演示数据） ===== */
+  var TODAY = new Date();
+  function fmtDate(d){var m=String(d.getMonth()+1).padStart(2,"0");var day=String(d.getDate()).padStart(2,"0");return d.getFullYear()+"-"+m+"-"+day;}
+  function fmtDT(d){return fmtDate(d)+" "+String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0")+":"+String(d.getSeconds()).padStart(2,"0");}
+  function dayOffset(n){var d=new Date(TODAY);d.setDate(d.getDate()+n);return d;}
+
+  var DEDUCTIONS = [
+    // 今天的预减记录
+    { id: "pd001", preTime: fmtDT(TODAY), prescNo: "CF20261105001", doctor: "张医生", dept: "内科", patientName: "李明", patientCard: "370102198501011234", drugName: "阿莫西林胶囊", drugCode: "1210500301", drugSpec: "0.25g*24粒/盒", preQty: 48, preUnit: "粒", locId: "loc-1", locName: "中心药房 A 区库房", batchNo: "P260301", vendor: "华北制药股份有限公司", prodDate: "2026-03-12", expDate: "2028-03-11", minFactor: 24, split: "是", orgId: "org-c" },
+    { id: "pd002", preTime: fmtDT(TODAY), prescNo: "CF20261105002", doctor: "王医生", dept: "外科", patientName: "张伟", patientCard: "370102199005056789", drugName: "布洛芬缓释胶囊", drugCode: "1210500306", drugSpec: "0.3g*20粒/盒", preQty: 20, preUnit: "粒", locId: "loc-2", locName: "中心药房 B 区库房", batchNo: "P260110", vendor: "中美天津史克制药有限公司", prodDate: "2026-01-20", expDate: "2028-01-19", minFactor: 20, split: "是", orgId: "org-c" },
+    { id: "pd003", preTime: fmtDT(TODAY), prescNo: "CF20261105003", doctor: "李医生", dept: "儿科", patientName: "王小红", patientCard: "370102202106061111", drugName: "阿莫西林颗粒", drugCode: "1210500302", drugSpec: "0.125g*20袋/盒", preQty: 10, preUnit: "袋", locId: "loc-1", locName: "中心药房 A 区库房", batchNo: "P260401", vendor: "先声药业有限公司", prodDate: "2026-04-10", expDate: "2028-04-09", minFactor: 20, split: "是", orgId: "org-c" },
+    { id: "pd004", preTime: fmtDT(TODAY), prescNo: "CF20261105004", doctor: "赵医生", dept: "急诊科", patientName: "刘芳", patientCard: "370102197809092222", drugName: "头孢呋辛酯片", drugCode: "1210500305", drugSpec: "0.25g*12片/盒", preQty: 24, preUnit: "片", locId: "loc-1", locName: "中心药房 A 区库房", batchNo: "P260215", vendor: "国药集团致君（深圳）制药有限公司", prodDate: "2026-02-18", expDate: "2028-02-17", minFactor: 12, split: "是", orgId: "org-c" },
+    { id: "pd005", preTime: fmtDT(TODAY), prescNo: "CF20261105005", doctor: "张医生", dept: "内科", patientName: "陈强", patientCard: "370102196503033333", drugName: "硝苯地平控释片", drugCode: "1210501201", drugSpec: "30mg*7片/盒", preQty: 14, preUnit: "片", locId: "loc-1", locName: "中心药房 A 区库房", batchNo: "P260310", vendor: "拜耳医药保健有限公司", prodDate: "2026-03-10", expDate: "2028-03-09", minFactor: 7, split: "是", orgId: "org-c" },
+    // 昨天
+    { id: "pd006", preTime: fmtDT(dayOffset(-1)), prescNo: "CF20261104001", doctor: "周医生", dept: "妇产科", patientName: "孙丽", patientCard: "370102199211114444", drugName: "连花清瘟胶囊", drugCode: "1210500307", drugSpec: "0.35g*24粒/盒", preQty: 24, preUnit: "粒", locId: "loc-2", locName: "中心药房 B 区库房", batchNo: "P260520", vendor: "石家庄以岭药业股份有限公司", prodDate: "2026-05-16", expDate: "2028-05-15", minFactor: 24, split: "是", orgId: "org-c" },
+    { id: "pd007", preTime: fmtDT(dayOffset(-1)), prescNo: "CF20261104002", doctor: "吴医生", dept: "中医科", patientName: "郑伟", patientCard: "370102197307075555", drugName: "金银花", drugCode: "1210500308", drugSpec: "1kg/袋", preQty: 50, preUnit: "g", locId: "loc-1", locName: "中心药房 A 区库房", batchNo: "P260901", vendor: "亳州市沪谯药业有限公司", prodDate: "2026-09-01", expDate: "2028-08-31", minFactor: 1000, split: "是", orgId: "org-c" },
+    // 前天
+    { id: "pd008", preTime: fmtDT(dayOffset(-2)), prescNo: "CF20261103001", doctor: "张医生", dept: "内科", patientName: "黄敏", patientCard: "370102198808086666", drugName: "阿托伐他汀钙片", drugCode: "1210501601", drugSpec: "20mg*7片/盒", preQty: 21, preUnit: "片", locId: "loc-1", locName: "中心药房 A 区库房", batchNo: "P260208", vendor: "辉瑞制药有限公司", prodDate: "2026-02-08", expDate: "2028-02-07", minFactor: 7, split: "是", orgId: "org-c" },
+    { id: "pd009", preTime: fmtDT(dayOffset(-2)), prescNo: "CF20261103002", doctor: "王医生", dept: "外科", patientName: "徐磊", patientCard: "370102198512127777", drugName: "盐酸二甲双胍片", drugCode: "1210501301", drugSpec: "0.5g*20片/盒", preQty: 40, preUnit: "片", locId: "loc-1", locName: "中心药房 A 区库房", batchNo: "P260120", vendor: "中美上海施贵宝制药有限公司", prodDate: "2026-01-20", expDate: "2028-01-19", minFactor: 20, split: "是", orgId: "org-c" },
+    // 3 天前
+    { id: "pd010", preTime: fmtDT(dayOffset(-3)), prescNo: "CF20261102001", doctor: "李医生", dept: "儿科", patientName: "马小虎", patientCard: "370102201901018888", drugName: "布洛芬缓释胶囊", drugCode: "1210500306", drugSpec: "0.3g*20粒/盒", preQty: 10, preUnit: "粒", locId: "loc-4", locName: "XX 社区药库", batchNo: "P260315", vendor: "葵花药业集团股份有限公司", prodDate: "2026-03-15", expDate: "2028-03-14", minFactor: 20, split: "是", orgId: "org-a1" },
+    // 更早
+    { id: "pd011", preTime: fmtDT(dayOffset(-5)), prescNo: "CF20261031001", doctor: "陈医生", dept: "皮肤科", patientName: "朱琳", patientCard: "370102199504049999", drugName: "氯雷他定片", drugCode: "1210501701", drugSpec: "10mg*6片/盒", preQty: 12, preUnit: "片", locId: "loc-5", locName: "YY 人民医院西药库", batchNo: "P260315", vendor: "扬子江药业集团", prodDate: "2026-03-15", expDate: "2028-03-14", minFactor: 6, split: "是", orgId: "org-a2" },
+    { id: "pd012", preTime: fmtDT(dayOffset(-7)), prescNo: "CF20261029001", doctor: "赵医生", dept: "急诊科", patientName: "胡伟", patientCard: "370102197010100001", drugName: "注射用阿莫西林钠", drugCode: "1210500303", drugSpec: "0.5g*10支/盒", preQty: 5, preUnit: "支", locId: "loc-1", locName: "中心药房 A 区库房", batchNo: "P260301", vendor: "哈药集团制药总厂", prodDate: "2026-03-01", expDate: "2028-02-29", minFactor: 10, split: "否", orgId: "org-c" },
+    { id: "pd013", preTime: fmtDT(dayOffset(-10)), prescNo: "CF20261026001", doctor: "周医生", dept: "眼科", patientName: "高翔", patientCard: "370102198206060002", drugName: "左氧氟沙星片", drugCode: "1210501401", drugSpec: "0.5g*4片/盒", preQty: 8, preUnit: "片", locId: "loc-1", locName: "中心药房 A 区库房", batchNo: "P260220", vendor: "第一三共制药（北京）有限公司", prodDate: "2026-02-20", expDate: "2028-02-19", minFactor: 4, split: "是", orgId: "org-c" },
+    { id: "pd014", preTime: fmtDT(dayOffset(-15)), prescNo: "CF20261021001", doctor: "吴医生", dept: "内科", patientName: "林静", patientCard: "370102197512120003", drugName: "双歧杆菌三联活菌胶囊", drugCode: "1210501501", drugSpec: "0.21g*24粒/盒", preQty: 12, preUnit: "粒", locId: "loc-6", locName: "YY 人民医院中药库", batchNo: "P260305", vendor: "上海上药信谊药厂有限公司", prodDate: "2026-03-05", expDate: "2027-09-04", minFactor: 24, split: "否", orgId: "org-a2" },
+    { id: "pd015", preTime: fmtDT(dayOffset(-20)), prescNo: "CF20261016001", doctor: "张医生", dept: "中医科", patientName: "何涛", patientCard: "370102196709090004", drugName: "奥美拉唑肠溶胶囊", drugCode: "1210500901", drugSpec: "20mg*14粒/盒", preQty: 14, preUnit: "粒", locId: "loc-7", locName: "ZZ 中西医结合医院药库", batchNo: "P260301", vendor: "常州四药制药有限公司", prodDate: "2026-03-01", expDate: "2028-02-28", minFactor: 14, split: "是", orgId: "org-a3" }
+  ];
+
+  var ST = {
+    page: 1, pageSize: 20,
+    filtered: DEDUCTIONS.slice(),
+    listSel: new Set()   // 选中的预减明细 id
+  };
+
+  /* ===== 初始化库位多选 ===== */
+  var locSelected = new Set();
+  function initLocMulti(){
+    var menu = $("#multiLocMenu");
+    menu.innerHTML = LOCATIONS.map(function(l){
+      return '<label class="pd-multi-item"><input type="checkbox" value="'+l.id+'" data-name="'+esc(l.name)+'">'+esc(l.name)+'</label>';
+    }).join("");
+    // 点击触发区切换菜单
+    $("#multiLocTrigger").addEventListener("click", function(e){
+      e.stopPropagation();
+      var isOpen = menu.classList.contains("show");
+      menu.classList.toggle("show");
+      $("#multiLocTrigger").classList.toggle("is-open", !isOpen);
+    });
+    // 点击选项
+    menu.addEventListener("click", function(e){
+      var cb = e.target.closest("input[type=checkbox]");
+      if(!cb) return;
+      var id = cb.value;
+      if(cb.checked) locSelected.add(id); else locSelected.delete(id);
+      updateLocText();
+    });
+    // 外部点击关闭
+    document.addEventListener("click", function(){
+      menu.classList.remove("show");
+      $("#multiLocTrigger").classList.remove("is-open");
+    });
+  }
+  function updateLocText(){
+    var txtEl = $("#multiLocText");
+    if(locSelected.size === 0){
+      txtEl.textContent = "全部库位";
+      txtEl.classList.remove("has-val");
+    } else if(locSelected.size === 1){
+      var loc = LOCATIONS.find(function(l){return l.id === Array.from(locSelected)[0];});
+      txtEl.textContent = loc ? loc.name : "已选 1 项";
+      txtEl.classList.add("has-val");
+    } else {
+      txtEl.textContent = "已选 " + locSelected.size + " 项";
+      txtEl.classList.add("has-val");
+    }
+  }
+
+  /* ===== 预减时间默认当天 ===== */
+  function initDateRange(){
+    var t = todayStr();
+    $("#fTimeStart").value = t;
+    $("#fTimeEnd").value = t;
+  }
+
+  /* ===== 渲染表格 ===== */
+  function renderTable(){
+    var start = (ST.page-1)*ST.pageSize;
+    var rows = ST.filtered.slice(start, start+ST.pageSize);
+    var tbody = $("#listBody");
+    if(rows.length === 0){
+      tbody.innerHTML = '<tr><td colspan="20" style="text-align:center"><div class="pd-empty">暂无数据</div></td></tr>';
+    } else {
+      tbody.innerHTML = rows.map(function(r,i){
+        var idx = start+i;
+        var checked = ST.listSel.has(r.id);
+        return '<tr>'+
+          '<td class="col-check"><input type="checkbox" class="row-check" data-id="'+r.id+'"'+(checked?" checked":"")+'></td>'+
+          '<td>'+esc(r.preTime)+'</td>'+
+          '<td>'+esc(r.prescNo)+'</td>'+
+          '<td>'+esc(r.doctor)+'</td>'+
+          '<td>'+esc(r.dept)+'</td>'+
+          '<td>'+esc(r.patientName)+'</td>'+
+          '<td>'+esc(r.patientCard)+'</td>'+
+          '<td class="name-cell" title="'+esc(r.drugName)+'">'+esc(r.drugName)+'</td>'+
+          '<td>'+esc(r.drugCode)+'</td>'+
+          '<td class="name-cell" title="'+esc(r.drugSpec)+'">'+esc(r.drugSpec)+'</td>'+
+          '<td class="num">'+r.preQty+'</td>'+
+          '<td>'+esc(r.preUnit)+'</td>'+
+          '<td class="name-cell" title="'+esc(r.locName)+'">'+esc(r.locName)+'</td>'+
+          '<td>'+esc(r.batchNo)+'</td>'+
+          '<td class="name-cell" title="'+esc(r.vendor)+'">'+esc(r.vendor)+'</td>'+
+          '<td>'+esc(r.prodDate)+'</td>'+
+          '<td>'+esc(r.expDate)+'</td>'+
+          '<td class="num">'+r.minFactor+'</td>'+
+          '<td>'+esc(r.split)+'</td>'+
+          '<td class="col-acts"><button class="link-btn" data-act="del" data-id="'+r.id+'" style="color:var(--danger)">删除</button></td>'+
+        '</tr>';
+      }).join("");
+    }
+    $("#totalNum").textContent = ST.filtered.length;
+    syncCheckAll();
+    renderPager();
+    updateBatchDeleteBtn();
+  }
+
+  function syncCheckAll(){
+    var boxes = $$("#listBody .row-check");
+    var checkedCount = boxes.filter(function(cb){return cb.checked;}).length;
+    var head = $("#checkAll");
+    head.checked = boxes.length > 0 && checkedCount === boxes.length;
+    head.indeterminate = checkedCount > 0 && checkedCount < boxes.length;
+  }
+
+  function updateBatchDeleteBtn(){
+    $("#btnBatchDelete").disabled = ST.listSel.size === 0;
+  }
+
+  function renderPager(){
+    var total = ST.filtered.length;
+    var totalPages = Math.max(1, Math.ceil(total/ST.pageSize));
+    if(ST.page > totalPages) ST.page = totalPages;
+    var html = "";
+    var s = Math.max(1, ST.page-2), e = Math.min(totalPages, ST.page+2);
+    for(var i = s; i <= e; i++){
+      html += '<span class="pager-num '+(i===ST.page?"is-cur":"")+'" data-p="'+i+'">'+i+'</span>';
+    }
+    $("#pageNums").innerHTML = html;
+    $("#pagePrev").disabled = ST.page <= 1;
+    $("#pageNext").disabled = ST.page >= totalPages;
+    $("#pageJump").value = ST.page;
+  }
+
+  /* ===== 筛选 ===== */
+  function doFilter(){
+    var orgId = $("#fOrg").value;
+    var locIds = Array.from(locSelected);
+    var tStart = $("#fTimeStart").value;
+    var tEnd = $("#fTimeEnd").value;
+    var prescNo = $("#fPrescNo").value.trim();
+    var patient = $("#fPatient").value.trim().toLowerCase();
+    var drug = $("#fDrug").value.trim().toLowerCase();
+    var batchNo = $("#fBatchNo").value.trim().toLowerCase();
+    var doctor = $("#fDoctor").value.trim().toLowerCase();
+    var dept = $("#fDept").value;
+    var vendor = $("#fVendor").value.trim().toLowerCase();
+
+    ST.filtered = DEDUCTIONS.filter(function(r){
+      if(orgId && r.orgId !== orgId) return false;
+      if(locIds.length > 0 && locIds.indexOf(r.locId) < 0) return false;
+      if(tStart){ var rd = r.preTime.substring(0,10); if(rd < tStart) return false; }
+      if(tEnd){   var rd2 = r.preTime.substring(0,10); if(rd2 > tEnd) return false; }
+      if(prescNo && r.prescNo.indexOf(prescNo) < 0) return false;
+      if(patient && r.patientName.toLowerCase().indexOf(patient) < 0 && r.patientCard.toLowerCase().indexOf(patient) < 0) return false;
+      if(drug && r.drugName.toLowerCase().indexOf(drug) < 0 && r.drugCode.toLowerCase().indexOf(drug) < 0) return false;
+      if(batchNo && r.batchNo.toLowerCase().indexOf(batchNo) < 0) return false;
+      if(doctor && r.doctor.toLowerCase().indexOf(doctor) < 0) return false;
+      if(dept && r.dept !== dept) return false;
+      if(vendor && r.vendor.toLowerCase().indexOf(vendor) < 0) return false;
+      return true;
+    });
+    ST.page = 1;
+    renderTable();
+  }
+
+  function resetFilter(){
+    $("#fOrg").value = "";
+    locSelected.clear();
+    $$("#multiLocMenu input[type=checkbox]").forEach(function(cb){cb.checked = false;});
+    updateLocText();
+    initDateRange();
+    $("#fPrescNo").value = "";
+    $("#fPatient").value = "";
+    $("#fDrug").value = "";
+    $("#fBatchNo").value = "";
+    $("#fDoctor").value = "";
+    $("#fDept").value = "";
+    $("#fVendor").value = "";
+    ST.filtered = DEDUCTIONS.slice();
+    ST.page = 1;
+    renderTable();
+  }
+
+  /* ===== 删除确认弹窗 ===== */
+  function openDelConfirm(ids, count){
+    $("#delCount").textContent = count;
+    $("#delMask").classList.add("show");
+    $("#delConfirm").dataset.ids = JSON.stringify(ids);
+  }
+  function closeDelConfirm(){
+    $("#delMask").classList.remove("show");
+  }
+  function confirmDelete(){
+    var raw = $("#delConfirm").dataset.ids;
+    var ids = JSON.parse(raw || "[]");
+    if(ids.length === 0){ closeDelConfirm(); return; }
+    // 从源数据中移除
+    for(var i = DEDUCTIONS.length - 1; i >= 0; i--){
+      if(ids.indexOf(DEDUCTIONS[i].id) >= 0){
+        DEDUCTIONS.splice(i, 1);
+      }
+    }
+    // 从选中集合中移除
+    ids.forEach(function(id){ ST.listSel.delete(id); });
+    closeDelConfirm();
+    toast("成功删除 " + ids.length + " 条预减明细");
+    doFilter();
+  }
+
+  /* ===== 绑定事件 ===== */
+  function bindEvents(){
+    // 筛选
+    $("#btnSearch").addEventListener("click", doFilter);
+    $("#btnReset").addEventListener("click", resetFilter);
+    $("#btnToggle").addEventListener("click", function(){
+      var bar = $("#filterBar");
+      bar.classList.toggle("collapsed");
+      $("#btnToggle").textContent = bar.classList.contains("collapsed") ? "展开 ▾" : "收起 ▴";
+    });
+
+    // 表格 checkbox 交互
+    $("#checkAll").addEventListener("change", function(){
+      var start = (ST.page-1)*ST.pageSize;
+      var rows = ST.filtered.slice(start, start+ST.pageSize);
+      if(this.checked){
+        rows.forEach(function(r){ ST.listSel.add(r.id); });
+      } else {
+        rows.forEach(function(r){ ST.listSel.delete(r.id); });
+      }
+      renderTable();
+    });
+    $("#listBody").addEventListener("change", function(e){
+      var cb = e.target.closest(".row-check");
+      if(!cb) return;
+      var id = cb.dataset.id;
+      if(cb.checked) ST.listSel.add(id); else ST.listSel.delete(id);
+      syncCheckAll();
+      updateBatchDeleteBtn();
+    });
+
+    // 批量删除按钮
+    $("#btnBatchDelete").addEventListener("click", function(){
+      if(ST.listSel.size === 0) return;
+      openDelConfirm(Array.from(ST.listSel), ST.listSel.size);
+    });
+
+    // 单行删除
+    $("#listBody").addEventListener("click", function(e){
+      var btn = e.target.closest(".link-btn[data-act=del]");
+      if(!btn) return;
+      var id = btn.dataset.id;
+      openDelConfirm([id], 1);
+    });
+
+    // 确认弹窗
+    $("#delClose").addEventListener("click", closeDelConfirm);
+    $("#delCancel").addEventListener("click", closeDelConfirm);
+    $("#delMask").addEventListener("click", function(e){
+      if(e.target === this) closeDelConfirm();
+    });
+    $("#delConfirm").addEventListener("click", confirmDelete);
+
+    // 分页
+    $("#pageSize").addEventListener("change", function(){
+      ST.pageSize = parseInt(this.value, 10);
+      ST.page = 1;
+      renderTable();
+    });
+    $("#pagePrev").addEventListener("click", function(){ if(ST.page > 1){ ST.page--; renderTable(); } });
+    $("#pageNext").addEventListener("click", function(){
+      var totalPages = Math.max(1, Math.ceil(ST.filtered.length/ST.pageSize));
+      if(ST.page < totalPages){ ST.page++; renderTable(); }
+    });
+    $("#pageNums").addEventListener("click", function(e){
+      var t = e.target.closest(".pager-num");
+      if(!t || t.classList.contains("is-cur")) return;
+      ST.page = parseInt(t.dataset.p, 10);
+      renderTable();
+    });
+    $("#pageJump").addEventListener("keydown", function(e){
+      if(e.key === "Enter"){
+        var p = parseInt(this.value, 10);
+        var totalPages = Math.max(1, Math.ceil(ST.filtered.length/ST.pageSize));
+        if(p >= 1 && p <= totalPages){ ST.page = p; renderTable(); }
+        else { toast("页码超出范围"); this.value = ST.page; }
+      }
+    });
+
+    // Esc 关闭弹窗
+    document.addEventListener("keydown", function(e){
+      if(e.key === "Escape"){
+        if($("#delMask").classList.contains("show")) closeDelConfirm();
+      }
+      if(e.key === "Enter" && document.activeElement && document.activeElement.closest(".pd-filter")){
+        doFilter();
+      }
+    });
+  }
+
+  /* ===== 初始化 ===== */
+  function init(){
+    initLocMulti();
+    initDateRange();
+    bindEvents();
+    renderTable();
+  }
+
+  init();
+})();
+</script>
+
+  <script src="nav.js"></script>
+</body>
+</html>

@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>中医药处方开具 · 中心药房</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+/* ===== 处方管理 · 中医药处方开具 局部样式 ===== */
+.tcm-card {
+  flex: 1; min-height: 0; margin: 12px;
+  display: flex; flex-direction: column;
+  background: var(--bg-white);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 1px 2px rgba(0,0,0,.04);
+  overflow: hidden;
+}
+
+/* 工具栏 */
+.tcm-toolbar {
+  flex: none; height: 48px;
+  display: flex; align-items: center; gap: 2px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--border);
+}
+.tcm-tool {
+  height: 30px; padding: 0 10px;
+  border: none; background: none; border-radius: var(--radius);
+  color: var(--primary-dark); font-size: 13px;
+  display: inline-flex; align-items: center; gap: 5px;
+  cursor: pointer; white-space: nowrap;
+  transition: background .15s, color .15s;
+}
+.tcm-tool:hover { background: var(--primary-lighter); }
+.tcm-tool:active { color: var(--primary); }
+.tcm-tool svg { width: 14px; height: 14px; }
+.tcm-tool .tcm-key { font-size: 12px; opacity: .75; }
+.tcm-meta {
+  margin-left: auto; font-size: 12px; color: var(--text-tertiary);
+  display: flex; align-items: center; gap: 4px 12px; white-space: nowrap;
+}
+.tcm-meta > span { display: inline-flex; align-items: center; gap: 4px; }
+.tcm-meta .select { height: 28px; font-size: 12px; min-width: 118px; }
+.tcm-meta .input { height: 28px; font-size: 12px; width: 180px; }
+.tcm-rxname { color: var(--text-secondary); font-weight: 500; }
+
+/* 禁用态 */
+.select:disabled, .input:disabled {
+  background: #F5F5F5 !important; color: var(--text-placeholder) !important;
+  cursor: not-allowed;
+}
+
+/* 录入行 */
+.tcm-addrow {
+  flex: none; height: 46px;
+  display: flex; align-items: center; gap: 8px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--border);
+  background: #F7FAFF;
+}
+.tcm-lbl { font-size: 12px; color: var(--text-tertiary); white-space: nowrap; }
+.tcm-pickwrap { position: relative; width: 300px; flex: none; }
+.tcm-pickwrap .input { width: 100%; }
+.tcm-pick {
+  display: none; position: absolute; left: 0; top: 34px; z-index: 30;
+  width: 880px; max-height: 300px; overflow: auto;
+  background: #fff; border: 1px solid var(--border-input);
+  border-radius: var(--radius); box-shadow: var(--shadow-2);
+}
+.tcm-pick.show { display: block; }
+.tcm-pick-table { width: 100%; border-collapse: collapse; font-size: 12px; table-layout: fixed; }
+.tcm-pick-table thead th {
+  position: sticky; top: 0; height: 30px; padding: 0 10px;
+  background: var(--table-head); color: var(--text-secondary);
+  text-align: left; font-weight: 500; white-space: nowrap;
+  border-bottom: 1px solid var(--border);
+}
+.tcm-pick-table tbody td {
+  height: 32px; padding: 0 10px; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis;
+  border-bottom: 1px solid var(--border-light);
+}
+.tcm-pick-table tbody tr:hover { background: var(--primary-lighter); cursor: pointer; }
+.tcm-pick-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.tcm-pick-none { padding: 16px; text-align: center; color: var(--text-placeholder); font-size: 12px; }
+.tcm-qty { width: 72px !important; }
+.tcm-addrow .select { min-width: 96px; }
+.tcm-unit { font-size: 12px; color: var(--text-tertiary); }
+.input.is-invalid, .select.is-invalid { border-color: var(--danger) !important; }
+
+/* 药味区 */
+.tcm-herbs {
+  flex: 1; min-height: 0; overflow: auto;
+  padding: 12px;
+  display: flex; flex-wrap: wrap; gap: 10px;
+  align-content: flex-start;
+}
+.tcm-chip {
+  flex: 0 0 auto; height: 36px;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 0 8px 0 12px;
+  background: var(--primary-lighter);
+  border: 1px solid #BEDAFF; border-radius: var(--radius);
+  font-size: 13px; color: var(--text-primary);
+  white-space: nowrap;
+}
+.tcm-chip-name { font-weight: 500; flex: 0 0 auto; }
+.tcm-chip .input { width: 56px; height: 26px; padding: 0 6px; font-size: 12px; text-align: right; }
+.tcm-chip .select { height: 26px; min-width: 84px; font-size: 12px; padding: 0 4px; }
+.tcm-chip-x {
+  width: 20px; height: 20px; border: none; background: none; border-radius: 50%;
+  color: var(--text-tertiary); font-size: 14px; line-height: 1;
+  display: grid; place-items: center; cursor: pointer;
+}
+.tcm-chip-x:hover { background: rgba(0,0,0,.08); color: var(--danger); }
+.tcm-empty {
+  width: 100%; padding: 72px 0; text-align: center;
+  color: var(--text-placeholder); font-size: 13px;
+}
+
+/* 汇总条 */
+.tcm-sum {
+  flex: none; height: 34px;
+  display: flex; align-items: center; justify-content: flex-end; gap: 18px;
+  padding: 0 16px;
+  background: #EAF3FF;
+  border-top: 1px solid #D3E5FF;
+  font-size: 12px; color: var(--text-secondary);
+}
+.tcm-sum b { font-weight: 500; color: var(--primary-dark); font-variant-numeric: tabular-nums; }
+
+/* 处方信息区 */
+.tcm-rxinfo { flex: none; border-top: 1px solid var(--border); background: var(--bg-white); }
+.tcm-rxrow {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding: 8px 16px 0;
+}
+.tcm-rxrow:last-child { padding-bottom: 10px; }
+.tcm-fld { display: flex; align-items: center; gap: 6px; }
+.tcm-fld .input { width: 64px; }
+.tcm-fld .select { width: auto; min-width: 92px; }
+.tcm-fld.w-diag .select { min-width: 180px; }
+.tcm-note { flex: 1; min-width: 200px; }
+
+/* 弹窗 / toast */
+.tcm-mask {
+  display: none; position: fixed; inset: 0; z-index: 400;
+  background: rgba(0,0,0,.35); align-items: center; justify-content: center;
+}
+.tcm-mask.show { display: flex; }
+.tcm-dlg {
+  width: 400px; background: #fff; border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-2); overflow: hidden;
+}
+.tcm-dlg-title { padding: 18px 20px 8px; font-size: 15px; font-weight: 500; color: var(--text-primary); }
+.tcm-dlg-body { padding: 0 20px 22px; font-size: 13px; line-height: 1.6; color: var(--text-secondary); }
+.tcm-dlg-foot { padding: 12px 20px; display: flex; justify-content: flex-end; gap: 8px; border-top: 1px solid var(--border); }
+</style>
+</head>
+<body>
+
+<!-- ========== 顶部导航 ========== -->
+<header class="app-header">
+  <div class="header-left">
+    <div class="header-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z"></path></svg>
+    </div>
+    <div class="header-title">区域药房协同管理系统</div>
+  </div>
+  <div class="header-right">
+    <div class="header-user">
+      <div class="header-avatar">赵</div>
+      <div class="header-user-name">赵敏 · 中心药房</div>
+    </div>
+  </div>
+</header>
+
+<div class="app-body">
+
+  <!-- 左侧导航 -->
+  <aside class="app-side" id="appSide"></aside>
+<!-- 主区 -->
+  <main class="app-main">
+    <div class="tabbar">
+      <div class="tab" onclick="location.href='drug-catalog.html'">首页</div>
+      <div class="tab active">
+        中医药处方开具
+        <button class="tab-close" title="关闭" onclick="location.href='drug-catalog.html'">
+          <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 5l14 14M19 5L5 19"></path></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="tcm-card">
+
+      <!-- ========== 工具栏 ========== -->
+      <div class="tcm-toolbar" style="position: relative;">
+        <button class="tcm-tool" id="btnSend">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13"></path><path d="M22 2l-7 20-4-9-9-4z"></path></svg>
+          发送医嘱(<span class="tcm-key">A</span>)
+        </button>
+        <button class="tcm-tool" id="btnReset">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-3-6.7"></path><path d="M21 3v6h-6"></path></svg>
+          重置(<span class="tcm-key">R</span>)
+        </button>
+        <div class="tcm-meta">
+          <span>执行药房：
+            <select class="select" id="tcmPharmacy">
+              <option>中药房</option>
+              <option>西药房</option>
+            </select>
+          </span>
+          <span>药品种类：
+            <select class="select" id="tcmKind" disabled="">
+              <option>中药饮片</option>
+              <option>配方颗粒</option>
+              <option>中药直服饮片</option>
+            </select>
+          </span>
+          <span>处方名称：<input class="input" id="tcmRxName" value="中草药处方" placeholder="请输入处方名称"></span>
+        </div>
+      </div>
+
+      <!-- ========== 药味录入行 ========== -->
+      <div class="tcm-addrow" style="">
+        <span class="tcm-lbl">药品名称：</span>
+        <div class="tcm-pickwrap">
+          <input class="input" id="tcmDrugInput" placeholder="输入药品名称 / 拼音码，或点击选择药品" autocomplete="off">
+          <div class="tcm-pick" id="tcmPick">
+            <table class="tcm-pick-table">
+              <thead>
+                <tr>
+                  <th style="width:110px">药品名称</th>
+                  <th style="width:70px">药品规格</th>
+                  <th style="width:96px">药品种类</th>
+                  <th style="width:70px" class="num">库存量</th>
+                  <th style="width:76px" class="num">零售价</th>
+                  <th style="width:80px">药品属性</th>
+                  <th style="width:70px">医保级别</th>
+                  <th style="width:96px">医保说明</th>
+                  <th>生产企业名称</th>
+                </tr>
+              </thead>
+              <tbody id="tcmPickBody"></tbody>
+            </table>
+          </div>
+        </div>
+        <span class="tcm-lbl">数量：</span>
+        <input class="input tcm-qty" id="tcmQty" type="number" min="0.5" step="0.5" placeholder="0">
+        <span class="tcm-unit">g</span>
+        <span class="tcm-lbl">用法：</span>
+        <select class="select" id="tcmHerbUsage"><option value="">请选择</option><option>炒焦</option><option>冲服</option><option>布包</option><option>后下</option><option>炒</option><option>炙</option><option>杵</option><option>吸氧用</option><option>研粉浴足</option><option>两日一剂</option><option>熏药</option><option>外用</option></select>
+        <button class="btn btn-primary" id="btnAdd">添加</button>
+      </div>
+
+      <!-- ========== 药味区 ========== -->
+      <div class="tcm-herbs" id="tcmHerbs" style=""><div class="tcm-chip" data-i="0"><span class="tcm-chip-name" title="板蓝根（1g/g）">板蓝根</span><input class="input tcm-chip-qty" data-i="0" type="number" min="0.5" step="0.5" value="3"><span class="tcm-unit">g</span><select class="select tcm-chip-usage" data-i="0"><option value="">请选择</option><option>炒焦</option><option>冲服</option><option>布包</option><option>后下</option><option>炒</option><option>炙</option><option>杵</option><option>吸氧用</option><option>研粉浴足</option><option>两日一剂</option><option>熏药</option><option>外用</option></select><button class="tcm-chip-x" data-i="0" title="删除该药味">×</button></div><div class="tcm-chip" data-i="1"><span class="tcm-chip-name" title="丁香（1g/g）">丁香</span><input class="input tcm-chip-qty" data-i="1" type="number" min="0.5" step="0.5" value="3"><span class="tcm-unit">g</span><select class="select tcm-chip-usage" data-i="1"><option value="">请选择</option><option selected="">炒焦</option><option>冲服</option><option>布包</option><option>后下</option><option>炒</option><option>炙</option><option>杵</option><option>吸氧用</option><option>研粉浴足</option><option>两日一剂</option><option>熏药</option><option>外用</option></select><button class="tcm-chip-x" data-i="1" title="删除该药味">×</button></div><div class="tcm-chip" data-i="2"><span class="tcm-chip-name" title="葛花（1g/g）">葛花</span><input class="input tcm-chip-qty" data-i="2" type="number" min="0.5" step="0.5" value="1"><span class="tcm-unit">g</span><select class="select tcm-chip-usage" data-i="2"><option value="">请选择</option><option>炒焦</option><option>冲服</option><option>布包</option><option>后下</option><option>炒</option><option>炙</option><option>杵</option><option>吸氧用</option><option>研粉浴足</option><option>两日一剂</option><option>熏药</option><option>外用</option></select><button class="tcm-chip-x" data-i="2" title="删除该药味">×</button></div><div class="tcm-chip" data-i="3"><span class="tcm-chip-name" title="金银花（1g/g）">金银花</span><input class="input tcm-chip-qty" data-i="3" type="number" min="0.5" step="0.5" value="2"><span class="tcm-unit">g</span><select class="select tcm-chip-usage" data-i="3"><option value="">请选择</option><option>炒焦</option><option>冲服</option><option>布包</option><option selected="">后下</option><option>炒</option><option>炙</option><option>杵</option><option>吸氧用</option><option>研粉浴足</option><option>两日一剂</option><option>熏药</option><option>外用</option></select><button class="tcm-chip-x" data-i="3" title="删除该药味">×</button></div><div class="tcm-chip" data-i="4"><span class="tcm-chip-name" title="甘草（1g/g）">甘草</span><input class="input tcm-chip-qty" data-i="4" type="number" min="0.5" step="0.5" value="2"><span class="tcm-unit">g</span><select class="select tcm-chip-usage" data-i="4"><option value="">请选择</option><option>炒焦</option><option>冲服</option><option>布包</option><option>后下</option><option>炒</option><option selected="">炙</option><option>杵</option><option>吸氧用</option><option>研粉浴足</option><option>两日一剂</option><option>熏药</option><option>外用</option></select><button class="tcm-chip-x" data-i="4" title="删除该药味">×</button></div><div class="tcm-chip" data-i="5"><span class="tcm-chip-name" title="薄荷（1g/g）">薄荷</span><input class="input tcm-chip-qty" data-i="5" type="number" min="0.5" step="0.5" value="1"><span class="tcm-unit">g</span><select class="select tcm-chip-usage" data-i="5"><option value="">请选择</option><option>炒焦</option><option>冲服</option><option>布包</option><option selected="">后下</option><option>炒</option><option>炙</option><option>杵</option><option>吸氧用</option><option>研粉浴足</option><option>两日一剂</option><option>熏药</option><option>外用</option></select><button class="tcm-chip-x" data-i="5" title="删除该药味">×</button></div></div>
+
+      <!-- 汇总条 -->
+      <div class="tcm-sum" title="药品重量与总金额 = 单剂用量合计 × 剂数">
+        <span>共 <b id="sumCnt">6</b> 种药</span>
+        <span>药品重量：<b id="sumWeight">36</b> g</span>
+        <span>总金额：<b id="sumAmount">6.53</b> 元</span>
+      </div>
+
+      <!-- ========== 处方信息 ========== -->
+      <div class="tcm-rxinfo">
+        <div class="tcm-rxrow">
+          <div class="tcm-fld">
+            <span class="tcm-lbl">剂数：</span>
+            <input class="input" id="tcmDoses" type="number" min="1" step="1" value="3">
+            <span class="tcm-unit">剂</span>
+          </div>
+          <div class="tcm-fld">
+            <span class="tcm-lbl">用法：</span>
+            <select class="select" id="tcmUsage">
+              <option>水煎温服</option>
+              <option>冲服</option>
+              <option>煎汤外洗</option>
+              <option>研末调服</option>
+              <option>泡水代茶饮</option>
+            </select>
+          </div>
+          <div class="tcm-fld">
+            <span class="tcm-lbl">用次：</span>
+            <select class="select" id="tcmFreq">
+              <option>每日一剂</option>
+              <option>每日两剂</option>
+              <option>隔日一剂</option>
+              <option>两日一剂</option>
+            </select>
+          </div>
+          <div class="tcm-fld">
+            <span class="tcm-lbl">服法：</span>
+            <select class="select" id="tcmRoute">
+              <option>口服</option>
+              <option>外用</option>
+              <option>熏洗</option>
+              <option>含漱</option>
+            </select>
+          </div>
+          <div class="tcm-fld">
+            <span class="tcm-lbl">每次：</span>
+            <input class="input" id="tcmMl" type="number" min="0" step="50" value="200">
+            <select class="select" id="tcmMlUnit">
+              <option>ml</option><option>g</option><option>袋</option><option>盒</option>
+            </select>
+          </div>
+          <div class="tcm-fld">
+            <span class="tcm-lbl">服药时间：</span>
+            <select class="select" id="tcmTiming">
+              <option>饭后服用</option>
+              <option>饭前服用</option>
+              <option>睡前服用</option>
+              <option>晨起空腹</option>
+              <option>不拘时服</option>
+            </select>
+          </div>
+          <div class="tcm-fld w-diag">
+            <span class="tcm-lbl"><span class="req">*</span>诊断：</span>
+            <select class="select" id="tcmDiag">
+              <option value="">请选择</option>
+            <option value="ZY01">ZY01 风寒感冒</option><option value="ZY02">ZY02 风热感冒</option><option value="ZY03">ZY03 咳嗽（风燥伤肺）</option><option value="ZY04">ZY04 胃脘痛</option><option value="ZY05">ZY05 泄泻</option><option value="ZY06">ZY06 便秘</option><option value="ZY07">ZY07 不寐</option><option value="ZY08">ZY08 眩晕</option><option value="ZY09">ZY09 头痛</option><option value="ZY10">ZY10 月经不调</option><option value="ZY11">ZY11 痛经</option><option value="ZY12">ZY12 痹证（关节疼痛）</option></select>
+          </div>
+        </div>
+        <div class="tcm-rxrow">
+          <span class="tcm-lbl">备注：</span>
+          <input class="input tcm-note" id="tcmNote" maxlength="100" placeholder="选填，最多100字">
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- 确认弹窗 -->
+<div class="tcm-mask" id="tcmMask">
+  <div class="tcm-dlg">
+    <div class="tcm-dlg-title" id="tcmDlgTitle">提示</div>
+    <div class="tcm-dlg-body" id="tcmDlgBody"></div>
+    <div class="tcm-dlg-foot">
+      <button class="btn" id="tcmDlgCancel">取消</button>
+      <button class="btn btn-primary" id="tcmDlgOk">确定</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="tcmToast"></div>
+
+<script src="mock.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  function $(id){ return document.getElementById(id); }
+  function esc(v){
+    if (v === null || v === undefined || v === "") return "—";
+    return String(v).replace(/[&<>"']/g, function(c){
+      return { "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c];
+    });
+  }
+  function money(n){ return (Math.round((Number(n) || 0) * 100) / 100).toFixed(2); }
+  function pad(n){ return n < 10 ? "0" + n : "" + n; }
+  function nowStr(){
+    var d = new Date();
+    return d.getFullYear() + "-" + pad(d.getMonth()+1) + "-" + pad(d.getDate()) + " "
+      + pad(d.getHours()) + ":" + pad(d.getMinutes()) + ":" + pad(d.getSeconds());
+  }
+
+  var KEY_DRAFT = "RX_TCM_DRAFT_V1";
+  var KEY_LIST  = "RX_TCM_LIST_V1";
+  var RX_NAME = {
+    "中药饮片": "中草药处方",
+    "配方颗粒": "中药配方颗粒处方",
+    "中药直服饮片": "中药直服饮片处方"
+  };
+
+  function drugOf(key){
+    for (var i = 0; i < MOCK.tcmHerbs.length; i++){
+      if (MOCK.tcmHerbs[i].key === key) return MOCK.tcmHerbs[i];
+    }
+    return null;
+  }
+  function unitOf(drug){ return drug && drug.kind === "中药饮片" ? "g" : "袋"; }
+
+  function blankDraft(){
+    return {
+      pharmacy: "中药房", kind: "中药饮片", rxName: "中草药处方",
+      herbs: [], selKey: "",
+      doses: "3", usage: "水煎温服", freq: "每日一剂", route: "口服",
+      ml: "200", mlUnit: "ml", timing: "饭后服用", diag: "", note: ""
+    };
+  }
+  function seedDraft(){
+    var d = blankDraft();
+    var s = MOCK.tcmSeed;
+    d.herbs = s.herbs.filter(function(h){ return drugOf(h.key); })
+      .map(function(h){ return { key: h.key, qty: String(h.qty), usage: h.usage }; });
+    d.doses = String(s.doses); d.usage = s.usage; d.freq = s.freq; d.route = s.route;
+    d.ml = String(s.ml); d.timing = s.timing; d.diag = s.diag; d.note = s.note;
+    return d;
+  }
+
+  function loadDraft(){
+    try {
+      var raw = sessionStorage.getItem(KEY_DRAFT);
+      if (raw){
+        var data = JSON.parse(raw);
+        if (data && data.v === 1 && data.draft && Array.isArray(data.draft.herbs)){
+          data.draft.herbs = data.draft.herbs.filter(function(h){ return drugOf(h.key); });
+          return data.draft;
+        }
+      }
+    } catch(e){}
+    return seedDraft();
+  }
+  function persist(){
+    try { sessionStorage.setItem(KEY_DRAFT, JSON.stringify({ v: 1, draft: ST })); } catch(e){}
+  }
+  function loadList(){
+    try {
+      var raw = sessionStorage.getItem(KEY_LIST);
+      if (raw){
+        var data = JSON.parse(raw);
+        if (data && data.v === 1 && Array.isArray(data.list)) return data.list;
+      }
+    } catch(e){}
+    return [];
+  }
+  function persistList(list){
+    try { sessionStorage.setItem(KEY_LIST, JSON.stringify({ v: 1, list: list })); } catch(e){}
+  }
+
+  var ST = loadDraft();
+
+  /* ---------------- 计算 ---------------- */
+  function herbPrice(h){
+    var d = drugOf(h.key);
+    return d ? (Number(h.qty) || 0) * d.price : 0;
+  }
+  function sums(){
+    var doses = Number(ST.doses) || 0;
+    var w = 0, a = 0;
+    ST.herbs.forEach(function(h){
+      w += Number(h.qty) || 0;
+      a += herbPrice(h);
+    });
+    return { cnt: ST.herbs.length, weight: w * doses, amount: a * doses };
+  }
+
+  /* ---------------- 渲染 ---------------- */
+  function usageOptions(cur){
+    var html = '<option value="">请选择</option>';
+    MOCK.tcmUsage.forEach(function(u){
+      html += '<option' + (u === cur ? " selected" : "") + '>' + u + '</option>';
+    });
+    return html;
+  }
+
+  function renderHerbs(){
+    var box = $("tcmHerbs");
+    if (!ST.herbs.length){
+      box.innerHTML = '<div class="tcm-empty">暂无处方药味，请通过上方录入行搜索药品并添加</div>';
+      return;
+    }
+    box.innerHTML = ST.herbs.map(function(h, i){
+      var d = drugOf(h.key);
+      return '<div class="tcm-chip" data-i="' + i + '">'
+        + '<span class="tcm-chip-name" title="' + esc(d.name) + '（' + esc(d.spec) + '）">' + esc(d.name) + '</span>'
+        + '<input class="input tcm-chip-qty" data-i="' + i + '" type="number" min="0.5" step="0.5" value="' + esc(h.qty) + '">'
+        + '<span class="tcm-unit">' + unitOf(d) + '</span>'
+        + '<select class="select tcm-chip-usage" data-i="' + i + '">' + usageOptions(h.usage) + '</select>'
+        + '<button class="tcm-chip-x" data-i="' + i + '" title="删除该药味">×</button>'
+        + '</div>';
+    }).join("");
+  }
+
+  function renderSum(){
+    var s = sums();
+    $("sumCnt").textContent = s.cnt;
+    $("sumWeight").textContent = s.weight;
+    $("sumAmount").textContent = money(s.amount);
+  }
+
+  function syncForm(){
+    $("tcmPharmacy").value = ST.pharmacy;
+    $("tcmKind").value = ST.kind;
+    // 药味 > 0 时禁用药品种类
+    $("tcmKind").disabled = ST.herbs.length > 0;
+    $("tcmRxName").value = ST.rxName || RX_NAME[ST.kind] || "中草药处方";
+    $("tcmDoses").value = ST.doses;
+    $("tcmUsage").value = ST.usage;
+    $("tcmFreq").value = ST.freq;
+    $("tcmRoute").value = ST.route;
+    $("tcmMl").value = ST.ml;
+    $("tcmMlUnit").value = ST.mlUnit || "ml";
+    $("tcmTiming").value = ST.timing;
+    $("tcmDiag").value = ST.diag;
+    $("tcmNote").value = ST.note;
+    var d = drugOf(ST.selKey);
+    $("tcmDrugInput").value = d ? d.name : "";
+  }
+
+  function renderAll(){
+    renderHerbs(); renderSum(); syncForm();
+  }
+
+  /* ---------------- 药品选择 ---------------- */
+  function matchDrug(d, q){
+    if (d.kind !== ST.kind) return false;
+    if (!q) return true;
+    q = q.toLowerCase();
+    return (d.name + d.py + d.vendor).toLowerCase().indexOf(q) >= 0;
+  }
+  function renderPick(q){
+    var list = MOCK.tcmHerbs.filter(function(d){ return matchDrug(d, q); });
+    if (!list.length){
+      $("tcmPickBody").innerHTML = '<tr><td colspan="9" class="tcm-pick-none">当前药品种类下无匹配药品</td></tr>';
+      return;
+    }
+    $("tcmPickBody").innerHTML = list.map(function(d){
+      return '<tr data-key="' + d.key + '">'
+        + '<td>' + esc(d.name) + '</td>'
+        + '<td>' + esc(d.spec) + '</td>'
+        + '<td>' + esc(d.kind) + '</td>'
+        + '<td class="num">' + d.stock + unitOf(d) + '</td>'
+        + '<td class="num">' + money(d.price) + '</td>'
+        + '<td>' + esc(d.attr) + '</td>'
+        + '<td>' + esc(d.insLevel) + '</td>'
+        + '<td title="' + esc(d.insNote) + '">' + esc(d.insNote) + '</td>'
+        + '<td title="' + esc(d.vendor) + '">' + esc(d.vendor) + '</td>'
+        + '</tr>';
+    }).join("");
+  }
+  function openPick(){
+    renderPick($("tcmDrugInput").value.trim());
+    $("tcmPick").classList.add("show");
+  }
+  function closePick(){ $("tcmPick").classList.remove("show"); }
+
+  function selectDrug(key){
+    var d = drugOf(key);
+    if (!d) return;
+    ST.selKey = key;
+    $("tcmDrugInput").value = d.name;
+    $("tcmDrugInput").classList.remove("is-invalid");
+    closePick();
+    $("tcmQty").focus();
+  }
+
+  /* ---------------- 添加药味 ---------------- */
+  function addHerb(){
+    var d = drugOf(ST.selKey);
+    if (!d){
+      $("tcmDrugInput").classList.add("is-invalid");
+      toast("请先选择药品");
+      return;
+    }
+    var qty = Number($("tcmQty").value);
+    if (!(qty > 0)){
+      $("tcmQty").classList.add("is-invalid");
+      toast("请填写数量");
+      return;
+    }
+    for (var i = 0; i < ST.herbs.length; i++){
+      if (ST.herbs[i].key === d.key){
+        toast("「" + d.name + "」已在处方中，可直接在药味卡片上修改数量");
+        return;
+      }
+    }
+    ST.herbs.push({ key: d.key, qty: String(qty), usage: $("tcmHerbUsage").value });
+    ST.selKey = "";
+    $("tcmDrugInput").value = "";
+    $("tcmQty").value = "";
+    $("tcmHerbUsage").value = "";
+    persist();
+    renderHerbs(); renderSum();
+    $("tcmDrugInput").focus();
+  }
+
+  /* ---------------- 发送 / 重置 ---------------- */
+  function setInvalid(el, bad){ if (el) el.classList.toggle("is-invalid", !!bad); }
+
+  function sendRx(){
+    var errs = [];
+    if (!ST.herbs.length) errs.push("至少 1 味药品");
+    var badQty = false;
+    ST.herbs.forEach(function(h){ if (!(Number(h.qty) > 0)) badQty = true; });
+    if (badQty) errs.push("药味数量须大于 0");
+    var doses = Number(ST.doses);
+    setInvalid($("tcmDoses"), !(doses >= 1));
+    if (!(doses >= 1)) errs.push("剂数");
+    setInvalid($("tcmDiag"), !ST.diag);
+    if (!ST.diag) errs.push("诊断");
+    if (errs.length){
+      toast("请完善：" + errs.join("、"));
+      return;
+    }
+    var s = sums();
+    var diagName = ST.diag;
+    MOCK.diagnoses.forEach(function(g){ if (g.code === ST.diag) diagName = g.name; });
+    confirmDialog(
+      "发送医嘱",
+      "将发送当前" + (ST.rxName || RX_NAME[ST.kind] || "处方") + "（共 " + s.cnt + " 种药，剂数 " + doses
+        + " 剂，总金额 " + money(s.amount) + " 元），发送后进入待审核。",
+      "发送",
+      function(){
+        var list = loadList();
+        var d = new Date();
+        var code = "CF" + d.getFullYear() + pad(d.getMonth()+1) + pad(d.getDate()) + pad(list.length + 1 + 100).slice(-2);
+        list.push({
+          id: "tcmrx" + Date.now(), code: code, time: nowStr(), status: "pending",
+          pharmacy: ST.pharmacy, kind: ST.kind, rxName: ST.rxName || RX_NAME[ST.kind] || "中草药处方",
+          herbs: ST.herbs.map(function(h){
+            var drug = drugOf(h.key);
+            return {
+              key: h.key, name: drug.name, spec: drug.spec, qty: Number(h.qty),
+              unit: unitOf(drug), usage: h.usage, price: drug.price,
+              amount: Number(money(herbPrice(h) * doses))
+            };
+          }),
+          doses: doses, usage: ST.usage, freq: ST.freq, route: ST.route,
+          ml: Number(ST.ml) || 0, mlUnit: ST.mlUnit || "ml", timing: ST.timing,
+          diag: ST.diag, diagName: diagName, note: ST.note,
+          weight: s.weight, amount: Number(money(s.amount))
+        });
+        persistList(list);
+        var kind = ST.kind;
+        ST = blankDraft();
+        ST.kind = kind;
+        persist();
+        renderAll();
+        toast("处方已发送，进入待审核");
+      }
+    );
+  }
+
+  function resetRx(){
+    if (!ST.herbs.length && !ST.diag && !ST.note){
+      toast("当前已是空白处方");
+      return;
+    }
+    confirmDialog("重置处方", "将清空已录入的 " + ST.herbs.length + " 味药品及处方信息，确认重置吗？", "重置", function(){
+      var kind = ST.kind;
+      ST = blankDraft();
+      ST.kind = kind;
+      persist();
+      renderAll();
+      toast("已重置");
+    });
+  }
+
+  /* ---------------- 弹窗 / toast ---------------- */
+  var dlgOk = null;
+  function confirmDialog(title, body, okText, onOk){
+    $("tcmDlgTitle").textContent = title;
+    $("tcmDlgBody").textContent = body;
+    $("tcmDlgOk").textContent = okText || "确定";
+    dlgOk = onOk;
+    $("tcmMask").classList.add("show");
+  }
+  function closeDialog(){
+    $("tcmMask").classList.remove("show");
+    dlgOk = null;
+  }
+
+  var toastTimer = null;
+  function toast(msg){
+    var el = $("tcmToast");
+    el.textContent = msg;
+    el.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ el.classList.remove("show"); }, 2200);
+  }
+
+  /* ---------------- 事件绑定 ---------------- */
+  function bind(){
+    $("btnSend").onclick = sendRx;
+    $("btnReset").onclick = resetRx;
+    $("btnAdd").onclick = addHerb;
+
+    // 药品种类切换：已有药味时需确认清空
+    $("tcmKind").addEventListener("change", function(){
+      var v = this.value;
+      var doSwitch = function(){
+        ST.kind = v;
+        ST.selKey = "";
+        $("tcmDrugInput").value = "";
+        persist();
+        renderAll();
+      };
+      if (ST.herbs.length){
+        var self = this;
+        confirmDialog(
+          "切换药品种类",
+          "切换为「" + v + "」将清空已添加的 " + ST.herbs.length + " 味药品，确认切换吗？",
+          "切换",
+          doSwitch
+        );
+        // 取消时还原下拉显示
+        var old = ST.kind;
+        dlgCancelRestore = function(){ self.value = old; };
+      } else {
+        doSwitch();
+      }
+    });
+
+    // 药品选择
+    $("tcmDrugInput").addEventListener("focus", openPick);
+    $("tcmDrugInput").addEventListener("input", function(){
+      ST.selKey = "";
+      this.classList.remove("is-invalid");
+      openPick();
+    });
+    $("tcmPickBody").addEventListener("click", function(e){
+      var tr = e.target.closest("tr[data-key]");
+      if (tr) selectDrug(tr.getAttribute("data-key"));
+    });
+    document.addEventListener("click", function(e){
+      if (!e.target.closest(".tcm-pickwrap")) closePick();
+    });
+
+    $("tcmQty").addEventListener("input", function(){ this.classList.remove("is-invalid"); });
+    $("tcmQty").addEventListener("keydown", function(e){
+      if (e.key === "Enter"){ e.preventDefault(); addHerb(); }
+    });
+
+    // 药味卡片：改数量 / 改用法 / 删除（下标定位）
+    $("tcmHerbs").addEventListener("input", function(e){
+      var inp = e.target.closest(".tcm-chip-qty");
+      if (!inp) return;
+      var i = Number(inp.getAttribute("data-i"));
+      if (ST.herbs[i]){
+        ST.herbs[i].qty = inp.value;
+        persist();
+        renderSum();
+      }
+    });
+    $("tcmHerbs").addEventListener("change", function(e){
+      var sel = e.target.closest(".tcm-chip-usage");
+      if (!sel) return;
+      var i = Number(sel.getAttribute("data-i"));
+      if (ST.herbs[i]){
+        ST.herbs[i].usage = sel.value;
+        persist();
+      }
+    });
+    $("tcmHerbs").addEventListener("click", function(e){
+      var btn = e.target.closest(".tcm-chip-x");
+      if (!btn) return;
+      var i = Number(btn.getAttribute("data-i"));
+      var h = ST.herbs[i];
+      if (!h) return;
+      var d = drugOf(h.key);
+      ST.herbs.splice(i, 1);
+      persist();
+      renderHerbs(); renderSum();
+      toast("已删除「" + (d ? d.name : "") + "」");
+    });
+
+    // 处方信息字段
+    $("tcmPharmacy").addEventListener("change", function(){ ST.pharmacy = this.value; persist(); });
+    $("tcmRxName").addEventListener("input", function(){ ST.rxName = this.value; persist(); });
+    $("tcmDoses").addEventListener("input", function(){
+      ST.doses = this.value;
+      setInvalid(this, false);
+      persist(); renderSum();
+    });
+    $("tcmUsage").addEventListener("change", function(){ ST.usage = this.value; persist(); });
+    $("tcmFreq").addEventListener("change", function(){ ST.freq = this.value; persist(); });
+    $("tcmRoute").addEventListener("change", function(){ ST.route = this.value; persist(); });
+    $("tcmMl").addEventListener("input", function(){ ST.ml = this.value; persist(); });
+    $("tcmMlUnit").addEventListener("change", function(){ ST.mlUnit = this.value; persist(); });
+    $("tcmTiming").addEventListener("change", function(){ ST.timing = this.value; persist(); });
+    $("tcmDiag").addEventListener("change", function(){
+      ST.diag = this.value;
+      setInvalid(this, false);
+      persist();
+    });
+    $("tcmNote").addEventListener("input", function(){ ST.note = this.value; persist(); });
+
+    // 快捷键 Alt+A 发送 / Alt+R 重置
+    document.addEventListener("keydown", function(e){
+      if (e.altKey && !e.ctrlKey && !e.metaKey){
+        var k = (e.key || "").toLowerCase();
+        if (k === "a"){ e.preventDefault(); sendRx(); }
+        else if (k === "r"){ e.preventDefault(); resetRx(); }
+      }
+      if (e.key === "Escape"){
+        if ($("tcmMask").classList.contains("show")) closeDialog();
+        else closePick();
+      }
+    });
+
+    // 弹窗
+    $("tcmDlgCancel").onclick = function(){
+      closeDialog();
+      if (dlgCancelRestore){ dlgCancelRestore(); dlgCancelRestore = null; }
+    };
+    $("tcmDlgOk").onclick = function(){
+      var fn = dlgOk;
+      closeDialog();
+      dlgCancelRestore = null;
+      if (fn) fn();
+    };
+    $("tcmMask").addEventListener("click", function(e){
+      if (e.target === this){
+        closeDialog();
+        if (dlgCancelRestore){ dlgCancelRestore(); dlgCancelRestore = null; }
+      }
+    });
+  }
+  var dlgCancelRestore = null;
+
+  /* ---------------- 初始化 ---------------- */
+  $("tcmHerbUsage").innerHTML = usageOptions("");
+  $("tcmDiag").innerHTML = '<option value="">请选择</option>' + MOCK.diagnoses.map(function(g){
+    return '<option value="' + g.code + '">' + esc(g.code + " " + g.name) + '</option>';
+  }).join("");
+  bind();
+  renderAll();
+})();
+</script>
+
+
+
+
+  <script src="nav.js"></script>
+</body></html>

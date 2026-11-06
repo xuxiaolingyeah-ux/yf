@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>特殊参数设置 · 中心药房</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ========== 顶部导航 ========== -->
+<header class="app-header">
+  <div class="header-left">
+    <div class="header-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3.2" y="9.4" width="17.6" height="5.2" rx="2.6" transform="rotate(-45 12 12)"/>
+        <path d="M8.4 15.6L15.6 8.4"/>
+      </svg>
+    </div>
+    <div class="header-title">区域药房协同管理系统</div>
+  </div>
+  <div class="header-right">
+    <div class="header-user">
+      <div class="header-avatar">张</div>
+      <span class="header-user-name">张明远</span>
+    </div>
+  </div>
+</header>
+
+<div class="app-body">
+  <!-- ========== 左侧导航 ========== -->
+  <aside class="app-side" id="appSide"></aside>
+<!-- ========== 主区域 ========== -->
+  <main class="app-main">
+    <div class="tabbar">
+      <div class="tab" onclick="location.href='drug-catalog.html'">首页</div>
+      <div class="tab active">
+        特殊参数设置
+        <button class="tab-close" title="关闭" onclick="location.href='drug-catalog.html'">
+          <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+            <path d="M5 5l14 14M19 5L5 19"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="page sp-page">
+      <div class="page-head">
+        <div class="page-title">特殊参数</div>
+      </div>
+
+      <div class="page-body">
+        <div class="sp-body">
+          <div class="sp-sec-head">
+            <div class="sp-sec-title">药品出库顺序</div>
+            <div class="sp-acts">
+              <button class="sp-text-btn" id="btnSave">保存</button>
+              <button class="sp-text-btn is-plain" id="btnCancel">取消</button>
+            </div>
+          </div>
+
+          <table class="sp-table">
+            <colgroup>
+              <col style="width:100px">
+              <col style="width:240px">
+              <col>
+            </colgroup>
+            <thead>
+              <tr>
+                <th class="is-center">序号</th>
+                <th>名称</th>
+                <th>规则</th>
+              </tr>
+            </thead>
+            <tbody id="paramBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ========== Toast ========== -->
+<div class="toast" id="toast">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M20 6L9 17l-5-5"/>
+  </svg>
+  <span id="toastText"></span>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  function $(id) { return document.getElementById(id); }
+
+  /* 药品出库顺序：三行规则，默认值与规则选项 */
+  var RULES = [
+    { key: "expiry",  name: "效期",     opts: ["近效期先出", "近效期后出"], def: "近效期先出" },
+    { key: "inbound", name: "入库时间", opts: ["先进先出", "先进后出"],     def: "先进先出" },
+    { key: "stock",   name: "库存",     opts: ["量多先出", "量少先出"],     def: "量少先出" }
+  ];
+
+  var STORE_KEY = "SP_PARAMS_V1";
+
+  function defaults() {
+    var d = {};
+    RULES.forEach(function (r) { d[r.key] = r.def; });
+    return d;
+  }
+
+  function loadSaved() {
+    var d = defaults();
+    try {
+      var raw = sessionStorage.getItem(STORE_KEY);
+      if (raw) {
+        var o = JSON.parse(raw);
+        RULES.forEach(function (r) { if (o[r.key]) d[r.key] = o[r.key]; });
+      }
+    } catch (e) { /* ignore */ }
+    return d;
+  }
+
+  var saved = loadSaved();
+  var draft = mixin(saved);
+
+  function mixin(src) {
+    var d = defaults();
+    RULES.forEach(function (r) { if (src[r.key]) d[r.key] = src[r.key]; });
+    return d;
+  }
+
+  function render() {
+    $("paramBody").innerHTML = RULES.map(function (r, i) {
+      var radios = r.opts.map(function (opt) {
+        var checked = draft[r.key] === opt ? " checked" : "";
+        return '<label class="sp-radio">'
+          + '<input type="radio" name="' + r.key + '" value="' + opt + '"' + checked + '>'
+          + '<span class="circle"></span>'
+          + '<span>' + opt + '</span>'
+          + "</label>";
+      }).join("");
+      return "<tr>"
+        + '<td class="is-center"><span class="sp-no">' + (i + 1) + "</span></td>"
+        + "<td>" + r.name + "</td>"
+        + '<td><div class="sp-rules">' + radios + "</div></td>"
+        + "</tr>";
+    }).join("");
+  }
+
+  var toastTimer = null;
+  function toast(msg) {
+    var t = $("toast");
+    $("toastText").textContent = msg;
+    t.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { t.classList.remove("show"); }, 2200);
+  }
+
+  $("paramBody").addEventListener("change", function (e) {
+    var el = e.target;
+    if (el && el.type === "radio") draft[el.name] = el.value;
+  });
+
+  $("btnSave").addEventListener("click", function () {
+    saved = mixin(draft);
+    try { sessionStorage.setItem(STORE_KEY, JSON.stringify(saved)); } catch (e) { /* ignore */ }
+    toast("保存成功");
+  });
+
+  $("btnCancel").addEventListener("click", function () {
+    draft = mixin(saved);
+    render();
+  });
+
+  render();
+})();
+</script>
+  <script src="nav.js"></script>
+</body>
+</html>

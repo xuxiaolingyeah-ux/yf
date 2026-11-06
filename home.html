@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>首页 · 中心药房</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+/* ===== 首页（负责人工作台）局部样式 ===== */
+.hm-page {
+  flex: 1; min-height: 0;
+  display: flex;
+  background: var(--bg-page);
+  padding: 12px;
+}
+.hm-shell {
+  flex: 1; min-height: 0;
+  display: flex; flex-direction: column;
+  background: var(--bg-white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.hm-body {
+  flex: 1; min-height: 0;
+  overflow: auto;
+  padding: 16px 20px 20px;
+}
+.hm-greet-title { font-size: 17px; font-weight: 600; letter-spacing: .2px; color: var(--text-primary); line-height: 1.4; }
+.hm-greet-sub { display: flex; gap: 12px; margin-top: 2px; font-size: 12px; color: var(--text-tertiary); }
+
+/* 区块 */
+.hm-card + .hm-card {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+.hm-sec-head { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+.hm-sec-title {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-size: 15px; font-weight: 600; color: var(--text-primary);
+}
+.hm-sec-title::before {
+  content: ""; width: 3px; height: 14px; border-radius: 2px;
+  background: var(--primary); flex: none;
+}
+
+/* 指标卡 */
+.hm-kpi-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.hm-kpi {
+  background: var(--bg-page);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 14px 16px 15px;
+  cursor: pointer;
+  transition: border-color .15s, background .15s, box-shadow .15s, transform .15s;
+}
+.hm-kpi:hover {
+  border-color: var(--primary-light);
+  background: var(--bg-white);
+  box-shadow: 0 4px 12px rgba(43, 127, 255, .09);
+  transform: translateY(-1px);
+}
+.hm-kpi-label { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--text-secondary); }
+.hm-kpi-val {
+  margin-top: 6px;
+  font-family: var(--font-mono);
+  font-size: 23px; font-weight: 600; line-height: 1.3;
+  letter-spacing: -.4px;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  display: flex; align-items: baseline;
+}
+.hm-kpi-val .unit {
+  margin-left: 5px; font-family: var(--font-ui);
+  font-size: 12px; font-weight: 400; letter-spacing: 0;
+  color: var(--text-secondary);
+}
+.hm-kpi-note { margin-left: 8px; font-size: 11px; font-weight: 400; letter-spacing: 0; color: var(--text-secondary); white-space: nowrap; }
+
+/* 口径 icon + 悬浮提示 */
+.hm-iwrap { position: relative; display: inline-flex; align-items: center; }
+.hm-ico {
+  width: 14px; height: 14px;
+  display: inline-grid; place-items: center;
+  color: var(--text-tertiary); cursor: pointer; border-radius: 50%;
+  flex: none;
+}
+.hm-ico:hover { color: var(--primary-dark); }
+.hm-ico svg { width: 13px; height: 13px; }
+.hm-tip {
+  position: absolute; left: 50%; bottom: calc(100% + 6px);
+  transform: translateX(-50%);
+  width: 260px;
+  padding: 8px 10px;
+  background: var(--bg-white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-1);
+  font-size: 12px; line-height: 1.6; color: var(--text-secondary);
+  opacity: 0; visibility: hidden; pointer-events: none;
+  transition: opacity .15s; z-index: 30;
+}
+.hm-iwrap:hover .hm-tip, .hm-iwrap:focus-within .hm-tip { opacity: 1; visibility: visible; }
+.hm-iwrap.side-right .hm-tip { left: auto; right: -6px; transform: none; }
+
+/* 周期切换 + 自定义区间 */
+.hm-tools { display: flex; align-items: center; gap: 8px; margin-left: auto; flex-wrap: wrap; }
+.hm-seg {
+  display: inline-flex; align-items: center; gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--border); border-radius: 15px;
+  background: var(--bg-white);
+}
+.hm-seg-item {
+  height: 22px; padding: 0 10px;
+  display: inline-flex; align-items: center;
+  border: none; border-radius: 11px;
+  font-size: 12px; color: var(--text-secondary);
+  cursor: pointer; background: transparent;
+  white-space: nowrap;
+  transition: color .15s, background .15s;
+}
+.hm-seg-item:hover { color: var(--primary-dark); background: var(--primary-lighter); }
+.hm-seg-item.is-on {
+  background: var(--primary-light);
+  color: var(--primary-dark); font-weight: 500;
+}
+.hm-range {
+  display: none;
+  align-items: center;
+  height: 28px;
+  padding: 0 4px 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--bg-white);
+}
+.hm-range.is-on { display: inline-flex; }
+.hm-date {
+  width: 112px;
+  height: 26px;
+  border: none; outline: none; background: transparent;
+  font-size: 12px; color: var(--text-primary);
+  font-family: var(--font-sans);
+}
+.hm-date::-webkit-calendar-picker-indicator { opacity: .45; cursor: pointer; }
+.hm-range-sep { font-size: 12px; color: var(--text-tertiary); padding: 0 2px; }
+.hm-range-ok {
+  height: 24px; padding: 0 8px; margin-left: 2px;
+  border: none; border-radius: 12px;
+  background: transparent; color: var(--primary-dark);
+  font-size: 12px; cursor: pointer;
+}
+.hm-range-ok:hover { background: var(--primary-light); }
+
+/* 用药监测 */
+.hm-split { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 12px; }
+.hm-panel {
+  background: var(--bg-page);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 14px 16px;
+  min-width: 0;
+}
+.hm-rate-head { display: flex; align-items: center; justify-content: space-between; }
+.hm-rate-name { display: flex; align-items: center; gap: 4px; font-size: 13px; color: var(--text-secondary); }
+.hm-rate-val {
+  display: flex; align-items: baseline;
+  margin-top: 6px;
+  font-size: 22px; font-weight: 600; letter-spacing: -.2px;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1;
+}
+.hm-rate-delta {
+  display: inline-flex; align-items: center; height: 18px;
+  padding: 0 7px; margin-left: 8px;
+  border-radius: 9px;
+  font-size: 12px; font-weight: 500; letter-spacing: 0;
+  white-space: nowrap;
+}
+.hm-rate-delta.is-good { color: #237804; background: var(--success-bg); }
+.hm-rate-delta.is-bad { color: #A8071A; background: var(--danger-bg); }
+
+/* 迷你趋势（含横轴与悬停） */
+.hm-chart { margin-top: 6px; }
+.hm-plot { position: relative; height: 40px; cursor: crosshair; }
+.hm-plot svg { display: block; width: 100%; height: 40px; }
+.hm-axis { position: relative; height: 16px; margin-top: 4px; }
+.hm-axis span {
+  position: absolute; top: 0;
+  transform: translateX(-50%);
+  font-size: 11px; color: var(--text-tertiary);
+  white-space: nowrap;
+}
+.hm-vline {
+  position: absolute; top: 0; width: 1px; height: 40px;
+  background: rgba(0, 0, 0, .16); display: none;
+}
+.hm-dot {
+  position: absolute; width: 7px; height: 7px; border-radius: 50%;
+  background: var(--primary); box-shadow: 0 0 0 1.5px var(--bg-white);
+  transform: translate(-50%, -50%);
+  display: none; pointer-events: none;
+}
+.hm-enddot {
+  position: absolute; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--primary); box-shadow: 0 0 0 1.5px var(--bg-white);
+  transform: translate(-50%, -50%); pointer-events: none;
+}
+.hm-ctip {
+  position: absolute; bottom: calc(100% + 4px);
+  transform: translateX(-50%);
+  padding: 2px 8px;
+  background: var(--bg-white);
+  border: 1px solid var(--border); border-radius: var(--radius);
+  box-shadow: var(--shadow-1);
+  font-size: 12px; color: var(--text-primary); white-space: nowrap;
+  display: none; z-index: 10;
+}
+
+/* TOP10 */
+.hm-top-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px; }
+.hm-top-title { font-size: 14px; font-weight: 500; color: var(--text-primary); }
+.hm-mode {
+  display: inline-flex; align-items: center; gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--border); border-radius: 13px;
+  background: var(--bg-white);
+}
+.hm-mode-item {
+  height: 20px; padding: 0 9px;
+  display: inline-flex; align-items: center;
+  border: none; border-radius: 10px;
+  font-size: 12px; color: var(--text-secondary);
+  cursor: pointer; background: transparent;
+  transition: color .15s, background .15s;
+}
+.hm-mode-item:hover { color: var(--primary-dark); background: var(--primary-lighter); }
+.hm-mode-item.is-on { background: var(--primary-light); color: var(--primary-dark); font-weight: 500; }
+.hm-top-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 28px; }
+.hm-trow {
+  position: relative;
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr) 52px 80px;
+  gap: 8px; align-items: baseline;
+  padding: 7px 4px;
+  border-radius: var(--radius);
+  transition: background .12s;
+}
+.hm-trow:hover { background: var(--primary-lighter); }
+.hm-tbar {
+  position: absolute; left: 0; top: 4px; bottom: 4px;
+  border-radius: var(--radius);
+  background: linear-gradient(90deg, rgba(43, 127, 255, .10), rgba(43, 127, 255, .015));
+  pointer-events: none;
+}
+.hm-trow > span:not(.hm-tbar) { position: relative; z-index: 1; }
+.hm-trank { font-size: 12px; color: var(--text-tertiary); font-family: var(--font-mono); text-align: center; }
+.hm-top-grid .hm-trow:nth-child(-n+3) .hm-trank { color: var(--primary-dark); font-weight: 600; }
+.hm-tname { font-size: 13px; color: var(--text-primary); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.hm-tspec { font-size: 12px; color: var(--text-tertiary); white-space: nowrap; text-align: right; }
+.hm-tval { font-size: 13px; font-weight: 500; color: var(--text-primary); font-family: var(--font-mono); white-space: nowrap; text-align: right; }
+
+/* 待办与预警 */
+.hm-grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.hm-list-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding-right: 12px;
+  margin-bottom: 8px;
+}
+.hm-list-title { font-size: 13px; font-weight: 500; color: var(--text-primary); }
+.hm-list-count { font-size: 15px; font-weight: 600; color: var(--text-primary); font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; }
+.hm-list { height: 160px; overflow-y: auto; padding-right: 4px; scrollbar-gutter: stable; }
+.hm-list::-webkit-scrollbar { width: 4px; }
+.hm-list::-webkit-scrollbar-thumb { background: rgba(0,0,0,.18); border-radius: 2px; }
+.hm-list::-webkit-scrollbar-track { background: transparent; }
+.hm-task {
+  height: 32px; display: flex; align-items: center; justify-content: space-between;
+  padding: 0 4px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px; color: var(--text-primary);
+}
+.hm-task:last-child { border-bottom: none; }
+.hm-task[data-href] { cursor: pointer; }
+.hm-task[data-href]:hover { background: var(--primary-lighter); }
+.hm-task-count { font-family: var(--font-mono); font-weight: 500; color: var(--primary-dark); font-variant-numeric: tabular-nums; }
+.hm-task-count.is-warn { color: #B45309; }
+.hm-task-count.is-danger { color: #B91C1C; }
+.hm-task-count.is-muted { color: var(--text-tertiary); }
+
+/* 智能补货建议 */
+.hm-ai {
+  margin-top: 12px;
+  background: linear-gradient(155deg, #F7FAFF 0%, var(--bg-page) 62%);
+  border-color: rgba(43, 127, 255, .16);
+}
+.hm-ai-head { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.hm-ai-title { font-size: 13px; font-weight: 500; color: var(--text-primary); }
+.hm-ai-sub { font-size: 12px; color: var(--text-tertiary); border: 1px solid var(--border); border-radius: 10px; padding: 1px 8px; }
+.hm-ai-item { padding: 8px 0; border-bottom: 1px solid var(--border); }
+.hm-ai-item:last-child { border-bottom: none; }
+.hm-ai-line { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.hm-ai-name { font-size: 13px; color: var(--text-primary); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.hm-ai-qty { font-size: 13px; font-weight: 500; color: var(--text-primary); font-family: var(--font-mono); white-space: nowrap; }
+.hm-ai-qty em { font-style: normal; font-size: 12px; font-weight: 400; color: var(--text-tertiary); margin-right: 3px; }
+.hm-ai-subline { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 4px; }
+.hm-ai-meta { font-size: 12px; color: var(--text-tertiary); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.hm-fb { display: flex; align-items: center; gap: 4px; flex: none; }
+.hm-fb-btn {
+  width: 22px; height: 22px;
+  display: inline-grid; place-items: center;
+  border: 1px solid transparent; border-radius: 50%;
+  background: transparent;
+  color: var(--text-tertiary); cursor: pointer;
+}
+.hm-fb-btn svg { width: 13px; height: 13px; }
+.hm-fb-btn:hover:not(.is-up):not(.is-down) { color: var(--text-secondary); background: var(--bg-page); border-color: var(--border); }
+.hm-fb-btn.is-up { color: var(--primary-dark); background: var(--primary-light); border-color: var(--primary-light); }
+.hm-fb-btn.is-down { color: #A8071A; background: var(--danger-bg); border-color: var(--danger-border); }
+.hm-ai-foot {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-top: 2px; padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+.hm-ai-gen { font-size: 12px; color: var(--text-tertiary); }
+.hm-pager { display: flex; align-items: center; gap: 6px; }
+.hm-pg-btn {
+  width: 24px; height: 24px; padding: 0;
+  display: grid; place-items: center;
+  border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--bg-white); color: var(--text-secondary);
+}
+.hm-pg-btn:hover:not(:disabled) { border-color: var(--primary); color: var(--primary-dark); }
+.hm-pg-btn:disabled { color: var(--text-placeholder); cursor: not-allowed; }
+.hm-pg-num { font-size: 12px; color: var(--text-secondary); font-family: var(--font-mono); }
+
+/* 口径抽屉 */
+.hm-dr-name { font-size: 14px; font-weight: 500; color: var(--text-primary); margin-bottom: 12px; }
+.hm-dr-row { display: flex; gap: 10px; padding: 9px 0; border-bottom: 1px dashed var(--border-light); font-size: 13px; line-height: 1.7; }
+.hm-dr-label { width: 68px; flex: none; font-size: 12px; color: var(--text-tertiary); }
+.hm-dr-val { flex: 1; color: var(--text-primary); }
+.hm-dr-formula {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  background: var(--bg-page);
+  border-radius: var(--radius);
+  font-family: var(--font-mono);
+  font-size: 12px; line-height: 1.8; color: var(--text-secondary);
+  word-break: break-all;
+}
+
+/* toast */
+.hm-toast {
+  position: fixed; left: 50%; bottom: 40px;
+  transform: translate(-50%, 8px);
+  background: rgba(0,0,0,.8); color: #fff;
+  font-size: 13px; padding: 8px 14px; border-radius: var(--radius);
+  opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s;
+  z-index: 300;
+}
+.hm-toast.is-on { opacity: 1; transform: translate(-50%, 0); }
+
+/* 焦点可见性 */
+.hm-ico:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
+.hm-fb-btn:focus-visible,
+.hm-pg-btn:focus-visible,
+.hm-range-ok:focus-visible,
+.hm-date:focus-visible {
+  outline: 2px solid var(--primary); outline-offset: 2px;
+}
+
+/* 首屏入场：克制的分段浮现 */
+@keyframes hmRise {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .hm-card { animation: hmRise .38s cubic-bezier(.22, .61, .36, 1) both; }
+  .hm-card:nth-of-type(2) { animation-delay: .06s; }
+  .hm-card:nth-of-type(3) { animation-delay: .12s; }
+}
+
+/* 减少动效偏好 */
+@media (prefers-reduced-motion: reduce) {
+  .hm-kpi, .hm-task, .hm-trow, .hm-fb-btn, .hm-seg-item, .hm-mode-item, .hm-toast {
+    transition: none !important;
+  }
+  .hm-kpi:hover { transform: none; }
+  .hm-card { animation: none !important; }
+}
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="header-left">
+    <div class="header-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z"></path></svg>
+    </div>
+    <div class="header-title">区域药房协同管理系统</div>
+  </div>
+  <div class="header-right">
+    <div class="header-user">
+      <div class="header-avatar">赵</div>
+      <div class="header-user-name">赵敏 · 中心药房</div>
+    </div>
+  </div>
+</header>
+
+<div class="app-body">
+  <aside class="app-side" id="appSide"></aside>
+<main class="app-main">
+    <div class="tabbar">
+      <div class="tab active">首页</div>
+    </div>
+
+    <div class="page hm-page">
+      <div class="hm-shell">
+        <div class="page-head">
+          <div>
+            <div class="hm-greet-title" id="hmGreet">上午好，赵敏</div>
+            <div class="hm-greet-sub">
+              <span>区域中心药房</span>
+              <span id="hmDate">2026年11月6日 星期五</span>
+            </div>
+          </div>
+          <div class="page-acts">
+            <button class="btn btn-sm" id="hmRefresh">刷新</button>
+          </div>
+        </div>
+
+        <div class="hm-body">
+
+          <!-- ===== 01 整体指标 ===== -->
+          <section class="hm-card">
+            <div class="hm-kpi-grid">
+              <div class="hm-kpi" data-href="drug-catalog.html">
+                <div class="hm-kpi-label">药品品种数
+                  <span class="hm-iwrap">
+                    <span class="hm-ico" role="button" tabindex="0" data-metric="variety" aria-label="查看药品品种数口径">
+                      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="8" cy="8" r="6.4"></circle><path d="M8 7.2v4.2" stroke-linecap="round"></path><circle cx="8" cy="4.6" r=".8" fill="currentColor" stroke="none"></circle></svg>
+                    </span>
+                    <span class="hm-tip">已启用的药品品种数，按通用名 + 剂型统计，不含停用品种。</span>
+                  </span>
+                </div>
+                <div class="hm-kpi-val">1,286<span class="unit">种</span></div>
+              </div>
+
+              <div class="hm-kpi" data-href="stock-query.html">
+                <div class="hm-kpi-label">库存零售总金额
+                  <span class="hm-iwrap">
+                    <span class="hm-ico" role="button" tabindex="0" data-metric="stockValue" aria-label="查看库存零售总金额口径">
+                      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="8" cy="8" r="6.4"></circle><path d="M8 7.2v4.2" stroke-linecap="round"></path><circle cx="8" cy="4.6" r=".8" fill="currentColor" stroke="none"></circle></svg>
+                    </span>
+                    <span class="hm-tip">在库可用库存 × 当前零售价，不含在途、锁定与冻结批次。</span>
+                  </span>
+                </div>
+                <div class="hm-kpi-val">¥342.9<span class="unit">万</span></div>
+              </div>
+
+              <div class="hm-kpi" data-href="stock-alert.html">
+                <div class="hm-kpi-label">缺货品规数
+                  <span class="hm-iwrap">
+                    <span class="hm-ico" role="button" tabindex="0" data-metric="shortage" aria-label="查看缺货品规数口径">
+                      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="8" cy="8" r="6.4"></circle><path d="M8 7.2v4.2" stroke-linecap="round"></path><circle cx="8" cy="4.6" r=".8" fill="currentColor" stroke="none"></circle></svg>
+                    </span>
+                    <span class="hm-tip">可用库存 = 现有库存 − 锁定 − 占用（待发药），等于 0 的品规数；计入低储预警。</span>
+                  </span>
+                </div>
+                <div class="hm-kpi-val">12<span class="unit">个</span></div>
+              </div>
+
+              <div class="hm-kpi" data-href="drug-catalog.html">
+                <div class="hm-kpi-label">基药重合度
+                  <span class="hm-iwrap side-right">
+                    <span class="hm-ico" role="button" tabindex="0" data-metric="essentialRatio" aria-label="查看基药重合度口径">
+                      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="8" cy="8" r="6.4"></circle><path d="M8 7.2v4.2" stroke-linecap="round"></path><circle cx="8" cy="4.6" r=".8" fill="currentColor" stroke="none"></circle></svg>
+                    </span>
+                    <span class="hm-tip">已配备的国家基本药物品种数（状态为启动）/ 当前目录版本基药品种数 × 100%。</span>
+                  </span>
+                </div>
+                <div class="hm-kpi-val">78.4<span class="unit">%</span><span class="hm-kpi-note">已配 984 / 目录 1,255</span></div>
+              </div>
+            </div>
+          </section>
+
+          <!-- ===== 02 用药监测 ===== -->
+          <section class="hm-card">
+            <div class="hm-sec-head">
+              <span class="hm-sec-title">用药监测</span>
+              <span class="hm-tools">
+                <span class="hm-seg" id="hmPeriod">
+                  <span class="hm-seg-item is-on" data-period="month">本月</span>
+                  <span class="hm-seg-item" data-period="quarter">近 3 月</span>
+                  <span class="hm-seg-item" data-period="half">近半年</span>
+                  <span class="hm-seg-item" data-period="custom">自定义</span>
+                </span>
+                <span class="hm-range" id="hmRange">
+                  <input class="hm-date" type="date" id="hmFrom" value="2026-09-01" aria-label="开始日期">
+                  <span class="hm-range-sep">至</span>
+                  <input class="hm-date" type="date" id="hmTo" value="2026-11-05" aria-label="结束日期">
+                  <button class="hm-range-ok" id="hmApplyRange">应用</button>
+                </span>
+              </span>
+            </div>
+
+            <div class="hm-split">
+              <div class="hm-panel">
+                <div class="hm-rate-head">
+                  <div class="hm-rate-name">基药使用率
+                    <span class="hm-iwrap">
+                      <span class="hm-ico" role="button" tabindex="0" data-metric="basicRate" aria-label="查看基药使用率口径">
+                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="8" cy="8" r="6.4"></circle><path d="M8 7.2v4.2" stroke-linecap="round"></path><circle cx="8" cy="4.6" r=".8" fill="currentColor" stroke="none"></circle></svg>
+                      </span>
+                      <span class="hm-tip">基本药物零售金额 ÷ 全部药品零售金额 × 100%；括号内为与上期使用率之差。</span>
+                    </span>
+                  </div>
+                </div>
+                <div class="hm-rate-val"><span id="hmBasicVal">62.5%</span><span class="hm-rate-delta is-good" id="hmBasicDelta">环比 +2.1%</span></div>
+                <div class="hm-chart" id="hmBasicChart"><div class="hm-plot"><svg viewBox="0 0 200 40" width="100%" height="40" preserveAspectRatio="none"><path d="M6.0 34.0 L43.6 22.0 L81.2 28.7 L118.8 16.7 L156.4 15.3 L194.0 6.0" fill="none" stroke="var(--primary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"></path><path d="M193.5 -1.0 V13.0" stroke="var(--primary)" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linecap="round"></path></svg><span class="hm-vline"></span><span class="hm-dot"></span><span class="hm-ctip"></span></div><div class="hm-axis"><span style="left:3.00%">6 月</span><span style="left:21.80%">7 月</span><span style="left:40.60%">8 月</span><span style="left:59.40%">9 月</span><span style="left:78.20%">10 月</span><span style="left:97.00%">11 月</span></div></div>
+              </div>
+
+              <div class="hm-panel">
+                <div class="hm-rate-head">
+                  <div class="hm-rate-name">抗菌药物使用率
+                    <span class="hm-iwrap">
+                      <span class="hm-ico" role="button" tabindex="0" data-metric="antiRate" aria-label="查看抗菌药物使用率口径">
+                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="8" cy="8" r="6.4"></circle><path d="M8 7.2v4.2" stroke-linecap="round"></path><circle cx="8" cy="4.6" r=".8" fill="currentColor" stroke="none"></circle></svg>
+                      </span>
+                      <span class="hm-tip">抗菌药物零售金额 ÷ 全部药品零售金额 × 100%；不是抗菌药物使用强度（DDD）。</span>
+                    </span>
+                  </div>
+                </div>
+                <div class="hm-rate-val"><span id="hmAntiVal">18.7%</span><span class="hm-rate-delta is-good" id="hmAntiDelta">环比 -0.6%</span></div>
+                <div class="hm-chart" id="hmAntiChart"><div class="hm-plot"><svg viewBox="0 0 200 40" width="100%" height="40" preserveAspectRatio="none"><path d="M6.0 6.0 L43.6 11.4 L81.2 21.1 L118.8 26.5 L156.4 27.5 L194.0 34.0" fill="none" stroke="var(--primary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"></path><path d="M193.5 27.0 V41.0" stroke="var(--primary)" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linecap="round"></path></svg><span class="hm-vline"></span><span class="hm-dot"></span><span class="hm-ctip"></span></div><div class="hm-axis"><span style="left:3.00%">6 月</span><span style="left:21.80%">7 月</span><span style="left:40.60%">8 月</span><span style="left:59.40%">9 月</span><span style="left:78.20%">10 月</span><span style="left:97.00%">11 月</span></div></div>
+              </div>
+            </div>
+
+            <div class="hm-panel">
+              <div class="hm-top-head">
+                <div class="hm-top-title" id="hmTopTitle">TOP10 品种（按零售金额）</div>
+                <div class="hm-mode" id="hmTopMode">
+                  <span class="hm-mode-item is-on" data-mode="amt">按零售金额</span>
+                  <span class="hm-mode-item" data-mode="qty">按数量</span>
+                </div>
+              </div>
+              <div class="hm-top-grid" id="hmTopList"><div class="hm-trow"><span class="hm-trank">1</span><span class="hm-tname" title="氯化钠注射液">氯化钠注射液</span><span class="hm-tspec">4 品规</span><span class="hm-tval">¥86,240</span></div><div class="hm-trow"><span class="hm-trank">2</span><span class="hm-tname" title="头孢曲松钠">头孢曲松钠</span><span class="hm-tspec">2 品规</span><span class="hm-tval">¥54,860</span></div><div class="hm-trow"><span class="hm-trank">3</span><span class="hm-tname" title="人血白蛋白">人血白蛋白</span><span class="hm-tspec">1 品规</span><span class="hm-tval">¥31,200</span></div><div class="hm-trow"><span class="hm-trank">4</span><span class="hm-tname" title="硫酸镁注射液">硫酸镁注射液</span><span class="hm-tspec">2 品规</span><span class="hm-tval">¥22,140</span></div><div class="hm-trow"><span class="hm-trank">5</span><span class="hm-tname" title="葡萄糖注射液">葡萄糖注射液</span><span class="hm-tspec">3 品规</span><span class="hm-tval">¥19,480</span></div><div class="hm-trow"><span class="hm-trank">6</span><span class="hm-tname" title="奥美拉唑注射液">奥美拉唑注射液</span><span class="hm-tspec">2 品规</span><span class="hm-tval">¥17,260</span></div><div class="hm-trow"><span class="hm-trank">7</span><span class="hm-tname" title="注射用甲泼尼龙">注射用甲泼尼龙</span><span class="hm-tspec">1 品规</span><span class="hm-tval">¥15,840</span></div><div class="hm-trow"><span class="hm-trank">8</span><span class="hm-tname" title="复方氯化钠注射液">复方氯化钠注射液</span><span class="hm-tspec">2 品规</span><span class="hm-tval">¥14,320</span></div><div class="hm-trow"><span class="hm-trank">9</span><span class="hm-tname" title="甘露醇注射液">甘露醇注射液</span><span class="hm-tspec">2 品规</span><span class="hm-tval">¥12,680</span></div><div class="hm-trow"><span class="hm-trank">10</span><span class="hm-tname" title="注射用头孢他啶">注射用头孢他啶</span><span class="hm-tspec">1 品规</span><span class="hm-tval">¥11,540</span></div></div>
+            </div>
+          </section>
+
+          <!-- ===== 03 待办与预警 ===== -->
+          <section class="hm-card">
+            <div class="hm-sec-head">
+              <span class="hm-sec-title">待办与预警</span>
+            </div>
+
+            <div class="hm-grid2">
+              <div class="hm-panel">
+                <div class="hm-list-head">
+                  <span class="hm-list-title">待处理任务</span>
+                  <span class="hm-list-count">36</span>
+                </div>
+                <div class="hm-list" id="hmTaskList"><div class="hm-task" data-href="prescription-dispensing.html"><span>待发药</span><span class="hm-task-count">20</span></div><div class="hm-task" data-href="transfer.html"><span>待处理调拨单</span><span class="hm-task-count">3</span></div><div class="hm-task" data-href="stock-return.html"><span>待处理退库申请</span><span class="hm-task-count">2</span></div><div class="hm-task" data-href="outbound.html"><span>待核出库单</span><span class="hm-task-count">5</span></div><div class="hm-task" data-href="stock-in.html"><span>待核入库单</span><span class="hm-task-count">4</span></div><div class="hm-task" data-href="stock-adjust.html"><span>待核增损单</span><span class="hm-task-count">1</span></div><div class="hm-task" data-href="stock-check.html"><span>待审盘点 / 调价</span><span class="hm-task-count">1</span></div></div>
+              </div>
+
+              <div class="hm-panel">
+                <div class="hm-list-head">
+                  <span class="hm-list-title">预警任务</span>
+                  <span class="hm-list-count">17</span>
+                </div>
+                <div class="hm-list" id="hmAlertList"><div class="hm-task is-quiet"><span>近效期预警</span><span class="hm-task-count">8</span></div><div class="hm-task" data-href="stock-alert.html"><span>药品低储预警</span><span class="hm-task-count">6</span></div><div class="hm-task" data-href="stock-alert.html"><span>药品高储预警</span><span class="hm-task-count">3</span></div></div>
+              </div>
+            </div>
+
+            <div class="hm-panel hm-ai">
+              <div class="hm-ai-head">
+                <span class="hm-ai-title">智能补货建议</span>
+                <span class="hm-ai-sub">仅供参考</span>
+              </div>
+              <div id="hmAiList"><div class="hm-ai-item"><div class="hm-ai-line"><span class="hm-ai-name" title="头孢曲松钠 1g">头孢曲松钠 1g</span><span class="hm-ai-qty"><em>建议</em>1,200 支</span></div><div class="hm-ai-subline"><span class="hm-ai-meta">依据：可用 0 支 · 日均 148 支 · 近 3 月日均 +18%</span><span class="hm-fb"><button class="hm-fb-btn" data-fb="up" aria-label="点赞" aria-pressed="false"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="8.5" width="3" height="9" rx="1"></rect><path d="M6 17.5V9.3l3.2-5.1a1.9 1.9 0 0 1 3.4 1.1l-.6 3.4h4a1.7 1.7 0 0 1 1.65 2.15l-1.05 4.4a1.7 1.7 0 0 1-1.65 1.25H6z"></path></svg></button><button class="hm-fb-btn" data-fb="down" aria-label="踩一脚" aria-pressed="false"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><g transform="translate(0,20) scale(1,-1)"><rect x="2.5" y="8.5" width="3" height="9" rx="1"></rect><path d="M6 17.5V9.3l3.2-5.1a1.9 1.9 0 0 1 3.4 1.1l-.6 3.4h4a1.7 1.7 0 0 1 1.65 2.15l-1.05 4.4a1.7 1.7 0 0 1-1.65 1.25H6z"></path></g></svg></button></span></div></div><div class="hm-ai-item"><div class="hm-ai-line"><span class="hm-ai-name" title="氯化钠注射液 0.9% 500ml">氯化钠注射液 0.9% 500ml</span><span class="hm-ai-qty"><em>建议</em>2,000 瓶</span></div><div class="hm-ai-subline"><span class="hm-ai-meta">依据：可用 210 瓶 · 日均 460 瓶 · 按 7 天安全库存补足</span><span class="hm-fb"><button class="hm-fb-btn" data-fb="up" aria-label="点赞" aria-pressed="false"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="8.5" width="3" height="9" rx="1"></rect><path d="M6 17.5V9.3l3.2-5.1a1.9 1.9 0 0 1 3.4 1.1l-.6 3.4h4a1.7 1.7 0 0 1 1.65 2.15l-1.05 4.4a1.7 1.7 0 0 1-1.65 1.25H6z"></path></svg></button><button class="hm-fb-btn" data-fb="down" aria-label="踩一脚" aria-pressed="false"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><g transform="translate(0,20) scale(1,-1)"><rect x="2.5" y="8.5" width="3" height="9" rx="1"></rect><path d="M6 17.5V9.3l3.2-5.1a1.9 1.9 0 0 1 3.4 1.1l-.6 3.4h4a1.7 1.7 0 0 1 1.65 2.15l-1.05 4.4a1.7 1.7 0 0 1-1.65 1.25H6z"></path></g></svg></button></span></div></div><div class="hm-ai-item"><div class="hm-ai-line"><span class="hm-ai-name" title="人血白蛋白 10g">人血白蛋白 10g</span><span class="hm-ai-qty"><em>建议</em>40 瓶</span></div><div class="hm-ai-subline"><span class="hm-ai-meta">依据：可用 6 瓶 · 日均 12 瓶 · 缺药登记 4 次，到货 7 天</span><span class="hm-fb"><button class="hm-fb-btn" data-fb="up" aria-label="点赞" aria-pressed="false"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="8.5" width="3" height="9" rx="1"></rect><path d="M6 17.5V9.3l3.2-5.1a1.9 1.9 0 0 1 3.4 1.1l-.6 3.4h4a1.7 1.7 0 0 1 1.65 2.15l-1.05 4.4a1.7 1.7 0 0 1-1.65 1.25H6z"></path></svg></button><button class="hm-fb-btn" data-fb="down" aria-label="踩一脚" aria-pressed="false"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><g transform="translate(0,20) scale(1,-1)"><rect x="2.5" y="8.5" width="3" height="9" rx="1"></rect><path d="M6 17.5V9.3l3.2-5.1a1.9 1.9 0 0 1 3.4 1.1l-.6 3.4h4a1.7 1.7 0 0 1 1.65 2.15l-1.05 4.4a1.7 1.7 0 0 1-1.65 1.25H6z"></path></g></svg></button></span></div></div><div class="hm-ai-item"><div class="hm-ai-line"><span class="hm-ai-name" title="注射用头孢他啶 1g">注射用头孢他啶 1g</span><span class="hm-ai-qty"><em>建议</em>800 支</span></div><div class="hm-ai-subline"><span class="hm-ai-meta">依据：可用 40 支 · 日均 92 支 · 近 3 月日均 +12%</span><span class="hm-fb"><button class="hm-fb-btn" data-fb="up" aria-label="点赞" aria-pressed="false"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="8.5" width="3" height="9" rx="1"></rect><path d="M6 17.5V9.3l3.2-5.1a1.9 1.9 0 0 1 3.4 1.1l-.6 3.4h4a1.7 1.7 0 0 1 1.65 2.15l-1.05 4.4a1.7 1.7 0 0 1-1.65 1.25H6z"></path></svg></button><button class="hm-fb-btn" data-fb="down" aria-label="踩一脚" aria-pressed="false"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><g transform="translate(0,20) scale(1,-1)"><rect x="2.5" y="8.5" width="3" height="9" rx="1"></rect><path d="M6 17.5V9.3l3.2-5.1a1.9 1.9 0 0 1 3.4 1.1l-.6 3.4h4a1.7 1.7 0 0 1 1.65 2.15l-1.05 4.4a1.7 1.7 0 0 1-1.65 1.25H6z"></path></g></svg></button></span></div></div><div class="hm-ai-item"><div class="hm-ai-line"><span class="hm-ai-name" title="葡萄糖注射液 5% 500ml">葡萄糖注射液 5% 500ml</span><span class="hm-ai-qty"><em>建议</em>1,600 袋</span></div><div class="hm-ai-subline"><span class="hm-ai-meta">依据：可用 320 袋 · 日均 510 袋 · 消耗平稳</span><span class="hm-fb"><button class="hm-fb-btn" data-fb="up" aria-label="点赞" aria-pressed="false"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="8.5" width="3" height="9" rx="1"></rect><path d="M6 17.5V9.3l3.2-5.1a1.9 1.9 0 0 1 3.4 1.1l-.6 3.4h4a1.7 1.7 0 0 1 1.65 2.15l-1.05 4.4a1.7 1.7 0 0 1-1.65 1.25H6z"></path></svg></button><button class="hm-fb-btn" data-fb="down" aria-label="踩一脚" aria-pressed="false"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><g transform="translate(0,20) scale(1,-1)"><rect x="2.5" y="8.5" width="3" height="9" rx="1"></rect><path d="M6 17.5V9.3l3.2-5.1a1.9 1.9 0 0 1 3.4 1.1l-.6 3.4h4a1.7 1.7 0 0 1 1.65 2.15l-1.05 4.4a1.7 1.7 0 0 1-1.65 1.25H6z"></path></g></svg></button></span></div></div></div>
+              <div class="hm-ai-foot">
+                <span class="hm-ai-gen">09:00 生成 · 反馈仅用于优化预测</span>
+                <div class="hm-pager">
+                  <button class="hm-pg-btn" id="hmPgPrev" aria-label="上一页" disabled="">
+                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"></path></svg>
+                  </button>
+                  <span class="hm-pg-num" id="hmPgNum">1 / 2</span>
+                  <button class="hm-pg-btn" id="hmPgNext" aria-label="下一页">
+                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="drawer-mask" id="hmMask"></div>
+<div class="drawer" id="hmDrawer" aria-hidden="true">
+  <div class="drawer-head">
+    <div class="drawer-title">指标口径说明</div>
+    <button class="drawer-close" id="hmDrawerClose" aria-label="关闭">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 5l14 14M19 5L5 19"></path></svg>
+    </button>
+  </div>
+  <div class="drawer-body" id="hmDrawerBody"></div>
+</div>
+
+<div class="hm-toast" id="hmToast"></div>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var ST = { period: "month", customFrom: "", customTo: "", topMode: "amt", aiPage: 1 };
+
+  /* ---------- 数据 ---------- */
+  var M6 = ["6 月", "7 月", "8 月", "9 月", "10 月", "11 月"];
+  var M3 = ["9 月", "10 月", "11 月"];
+
+  /* 趋势点：由 from 平滑过渡到 to，中间保留小幅波动 */
+  function seqOf(from, to, n) {
+    var out = [];
+    for (var i = 0; i < n; i++) {
+      var t = n > 1 ? i / (n - 1) : 1;
+      var w = i === 0 || i === n - 1 ? 0 : Math.sin(i * 1.6) * 0.55;
+      out.push(Math.round((from + (to - from) * t + w) * 10) / 10);
+    }
+    return out;
+  }
+
+  /* 本月按天：1 日至当日 */
+  function dayLabels() {
+    var now = new Date();
+    var d = Math.max(2, now.getDate());
+    var out = [];
+    for (var i = 1; i <= d; i++) out.push(i + " 日");
+    return out;
+  }
+
+  var DAYS = dayLabels();
+
+  var RATES = {
+    month: {
+      basic: { v: 62.5, delta: "+2.1%", good: true, series: seqOf(56.2, 62.5, DAYS.length), labels: DAYS },
+      anti: { v: 18.7, delta: "-0.6%", good: true, series: seqOf(21.3, 18.7, DAYS.length), labels: DAYS }
+    },
+    quarter: {
+      basic: { v: 61.2, delta: "+2.4%", good: true, series: [59.6, 60.4, 62.5], labels: M3 },
+      anti: { v: 19.5, delta: "-0.4%", good: true, series: [19.7, 19.3, 18.7], labels: M3 }
+    },
+    half: {
+      basic: { v: 60.8, delta: "+3.1%", good: true, series: seqOf(55.8, 62.5, 6), labels: M6 },
+      anti: { v: 19.9, delta: "-2.2%", good: true, series: seqOf(22.4, 18.7, 6), labels: M6 }
+    }
+  };
+
+  /* 自定义区间：同月按天，跨月按月 */
+  function customRates() {
+    var f = ST.customFrom || "2026-09-01";
+    var t = ST.customTo || "2026-11-05";
+    var labels = [];
+    if (f.slice(0, 7) === t.slice(0, 7)) {
+      var d1 = Number(f.slice(8, 10));
+      var d2 = Number(t.slice(8, 10));
+      if (d1 === d2) d1 = Math.max(1, d1 - 1);
+      for (var d = d1; d <= d2; d++) labels.push(d + " 日");
+    } else {
+      var y = Number(f.slice(0, 4)), m = Number(f.slice(5, 7));
+      var ey = Number(t.slice(0, 4)), em = Number(t.slice(5, 7));
+      while (y < ey || (y === ey && m <= em)) {
+        labels.push(m + " 月");
+        if (++m > 12) { m = 1; y++; }
+      }
+    }
+    var n = labels.length;
+    return {
+      basic: { v: 61.2, delta: "+2.4%", good: true, series: seqOf(59.6, 62.5, n), labels: labels },
+      anti: { v: 19.5, delta: "-0.4%", good: true, series: seqOf(21.0, 18.7, n), labels: labels }
+    };
+  }
+
+  var TOP = {
+    amt: {
+      title: "TOP10 品种（按零售金额）",
+      rows: [
+        { name: "氯化钠注射液", sub: "4 品规", value: 86240, text: "¥86,240" },
+        { name: "头孢曲松钠", sub: "2 品规", value: 54860, text: "¥54,860" },
+        { name: "人血白蛋白", sub: "1 品规", value: 31200, text: "¥31,200" },
+        { name: "硫酸镁注射液", sub: "2 品规", value: 22140, text: "¥22,140" },
+        { name: "葡萄糖注射液", sub: "3 品规", value: 19480, text: "¥19,480" },
+        { name: "奥美拉唑注射液", sub: "2 品规", value: 17260, text: "¥17,260" },
+        { name: "注射用甲泼尼龙", sub: "1 品规", value: 15840, text: "¥15,840" },
+        { name: "复方氯化钠注射液", sub: "2 品规", value: 14320, text: "¥14,320" },
+        { name: "甘露醇注射液", sub: "2 品规", value: 12680, text: "¥12,680" },
+        { name: "注射用头孢他啶", sub: "1 品规", value: 11540, text: "¥11,540" }
+      ]
+    },
+    qty: {
+      title: "TOP10 品规（按最小制剂单位）",
+      rows: [
+        { name: "氯化钠注射液 0.9% 500ml", sub: "¥12,860", value: 21430, text: "21,430 瓶" },
+        { name: "氯化钠注射液 0.9% 250ml", sub: "¥5,910", value: 9860, text: "9,860 瓶" },
+        { name: "头孢曲松钠 1g", sub: "¥38,420", value: 9605, text: "9,605 支" },
+        { name: "硫酸镁注射液 10ml", sub: "¥18,640", value: 9320, text: "9,320 支" },
+        { name: "葡萄糖注射液 5% 500ml", sub: "¥6,590", value: 8240, text: "8,240 袋" },
+        { name: "葡萄糖注射液 5% 250ml", sub: "¥3,340", value: 4180, text: "4,180 袋" },
+        { name: "复方氯化钠注射液 500ml", sub: "¥5,030", value: 3120, text: "3,120 瓶" },
+        { name: "注射用头孢他啶 1g", sub: "¥11,540", value: 2860, text: "2,860 支" },
+        { name: "奥美拉唑注射液 40mg", sub: "¥8,630", value: 2410, text: "2,410 支" },
+        { name: "人血白蛋白 10g", sub: "¥31,200", value: 312, text: "312 瓶" }
+      ]
+    }
+  };
+
+  var TASKS = [
+    { name: "待发药", count: 20, href: "prescription-dispensing.html" },
+    { name: "待处理调拨单", count: 3, href: "transfer.html" },
+    { name: "待处理退库申请", count: 2, href: "stock-return.html" },
+    { name: "待核出库单", count: 5, href: "outbound.html" },
+    { name: "待核入库单", count: 4, href: "stock-in.html" },
+    { name: "待核增损单", count: 1, href: "stock-adjust.html" },
+    { name: "待审盘点 / 调价", count: 1, href: "stock-check.html" }
+  ];
+
+  var ALERTS = [
+    { name: "近效期预警", count: 8, href: "", tone: "warn" },
+    { name: "药品低储预警", count: 6, href: "stock-alert.html", tone: "danger" },
+    { name: "药品高储预警", count: 3, href: "stock-alert.html", tone: "muted" }
+  ];
+
+  var AI_PAGES = [
+    [
+      { name: "头孢曲松钠 1g", qty: "1,200 支", meta: "可用 0 支 · 日均 148 支 · 近 3 月日均 +18%" },
+      { name: "氯化钠注射液 0.9% 500ml", qty: "2,000 瓶", meta: "可用 210 瓶 · 日均 460 瓶 · 按 7 天安全库存补足" },
+      { name: "人血白蛋白 10g", qty: "40 瓶", meta: "可用 6 瓶 · 日均 12 瓶 · 缺药登记 4 次，到货 7 天" },
+      { name: "注射用头孢他啶 1g", qty: "800 支", meta: "可用 40 支 · 日均 92 支 · 近 3 月日均 +12%" },
+      { name: "葡萄糖注射液 5% 500ml", qty: "1,600 袋", meta: "可用 320 袋 · 日均 510 袋 · 消耗平稳" }
+    ],
+    [
+      { name: "硫酸镁注射液 10ml", qty: "600 支", meta: "可用 95 支 · 日均 130 支 · 去年同期需求上浮" },
+      { name: "注射用甲泼尼龙 40mg", qty: "200 支", meta: "可用 12 支 · 日均 36 支 · 缺药登记 2 次" },
+      { name: "复方氯化钠注射液 500ml", qty: "900 瓶", meta: "可用 180 瓶 · 日均 260 瓶 · 消耗平稳" },
+      { name: "奥美拉唑注射液 40mg", qty: "500 支", meta: "可用 8 支 · 日均 45 支 · 近 3 月日均 +22%" },
+      { name: "甘露醇注射液 20% 250ml", qty: "300 瓶", meta: "可用 60 瓶 · 日均 88 瓶 · 消耗平稳" }
+    ]
+  ];
+
+  var METRICS = {
+    variety: {
+      name: "药品品种数",
+      rows: [
+        ["计算口径", "已启用状态的药品品种数，按通用名 + 剂型统计；同一品种的多个规格合并为 1 个品种。"],
+        ["数据来源", "药品目录管理（中心药房目录）"],
+        ["更新频率", "目录变更后更新，非实时轮询"]
+      ]
+    },
+    stockValue: {
+      name: "库存零售总金额",
+      rows: [
+        ["计算口径", "Σ（在库可用库存 × 当前零售价），仅统计中心药房在库批次。"],
+        ["数据来源", "库存查询 / 批次管理"],
+        ["更新频率", "实时，60 秒轮询"],
+        ["补充说明", "不含在途、锁定、冻结批次；零售价随调价单生效后重算。"]
+      ]
+    },
+    shortage: {
+      name: "缺货品规数",
+      rows: [
+        ["计算口径", "可用库存 = 现有库存 − 锁定量 − 占用量（待发药），可用库存等于 0 的品规数。"],
+        ["数据来源", "库存查询 + 处方占用"],
+        ["更新频率", "实时，60 秒轮询"],
+        ["补充说明", "缺货品规同时计入低储预警，两个数字口径存在包含关系。"]
+      ]
+    },
+    essentialRatio: {
+      name: "基药重合度",
+      rows: [
+        ["计算口径", "已配备的国家基本药物品种数（状态为启动）/ 当前目录版本基药品种数 × 100%。"],
+        ["数据来源", "药品目录管理 + 国家基本药物目录（2018 版）"],
+        ["更新频率", "仅目录变更时更新"],
+        ["补充说明", "示例：984 / 1,255 = 78.4%；目录版本变更后需整体重算。"]
+      ]
+    },
+    basicRate: {
+      name: "基药使用率",
+      rows: [
+        ["计算口径", "基本药物零售金额 ÷ 全部药品零售金额 × 100%，按所选统计周期汇总。"],
+        ["数据来源", "出库/发药明细（按零售价折算）"],
+        ["更新频率", "每小时汇总一次"],
+        ["补充说明", "示例：本月基药 24.6 万 / 全部 39.4 万 = 62.5%；环比为两个百分比相减，不是相对增长率。"]
+      ]
+    },
+    antiRate: {
+      name: "抗菌药物使用率",
+      rows: [
+        ["计算口径", "抗菌药物零售金额 ÷ 全部药品零售金额 × 100%，按所选统计周期汇总。"],
+        ["数据来源", "出库/发药明细（按零售价折算）"],
+        ["更新频率", "每小时汇总一次"],
+        ["补充说明", "该指标是金额占比，不等于抗菌药物使用强度（DDD 口径），评审时请勿混用。"]
+      ]
+    }
+  };
+
+  /* ---------- 趋势图 ---------- */
+  function calcPoints(series) {
+    var w = 200, h = 40, pad = 6;
+    var min = Math.min.apply(null, series);
+    var max = Math.max.apply(null, series);
+    var span = (max - min) || 1;
+    var step = series.length > 1 ? (w - pad * 2) / (series.length - 1) : 0;
+    return {
+      w: w, h: h, pad: pad, step: step,
+      pts: series.map(function (v, i) {
+        return {
+          x: pad + step * i,
+          y: h - pad - ((v - min) / span) * (h - pad * 2)
+        };
+      })
+    };
+  }
+
+  function svgOf(series) {
+    var g = calcPoints(series);
+    var first = g.pts[0];
+    var last = g.pts[g.pts.length - 1];
+    var d = g.pts.map(function (p, i) { return (i ? "L" : "M") + p.x.toFixed(1) + " " + p.y.toFixed(1); }).join(" ");
+    var area = "M" + first.x.toFixed(1) + " " + g.h + " " +
+      g.pts.map(function (p) { return "L" + p.x.toFixed(1) + " " + p.y.toFixed(1); }).join(" ") +
+      " L" + last.x.toFixed(1) + " " + g.h + " Z";
+    return '<svg viewBox="0 0 200 40" width="100%" height="40" preserveAspectRatio="none">' +
+      '<path d="' + area + '" fill="rgba(43, 127, 255, .07)" stroke="none"/>' +
+      '<path d="' + d + '" fill="none" stroke="var(--primary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>' +
+      "</svg>";
+  }
+
+  function axisOf(series, labels) {
+    var g = calcPoints(series);
+    var n = labels.length;
+    // 按天时点位多，标签抽稀到不超过 6 个，首末必显示
+    var every = Math.ceil(n / 6);
+    var keep = {};
+    keep[0] = true;
+    keep[n - 1] = true;
+    for (var i = every; i < n - 1; i += every) keep[i] = true;
+    var out = [];
+    labels.forEach(function (l, i) {
+      if (!keep[i]) return;
+      var tf = i === 0 ? "translateX(0)" : (i === n - 1 ? "translateX(-100%)" : "translateX(-50%)");
+      out.push('<span style="left:' + ((g.pts[i].x / g.w) * 100).toFixed(2) + '%; transform:' + tf + '">' + l + "</span>");
+    });
+    return '<div class="hm-axis">' + out.join("") + "</div>";
+  }
+
+  function chartMarkup(series, labels) {
+    var g = calcPoints(series);
+    var last = g.pts[g.pts.length - 1];
+    return '<div class="hm-plot">' + svgOf(series) +
+      '<span class="hm-enddot" style="left:' + ((last.x / g.w) * 100).toFixed(2) + '%; top:' + last.y.toFixed(1) + 'px"></span>' +
+      '<span class="hm-vline"></span><span class="hm-dot"></span><span class="hm-ctip"></span>' +
+      "</div>" + axisOf(series, labels);
+  }
+
+  function bindChart(root, series, labels) {
+    var plot = root.querySelector(".hm-plot");
+    if (!plot) return;
+    var g = calcPoints(series);
+    var vline = plot.querySelector(".hm-vline");
+    var dot = plot.querySelector(".hm-dot");
+    var tip = plot.querySelector(".hm-ctip");
+
+    plot.addEventListener("mousemove", function (e) {
+      var rect = plot.getBoundingClientRect();
+      var xInView = ((e.clientX - rect.left) / rect.width) * g.w;
+      var idx = Math.round((xInView - g.pad) / g.step);
+      idx = Math.max(0, Math.min(series.length - 1, idx));
+      var p = g.pts[idx];
+      var leftPct = (p.x / g.w) * 100;
+      vline.style.left = leftPct + "%";
+      dot.style.left = leftPct + "%";
+      dot.style.top = p.y + "px";
+      tip.textContent = labels[idx] + " · " + series[idx].toFixed(1) + "%";
+      tip.style.left = leftPct + "%";
+      tip.style.transform = idx === 0 ? "translateX(0)" : (idx === series.length - 1 ? "translateX(-100%)" : "translateX(-50%)");
+      vline.style.display = "block";
+      dot.style.display = "block";
+      tip.style.display = "block";
+    });
+    plot.addEventListener("mouseleave", function () {
+      vline.style.display = "none";
+      dot.style.display = "none";
+      tip.style.display = "none";
+    });
+  }
+
+  function renderRate(side, d) {
+    $("hm" + side + "Val").textContent = d.v.toFixed(1) + "%";
+    var dl = $("hm" + side + "Delta");
+    dl.textContent = "环比 " + d.delta;
+    dl.className = "hm-rate-delta " + (d.good ? "is-good" : "is-bad");
+    var box = $("hm" + side + "Chart");
+    box.innerHTML = chartMarkup(d.series, d.labels);
+    bindChart(box, d.series, d.labels);
+  }
+
+  function renderPeriod() {
+    var d = ST.period === "custom" ? customRates() : (RATES[ST.period] || RATES.month);
+    renderRate("Basic", d.basic);
+    renderRate("Anti", d.anti);
+    Array.prototype.forEach.call($("hmPeriod").children, function (el) {
+      el.classList.toggle("is-on", el.getAttribute("data-period") === ST.period);
+    });
+  }
+
+  /* ---------- TOP10 ---------- */
+  function renderTop() {
+    var d = TOP[ST.topMode];
+    var max = 1;
+    d.rows.forEach(function (r) { if (r.value > max) max = r.value; });
+    $("hmTopTitle").textContent = d.title;
+    $("hmTopList").innerHTML = d.rows.map(function (r, i) {
+      return '<div class="hm-trow">' +
+        '<span class="hm-tbar" style="width:' + (r.value / max * 100).toFixed(1) + '%"></span>' +
+        '<span class="hm-trank">' + (i + 1) + "</span>" +
+        '<span class="hm-tname" title="' + r.name + '">' + r.name + "</span>" +
+        '<span class="hm-tspec">' + r.sub + "</span>" +
+        '<span class="hm-tval">' + r.text + "</span>" +
+        "</div>";
+    }).join("");
+    Array.prototype.forEach.call($("hmTopMode").children, function (el) {
+      el.classList.toggle("is-on", el.getAttribute("data-mode") === ST.topMode);
+    });
+  }
+
+  /* ---------- 待办 / 预警 ---------- */
+  function renderTasks() {
+    $("hmTaskList").innerHTML = TASKS.map(function (t) {
+      return '<div class="hm-task" data-href="' + t.href + '">' +
+        "<span>" + t.name + "</span>" +
+        '<span class="hm-task-count">' + t.count + "</span></div>";
+    }).join("");
+    $("hmAlertList").innerHTML = ALERTS.map(function (a) {
+      var tc = "hm-task-count" + (a.tone ? " is-" + a.tone : "");
+      return '<div class="hm-task"' + (a.href ? ' data-href="' + a.href + '"' : "") + ">" +
+        "<span>" + a.name + "</span>" +
+        '<span class="' + tc + '">' + a.count + "</span></div>";
+    }).join("");
+  }
+
+  /* ---------- 补货建议 ---------- */
+  function thumbs(dir) {
+    var g = dir === "up" ? "" : '<g transform="translate(0,20) scale(1,-1)">';
+    var end = dir === "up" ? "" : "</g>";
+    return '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">' +
+      g +
+      '<rect x="2.5" y="8.5" width="3" height="9" rx="1"/>' +
+      '<path d="M6 17.5V9.3l3.2-5.1a1.9 1.9 0 0 1 3.4 1.1l-.6 3.4h4a1.7 1.7 0 0 1 1.65 2.15l-1.05 4.4a1.7 1.7 0 0 1-1.65 1.25H6z"/>' +
+      end + "</svg>";
+  }
+
+  function renderAi() {
+    var rows = AI_PAGES[ST.aiPage - 1] || [];
+    $("hmAiList").innerHTML = rows.map(function (r) {
+      return '<div class="hm-ai-item">' +
+        '<div class="hm-ai-line">' +
+          '<span class="hm-ai-name" title="' + r.name + '">' + r.name + "</span>" +
+          '<span class="hm-ai-qty"><em>建议</em>' + r.qty + "</span>" +
+        "</div>" +
+        '<div class="hm-ai-subline">' +
+          '<span class="hm-ai-meta">依据：' + r.meta + "</span>" +
+          '<span class="hm-fb">' +
+            '<button class="hm-fb-btn" data-fb="up" aria-label="点赞" aria-pressed="false">' + thumbs("up") + "</button>" +
+            '<button class="hm-fb-btn" data-fb="down" aria-label="踩一脚" aria-pressed="false">' + thumbs("down") + "</button>" +
+          "</span>" +
+        "</div>" +
+      "</div>";
+    }).join("");
+    $("hmPgNum").textContent = ST.aiPage + " / " + AI_PAGES.length;
+    $("hmPgPrev").disabled = ST.aiPage === 1;
+    $("hmPgNext").disabled = ST.aiPage === AI_PAGES.length;
+  }
+
+  /* ---------- 抽屉 ---------- */
+  function openDrawer(key) {
+    var m = METRICS[key];
+    if (!m) return;
+    $("hmDrawerBody").innerHTML =
+      '<div class="hm-dr-name">' + m.name + "</div>" +
+      m.rows.map(function (r) {
+        return '<div class="hm-dr-row"><span class="hm-dr-label">' + r[0] + '</span><span class="hm-dr-val">' + r[1] + "</span></div>";
+      }).join("") +
+      '<div class="hm-dr-formula">环比展示的是两个使用率的差值（如 62.5% − 60.4% = +2.1%），不是相对增长率。</div>';
+    $("hmDrawer").setAttribute("aria-hidden", "false");
+    document.body.classList.add("drawer-open");
+  }
+
+  function closeDrawer() {
+    $("hmDrawer").setAttribute("aria-hidden", "true");
+    document.body.classList.remove("drawer-open");
+  }
+
+  /* ---------- 事件 ---------- */
+  $("hmMask").addEventListener("click", closeDrawer);
+  $("hmDrawerClose").addEventListener("click", closeDrawer);
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") closeDrawer();
+    var ico = e.target.closest && e.target.closest(".hm-ico");
+    if (ico && (e.key === "Enter" || e.key === " ")) {
+      e.preventDefault();
+      openDrawer(ico.getAttribute("data-metric"));
+    }
+  });
+
+  Array.prototype.forEach.call($("hmPeriod").children, function (el) {
+    el.addEventListener("click", function () {
+      var p = el.getAttribute("data-period");
+      ST.period = p;
+      if (p === "custom") {
+        ST.customFrom = $("hmFrom").value;
+        ST.customTo = $("hmTo").value;
+      }
+      $("hmRange").classList.toggle("is-on", p === "custom");
+      renderPeriod();
+    });
+  });
+
+  $("hmApplyRange").addEventListener("click", function () {
+    var f = $("hmFrom").value, t = $("hmTo").value;
+    if (!f || !t) { toast("请选择完整的统计区间"); return; }
+    if (f > t) { toast("开始日期不能晚于结束日期"); return; }
+    ST.period = "custom";
+    ST.customFrom = f;
+    ST.customTo = t;
+    renderPeriod();
+    toast("已按所选区间重新统计");
+  });
+
+  Array.prototype.forEach.call($("hmTopMode").children, function (el) {
+    el.addEventListener("click", function () {
+      ST.topMode = el.getAttribute("data-mode");
+      renderTop();
+    });
+  });
+
+  $("hmPgPrev").addEventListener("click", function () {
+    if (ST.aiPage > 1) { ST.aiPage -= 1; renderAi(); }
+  });
+  $("hmPgNext").addEventListener("click", function () {
+    if (ST.aiPage < AI_PAGES.length) { ST.aiPage += 1; renderAi(); }
+  });
+
+  $("hmAiList").addEventListener("click", function (e) {
+    var btn = e.target.closest(".hm-fb-btn");
+    if (!btn) return;
+    var wrap = btn.parentNode;
+    var kind = btn.getAttribute("data-fb");
+    var wasOn = btn.classList.contains(kind === "up" ? "is-up" : "is-down");
+    Array.prototype.forEach.call(wrap.querySelectorAll(".hm-fb-btn"), function (b) {
+      b.classList.remove("is-up", "is-down");
+      b.setAttribute("aria-pressed", "false");
+    });
+    if (!wasOn) {
+      btn.classList.add(kind === "up" ? "is-up" : "is-down");
+      btn.setAttribute("aria-pressed", "true");
+      toast(kind === "up" ? "已点赞，反馈已记录" : "已记录，会用于优化预测");
+    }
+  });
+
+  document.addEventListener("click", function (e) {
+    var ico = e.target.closest(".hm-ico");
+    if (ico) { openDrawer(ico.getAttribute("data-metric")); return; }
+    var kpi = e.target.closest(".hm-kpi");
+    if (kpi && kpi.getAttribute("data-href")) { location.href = kpi.getAttribute("data-href"); return; }
+    var task = e.target.closest(".hm-task");
+    if (task && task.getAttribute("data-href")) { location.href = task.getAttribute("data-href"); }
+  });
+
+  $("hmRefresh").addEventListener("click", function () { toast("数据已刷新"); });
+
+  var toastTimer = null;
+  function toast(msg) {
+    var t = $("hmToast");
+    t.textContent = msg;
+    t.classList.add("is-on");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { t.classList.remove("is-on"); }, 2000);
+  }
+
+  /* ---------- 初始化 ---------- */
+  (function initHead() {
+    var now = new Date();
+    var h = now.getHours();
+    var greet = h < 12 ? "上午好" : (h < 18 ? "下午好" : "晚上好");
+    var wd = ["星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"][now.getDay()];
+    $("hmGreet").textContent = greet + "，赵敏";
+    $("hmDate").textContent = now.getFullYear() + "年" + (now.getMonth() + 1) + "月" + now.getDate() + "日 " + wd;
+  })();
+  renderPeriod();
+  renderTop();
+  renderTasks();
+  renderAi();
+})();
+</script>
+
+
+
+  <script src="nav.js"></script>
+</body></html>

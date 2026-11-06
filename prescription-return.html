@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>处方退药 · 中心药房</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+/* ===== 处方管理 · 处方退药 局部样式 ===== */
+.rt-page { background: var(--bg-page); }
+.rt-page > .page-head { background: var(--bg-white); }
+
+.rt-body {
+  flex: 1; min-height: 0;
+  display: flex; gap: 12px;
+  padding: 12px;
+}
+
+/* ---------- 左侧：筛选 + 处方列表 ---------- */
+.rt-left {
+  flex: none; width: 324px; min-height: 0;
+  display: flex; flex-direction: column;
+  background: var(--bg-white);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 1px 2px rgba(0,0,0,.04);
+  overflow: hidden;
+}
+
+.rt-filter { flex: none; padding: 10px 12px 12px; border-bottom: 1px solid var(--border); }
+.rt-frow { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+.rt-frow:last-of-type { margin-bottom: 0; }
+.rt-flbl { flex: none; width: 54px; font-size: 12px; color: var(--text-secondary); text-align: right; white-space: nowrap; }
+.rt-dt { flex: none; width: 112px; height: 30px; padding: 0 3px; font-size: 10px; }
+.rt-dash { flex: none; font-size: 12px; color: var(--text-tertiary); }
+.rt-inp { flex: 1; min-width: 0; height: 30px; }
+
+.rt-scopes { display: flex; flex-wrap: wrap; gap: 8px 14px; margin: 2px 0 10px; }
+.rt-scope {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 12px; color: var(--text-secondary); white-space: nowrap; cursor: pointer;
+}
+.rt-frow .rt-scope { flex: none; white-space: nowrap; word-break: keep-all; }
+.rt-frow .rt-scope input { width: 13px; height: 13px; margin: 0; accent-color: var(--primary); cursor: pointer; }
+.rt-frow .rt-inp { flex: 1; min-width: 60px; }
+.rt-acts { display: flex; justify-content: flex-end; gap: 8px; }
+
+.rt-listwrap { flex: 1; min-height: 0; overflow: auto; }
+.rt-list { width: 100%; border-collapse: separate; border-spacing: 0; table-layout: fixed; font-size: 12px; }
+.rt-list thead th {
+  position: sticky; top: 0; z-index: 2;
+  height: 36px; padding: 0 6px;
+  background: var(--table-head);
+  font-weight: 500; color: var(--text-secondary);
+  text-align: left; white-space: nowrap;
+  border-bottom: 1px solid var(--border);
+}
+.rt-list tbody tr { background: var(--bg-white); cursor: pointer; }
+.rt-list tbody tr:nth-child(even) { background: var(--table-even); }
+.rt-list tbody tr:hover { background: var(--table-hover); }
+.rt-list tbody tr.active td { background: var(--primary-light); color: var(--primary-dark); }
+.rt-list tbody td {
+  height: 36px; padding: 0 6px;
+  border-bottom: 1px solid var(--border-light);
+  color: var(--text-primary);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.rt-list .num { text-align: right; font-variant-numeric: tabular-nums; }
+.rt-list .c-dose { width: 42px; }
+.rt-empty { padding: 48px 0; text-align: center; color: var(--text-placeholder); font-size: 12px; }
+.rt-pager { flex: none; height: 42px; padding: 0 3px 0 10px; }
+
+/* ---------- 右侧：处方详情 ---------- */
+.rt-right {
+  flex: 1; min-width: 0; min-height: 0;
+  display: flex; flex-direction: column;
+  background: var(--bg-white);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 1px 2px rgba(0,0,0,.04);
+  overflow: hidden;
+}
+.rt-dhead {
+  flex: none; height: 48px;
+  display: flex; align-items: center; gap: 12px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--border);
+}
+.rt-sec {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 14px; font-weight: 500; color: var(--text-primary);
+  white-space: nowrap;
+}
+.rt-sec::before { content: ""; width: 3px; height: 14px; border-radius: 1px; background: var(--primary); }
+.rt-dacts { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+.rt-dacts .btn:disabled { color: var(--text-placeholder); border-color: var(--border); background: var(--bg-white); cursor: not-allowed; }
+.rt-dacts .btn-primary:disabled { background: #A8C8F0; border-color: #A8C8F0; color: #fff; }
+.rt-state { font-size: 12px; color: var(--success); white-space: nowrap; }
+
+.rt-dwrap { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.rt-info {
+  flex: none;
+  display: flex; flex-direction: column; gap: 7px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-light);
+}
+.rt-irow { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 6px 28px; }
+.rt-cell { display: flex; min-width: 0; flex: none; font-size: 12px; line-height: 18px; }
+.rt-cell.wide { flex: 0 1 260px; max-width: 320px; }
+.rt-k { flex: none; color: var(--text-tertiary); white-space: nowrap; }
+.rt-v { min-width: 0; white-space: nowrap; color: var(--text-primary); }
+.rt-cell.wide .rt-v { overflow: hidden; text-overflow: ellipsis; }
+
+.rt-drughead { flex: none; height: 40px; display: flex; align-items: center; padding: 0 16px; }
+
+.rt-tablewrap { flex: 1; min-height: 0; overflow: auto; }
+.rt-table {
+  width: 100%; min-width: 1132px;
+  border-collapse: separate; border-spacing: 0;
+  table-layout: fixed; font-size: 11px;
+}
+.rt-table thead th {
+  position: sticky; top: 0; z-index: 3;
+  height: 36px; padding: 0 6px;
+  background: var(--table-head);
+  font-weight: 500; color: var(--text-secondary);
+  text-align: left; white-space: nowrap;
+  border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+}
+.rt-table thead th:last-child { border-right: none; }
+.rt-table tbody td {
+  height: 38px; padding: 0 6px;
+  border-bottom: 1px solid var(--border-light);
+  border-right: 1px solid var(--border-light);
+  color: var(--text-primary);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  vertical-align: middle;
+}
+.rt-table tbody td:last-child { border-right: none; }
+.rt-table tbody tr:nth-child(even) { background: var(--table-even); }
+.rt-table tbody tr:hover { background: var(--table-hover); }
+.rt-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.rt-table input[type="checkbox"] { width: 13px; height: 13px; margin: 0; accent-color: var(--primary); vertical-align: middle; }
+.rt-table .c-chk { width: 30px; text-align: center; padding: 0; }
+.rt-table .c-code { width: 90px; }
+.rt-table .c-dname { width: 58px; }
+.rt-table .c-spec { width: 72px; }
+.rt-table .c-vendor { width: 80px; }
+.rt-table .c-unit { width: 30px; }
+.rt-table .c-price { width: 44px; }
+.rt-table .c-qty { width: 30px; }
+.rt-table .c-rqty { width: 56px; text-align: center; padding: 0 3px; }
+.rt-table .c-amt { width: 56px; }
+.rt-table .c-remq { width: 56px; }
+.rt-table .c-rema { width: 56px; }
+.rt-table .c-cashier { width: 46px; }
+.rt-table .c-ctime { width: 122px; }
+.rt-table .c-disp { width: 44px; }
+.rt-table .c-dtime { width: 122px; }
+.rt-table .c-tcode { width: 150px; }
+.rt-table .c-rtcode { width: 150px; }
+
+.rt-code {
+  display: inline-block; max-width: 100%;
+  padding: 1px 5px; margin: 1px 2px 1px 0;
+  border-radius: 2px;
+  background: var(--primary-light); color: var(--primary-dark);
+  font-size: 10px; line-height: 16px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  vertical-align: middle;
+}
+.rt-code.is-ret { background: #E8F7E9; color: var(--success); }
+.rt-code.rt-more { border: none; cursor: pointer; font-family: inherit; padding: 1px 6px; }
+.rt-code.rt-more:hover { filter: brightness(.95); }
+
+/* ---------- 追溯码明细弹窗 ---------- */
+.rt-tv-sub { margin-bottom: 10px; font-size: 12px; color: var(--text-secondary); }
+.rt-tv-chips { max-height: 260px; overflow: auto; }
+.rt-tv-chips .rt-code { max-width: 100%; }
+
+.rt-qty {
+  width: 48px; height: 26px;
+  border: 1px solid var(--border-input); border-radius: 3px;
+  background: var(--bg-white); color: var(--success);
+  font-size: 11px; text-align: center; padding: 0 2px;
+  font-variant-numeric: tabular-nums;
+}
+.rt-qty:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 2px rgba(43,127,255,.12); }
+.rt-qty:disabled { background: var(--bg-disabled); color: var(--text-tertiary); border-color: var(--border); cursor: not-allowed; }
+.rt-qty.is-invalid { border-color: var(--danger); }
+.rt-qty::-webkit-outer-spin-button, .rt-qty::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+.rt-sum {
+  flex: none; height: 36px;
+  display: flex; align-items: center; justify-content: flex-end; gap: 4px;
+  padding: 0 16px;
+  background: #EAF3FF;
+  border-top: 1px solid #D3E5FF;
+  font-size: 12px; color: var(--text-secondary);
+}
+.rt-sum b { color: var(--primary-dark); font-weight: 500; font-variant-numeric: tabular-nums; }
+
+.rt-dempty { flex: 1; display: grid; place-items: center; color: var(--text-placeholder); font-size: 13px; }
+.rt-dlg-text { font-size: 13px; line-height: 1.9; color: var(--text-secondary); }
+.rt-dlg-text b { color: var(--primary-dark); font-weight: 500; }
+
+/* ---------- 顶栏药房下拉 ---------- */
+.app-header { position: relative; z-index: 50; }
+.hp-drop { position: relative; margin-left: 16px; }
+.hp-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 28px; padding: 0 10px;
+  border: none; border-radius: 4px;
+  background: transparent; color: #fff;
+  font-size: 13px; cursor: pointer;
+}
+.hp-btn:hover { background: rgba(255,255,255,.14); }
+.hp-btn .hp-sep { width: 1px; height: 14px; background: rgba(255,255,255,.35); }
+.hp-btn svg { transition: transform .15s; }
+.hp-drop.open .hp-btn svg { transform: rotate(180deg); }
+.hp-menu {
+  display: none; position: absolute; top: 36px; left: 0;
+  min-width: 132px; padding: 4px;
+  background: #fff; border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.16);
+}
+.hp-drop.open .hp-menu { display: block; }
+.hp-item {
+  padding: 7px 10px; border-radius: 4px;
+  font-size: 12px; color: var(--text-primary);
+  cursor: pointer; white-space: nowrap;
+}
+.hp-item:hover { background: var(--bg-hover); }
+.hp-item.active { color: var(--primary-dark); background: var(--primary-light); font-weight: 500; }
+
+/* ---------- 退药录码弹窗 ---------- */
+.modal-foot .btn-primary:disabled { background: #A8C8F0; border-color: #A8C8F0; color: #fff; cursor: not-allowed; }
+.rt-scan-row { display: flex; gap: 8px; margin-bottom: 10px; }
+.rt-scan-row .input { flex: 1; }
+.rt-scan-list {
+  max-height: 300px; overflow: auto;
+  border: 1px solid var(--border); border-radius: 4px;
+  padding: 4px 0;
+}
+.rt-scan-item { padding: 8px 12px; }
+.rt-scan-item + .rt-scan-item { border-top: 1px solid var(--border-light); }
+.rt-scan-name {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 6px; font-size: 12px; color: var(--text-primary); font-weight: 500;
+}
+.rt-scan-name .rt-scan-cnt { margin-left: auto; font-weight: 400; color: var(--text-tertiary); }
+.rt-scan-name .rt-scan-cnt.ok { color: var(--success); }
+.rt-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.rt-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 4px 2px 8px;
+  background: var(--primary-light); border-radius: 3px;
+  font-size: 11px; color: var(--primary-dark);
+  font-variant-numeric: tabular-nums;
+}
+.rt-chip button {
+  width: 14px; height: 14px; padding: 0;
+  border: none; border-radius: 2px;
+  background: transparent; color: var(--primary-dark);
+  font-size: 12px; line-height: 14px; cursor: pointer;
+}
+.rt-chip button:hover { background: rgba(22,119,255,.18); }
+.rt-chip-empty { font-size: 11px; color: var(--text-placeholder); }
+</style>
+</head>
+<body>
+
+<!-- ========== 顶部导航 ========== -->
+<header class="app-header">
+  <div class="header-left">
+    <div class="header-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z"></path></svg>
+    </div>
+    <div class="header-title">区域药房协同管理系统</div>
+    <div class="hp-drop" id="hpDrop">
+      <button class="hp-btn" id="hpBtn" title="切换药房">
+        <span class="hp-sep"></span>
+        <span id="hpLabel">中药房</span>
+        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"></path></svg>
+      </button>
+      <div class="hp-menu" id="hpMenu">
+        <div class="hp-item active" data-ph="中药房">中药房</div>
+        <div class="hp-item" data-ph="西药房">西药房</div>
+      </div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="header-user">
+      <div class="header-avatar">赵</div>
+      <div class="header-user-name">赵敏 · 中心药房</div>
+    </div>
+  </div>
+</header>
+
+<div class="app-body">
+
+  <!-- 左侧导航 -->
+  <aside class="app-side" id="appSide"><div class="nav-group"><div class="nav-item" data-href="index.html"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg><span class="nav-label">首页</span></div></div><div class="nav-group"><div class="nav-item nav-toggle"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h6l2 3h8v13H4z"></path></svg><span class="nav-label">药品管理</span><svg class="nav-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"></path></svg></div><div class="nav-sub"><div class="nav-sub-item" data-href="drug-catalog.html">药品目录管理</div><div class="nav-sub-item" data-href="org-drug-catalog.html">机构药品目录</div><div class="nav-sub-item" data-href="drug-selection.html">药品目录遴选</div></div></div><div class="nav-group"><div class="nav-item nav-toggle"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8l9-5 9 5-9 5-9-5z"></path><path d="M3 8v8l9 5 9-5V8"></path></svg><span class="nav-label">库存管理</span><svg class="nav-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"></path></svg></div><div class="nav-sub"><div class="nav-sub-item" data-href="init-stock.html">药品期初管理</div><div class="nav-sub-item" data-href="batch-management.html">药品批次管理</div><div class="nav-sub-item" data-href="stock-in.html">药品入库</div><div class="nav-sub-item" data-href="outbound.html">药品出库</div><div class="nav-sub-item" data-href="stock-adjust.html">药品增损</div><div class="nav-sub-item" data-href="transfer.html">药品调拨管理</div><div class="nav-sub-item" data-href="stock-return.html">药品退库</div><div class="nav-sub-item" data-href="stock-check.html">库存盘点</div></div></div><div class="nav-group"><div class="nav-item nav-toggle"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12l-8 8-9-9V3h11l6 6z"></path><circle cx="7.5" cy="7.5" r="1.2"></circle></svg><span class="nav-label">物价管理</span><svg class="nav-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"></path></svg></div><div class="nav-sub"><div class="nav-sub-item" data-href="price-adjust.html">药品调价</div></div></div><div class="nav-group"><div class="nav-item nav-toggle"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 16H3z"></path><path d="M12 8v5"></path><circle cx="12" cy="16" r="1"></circle></svg><span class="nav-label">预警管理</span><svg class="nav-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"></path></svg></div><div class="nav-sub"><div class="nav-sub-item" data-href="drug-expiry-warning.html">药品效期预警</div><div class="nav-sub-item" data-href="stock-level.html">药品高低储设置</div><div class="nav-sub-item" data-href="stock-alert.html">药品高低储预警</div></div></div><div class="nav-group open"><div class="nav-item nav-toggle"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"></rect><path d="M9 4.5V3h6v1.5M9 10h6M9 14h6"></path></svg><span class="nav-label">门诊处方管理</span><svg class="nav-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"></path></svg></div><div class="nav-sub"><div class="nav-sub-item" data-href="prescription-tcm.html">中药饮片处方开具</div><div class="nav-sub-item" data-href="prescription-western.html">西药处方开具</div><div class="nav-sub-item" data-href="prescription-dispensing.html">门诊处方发药</div><div class="nav-sub-item active" data-href="prescription-return.html">门诊处方退药</div><div class="nav-sub-item" data-href="pre-deduction.html">预减管理</div></div></div><div class="nav-group"><div class="nav-item nav-toggle"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"></path></svg><span class="nav-label">统计查询</span><svg class="nav-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"></path></svg></div><div class="nav-sub"><div class="nav-sub-item" data-href="stock-query.html">库存查询</div><div class="nav-sub-item" data-href="prescription-query.html">处方查询</div><div class="nav-sub-item" data-href="drug-consumption.html">药品消耗明细</div></div></div><div class="nav-group"><div class="nav-item nav-toggle"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"></circle><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"></path></svg><span class="nav-label">系统维护</span><svg class="nav-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"></path></svg></div><div class="nav-sub"><div class="nav-sub-item" data-href="manufacturer-manage.html">企业管理</div><div class="nav-sub-item" data-href="supplier-allocation.html">供应商分配</div><div class="nav-sub-item" data-href="medical-insurance-mapping.html">医保对码</div><div class="nav-sub-item" data-href="pharmacy-maintenance.html">库位维护</div><div class="nav-sub-item" data-href="param-settings.html">特殊参数设置</div></div></div></aside>
+<!-- 主区 -->
+  <main class="app-main">
+    <div class="tabbar">
+      <div class="tab" onclick="location.href='drug-catalog.html'">首页</div>
+      <div class="tab active">
+        处方退药
+        <button class="tab-close" title="关闭" onclick="location.href='drug-catalog.html'">
+          <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 5l14 14M19 5L5 19"></path></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="page rt-page">
+      <div class="page-head">
+        <h1 class="page-title">门诊处方退药（中药房）</h1>
+        <div class="rt-dacts">
+          <span class="rt-state" id="rxState" style="display:none;">已退药</span>
+          <button class="btn btn-sm btn-primary" id="btnReturn" disabled>退药</button>
+        </div>
+      </div>
+
+      <div class="rt-body">
+
+        <!-- ========== 左侧：筛选 + 处方列表 ========== -->
+        <aside class="rt-left">
+          <div class="rt-filter">
+            <div class="rt-frow">
+              <span class="rt-flbl">发药时间</span>
+              <input class="input rt-dt" type="text" id="fFrom" autocomplete="off">
+              <span class="rt-dash">-</span>
+              <input class="input rt-dt" type="text" id="fTo" autocomplete="off">
+            </div>
+            <div class="rt-frow">
+              <label class="rt-flbl" for="fRxNo">处方号</label>
+              <input class="input rt-inp" id="fRxNo" placeholder="请输入处方号" autocomplete="off">
+            </div>
+            <div class="rt-frow">
+              <label class="rt-flbl" for="fKw">检索</label>
+              <input class="input rt-inp" id="fKw" placeholder="门诊号/姓名/医保卡号" autocomplete="off">
+              <label class="rt-scope" title="查询已退药"><input type="checkbox" id="scReturned">查询已退药</label>
+            </div>
+            <div class="rt-acts">
+              <button class="btn btn-sm" id="btnReset">重置</button>
+              <button class="btn btn-sm btn-primary" id="btnQuery">查询</button>
+            </div>
+          </div>
+
+          <div class="rt-listwrap">
+            <table class="rt-list">
+              <thead>
+                <tr>
+                  <th style="width:38%">处方号</th>
+                  <th style="width:16%">姓名</th>
+                  <th>门诊号</th>
+                  <th class="num c-dose">剂数</th>
+                </tr>
+              </thead>
+              <tbody id="listBody"><tr data-id="rt1" class="active"><td title="M20261100000A">M20261100000A</td><td title="冯小容">冯小容</td><td title="202611040002">202611040002</td><td class="num">1</td></tr><tr data-id="rt2"><td title="M202611000007A">M202611000007A</td><td title="冯小容">冯小容</td><td title="202611040003">202611040003</td><td class="num">2</td></tr><tr data-id="rt3"><td title="M202611000009A">M202611000009A</td><td title="王秀兰">王秀兰</td><td title="202611040006">202611040006</td><td class="num">3</td></tr><tr data-id="rt4"><td title="M202611000011A">M202611000011A</td><td title="李建国">李建国</td><td title="202611040008">202611040008</td><td class="num">2</td></tr><tr data-id="rt5"><td title="M202611030056A">M202611030056A</td><td title="陈志远">陈志远</td><td title="202611030056">202611030056</td><td class="num">2</td></tr></tbody>
+            </table>
+            <div class="rt-empty" id="listEmpty" style="display:none;">暂无数据</div>
+          </div>
+
+          <div class="pager rt-pager">
+            <span id="pagerInfo">共 5 条</span>
+            <div class="pager-ctrl">
+              <button class="pager-btn" id="pgPrev" title="上一页" disabled="">‹</button>
+              <span class="pager-num" id="pgNum">1</span>
+              <button class="pager-btn" id="pgNext" title="下一页" disabled="">›</button>
+            </div>
+          </div>
+        </aside>
+
+        <!-- ========== 右侧：处方详情 ========== -->
+        <section class="rt-right">
+          <div class="rt-dhead">
+            <span class="rt-sec">处方详情</span>
+          </div>
+
+          <div class="rt-dwrap" id="detailWrap" style="display: flex;">
+            <div class="rt-info" id="infoGrid"><div class="rt-irow"><div class="rt-cell"><span class="rt-k">姓名：</span><span class="rt-v" title="冯小容">冯小容</span></div><div class="rt-cell"><span class="rt-k">性别：</span><span class="rt-v" title="女性">女性</span></div><div class="rt-cell"><span class="rt-k">年龄：</span><span class="rt-v" title="44岁">44岁</span></div><div class="rt-cell"><span class="rt-k">处方号：</span><span class="rt-v" title="M20261100000A">M20261100000A</span></div><div class="rt-cell"><span class="rt-k">门诊号：</span><span class="rt-v" title="202611040002">202611040002</span></div><div class="rt-cell"><span class="rt-k">医疗号：</span><span class="rt-v" title="26043000000001">26043000000001</span></div></div><div class="rt-irow"><div class="rt-cell"><span class="rt-k">医保号：</span><span class="rt-v" title="—">—</span></div><div class="rt-cell"><span class="rt-k">科室：</span><span class="rt-v" title="内科门诊">内科门诊</span></div><div class="rt-cell"><span class="rt-k">医师：</span><span class="rt-v" title="林落落">林落落</span></div><div class="rt-cell"><span class="rt-k">划价药房：</span><span class="rt-v" title="中药房">中药房</span></div><div class="rt-cell"><span class="rt-k">收费种类：</span><span class="rt-v" title="自费">自费</span></div><div class="rt-cell"><span class="rt-k">处方类别：</span><span class="rt-v" title="中成药处方">中成药处方</span></div><div class="rt-cell"><span class="rt-k">应收金额：</span><span class="rt-v" title="26.4492">26.4492</span></div></div><div class="rt-irow"><div class="rt-cell wide"><span class="rt-k">诊断：</span><span class="rt-v" title="痤疮；虚证：痤疮">痤疮；虚证：痤疮</span></div><div class="rt-cell"><span class="rt-k">处方时间：</span><span class="rt-v" title="2026-11-04 19:40:21">2026-11-04 19:40:21</span></div><div class="rt-cell"><span class="rt-k">体温：</span><span class="rt-v" title="—">—</span></div><div class="rt-cell"><span class="rt-k">呼吸：</span><span class="rt-v" title="—">—</span></div><div class="rt-cell"><span class="rt-k">脉搏：</span><span class="rt-v" title="—">—</span></div><div class="rt-cell"><span class="rt-k">血压：</span><span class="rt-v" title="—">—</span></div></div><div class="rt-irow"><div class="rt-cell wide"><span class="rt-k">过敏药物：</span><span class="rt-v" title="青霉素类抗生素">青霉素类抗生素</span></div></div></div>
+            <div class="rt-drughead"><span class="rt-sec">药品信息</span></div>
+            <div class="rt-tablewrap">
+              <table class="rt-table">
+                <thead><tr id="drugHead"><th class="c-chk"><input type="checkbox" id="chkAll" title="全选"></th><th class="c-code">药品编码</th><th class="c-dname">药品名称</th><th class="c-spec">药品规格</th><th class="c-vendor">生产企业</th><th class="c-unit">单位</th><th class="c-price num">单价</th><th class="c-qty num">数量</th><th class="c-rqty">退药数量</th><th class="c-amt num">退药金额</th><th class="c-remq num">剩余数量</th><th class="c-rema num">剩余金额</th><th class="c-cashier">收费人</th><th class="c-ctime">收费时间</th><th class="c-disp">发药人</th><th class="c-dtime">发药时间</th><th class="c-tcode">发药追溯码</th><th class="c-rtcode">退药追溯码</th></tr></thead>
+                <tbody id="drugBody"><tr data-i="0"><td class="c-chk"><input type="checkbox" data-sel="0" checked=""></td><td title="304032060201">304032060201</td><td title="六神丸">六神丸</td><td title="10粒*12支/盒">10粒*12支/盒</td><td title="雷允上药业集团有限公司">雷允上药业集团有限公司</td><td>盒</td><td class="num">26.45</td><td class="num">1</td><td class="c-rqty"><input class="rt-qty" type="number" min="0" max="1" step="1" data-qty="0" value="1"></td><td class="num" data-amt="0">26.45</td><td class="num" data-rq="0">0.00</td><td class="num" data-ra="0">0.00</td><td>林落落</td><td>2026-11-04 19:59:57</td><td>陈静</td><td>2026-11-04 19:59:57</td><td title="TRC202611A30001"><span class="rt-code">TRC202611A30001</span></td><td title="—">—</td></tr></tbody>
+              </table>
+            </div>
+            <div class="rt-sum">
+              <span>退药总金额：<b id="sumReturn">26.45</b></span>
+            </div>
+          </div>
+
+          <div class="rt-dempty" id="detailEmpty" style="display: none;">请从左侧选择一张处方</div>
+        </section>
+
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- 退药确认弹窗 -->
+<div class="modal-mask" id="dlgMask">
+  <div class="modal" style="width:420px;">
+    <div class="modal-head"><span class="modal-title" id="dlgTitle">退药确认</span></div>
+    <div class="modal-body"><div class="rt-dlg-text" id="dlgBody"></div></div>
+    <div class="modal-foot">
+      <button class="btn" id="dlgCancel">取消</button>
+      <button class="btn btn-primary" id="dlgOk">确认退药</button>
+    </div>
+  </div>
+</div>
+
+<!-- 退药录码弹窗（中成药处方 / 西药处方） -->
+<div class="modal-mask" id="scanMask">
+  <div class="modal" style="width:560px;">
+    <div class="modal-head"><span class="modal-title">退药录码</span></div>
+    <div class="modal-body">
+      <div class="rt-scan-row">
+        <input class="input" id="scanInput" placeholder="扫码枪录入或手工输入追溯码后回车" autocomplete="off">
+        <button class="btn btn-sm" id="scanClear">清空</button>
+      </div>
+      <div class="rt-scan-list" id="scanList"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" id="scanCancel">取消</button>
+      <button class="btn btn-primary" id="scanOk" disabled="">确认退药</button>
+    </div>
+  </div>
+</div>
+
+<!-- 追溯码明细弹窗 -->
+<div class="modal-mask" id="tvMask">
+  <div class="modal" style="width:460px;">
+    <div class="modal-head"><span class="modal-title" id="tvTitle">追溯码明细</span></div>
+    <div class="modal-body">
+      <div class="rt-tv-sub" id="tvSub"></div>
+      <div class="rt-chips rt-tv-chips" id="tvChips"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-primary" id="tvClose">关闭</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="mock.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  function $(id){ return document.getElementById(id); }
+  function esc(v){
+    if (v === null || v === undefined || v === "") return "—";
+    return String(v).replace(/[&<>"']/g, function(c){
+      return { "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c];
+    });
+  }
+  function money(n){ return (Math.round((Number(n) || 0) * 100) / 100).toFixed(2); }
+  function pad(n){ return n < 10 ? "0" + n : "" + n; }
+  function nowStr(){
+    var d = new Date();
+    return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) + " "
+      + pad(d.getHours()) + ":" + pad(d.getMinutes()) + ":" + pad(d.getSeconds());
+  }
+
+  var KEY = "RX_RETURN_DATA_V1";
+  function clone(o){ return JSON.parse(JSON.stringify(o)); }
+  function loadRows(){
+    try {
+      var raw = sessionStorage.getItem(KEY);
+      if (raw){
+        var data = JSON.parse(raw);
+        if (data && data.v === 1 && Array.isArray(data.rows) && data.rows.length) return data.rows;
+      }
+    } catch(e){}
+    return clone(MOCK.rxReturns);
+  }
+  function persist(){
+    try { sessionStorage.setItem(KEY, JSON.stringify({ v: 1, rows: ST.rows })); } catch(e){}
+  }
+
+  var ST = {
+    rows: loadRows(),
+    list: [],
+    activeId: null,
+    page: 1,
+    pageSize: 10,
+    filters: { from: "", to: "", rxNo: "", kw: "", returned: false }
+  };
+
+  ST.rows.forEach(function(p){
+    p.items.forEach(function(it){
+      if (it.returnQty === undefined) it.returnQty = it.qty;
+      if (it.sel === undefined) it.sel = true;
+      recalc(it);
+    });
+  });
+
+  function recalc(it){
+    var price = Number(it.price) || 0;
+    var qty = Number(it.qty) || 0;
+    var rq = Math.min(qty, Math.max(0, Number(it.returnQty) || 0));
+    it.returnQty = rq;
+    it.returnAmount = Math.round(price * rq * 100) / 100;
+    it.remainQty = Math.round((qty - rq) * 100) / 100;
+    it.remainAmount = Math.round(price * it.remainQty * 100) / 100;
+  }
+
+  function activeRow(){
+    for (var i = 0; i < ST.rows.length; i++){
+      if (ST.rows[i].id === ST.activeId) return ST.rows[i];
+    }
+    return null;
+  }
+
+  /* ---------------- 筛选 ---------------- */
+  function initRange(){
+    var dates = ST.rows.map(function(p){ return (p.dispenseTime || "").slice(0, 10); })
+      .filter(Boolean).sort();
+    var day = nowStr().slice(0, 10);
+    var min = dates.length ? dates[0] : day;
+    var max = dates.length ? dates[dates.length - 1] : day;
+    $("fFrom").value = min + " 00:00:00";
+    $("fTo").value = max + " 23:59:59";
+  }
+
+  function readFilters(){
+    ST.filters = {
+      from: ($("fFrom").value || "").replace("T", " "),
+      to: ($("fTo").value || "").replace("T", " "),
+      rxNo: $("fRxNo").value.trim(),
+      kw: $("fKw").value.trim(),
+      returned: $("scReturned").checked
+    };
+  }
+
+  function filtered(){
+    var f = ST.filters;
+    return ST.rows.filter(function(p){
+      var t = p.dispenseTime || "";
+      if (f.from && t < f.from) return false;
+      if (f.to && t > f.to) return false;
+      if (f.rxNo && p.rxNo.toUpperCase().indexOf(f.rxNo.toUpperCase()) < 0) return false;
+      if (f.kw){
+        var k = f.kw.toLowerCase();
+        var hay = [p.name, p.outpatientNo, p.medicalNo, p.insNo].join(" ").toLowerCase();
+        if (hay.indexOf(k) < 0) return false;
+      }
+      if (f.returned && p.status !== "returned") return false;
+      return true;
+    });
+  }
+
+  function pageRows(){
+    var start = (ST.page - 1) * ST.pageSize;
+    return ST.list.slice(start, start + ST.pageSize);
+  }
+
+  /* ---------------- 渲染 ---------------- */
+  function renderAll(){
+    ST.list = filtered();
+    var totalPages = Math.max(1, Math.ceil(ST.list.length / ST.pageSize));
+    if (ST.page > totalPages) ST.page = totalPages;
+
+    var rows = pageRows();
+    var exists = false;
+    for (var i = 0; i < rows.length; i++) if (rows[i].id === ST.activeId) exists = true;
+    if (!exists) ST.activeId = rows.length ? rows[0].id : null;
+
+    renderList(rows);
+    renderPager();
+    renderDetail();
+  }
+
+  function renderList(rows){
+    var body = $("listBody");
+    if (!rows.length){
+      body.innerHTML = "";
+      $("listEmpty").style.display = "block";
+      return;
+    }
+    $("listEmpty").style.display = "none";
+    var html = "";
+    rows.forEach(function(p){
+      html += '<tr data-id="' + p.id + '"' + (p.id === ST.activeId ? ' class="active"' : "") + '>'
+        + '<td title="' + esc(p.rxNo) + '">' + esc(p.rxNo) + '</td>'
+        + '<td title="' + esc(p.name) + '">' + esc(p.name) + '</td>'
+        + '<td title="' + esc(p.outpatientNo) + '">' + esc(p.outpatientNo) + '</td>'
+        + '<td class="num">' + p.doses + '</td>'
+        + '</tr>';
+    });
+    body.innerHTML = html;
+  }
+
+  function renderPager(){
+    $("pagerInfo").textContent = "共 " + ST.list.length + " 条";
+    $("pgNum").textContent = ST.page;
+    $("pgPrev").disabled = ST.page <= 1;
+    $("pgNext").disabled = ST.page >= Math.max(1, Math.ceil(ST.list.length / ST.pageSize));
+  }
+
+  function infoCell(label, value, wide){
+    return '<div class="rt-cell' + (wide ? " wide" : "") + '"><span class="rt-k">' + label + '：</span>'
+      + '<span class="rt-v" title="' + esc(value) + '">' + esc(value) + '</span></div>';
+  }
+  function row(cells){
+    return '<div class="rt-irow">' + cells.join("") + '</div>';
+  }
+
+  function renderDetail(){
+    var p = activeRow();
+    if (!p){
+      $("detailWrap").style.display = "none";
+      $("detailEmpty").style.display = "grid";
+      $("rxState").style.display = "none";
+      $("btnReturn").disabled = true;
+      return;
+    }
+    $("detailWrap").style.display = "flex";
+    $("detailEmpty").style.display = "none";
+
+    $("infoGrid").innerHTML = [
+      row([infoCell("姓名", p.name), infoCell("性别", p.gender), infoCell("年龄", p.age),
+        infoCell("处方号", p.rxNo), infoCell("门诊号", p.outpatientNo), infoCell("医疗号", p.medicalNo)]),
+      row([infoCell("医保号", p.insNo), infoCell("科室", p.dept), infoCell("医师", p.doctor),
+        infoCell("划价药房", p.pharmacy), infoCell("收费种类", p.feeType), infoCell("处方类别", p.rxCat),
+        infoCell("应收金额", p.amount)]),
+      row([infoCell("诊断", p.diagnose, true), infoCell("处方时间", p.rxTime), infoCell("体温", p.temp),
+        infoCell("呼吸", p.resp), infoCell("脉搏", p.pulse), infoCell("血压", p.bp)]),
+      row([infoCell("过敏药物", p.allergic, true)])
+    ].join("");
+
+    if (p.status === "returned"){
+      $("rxState").style.display = "inline";
+      $("btnReturn").disabled = true;
+      $("btnReturn").title = "该处方已完成退药";
+    } else {
+      $("rxState").style.display = "none";
+      $("btnReturn").disabled = false;
+      $("btnReturn").title = "";
+    }
+
+    renderDrugs(p);
+    updateSum();
+  }
+
+  function isHerbal(p){ return p.rxCat === "中药饮片处方"; }
+
+  /* 追溯码单元格：最多直接展示 2 个，超出折叠为「+n」，点击查看明细 */
+  function codeChips(codes, isRet, itemIdx){
+    if (!codes.length) return "—";
+    var cls = "rt-code" + (isRet ? " is-ret" : "");
+    var html = codes.slice(0, 2).map(function(c){
+      return '<span class="' + cls + '">' + esc(c) + '</span>';
+    }).join("");
+    if (codes.length > 2){
+      html += '<button type="button" class="' + cls + ' rt-more" data-tview="' + (isRet ? "ret" : "disp")
+        + '" data-ti="' + itemIdx + '" title="查看全部 ' + codes.length + ' 个追溯码">+'
+        + (codes.length - 2) + '</button>';
+    }
+    return html;
+  }
+
+  function renderDrugs(p){
+    var returned = p.status === "returned";
+    var showTrace = !isHerbal(p);
+
+    var head = '<th class="c-chk"><input type="checkbox" id="chkAll" title="全选"></th>'
+      + '<th class="c-code">药品编码</th>'
+      + '<th class="c-dname">药品名称</th>'
+      + '<th class="c-spec">药品规格</th>'
+      + '<th class="c-vendor">生产企业</th>'
+      + '<th class="c-unit">单位</th>'
+      + '<th class="c-price num">单价</th>'
+      + '<th class="c-qty num">数量</th>'
+      + '<th class="c-rqty">退药数量</th>'
+      + '<th class="c-amt num">退药金额</th>'
+      + '<th class="c-remq num">剩余数量</th>'
+      + '<th class="c-rema num">剩余金额</th>'
+      + '<th class="c-cashier">收费人</th>'
+      + '<th class="c-ctime">收费时间</th>'
+      + '<th class="c-disp">发药人</th>'
+      + '<th class="c-dtime">发药时间</th>';
+    if (showTrace){
+      head += '<th class="c-tcode">发药追溯码</th>'
+        + '<th class="c-rtcode">退药追溯码</th>';
+    }
+    $("drugHead").innerHTML = head;
+
+    var html = "";
+    p.items.forEach(function(it, i){
+      var tCodes = it.traceCodes || [];
+      var rCodes = it.returnCodes || [];
+      html += '<tr data-i="' + i + '">'
+        + '<td class="c-chk"><input type="checkbox" data-sel="' + i + '"' + (it.sel ? " checked" : "")
+          + (returned ? " disabled" : "") + '></td>'
+        + '<td title="' + esc(it.drugCode) + '">' + esc(it.drugCode) + '</td>'
+        + '<td title="' + esc(it.name) + '">' + esc(it.name) + '</td>'
+        + '<td title="' + esc(it.spec) + '">' + esc(it.spec) + '</td>'
+        + '<td title="' + esc(it.vendor) + '">' + esc(it.vendor) + '</td>'
+        + '<td>' + esc(it.unit) + '</td>'
+        + '<td class="num">' + money(it.price) + '</td>'
+        + '<td class="num">' + it.qty + '</td>'
+        + '<td class="c-rqty"><input class="rt-qty" type="number" min="0" max="' + it.qty + '" step="1"'
+          + ' data-qty="' + i + '" value="' + it.returnQty + '"'
+          + ((returned || !it.sel) ? " disabled" : "") + '></td>'
+        + '<td class="num" data-amt="' + i + '">' + money(it.returnAmount) + '</td>'
+        + '<td class="num" data-rq="' + i + '">' + money(it.remainQty) + '</td>'
+        + '<td class="num" data-ra="' + i + '">' + money(it.remainAmount) + '</td>'
+        + '<td>' + esc(it.cashier) + '</td>'
+        + '<td>' + esc(it.cashTime) + '</td>'
+        + '<td>' + esc(it.dispenser) + '</td>'
+        + '<td>' + esc(it.dispenseTime) + '</td>';
+      if (showTrace){
+        html += '<td title="' + esc(tCodes.join(" ")) + '">'
+          + codeChips(tCodes, false, i) + '</td>'
+          + '<td title="' + esc(rCodes.join(" ")) + '">'
+          + codeChips(rCodes, true, i) + '</td>';
+      }
+      html += '</tr>';
+    });
+    $("drugBody").innerHTML = html;
+    syncChkAll();
+  }
+
+  function syncChkAll(){
+    var p = activeRow();
+    var all = $("chkAll");
+    if (!p || !p.items.length){
+      all.checked = false;
+      all.disabled = true;
+      return;
+    }
+    if (p.status === "returned"){
+      all.checked = true;
+      all.disabled = true;
+      all.indeterminate = false;
+      return;
+    }
+    var selected = 0;
+    p.items.forEach(function(it){ if (it.sel) selected++; });
+    all.disabled = false;
+    all.checked = selected === p.items.length;
+    all.indeterminate = selected > 0 && selected < p.items.length;
+  }
+
+  function updateSum(){
+    var p = activeRow();
+    var sum = 0;
+    if (p){
+      p.items.forEach(function(it){
+        if (it.sel) sum += Number(it.returnAmount) || 0;
+      });
+    }
+    $("sumReturn").textContent = money(sum);
+    return sum;
+  }
+
+  var toastTimer = null;
+  function showToast(msg){
+    var el = $("toast");
+    el.textContent = msg;
+    el.classList.add("show");
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ el.classList.remove("show"); }, 2200);
+  }
+
+  /* ---------------- 交互：列表 ---------------- */
+  $("listBody").addEventListener("click", function(e){
+    var tr = e.target.closest("tr[data-id]");
+    if (!tr) return;
+    ST.activeId = tr.getAttribute("data-id");
+    renderList(pageRows());
+    renderDetail();
+  });
+
+  $("pgPrev").addEventListener("click", function(){
+    if (ST.page > 1){ ST.page--; renderAll(); }
+  });
+  $("pgNext").addEventListener("click", function(){
+    var totalPages = Math.max(1, Math.ceil(ST.list.length / ST.pageSize));
+    if (ST.page < totalPages){ ST.page++; renderAll(); }
+  });
+
+  /* ---------------- 交互：筛选 ---------------- */
+  function applyQuery(){
+    readFilters();
+    ST.page = 1;
+    renderAll();
+  }
+
+  $("btnQuery").addEventListener("click", applyQuery);
+  $("btnReset").addEventListener("click", function(){
+    $("fRxNo").value = "";
+    $("fKw").value = "";
+    $("scReturned").checked = false;
+    initRange();
+    applyQuery();
+  });
+  $("fRxNo").addEventListener("keydown", function(e){ if (e.key === "Enter") applyQuery(); });
+  $("fKw").addEventListener("keydown", function(e){ if (e.key === "Enter") applyQuery(); });
+
+  /* ---------------- 交互：药品明细 ---------------- */
+  $("drugBody").addEventListener("change", function(e){
+    var p = activeRow();
+    if (!p) return;
+
+    var chk = e.target.closest("[data-sel]");
+    if (chk){
+      if (p.status === "returned") return;
+      var i = Number(chk.getAttribute("data-sel"));
+      var it = p.items[i];
+      it.sel = chk.checked;
+      if (it.sel){
+        if (Number(it.returnQty) === 0) it.returnQty = it.qty;
+      } else {
+        it.returnQty = 0;
+      }
+      recalc(it);
+      renderDrugs(p);
+      updateSum();
+      return;
+    }
+
+    var qty = e.target.closest(".rt-qty");
+    if (qty){
+      var qi = Number(qty.getAttribute("data-qty"));
+      var it = p.items[qi];
+      var v = parseFloat(qty.value);
+      if (isNaN(v) || v < 0) v = 0;
+      if (v > it.qty){
+        v = it.qty;
+        showToast("退药数量不能大于发药数量，已自动调整为 " + it.qty);
+      }
+      it.returnQty = v;
+      recalc(it);
+      qty.value = v;
+      var tr = qty.closest("tr");
+      tr.querySelector('[data-amt="' + qi + '"]').textContent = money(it.returnAmount);
+      tr.querySelector('[data-rq="' + qi + '"]').textContent = money(it.remainQty);
+      tr.querySelector('[data-ra="' + qi + '"]').textContent = money(it.remainAmount);
+      updateSum();
+    }
+  });
+
+  $("drugBody").addEventListener("input", function(e){
+    var qty = e.target.closest(".rt-qty");
+    if (!qty) return;
+    var p = activeRow();
+    if (!p || p.status === "returned") return;
+    var i = Number(qty.getAttribute("data-qty"));
+    var it = p.items[i];
+    it.returnQty = qty.value;
+    recalc(it);
+    qty.classList.remove("is-invalid");
+
+    var tr = qty.closest("tr");
+    tr.querySelector('[data-amt="' + i + '"]').textContent = money(it.returnAmount);
+    tr.querySelector('[data-rq="' + i + '"]').textContent = money(it.remainQty);
+    tr.querySelector('[data-ra="' + i + '"]').textContent = money(it.remainAmount);
+    updateSum();
+  });
+
+  $("drugHead").addEventListener("change", function(e){
+    if (e.target.id !== "chkAll") return;
+    var p = activeRow();
+    if (!p || p.status === "returned") return;
+    var val = e.target.checked;
+    p.items.forEach(function(it){
+      it.sel = val;
+      it.returnQty = val ? it.qty : 0;
+      recalc(it);
+    });
+    renderDrugs(p);
+    updateSum();
+  });
+
+  /* ---------------- 交互：退药 ---------------- */
+  var DLG = null;
+
+  function openModal(mask){ $(mask).classList.add("show"); }
+  function closeModal(mask){ $(mask).classList.remove("show"); }
+
+  function pickedItems(p){
+    var picked = [];
+    p.items.forEach(function(it, i){ if (it.sel && Number(it.returnQty) > 0) picked.push({ it: it, i: i }); });
+    return picked;
+  }
+
+  $("btnReturn").addEventListener("click", function(){
+    var p = activeRow();
+    if (!p || p.status === "returned") return;
+
+    var picked = pickedItems(p);
+    if (!picked.length){ showToast("请选择需要退药的药品"); return; }
+
+    var invalid = false;
+    picked.forEach(function(x){
+      if (Number(x.it.returnQty) <= 0){
+        invalid = true;
+        var inp = $("drugBody").querySelector('[data-qty="' + x.i + '"]');
+        if (inp) inp.classList.add("is-invalid");
+      }
+    });
+    if (invalid){ showToast("退药数量必须大于 0"); return; }
+
+    var total = 0;
+    picked.forEach(function(x){ total += Number(x.it.returnAmount) || 0; });
+
+    /* 中药饮片处方：直接确认退药；中成药 / 西药处方：先录入退药追溯码 */
+    if (isHerbal(p)){
+      DLG = { p: p, picked: picked, total: total };
+      $("dlgBody").innerHTML = '处方号：<b>' + esc(p.rxNo) + '</b>（' + esc(p.rxCat) + '）<br>'
+        + '患者：' + esc(p.name) + '　退药药品：' + picked.length + ' 种<br>'
+        + '退药总金额：<b>' + money(total) + '</b> 元<br><br>'
+        + '中药饮片处方无需录入追溯码，退药后该处方将标记为「已退药」，确认继续吗？';
+      openModal("dlgMask");
+    } else {
+      openScan(p, picked, total);
+    }
+  });
+
+  $("dlgCancel").addEventListener("click", function(){ DLG = null; closeModal("dlgMask"); });
+  $("dlgMask").addEventListener("click", function(e){ if (e.target === this){ DLG = null; closeModal("dlgMask"); } });
+
+  $("dlgOk").addEventListener("click", function(){
+    if (!DLG) return;
+    doReturn(DLG.p, DLG.total);
+    DLG = null;
+    closeModal("dlgMask");
+  });
+
+  function doReturn(p, total){
+    var now = nowStr();
+    p.items.forEach(function(it){
+      if (!it.sel){
+        it.returnQty = 0;
+      }
+      recalc(it);
+      it.returnTime = now;
+    });
+    p.status = "returned";
+    p.returnTime = now;
+    persist();
+    renderAll();
+    showToast("退药成功，退药总金额 " + money(total) + " 元");
+  }
+
+  /* ---------------- 退药录码弹窗（中成药 / 西药处方） ---------------- */
+  var SCAN = null;
+
+  function openScan(p, picked, total){
+    var map = {};
+    picked.forEach(function(x){
+      x.codes = [];
+      (x.it.traceCodes || []).forEach(function(c){ map[c] = x.i; });
+    });
+    SCAN = { p: p, picked: picked, total: total, map: map };
+
+    $("scanInput").value = "";
+    renderScan();
+    openModal("scanMask");
+    setTimeout(function(){ $("scanInput").focus(); }, 50);
+  }
+
+  function scanExpected(x){ return Number(x.it.returnQty) || 0; }
+
+  function renderScan(){
+    if (!SCAN) return;
+    var allOk = true;
+    var html = "";
+    SCAN.picked.forEach(function(x){
+      var need = scanExpected(x);
+      var got = x.codes.length;
+      var ok = got === need;
+      if (!ok) allOk = false;
+      html += '<div class="rt-scan-item">'
+        + '<div class="rt-scan-name"><span>' + esc(x.it.name) + '</span>'
+        + '<span class="rt-scan-cnt' + (ok ? " ok" : "") + '">已扫 ' + got + ' / ' + need + '</span></div>'
+        + '<div class="rt-chips">'
+        + (got ? x.codes.map(function(c, ci){
+              return '<span class="rt-chip">' + esc(c)
+                + '<button data-unscan="' + x.i + '" data-ci="' + ci + '" title="撤销该码">×</button></span>';
+            }).join("") : '<span class="rt-chip-empty">尚未录入</span>')
+        + '</div></div>';
+    });
+    $("scanList").innerHTML = html;
+    $("scanOk").disabled = !allOk;
+  }
+
+  function addCode(raw){
+    if (!SCAN) return;
+    var code = String(raw || "").trim();
+    if (!code) return;
+    var idx = SCAN.map[code];
+    if (idx === undefined){
+      showToast("追溯码不属于本处方，已忽略");
+      return;
+    }
+    var x = null;
+    SCAN.picked.forEach(function(px){ if (px.i === idx) x = px; });
+    if (!x){ showToast("该药品未勾选退药，已忽略"); return; }
+    if (x.codes.indexOf(code) >= 0){ showToast("该追溯码已录入"); return; }
+    if (x.codes.length >= scanExpected(x)){ showToast(x.it.name + " 录码已达退药数量"); return; }
+    x.codes.push(code);
+    $("scanInput").value = "";
+    renderScan();
+  }
+
+  $("scanInput").addEventListener("keydown", function(e){
+    if (e.key === "Enter"){ e.preventDefault(); addCode(this.value); }
+  });
+  $("scanClear").addEventListener("click", function(){
+    if (!SCAN) return;
+    SCAN.picked.forEach(function(x){ x.codes = []; });
+    renderScan();
+  });
+  $("scanList").addEventListener("click", function(e){
+    var btn = e.target.closest("[data-unscan]");
+    if (!btn || !SCAN) return;
+    var idx = Number(btn.getAttribute("data-unscan"));
+    var ci = Number(btn.getAttribute("data-ci"));
+    SCAN.picked.forEach(function(x){
+      if (x.i === idx) x.codes.splice(ci, 1);
+    });
+    renderScan();
+  });
+  $("scanCancel").addEventListener("click", function(){ SCAN = null; closeModal("scanMask"); });
+  $("scanMask").addEventListener("click", function(e){ if (e.target === this){ SCAN = null; closeModal("scanMask"); } });
+
+  $("scanOk").addEventListener("click", function(){
+    if (!SCAN || this.disabled) return;
+    var p = SCAN.p;
+    var total = SCAN.total;
+    SCAN.picked.forEach(function(x){ x.it.returnCodes = x.codes.slice(); });
+    SCAN = null;
+    closeModal("scanMask");
+    doReturn(p, total);
+  });
+
+  /* ---------------- 追溯码明细弹窗 ---------------- */
+  $("drugBody").addEventListener("click", function(e){
+    var btn = e.target.closest("[data-tview]");
+    if (!btn) return;
+    var p = activeRow();
+    if (!p) return;
+    var it = p.items[Number(btn.getAttribute("data-ti"))];
+    var isRet = btn.getAttribute("data-tview") === "ret";
+    var codes = isRet ? (it.returnCodes || []) : (it.traceCodes || []);
+    if (!codes.length) return;
+    $("tvTitle").textContent = (isRet ? "退药追溯码明细" : "发药追溯码明细");
+    $("tvSub").textContent = it.name + "（" + it.spec + "）　共 " + codes.length + " 个追溯码";
+    $("tvChips").innerHTML = codes.map(function(c){
+      return '<span class="rt-code' + (isRet ? " is-ret" : "") + '" title="' + esc(c) + '">' + esc(c) + '</span>';
+    }).join("");
+    openModal("tvMask");
+  });
+  $("tvClose").addEventListener("click", function(){ closeModal("tvMask"); });
+  $("tvMask").addEventListener("click", function(e){ if (e.target === this) closeModal("tvMask"); });
+
+  /* ---------------- 顶栏药房下拉 ---------------- */
+  $("hpBtn").addEventListener("click", function(e){
+    e.stopPropagation();
+    $("hpDrop").classList.toggle("open");
+  });
+  $("hpMenu").addEventListener("click", function(e){
+    var item = e.target.closest(".hp-item");
+    if (!item) return;
+    var ph = item.getAttribute("data-ph");
+    $("hpLabel").textContent = ph;
+    Array.prototype.forEach.call($("hpMenu").querySelectorAll(".hp-item"), function(el){
+      el.classList.toggle("active", el === item);
+    });
+    $("hpDrop").classList.remove("open");
+    showToast("已切换至" + ph + "（演示原型，数据仍为中药房示例）");
+  });
+  document.addEventListener("click", function(){
+    $("hpDrop").classList.remove("open");
+  });
+
+  /* ---------------- 初始化 ---------------- */
+  initRange();
+  readFilters();
+  renderAll();
+})();
+</script>
+  <script src="nav.js"></script>
+
+
+</body></html>

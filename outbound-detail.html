@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>出库详情 · 中心药房</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+/* ===== 出库详情页局部样式 ===== */
+.od-page { background: var(--bg-page); }
+.od-card {
+  flex: 1; min-height: 0; display: flex; flex-direction: column; background: var(--bg-white);
+  margin: 12px; border-radius: var(--radius-lg); box-shadow: 0 1px 2px rgba(0,0,0,.04); overflow: hidden;
+}
+.od-card.has-foot { border-radius: var(--radius-lg) var(--radius-lg) 0 0; margin-bottom: 0; }
+.od-head {
+  flex: none; height: 56px; display: flex; align-items: center; gap: 10px;
+  padding: 0 20px; border-bottom: 1px solid var(--border);
+}
+.od-head .page-title { font-size: 16px; font-weight: 500; }
+.od-head .od-code { font-size: 12px; color: var(--text-tertiary); }
+/* 页签：仅滚动定位 */
+.od-tabs {
+  flex: none; height: 40px; display: flex; align-items: center; gap: 24px;
+  padding: 0 20px; border-bottom: 1px solid var(--border);
+}
+.od-tab {
+  position: relative; height: 40px; padding: 0 2px; border: none; background: none;
+  font-size: 13px; color: var(--text-secondary); cursor: pointer;
+}
+.od-tab:hover { color: var(--primary); }
+.od-tab.is-active { color: var(--primary); font-weight: 500; }
+.od-tab.is-active::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: var(--primary);
+}
+.od-body { flex: 1; min-height: 0; overflow: auto; padding: 16px 20px; }
+.od-sec + .od-sec { margin-top: 22px; }
+.od-sec-title {
+  font-size: 13px; font-weight: 500; color: var(--text-primary);
+  padding-left: 8px; margin-bottom: 12px; border-left: 3px solid var(--primary);
+}
+.od-view { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px 16px; }
+.od-view .fi { display: flex; align-items: flex-start; gap: 6px; min-width: 0; }
+.od-view .fi .lbl { width: 104px; flex: none; text-align: right; font-size: 13px; color: var(--text-secondary); white-space: nowrap; line-height: 22px; }
+.od-view .fi .val { flex: 1; min-width: 0; font-size: 13px; color: var(--text-primary); line-height: 22px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.od-view .fi .val.is-empty { color: var(--text-tertiary); }
+.od-view .fi-span { grid-column: 1 / -1; }
+/* 明细宽表 */
+.od-items-wrap { border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: auto; }
+.od-items { width: max-content; min-width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 13px; }
+.od-items th {
+  position: sticky; top: 0; z-index: 2; background: var(--table-head); height: 38px; padding: 0 8px;
+  text-align: left; font-weight: 500; color: var(--text-secondary); white-space: nowrap; border-bottom: 1px solid var(--border);
+}
+.od-items td { padding: 7px 8px; border-bottom: 1px solid var(--border); white-space: nowrap; vertical-align: middle; }
+.od-items tbody tr:nth-child(even) td { background: var(--table-even); }
+.od-items tbody tr:hover td { background: var(--table-hover); }
+.od-items .num { text-align: right; font-variant-numeric: tabular-nums; }
+.od-items .cell-ellipsis { overflow: hidden; text-overflow: ellipsis; }
+.od-items .col-name { position: sticky; left: 0; z-index: 3; background: var(--bg-white); box-shadow: 2px 0 6px -4px rgba(0,0,0,.18); }
+.od-items .col-trace { position: sticky; right: 126px; z-index: 3; background: var(--bg-white); }
+.od-items .col-acts { position: sticky; right: 0; z-index: 3; background: var(--bg-white); box-shadow: -2px 0 6px -4px rgba(0,0,0,.18); }
+.od-items th.col-name, .od-items th.col-trace, .od-items th.col-acts { background: var(--table-head); z-index: 5; }
+.od-items tbody tr:nth-child(even) td.col-name,
+.od-items tbody tr:nth-child(even) td.col-trace,
+.od-items tbody tr:nth-child(even) td.col-acts { background: var(--table-even); }
+.od-items tbody tr:hover td.col-name,
+.od-items tbody tr:hover td.col-trace,
+.od-items tbody tr:hover td.col-acts { background: var(--table-hover); }
+/* 合计条（表格外） */
+.od-sum-line { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 32px; margin-top: 12px; }
+.od-sum-line .item { font-size: 12px; color: var(--text-tertiary); }
+.od-sum-line .item b { margin-left: 4px; font-size: 14px; font-weight: 500; color: var(--text-primary); font-variant-numeric: tabular-nums; }
+.tr-code-progress { font-variant-numeric: tabular-nums; }
+.tr-code-progress.is-bad { color: var(--danger); }
+.tr-code-progress.is-ok { color: var(--success); }
+/* 审批记录 */
+.od-rec { width: 100%; border-collapse: collapse; font-size: 13px; border: 1px solid var(--border); border-radius: var(--radius); }
+.od-rec th { background: var(--table-head); height: 36px; padding: 0 10px; text-align: left; font-weight: 500; color: var(--text-secondary); white-space: nowrap; border-bottom: 1px solid var(--border); }
+.od-rec td { padding: 7px 10px; border-bottom: 1px solid var(--border); vertical-align: top; white-space: nowrap; }
+.od-rec td.opinion { white-space: normal; word-break: break-all; }
+.od-empty { padding: 32px 0; text-align: center; color: var(--text-placeholder); font-size: 13px; }
+/* 审批区 */
+.od-foot {
+  flex: none; background: var(--bg-white); border-top: 1px solid var(--border);
+  padding: 14px 20px 16px; display: flex; flex-direction: column; gap: 12px;
+}
+.od-foot .row { display: flex; align-items: flex-start; gap: 8px; }
+.od-foot .row .lbl { width: 104px; flex: none; text-align: right; font-size: 12px; color: var(--text-tertiary); line-height: 32px; }
+.od-foot .radios { display: flex; align-items: center; gap: 24px; height: 32px; }
+.od-foot .radios .radio { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; cursor: pointer; }
+.od-foot .radios .radio input { width: 14px; height: 14px; margin: 0; accent-color: var(--primary); cursor: pointer; }
+.od-foot .textarea { flex: 1; min-width: 0; min-height: 72px; max-height: 160px; resize: vertical; }
+.od-foot .btns { display: flex; justify-content: flex-end; gap: 8px; }
+/* 追溯码弹窗 */
+.od-trace .modal { width: 720px; max-width: 92vw; }
+.od-trace-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.od-trace-table th { background: var(--table-head); height: 36px; padding: 0 10px; text-align: left; font-weight: 500; color: var(--text-secondary); white-space: nowrap; border-bottom: 1px solid var(--border); }
+.od-trace-table td { padding: 7px 10px; border-bottom: 1px solid var(--border); white-space: nowrap; font-family: var(--font-mono); font-size: 12px; }
+</style>
+</head>
+<body>
+
+<!-- ========== 顶部导航 ========== -->
+<header class="app-header">
+  <div class="header-left">
+    <div class="header-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3.2" y="9.4" width="17.6" height="5.2" rx="2.6" transform="rotate(-45 12 12)"/>
+        <path d="M8.4 15.6L15.6 8.4"/>
+      </svg>
+    </div>
+    <div class="header-title">区域药房协同管理系统</div>
+    <span class="header-sub">中心药房</span>
+  </div>
+  <div class="header-right">
+    <div class="header-user">
+      <div class="header-avatar" id="userAvatar">赵</div>
+      <span class="header-user-name" id="userName">赵敏</span>
+    </div>
+  </div>
+</header>
+
+<div class="app-body">
+  <!-- ========== 左侧导航 ========== -->
+  <aside class="app-side" id="appSide"></aside>
+<!-- ========== 主区域 ========== -->
+  <main class="app-main">
+    <div class="tabbar">
+      <div class="tab" onclick="location.href='batch-management.html'">首页</div>
+      <div class="tab" onclick="location.href='outbound.html'">药品出库</div>
+      <div class="tab active">
+        出库详情
+        <button class="tab-close" title="关闭" onclick="location.href='outbound.html'">
+          <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="page od-page">
+      <div class="od-card" id="mainCard">
+        <!-- 标题行 -->
+        <div class="od-head">
+          <button class="back-btn" id="btnBack" title="返回" onclick="location.href='outbound.html'">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+          </button>
+          <div class="page-title">出库详情</div>
+          <span class="od-code" id="headCode"></span>
+          <span class="status-text" id="headStatus" style="margin-left:auto;font-size:13px"></span>
+        </div>
+
+        <!-- 页签：仅定位，不切换面板 -->
+        <div class="od-tabs" id="detailTabs">
+          <button class="od-tab is-active" data-tab="info">出库信息</button>
+          <button class="od-tab" data-tab="records">审批记录</button>
+        </div>
+
+        <div class="od-body" id="detailBody">
+          <!-- 出库信息 -->
+          <div class="od-sec" id="secInfo">
+            <div class="od-sec-title">出库信息</div>
+            <div class="od-view">
+              <div class="fi"><span class="lbl">出库方式：</span><span class="val" id="vMethod"></span></div>
+              <div class="fi"><span class="lbl">出库机构：</span><span class="val" id="vOutOrg"></span></div>
+              <div class="fi"><span class="lbl">出库库位：</span><span class="val" id="vOutLocation"></span></div>
+              <div class="fi"><span class="lbl">接收机构：</span><span class="val" id="vInOrg"></span></div>
+              <div class="fi"><span class="lbl">接收库位：</span><span class="val" id="vInLocation"></span></div>
+              <div class="fi"><span class="lbl">提交人：</span><span class="val" id="vCreator"></span></div>
+              <div class="fi"><span class="lbl">提交时间：</span><span class="val" id="vTime"></span></div>
+              <div class="fi"><span class="lbl">来源单号：</span><span class="val" id="vSrc"></span></div>
+              <div class="fi"><span class="lbl">审核状态：</span><span class="val" id="vStatus"></span></div>
+              <div class="fi"><span class="lbl">审核人：</span><span class="val" id="vAuditor"></span></div>
+              <div class="fi"><span class="lbl">审核时间：</span><span class="val" id="vAuditTime"></span></div>
+              <div class="fi"><span class="lbl">审核机构：</span><span class="val" id="vAuditOrg"></span></div>
+              <div class="fi fi-span"><span class="lbl">说明：</span><span class="val" id="vRemark"></span></div>
+            </div>
+          </div>
+
+          <!-- 药品明细 -->
+          <div class="od-sec" id="secItems">
+            <div class="od-sec-title">药品明细</div>
+            <div class="od-items-wrap">
+              <table class="od-items">
+                <colgroup>
+                  <col style="width:160px"><col style="width:100px"><col style="width:108px">
+                  <col style="width:170px"><col style="width:88px"><col style="width:90px">
+                  <col style="width:86px"><col style="width:118px"><col style="width:78px">
+                  <col style="width:78px"><col style="width:98px"><col style="width:98px">
+                  <col style="width:100px"><col style="width:90px"><col style="width:126px">
+                </colgroup>
+                <thead>
+                  <tr>
+                    <th class="col-name">药品名称</th>
+                    <th>药品编码</th>
+                    <th>规格</th>
+                    <th>生产企业</th>
+                    <th>包装规格</th>
+                    <th class="num">最小换算系数</th>
+                    <th class="num">出库数量</th>
+                    <th>批次号</th>
+                    <th class="num">进货价</th>
+                    <th class="num">零售价</th>
+                    <th class="num">进货价合计</th>
+                    <th class="num">零售价合计</th>
+                    <th>有效期</th>
+                    <th class="col-trace">追溯码</th>
+                    <th class="col-acts">操作</th>
+                  </tr>
+                </thead>
+                <tbody id="itemsBody"></tbody>
+              </table>
+            </div>
+            <div class="od-sum-line">
+              <span class="item">明细行数<b id="sumRows">0</b></span>
+              <span class="item">进货价合计金额<b id="sumPurchase">0.00</b></span>
+              <span class="item">零售价合计金额<b id="sumRetail">0.00</b></span>
+            </div>
+          </div>
+
+          <!-- 审批记录 -->
+          <div class="od-sec" id="secRecords">
+            <div class="od-sec-title">审批记录</div>
+            <table class="od-rec">
+              <thead>
+                <tr><th style="width:110px">节点</th><th style="width:90px">操作人</th><th style="width:180px">机构</th><th style="width:150px">时间</th><th style="width:90px">结果</th><th>意见</th></tr>
+              </thead>
+              <tbody id="recBody"></tbody>
+            </table>
+            <div class="od-empty" id="recEmpty" style="display:none">暂无审批记录</div>
+          </div>
+        </div>
+
+        <!-- 审批区（仅审核模式） -->
+        <div class="od-foot" id="pageFoot" style="display:none"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ========== 弹窗：追溯码清单（只读） ========== -->
+<div class="modal-mask od-trace" id="traceMask">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title" id="traceTitle">追溯码清单</div>
+      <button class="drawer-close" id="traceClose" title="关闭">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <table class="od-trace-table">
+        <thead><tr><th style="width:56px">序号</th><th>药品追溯码</th><th>药品名称</th><th>规格</th><th>批次号</th></tr></thead>
+        <tbody id="traceBody"></tbody>
+      </table>
+      <div class="od-empty" id="traceEmpty" style="display:none">该药品暂无追溯码</div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-primary" id="traceOk">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- toast -->
+<div id="toast" style="position:fixed;top:70px;left:50%;transform:translateX(-50%);padding:8px 16px;background:rgba(0,0,0,.78);color:#fff;border-radius:4px;font-size:13px;z-index:9999;display:none"></div>
+
+<script src="outbound-common.js"></script>
+<script>
+(function(){
+  "use strict";
+  var OB = window.OB;
+  var $ = function(s,c){ return (c||document).querySelector(s); };
+  var $$ = function(s,c){ return Array.prototype.slice.call((c||document).querySelectorAll(s)); };
+  function toast(msg){
+    var t=$("#toast"); t.textContent=msg; t.style.display="block";
+    clearTimeout(t._t); t._t=setTimeout(function(){ t.style.display="none"; },2400);
+  }
+
+  var user = OB.currentUser();
+  $("#userAvatar").textContent = user.name.charAt(0);
+  $("#userName").textContent = user.name;
+
+  var mode = OB.qs("mode") === "approve" ? "approve" : "view";
+  var id = OB.qs("id");
+  var list = OB.load();
+  var bill = list.filter(function(b){ return b.id === id; })[0];
+  if(!bill){ location.href = "outbound.html"; return; }
+
+  function setV(sel, v){
+    var el = $(sel);
+    if(v === null || v === undefined || v === ""){
+      el.textContent = "—";
+      el.classList.add("is-empty");
+      return;
+    }
+    el.textContent = v;
+    el.classList.remove("is-empty");
+  }
+
+  /* ===== 出库信息 ===== */
+  function renderInfo(){
+    $("#headCode").textContent = bill.code ? "出库单号：" + bill.code : "草稿未生成单号";
+    $("#headStatus").textContent = "审核状态：" + (OB.AUDIT_STATUS[bill.auditStatus] || "—");
+    setV("#vMethod", bill.method);
+    setV("#vOutOrg", OB.orgName(bill.outOrgId));
+    setV("#vOutLocation", bill.outLocation);
+    setV("#vInOrg", OB.orgName(bill.inOrgId));
+    setV("#vInLocation", bill.inLocation);
+    setV("#vCreator", bill.creatorName);
+    setV("#vTime", bill.submitTime);
+    setV("#vStatus", OB.AUDIT_STATUS[bill.auditStatus] || "");
+    setV("#vAuditor", bill.auditorName);
+    setV("#vAuditTime", bill.auditTime);
+    setV("#vAuditOrg", bill.auditorOrg);
+    setV("#vRemark", bill.remark);
+
+    /* 来源单号：调拨出库可跳转调拨详情，其余来源单据页待建 */
+    var src = $("#vSrc");
+    var label = OB.SRC_TYPE[bill.method] || "来源单号";
+    src.innerHTML = "";
+    src.classList.remove("is-empty");
+    if(!bill.srcCode){
+      src.textContent = "—";
+      src.classList.add("is-empty");
+      return;
+    }
+    var a = document.createElement("a");
+    a.className = "ob-src";
+    a.textContent = bill.srcCode;
+    a.title = label + "：" + bill.srcCode;
+    if(bill.method === "调拨出库" && bill.srcId){
+      a.href = "transfer-detail.html?id=" + encodeURIComponent(bill.srcId);
+    }else{
+      a.href = "#";
+      a.addEventListener("click", function(e){
+        e.preventDefault();
+        toast(label + "详情页待建：" + bill.srcCode);
+      });
+    }
+    src.appendChild(a);
+  }
+
+  /* ===== 药品明细 ===== */
+  function renderItems(){
+    $("#itemsBody").innerHTML = (bill.items || []).map(function(it, i){
+      var tp = (it.traces || []).length;
+      var ok = tp === Number(it.qty);
+      var h = "<tr>";
+      h += "<td class='col-name cell-ellipsis' title='"+OB.esc(it.name)+"'>"+OB.esc(it.name)+"</td>";
+      h += "<td>"+OB.esc(it.code)+"</td>";
+      h += "<td>"+OB.esc(it.spec)+"</td>";
+      h += "<td class='cell-ellipsis' title='"+OB.esc(it.vendor)+"'>"+OB.esc(it.vendor)+"</td>";
+      h += "<td>"+OB.esc(it.packSpec)+"</td>";
+      h += "<td class='num'>"+OB.esc(it.minFactor)+"</td>";
+      h += "<td class='num'>"+OB.esc(it.qty)+"</td>";
+      h += "<td>"+OB.esc(it.batch)+"</td>";
+      h += "<td class='num'>"+OB.num2(it.purchase)+"</td>";
+      h += "<td class='num'>"+OB.num2(it.retail)+"</td>";
+      h += "<td class='num'>"+OB.num2(OB.purchaseAmt(it))+"</td>";
+      h += "<td class='num'>"+OB.num2(OB.retailAmt(it))+"</td>";
+      h += "<td>"+OB.esc(it.expiry)+"</td>";
+      if(bill.traceRequired === false){
+        h += "<td class='col-trace'><span class='tr-code-progress'>无需追溯码</span></td>";
+        h += "<td class='col-acts'><span class='link-btn is-disabled'>查看追溯码</span></td>";
+      } else {
+        h += "<td class='col-trace'><span class='tr-code-progress "+(ok?"is-ok":"is-bad")+"'>"+tp+"/"+Number(it.qty)+"</span></td>";
+        h += "<td class='col-acts'><a class='link-btn' data-tr='"+i+"'>查看追溯码</a></td>";
+      }
+      return h + "</tr>";
+    }).join("") || "<tr><td colspan='15' class='od-empty'>暂无药品明细</td></tr>";
+
+    var s = OB.sums(bill);
+    $("#sumRows").textContent = (bill.items || []).length;
+    $("#sumPurchase").textContent = OB.num2(s.purchase);
+    $("#sumRetail").textContent = OB.num2(s.retail);
+
+    $$("#itemsBody [data-tr]").forEach(function(a){
+      a.addEventListener("click", function(){ openTrace(parseInt(a.getAttribute("data-tr"), 10)); });
+    });
+  }
+
+  /* ===== 追溯码清单（只读） ===== */
+  function openTrace(i){
+    var it = bill.items[i];
+    var ts = it.traces || [];
+    $("#traceTitle").textContent = "追溯码清单 — " + it.name + " " + it.spec;
+    $("#traceEmpty").style.display = ts.length ? "none" : "block";
+    $("#traceBody").innerHTML = ts.map(function(code, idx){
+      return "<tr><td>"+(idx+1)+"</td><td>"+OB.esc(code)+"</td><td>"+OB.esc(it.name)+"</td><td>"+OB.esc(it.spec)+"</td><td>"+OB.esc(it.batch)+"</td></tr>";
+    }).join("");
+    $("#traceMask").classList.add("show");
+  }
+  function closeTrace(){ $("#traceMask").classList.remove("show"); }
+  $("#traceClose").addEventListener("click", closeTrace);
+  $("#traceOk").addEventListener("click", closeTrace);
+  $("#traceMask").addEventListener("click", function(e){ if(e.target === this) closeTrace(); });
+
+  /* ===== 审批记录 ===== */
+  function renderRecords(){
+    var rs = bill.records || [];
+    $("#recEmpty").style.display = rs.length ? "none" : "block";
+    $("#recBody").innerHTML = rs.map(function(r){
+      return "<tr><td>"+OB.esc(r.node)+"</td><td>"+OB.esc(r.person)+"</td><td>"+OB.esc(r.org)+"</td>"
+        +"<td>"+OB.esc(r.time)+"</td><td>"+OB.esc(r.result)+"</td>"
+        +"<td class='opinion'>"+OB.esc(r.opinion)+"</td></tr>";
+    }).join("");
+  }
+
+  /* ===== 审批区 ===== */
+  function renderFoot(){
+    if(mode !== "approve" || !OB.canAudit(bill, user)){
+      $("#pageFoot").style.display = "none";
+      $("#mainCard").classList.remove("has-foot");
+      return;
+    }
+    $("#mainCard").classList.add("has-foot");
+    $("#pageFoot").style.display = "flex";
+    $("#pageFoot").innerHTML =
+      '<div class="row"><span class="lbl">审核结果：</span><div class="radios">'
+      + '<label class="radio"><input type="radio" name="apResult" value="通过" checked><span>通过</span></label>'
+      + '<label class="radio"><input type="radio" name="apResult" value="拒绝"><span>拒绝</span></label>'
+      + '</div></div>'
+      + '<div class="row"><span class="lbl">审批意见：</span><textarea class="textarea" id="apOpinion" rows="2" placeholder="请输入审批意见（拒绝时必填）"></textarea></div>'
+      + '<div class="btns"><button class="btn" id="apCancel">取消</button><button class="btn btn-primary" id="apSubmit">提交</button></div>';
+
+    $$('input[name="apResult"]').forEach(function(r){
+      r.addEventListener("change", function(){ $("#apOpinion").classList.remove("is-invalid"); });
+    });
+    $("#apOpinion").addEventListener("input", function(){ this.classList.remove("is-invalid"); });
+    $("#apCancel").addEventListener("click", function(){ location.href = "outbound.html"; });
+    $("#apSubmit").addEventListener("click", function(){
+      var result = $('input[name="apResult"]:checked').value;
+      var opinion = $("#apOpinion").value.trim();
+      if(result === "拒绝" && !opinion){
+        $("#apOpinion").classList.add("is-invalid");
+        toast("拒绝时必须填写审批意见");
+        return;
+      }
+      var now = OB.fmtNow();
+      if(result === "通过"){
+        bill.auditStatus = "approved";
+        bill.auditTime = now;
+        OB.deductStock(bill);
+      } else {
+        bill.auditStatus = "rejected";
+        bill.auditTime = now;
+      }
+      bill.auditorName = user.name;
+      bill.auditorOrg = OB.orgName(user.orgId);
+      bill.records = (bill.records || []).concat([{
+        node: "审核", person: user.name, org: bill.auditorOrg, time: now, result: result, opinion: opinion
+      }]);
+      OB.save(list);
+      toast(result === "通过" ? "审核已通过，库存已扣减" : "已驳回，库存预占已释放");
+      renderInfo(); renderItems(); renderRecords(); renderFoot();
+    });
+  }
+
+  $("#btnBack").addEventListener("click", function(){ location.href = "outbound.html"; });
+
+  /* ===== 页签：当前页滚动定位 ===== */
+  var detailBody = $("#detailBody");
+  var tabBtns = $$(".od-tab");
+  function setTab(k){
+    tabBtns.forEach(function(t){ t.classList.toggle("is-active", t.getAttribute("data-tab") === k); });
+  }
+  function scrollToTab(k){
+    setTab(k);
+    var target = k === "records" ? $("#secRecords") : $("#secInfo");
+    var top = target.getBoundingClientRect().top - detailBody.getBoundingClientRect().top + detailBody.scrollTop - 8;
+    detailBody.scrollTo({ top: Math.max(0, top), behavior: "auto" });
+  }
+  tabBtns.forEach(function(t){
+    t.addEventListener("click", function(){ scrollToTab(t.getAttribute("data-tab")); });
+  });
+  detailBody.addEventListener("scroll", function(){
+    var rec = $("#secRecords");
+    var rel = rec.getBoundingClientRect().top - detailBody.getBoundingClientRect().top;
+    var atBottom = detailBody.scrollTop >= detailBody.scrollHeight - detailBody.clientHeight - 2;
+    setTab((atBottom || rel < 60) ? "records" : "info");
+  });
+
+  /* ===== 初始化 ===== */
+  renderInfo();
+  renderItems();
+  renderRecords();
+  renderFoot();
+})();
+</script>
+  <script src="nav.js"></script>
+</body>
+</html>

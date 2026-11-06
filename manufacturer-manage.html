@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>企业管理 · 中心药房</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ========== 顶部导航 ========== -->
+<header class="app-header">
+  <div class="header-left">
+    <div class="header-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3.2" y="9.4" width="17.6" height="5.2" rx="2.6" transform="rotate(-45 12 12)"></rect>
+        <path d="M8.4 15.6L15.6 8.4"></path>
+      </svg>
+    </div>
+    <div class="header-title">区域药房协同管理系统</div>
+  </div>
+  <div class="header-right">
+    <div class="header-user">
+      <div class="header-avatar">张</div>
+      <span class="header-user-name">张明远</span>
+    </div>
+  </div>
+</header>
+
+<div class="app-body">
+  <!-- ========== 左侧导航 ========== -->
+  <aside class="app-side" id="appSide"></aside>
+<!-- ========== 主区域 ========== -->
+  <main class="app-main">
+    <div class="tabbar">
+      <div class="tab" onclick="location.href='drug-catalog.html'">首页</div>
+      <div class="tab active">
+        企业管理
+        <button class="tab-close" title="关闭" onclick="location.href='drug-catalog.html'">
+          <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+            <path d="M5 5l14 14M19 5L5 19"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="page">
+      <div class="page-head">
+        <h1 class="page-title">企业管理</h1>
+        <div class="page-acts">
+          <button class="btn" id="btnBlack">黑名单管理</button>
+          <button class="btn btn-primary" id="btnAdd">新增企业</button>
+        </div>
+      </div>
+
+      <div class="sel-card">
+        <div class="filter-bar mf-filter" id="filterBar">
+            <div class="mf-fi">
+              <span class="lbl">企业名称：</span>
+              <input class="input" id="fltName" placeholder="请输入企业名称" autocomplete="off">
+            </div>
+            <div class="mf-fi">
+              <span class="lbl">企业类型：</span>
+              <select class="select" id="fltType">
+                <option value="">请选择企业类型</option>
+                <option value="供应商">供应商</option>
+                <option value="生产企业">生产企业</option>
+                <option value="生产企业+供应商">生产企业+供应商</option>
+              </select>
+            </div>
+            <div class="mf-fi mf-more is-hidden">
+              <span class="lbl">企业分类：</span>
+              <select class="select" id="fltCategory">
+                <option value="">请选择企业分类</option>
+                <option value="物资">物资</option>
+                <option value="药品">药品</option>
+                <option value="药品+物资">药品+物资</option>
+              </select>
+            </div>
+            <div class="mf-fi" id="shelfFilter">
+              <span class="lbl">启用状态：</span>
+              <div class="mf-radios">
+                <label class="mf-radio"><input type="radio" name="fltShelf" value="all" checked>全部</label>
+                <label class="mf-radio"><input type="radio" name="fltShelf" value="on">启用</label>
+                <label class="mf-radio"><input type="radio" name="fltShelf" value="off">停用</label>
+              </div>
+            </div>
+            <div class="filter-acts">
+              <button class="btn btn-sm" id="btnReset">重置</button>
+              <button class="btn btn-sm btn-primary" id="btnSearch">查询</button>
+              <button class="mf-toggle" id="btnExpand">
+                展开
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M6 9l6 6 6-6"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- 企业管理 -->
+          <div class="mf-table-wrap" id="paneVendor" style="padding:0 16px;">
+            <table class="data-table mf-table">
+              <colgroup>
+                <col style="width:56px"><col style="width:104px"><col style="width:180px"><col style="width:110px">
+                <col style="width:140px"><col style="width:100px"><col style="width:100px"><col style="width:116px">
+                <col style="width:96px"><col style="width:150px">
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>序号</th><th>企业编码</th><th>企业名称</th><th>企业简称</th>
+                  <th>企业类型</th><th>企业分类</th><th>授权人姓名</th><th>手机号码</th>
+                  <th>启用状态</th><th>操作</th>
+                </tr>
+              </thead>
+              <tbody id="listBody"></tbody>
+            </table>
+          </div>
+
+          <div class="mf-pager">
+            <span>共 <b id="totalNum">0</b> 条</span>
+            <div class="ctrl">
+              <button class="pager-btn" id="pagePrev">‹</button>
+              <span id="pageNums"></span>
+              <button class="pager-btn" id="pageNext">›</button>
+              <select class="select mf-size" id="pageSize">
+                <option value="15">15条/页</option>
+                <option value="30">30条/页</option>
+                <option value="50">50条/页</option>
+              </select>
+              <span>跳至第</span>
+              <input class="input mf-jump" id="pageJump" value="1">
+              <span>页</span>
+            </div>
+          </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ========== 抽屉：新增 / 更新 / 详情 ========== -->
+<div class="drawer-mask" id="drawerMask"></div>
+<div class="drawer is-edit" id="drawer">
+  <div class="drawer-head">
+    <div class="drawer-title" id="drawerTitle">新增企业</div>
+    <button class="drawer-close" id="drawerClose" title="关闭">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <path d="M5 5l14 14M19 5L5 19"></path>
+      </svg>
+    </button>
+  </div>
+  <div class="mf-tabs" id="drawerTabs">
+    <button class="mf-tab active" data-tab="info">企业信息</button>
+    <button class="mf-tab" data-tab="qual">资质信息</button>
+  </div>
+  <div class="drawer-body" id="drawerBody"></div>
+  <div class="drawer-foot" id="drawerFoot"></div>
+</div>
+
+
+<!-- ========== 通用弹窗 ========== -->
+<div class="modal-mask" id="modalMask"></div>
+
+<!-- ========== Toast ========== -->
+<div class="toast" id="toast">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M20 6L9 17l-5-5"></path>
+  </svg>
+  <span id="toastText"></span>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  function $(id) { return document.getElementById(id); }
+  function esc(s) {
+    return String(s === null || s === undefined ? "" : s)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+
+  /* ================= 地区 / 选项 ================= */
+  var PROVINCES = ["北京市", "天津市", "河北省", "山西省", "内蒙古自治区", "辽宁省", "吉林省", "黑龙江省", "上海市",
+    "江苏省", "浙江省", "安徽省", "福建省", "江西省", "山东省", "河南省", "湖北省", "湖南省", "广东省",
+    "广西壮族自治区", "海南省", "重庆市", "四川省", "贵州省", "云南省", "西藏自治区", "陕西省", "甘肃省",
+    "青海省", "宁夏回族自治区", "新疆维吾尔自治区", "台湾省", "香港特别行政区", "澳门特别行政区"];
+
+  /* ================= 企业信息字段 ================= */
+  var INFO_FIELDS = [
+    { k: "type", label: "企业类型", req: 1, kind: "select", opts: ["供应商", "生产企业", "生产企业+供应商"], ph: "请选择企业类型" },
+    { k: "name", label: "企业名称", req: 1, kind: "text", ph: "请输入企业名称" },
+    { k: "py", label: "企业拼音码", req: 1, kind: "text", ph: "" },
+    { k: "category", label: "企业分类", req: 1, kind: "select", opts: ["物资", "药品", "药品+物资"], ph: "请选择企业分类" },
+    { k: "classType", label: "企业类别", kind: "select", opts: ["国有企业", "独资企业", "股份制企业"], ph: "请选择企业类别" },
+    { k: "province", label: "所属地区", kind: "select", opts: PROVINCES, ph: "请选择所属地区" },
+    { k: "address", label: "详细地址", kind: "text", ph: "", span: 1 },
+    { k: "shortName", label: "企业简称", kind: "text", ph: "请输入企业简称" },
+    { k: "capital", label: "企业注册资本", kind: "text", ph: "请输入企业注册资本" },
+    { k: "legalName", label: "法定代表人名称", kind: "text", ph: "请输入法定代表人名称" },
+    { k: "legalId", label: "法定代表人身份证号", kind: "text", ph: "请输入法定代表人身份证号" },
+    { k: "authName", label: "授权人姓名", kind: "text", ph: "请输入授权人姓名" },
+    { k: "authId", label: "授权人身份证号", kind: "text", ph: "请输入授权人身份号" },
+    { k: "authPhone", label: "授权人手机号", kind: "text", ph: "请输入授权人手机号" },
+    { k: "contactName", label: "联系人姓名", kind: "text", ph: "请输入联系人姓名" },
+    { k: "contactId", label: "联系人身份证号", kind: "text", ph: "请输入联系人身份证号" },
+    { k: "contactTitle", label: "联系人职务", kind: "text", ph: "请输入授联系人职务" },
+    { k: "contactPhone", label: "联系人手机号", kind: "text", ph: "请输入联系人手机号" },
+    { k: "bankAccount", label: "银行账号", kind: "text", ph: "请输入银行账号" },
+    { k: "bankName", label: "开户银行", kind: "text", ph: "请输入开户银行" },
+    { k: "website", label: "企业网站", kind: "text", ph: "请输入企业网站" },
+    { k: "fax", label: "企业传真", kind: "text", ph: "请输入企业传真" },
+    { k: "email", label: "电子邮箱", kind: "text", ph: "请输入电子邮箱" },
+    { k: "intro", label: "公司简介", kind: "textarea", ph: "", span: 1 },
+    { k: "remark", label: "备注", kind: "textarea", ph: "", span: 1 }
+  ];
+
+  /* 资质信息六个证照 */
+  var QUAL_SECTIONS = [
+    { k: "business", name: "营业执照" },
+    { k: "tax", name: "税务登记" },
+    { k: "org", name: "组织机构" },
+    { k: "prod", name: "医疗生产许可证" },
+    { k: "biz", name: "经营许可证" },
+    { k: "hyg", name: "卫生许可证" }
+  ];
+
+  /* ================= 拼音首字母 ================= */
+  var PY_MAP = {
+    "双": "S", "通": "T", "医": "Y", "疗": "L", "科": "K", "技": "J", "生": "S", "物": "W", "有": "Y",
+    "限": "X", "公": "G", "司": "S", "重": "C", "庆": "Q", "大": "D", "清": "Q", "无": "W", "锡": "X",
+    "赛": "S", "德": "D", "开": "K", "发": "F", "邗": "H", "江": "J", "新": "X", "创": "C", "宁": "N",
+    "波": "B", "市": "S", "温": "W", "度": "D", "表": "B", "厂": "C", "南": "N", "京": "J", "万": "W",
+    "福": "F", "金": "J", "安": "A", "龙": "L", "口": "K", "康": "K", "谐": "X", "械": "X", "烟": "Y",
+    "台": "T", "健": "J", "华": "H", "厦": "X", "门": "M", "施": "S", "爱": "A", "普": "P", "迈": "M",
+    "北": "B", "潍": "W", "坊": "F", "徐": "X", "州": "Z", "诚": "C", "信": "X", "苏": "S", "伟": "W",
+    "鱼": "Y", "跃": "Y", "设": "S", "备": "B", "股": "G", "份": "F", "常": "C", "威": "W", "高": "G",
+    "集": "J", "团": "T", "用": "Y", "分": "F", "子": "Z", "制": "Z", "品": "P", "山": "S", "东": "D",
+    "鲁": "L", "齐": "Q", "瑞": "R", "济": "J", "药": "Y", "贸": "M", "易": "Y", "燀": "C", "中": "Z",
+    "国": "G", "实": "S", "业": "Y", "泰": "T", "和": "H", "长": "C", "春": "C", "光": "G", "明": "M",
+    "丰": "F", "沃": "W", "盛": "S", "隆": "L", "兴": "X", "达": "D", "海": "H", "康": "K", "恩": "E",
+    "宝": "B", "利": "L", "来": "L", "博": "B", "雅": "Y", "恒": "H", "瑞": "R", "特": "T", "思": "S"
+  };
+  function toPyCode(text) {
+    var out = "";
+    for (var i = 0; i < text.length; i++) {
+      var ch = text.charAt(i);
+      if (/[0-9A-Za-z]/.test(ch)) out += ch.toUpperCase();
+      else if (PY_MAP[ch]) out += PY_MAP[ch];
+    }
+    return out;
+  }
+
+  /* ================= Mock 数据 ================= */
+  function blankQual() {
+    var q = {};
+    QUAL_SECTIONS.forEach(function (s) { q[s.k] = { no: "", from: "", to: "", forever: false, img: false }; });
+    return q;
+  }
+
+  function makeVendor(o) {
+    var v = {
+      code: "", name: "", py: "", shortName: "", type: "", category: "", classType: "", province: "",
+      address: "", capital: "", legalName: "", legalId: "", authName: "", authId: "", authPhone: "",
+      contactName: "", contactId: "", contactTitle: "", contactPhone: "", bankAccount: "", bankName: "",
+      website: "", fax: "", email: "", intro: "", remark: "",
+      shelf: "停用", black: false, blackAt: "", blackReason: "",
+      multiCert: "否", qual: blankQual()
+    };
+    Object.keys(o || {}).forEach(function (k) { v[k] = o[k]; });
+    if (!v.py && v.name) v.py = toPyCode(v.name);
+    return v;
+  }
+
+  var SEED = [
+    { code: "Q24581", name: "双通医疗", type: "供应商", category: "药品", shelf: "启用" },
+    { code: "Q24580", name: "", type: "生产企业+供应商", category: "物资", shelf: "停用" },
+    { code: "Q24576", name: "燀", type: "供应商", category: "物资", shelf: "启用" },
+    { code: "Q24574", name: "", type: "", category: "", shelf: "停用" },
+    { code: "Q24573", name: "", type: "", category: "药品", shelf: "停用" },
+    { code: "Q23574", name: "重庆大清生物有限公司", type: "生产企业", category: "物资", shelf: "启用" },
+    { code: "Q23572", name: "无锡赛德科技开发有限公司", type: "生产企业", category: "物资", shelf: "启用", black: true, blackAt: "2026-07-18", blackReason: "资质到期未续办" },
+    { code: "Q22640", name: "邗江新创", type: "生产企业", category: "物资", shelf: "启用" },
+    { code: "Q22639", name: "宁波市温度表厂", type: "生产企业", category: "物资", shelf: "启用" },
+    { code: "Q22638", name: "南京万福金安生物医药科技有限公司", type: "生产企业", category: "物资", shelf: "启用" },
+    { code: "Q22637", name: "龙口市康谐医疗器械有限公司", type: "生产企业", category: "物资", shelf: "启用", black: true, blackAt: "2026-09-02", blackReason: "违规经营，暂停合作" },
+    { code: "Q22636", name: "烟台市健新医疗科技有限公司", type: "生产企业", category: "物资", shelf: "启用" },
+    { code: "Q22635", name: "江苏华夏医疗器械有限公司", type: "生产企业", category: "物资", shelf: "启用" },
+    { code: "Q22634", name: "施爱德（厦门）医疗器材有限公司", type: "生产企业", category: "物资", shelf: "启用" },
+    { code: "Q22633", name: "普迈德（北京）科技有限公司", type: "生产企业", category: "物资", shelf: "启用" },
+    { code: "Q22632", name: "徐州诚信医疗器械有限公司", type: "生产企业", category: "物资", shelf: "启用", province: "江苏省" },
+    { code: "Q22631", name: "苏州伟康医疗器械有限公司", type: "供应商", category: "药品", shelf: "启用", province: "江苏省" },
+    { code: "Q22630", name: "江苏鱼跃医疗设备股份有限公司", type: "生产企业", category: "物资", shelf: "启用", province: "江苏省" },
+    { code: "Q22629", name: "南京医药股份有限公司", type: "供应商", category: "药品", shelf: "启用", province: "江苏省", black: true, blackAt: "2026-10-11", blackReason: "药品质量抽检不合格" },
+    { code: "Q22628", name: "常州华通医疗器械有限公司", type: "生产企业", category: "物资", shelf: "停用", province: "江苏省" },
+    { code: "Q24590", name: "山东威高集团医用高分子制品股份有限公司", type: "生产企业", category: "药品", shelf: "启用" }
+  ];
+
+  var SEED_DETAIL = {
+    legalName: "王建国", legalId: "320102196805061234", authName: "李红", authId: "320102199002023456",
+    authPhone: "13800001234", contactName: "李红", contactId: "320102199002023456", contactTitle: "销售经理",
+    contactPhone: "13800001234", bankName: "中国银行南京城南支行", bankAccount: "5243000012345678",
+    shortName: "双通医疗", capital: "500万元", province: "江苏省", address: "南京市江宁区秣陵街道工业园1号",
+    classType: "股份制企业", website: "www.shuangtong-med.com", email: "service@shuangtong-med.com"
+  };
+
+  var DATA_KEY = "MF_VENDORS_V4";
+  var DATA = [];
+
+  function loadData() {
+    try {
+      var raw = sessionStorage.getItem(DATA_KEY);
+      if (raw) { DATA = JSON.parse(raw); return; }
+    } catch (e) { /* ignore */ }
+    DATA = SEED.map(function (o, i) {
+      var base = makeVendor(o);
+      if (i === 0) {
+        Object.keys(SEED_DETAIL).forEach(function (k) { base[k] = SEED_DETAIL[k]; });
+      }
+      return base;
+    });
+  }
+  function saveData() {
+    try { sessionStorage.setItem(DATA_KEY, JSON.stringify(DATA)); } catch (e) { /* ignore */ }
+  }
+
+  /* ================= 状态 ================= */
+  var ST = {
+    filters: { kw: "", type: "", category: "", shelf: "all" },
+    expanded: false,
+    page: 1,
+    size: 15,
+    dw: null                 // 抽屉状态
+  };
+
+  function findVendor(code) {
+    return DATA.filter(function (v) { return v.code === code; })[0] || null;
+  }
+
+  function filtered() {
+    var f = ST.filters;
+    return DATA.filter(function (v) {
+      if (v.black) return false;
+      if (f.kw) {
+        var kw = f.kw.toLowerCase();
+        var hay = [v.name, v.code, v.py, v.shortName].join("|").toLowerCase();
+        if (hay.indexOf(kw) < 0) return false;
+      }
+      if (f.type && v.type !== f.type) return false;
+      if (f.category && v.category !== f.category) return false;
+      if (f.shelf === "on" && v.shelf !== "启用") return false;
+      if (f.shelf === "off" && v.shelf === "启用") return false;
+      return true;
+    });
+  }
+
+  /* ================= 列表渲染 ================= */
+  function statusCell(text, kind) {
+    if (!text) return '<span class="mf-status">—</span>';
+    return '<span class="mf-status"><i class="dot ' + kind + '"></i>' + esc(text) + "</span>";
+  }
+
+  function renderList() {
+    var rows = filtered();
+    var start = (ST.page - 1) * ST.size;
+    var pageRows = rows.slice(start, start + ST.size);
+    renderVendorRows(pageRows, start);
+    renderPager(rows.length);
+  }
+
+  function renderVendorRows(pageRows, start) {
+    var body = $("listBody");
+    if (!pageRows.length) {
+      body.innerHTML = '<tr><td colspan="10" class="table-empty">暂无数据</td></tr>';
+      return;
+    }
+    body.innerHTML = pageRows.map(function (v, i) {
+      var on = v.shelf === "启用";
+      var acts = "";
+      acts += on
+        ? '<button class="link-btn" data-act="off" data-id="' + esc(v.code) + '">停用</button>'
+        : '<button class="link-btn" data-act="on" data-id="' + esc(v.code) + '">启用</button>';
+      if (!on) acts += '<button class="link-btn" data-act="edit" data-id="' + esc(v.code) + '">更新</button>';
+      acts += '<button class="link-btn" data-act="view" data-id="' + esc(v.code) + '">详情</button>';
+      acts += '<button class="link-btn is-danger" data-act="del" data-id="' + esc(v.code) + '">删除</button>';
+
+      return "<tr>"
+        + "<td>" + (start + i + 1) + "</td>"
+        + "<td>" + esc(v.code) + "</td>"
+        + "<td title=\"" + esc(v.name) + "\">" + (v.name ? esc(v.name) : "—") + "</td>"
+        + "<td>" + (v.shortName ? esc(v.shortName) : "—") + "</td>"
+        + "<td>" + (v.type ? esc(v.type) : "—") + "</td>"
+        + "<td>" + (v.category ? esc(v.category) : "—") + "</td>"
+        + "<td>" + (v.authName ? esc(v.authName) : "—") + "</td>"
+        + "<td>" + (v.authPhone ? esc(v.authPhone) : "—") + "</td>"
+        + "<td>" + statusCell(v.shelf, on ? "on" : "off") + "</td>"
+        + '<td><div class="mf-acts">' + acts + "</div></td>"
+        + "</tr>";
+    }).join("");
+  }
+
+  function renderPager(total) {
+    var pages = Math.max(1, Math.ceil(total / ST.size));
+    if (ST.page > pages) ST.page = pages;
+    if (ST.page < 1) ST.page = 1;
+    $("totalNum").textContent = total;
+
+    var nums = "";
+    var from = 1, to = pages;
+    if (pages > 7) {
+      from = Math.max(1, ST.page - 2);
+      to = Math.min(pages, from + 4);
+      from = Math.max(1, to - 4);
+    }
+    for (var p = from; p <= to; p++) {
+      nums += '<button class="pager-num' + (p === ST.page ? " is-cur" : "") + '" data-page="' + p + '">' + p + "</button>";
+    }
+    if (from > 1) nums = '<button class="pager-num" data-page="1">1</button><span>…</span>' + nums;
+    if (to < pages) nums = nums + "<span>…</span>" + '<button class="pager-num" data-page="' + pages + '">' + pages + "</button>";
+    $("pageNums").innerHTML = nums;
+
+    $("pagePrev").disabled = ST.page <= 1;
+    $("pageNext").disabled = ST.page >= pages;
+    $("pageJump").value = ST.page;
+  }
+
+  /* ================= 抽屉 ================= */
+  var DW_TITLE = { create: "新增企业", edit: "企业更新", detail: "企业详情" };
+
+  function openDrawer(mode, code) {
+    var v = code ? findVendor(code) : null;
+    if (mode !== "create" && !v) return;
+    var draft;
+    if (mode === "create") {
+      draft = makeVendor({});
+    } else {
+      draft = JSON.parse(JSON.stringify(v));
+    }
+    ST.dw = { mode: mode, code: code || null, tab: "info", draft: draft, dirty: false };
+    $("drawerTitle").textContent = DW_TITLE[mode];
+    renderDrawer();
+    document.body.classList.add("drawer-open");
+  }
+
+  function renderDrawer() {
+    var dw = ST.dw;
+    // 页签
+    Array.prototype.forEach.call(document.querySelectorAll(".mf-tab"), function (b) {
+      b.classList.toggle("active", b.getAttribute("data-tab") === dw.tab);
+    });
+    $("drawerBody").innerHTML = dw.tab === "info" ? renderInfoTab() : renderQualTab();
+    renderDrawerFoot();
+  }
+
+  function renderInfoTab() {
+    var dw = ST.dw, v = dw.draft, detail = dw.mode === "detail";
+    if (detail) {
+      return '<div class="mf-view">' + INFO_FIELDS.map(function (f) {
+        var val = v[f.k];
+        var text = val ? esc(val) : "—";
+        return '<div class="fi' + (f.span ? " span-2" : "") + '"><span class="lbl">' + esc(f.label) + '：</span>'
+          + '<span class="val">' + text + '</span></div>';
+      }).join("") + "</div>";
+    }
+
+    return '<div class="mf-form">' + INFO_FIELDS.map(function (f) {
+      var val = v[f.k] === null || v[f.k] === undefined ? "" : v[f.k];
+      var label = '<span class="lbl">' + (f.req ? '<span class="req">*</span>' : "") + esc(f.label) + '：</span>';
+      var ctrl;
+      if (f.kind === "select") {
+        ctrl = '<select class="select" data-k="' + f.k + '"><option value="">' + esc(f.ph) + "</option>"
+          + f.opts.map(function (o) {
+            return '<option value="' + esc(o) + '"' + (val === o ? " selected" : "") + ">" + esc(o) + "</option>";
+          }).join("") + "</select>";
+      } else if (f.kind === "textarea") {
+        ctrl = '<textarea class="textarea" data-k="' + f.k + '" placeholder="' + esc(f.ph) + '">' + esc(val) + "</textarea>";
+      } else {
+        ctrl = '<input class="input" data-k="' + f.k + '" value="' + esc(val) + '" placeholder="' + esc(f.ph) + '" autocomplete="off">';
+      }
+      return '<div class="fi' + (f.span ? " span-2" : "") + '">' + label + '<div class="ctrl">' + ctrl + "</div></div>";
+    }).join("") + "</div>";
+  }
+
+  function renderQualTab() {
+    var dw = ST.dw, v = dw.draft, detail = dw.mode === "detail";
+    var head = '<div class="mf-qual-head">多证合一：';
+    if (detail) {
+      head += '<span>' + esc(v.multiCert || "否") + "</span>";
+    } else {
+      head += '<label class="mf-radio"><input type="radio" name="multiCert" value="是" data-q-multi="1"'
+        + (v.multiCert === "是" ? " checked" : "") + ">是</label>"
+        + '<label class="mf-radio"><input type="radio" name="multiCert" value="否" data-q-multi="1"'
+        + (v.multiCert !== "是" ? " checked" : "") + ">否</label>";
+    }
+    head += "</div>";
+
+    var secs = QUAL_SECTIONS.map(function (s) {
+      var q = v.qual[s.k] || { no: "", from: "", to: "", forever: false, img: false };
+      var rows;
+      if (detail) {
+        rows = '<div class="mf-qual-row"><span class="lbl">照片信息：</span>'
+          + (q.img ? '<span class="val">已上传</span>' : '<span class="mf-qual-empty">—</span>') + "</div>"
+          + '<div class="mf-qual-row"><span class="lbl">资质证号：</span><span class="val">' + (q.no ? esc(q.no) : "—") + "</span></div>"
+          + '<div class="mf-qual-row"><span class="lbl">有效期：</span><span class="val">'
+          + (q.forever ? "长期" : ((q.from || "—") + " 至 " + (q.to || "—"))) + "</span></div>";
+      } else {
+        rows = '<div class="mf-qual-row"><span class="lbl">照片信息：</span>'
+          + '<div class="mf-upload" data-upload="' + s.k + '" title="上传照片">'
+          + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>'
+          + "</div></div>"
+          + '<div class="mf-qual-row"><span class="lbl">资质证号：</span>'
+          + '<input class="input" style="max-width:320px" data-q="' + s.k + '.no" value="' + esc(q.no) + '" autocomplete="off"></div>'
+          + '<div class="mf-qual-row"><span class="lbl">有效期：</span><div class="mf-date-range">'
+          + '<input class="input" type="date" data-q="' + s.k + '.from" value="' + esc(q.from) + '">'
+          + "<span>-</span>"
+          + '<input class="input" type="date" data-q="' + s.k + '.to" value="' + esc(q.to) + '">'
+          + '<label class="mf-check"><input type="checkbox" data-q="' + s.k + '.forever"' + (q.forever ? " checked" : "") + ">长期</label>"
+          + "</div></div>";
+      }
+      return '<div class="mf-qual-sec"><div class="mf-qual-title">' + esc(s.name) + "</div>" + rows + "</div>";
+    }).join("");
+
+    return head + secs;
+  }
+
+  function renderDrawerFoot() {
+    var mode = ST.dw.mode;
+    var html = "";
+    if (mode === "create") {
+      html = '<button class="btn" data-foot="draft">暂存</button>'
+        + '<button class="btn btn-primary" data-foot="submit">保存并启用</button>'
+        + '<button class="btn" data-foot="back">返回</button>';
+    } else if (mode === "edit") {
+      html = '<button class="btn" data-foot="draft">暂存</button>'
+        + '<button class="btn btn-primary" data-foot="submit">更新</button>'
+        + '<button class="btn" data-foot="back">返回</button>';
+    } else {
+      html = '<button class="btn" data-foot="back">返回</button>';
+    }
+    $("drawerFoot").innerHTML = html;
+  }
+
+  function syncDraft() {
+    var dw = ST.dw;
+    if (!dw || dw.mode === "detail") return;
+    if (dw.tab === "info") {
+      Array.prototype.forEach.call(document.querySelectorAll("#drawerBody [data-k]"), function (el) {
+        dw.draft[el.getAttribute("data-k")] = el.value;
+      });
+    } else {
+      var multi = document.querySelector('#drawerBody input[name="multiCert"]:checked');
+      if (multi) dw.draft.multiCert = multi.value;
+      Array.prototype.forEach.call(document.querySelectorAll("#drawerBody [data-q]"), function (el) {
+        var path = el.getAttribute("data-q");
+        var parts = path.split(".");
+        var sec = parts[0], key = parts[1];
+        if (!dw.draft.qual[sec]) dw.draft.qual[sec] = { no: "", from: "", to: "", forever: false, img: false };
+        dw.draft.qual[sec][key] = el.type === "checkbox" ? el.checked : el.value;
+      });
+    }
+  }
+
+  function switchTab(tab) {
+    if (!ST.dw || ST.dw.tab === tab) return;
+    syncDraft();
+    ST.dw.tab = tab;
+    renderDrawer();
+  }
+
+  function closeDrawer(force) {
+    if (!ST.dw) return;
+    if (!force && ST.dw.dirty && ST.dw.mode !== "detail") {
+      confirmDialog("提示", "确认关闭？", "确定", function () {
+        document.body.classList.remove("drawer-open");
+        ST.dw = null;
+      });
+      return;
+    }
+    document.body.classList.remove("drawer-open");
+    ST.dw = null;
+  }
+
+  /* ================= 保存 / 提交 ================= */
+  function nextCode() {
+    var max = 0;
+    DATA.forEach(function (v) {
+      var m = /Q(\d+)/.exec(v.code || "");
+      if (m) max = Math.max(max, parseInt(m[1], 10));
+    });
+    return "Q" + (max + 1);
+  }
+
+  function validate(draft) {
+    var miss = [];
+    INFO_FIELDS.forEach(function (f) {
+      if (f.req && !String(draft[f.k] || "").trim()) miss.push(f.label);
+    });
+    return miss;
+  }
+
+  function markInvalid() {
+    Array.prototype.forEach.call(document.querySelectorAll("#drawerBody [data-k]"), function (el) {
+      var f = INFO_FIELDS.filter(function (x) { return x.k === el.getAttribute("data-k"); })[0];
+      if (f && f.req && !el.value.trim()) el.classList.add("is-invalid");
+    });
+  }
+
+  function saveDrawer(kind) {
+    var dw = ST.dw;
+    syncDraft();
+    var v = dw.draft;
+
+    if (kind === "submit") {
+      var miss = validate(v);
+      if (miss.length) {
+        markInvalid();
+        toast("请完善：" + miss.join("、"));
+        return;
+      }
+    } else if (!String(v.name || "").trim()) {
+      toast("请至少填写企业名称");
+      return;
+    }
+
+    if (dw.mode === "create") {
+      v.code = nextCode();
+      v.py = v.py || toPyCode(v.name);
+      if (!v.qual) v.qual = blankQual();
+      v.shelf = kind === "submit" ? "启用" : "停用";
+      DATA.unshift(v);
+      toast(kind === "submit" ? "已启用：" + v.name : "已暂存：" + v.name);
+    } else {
+      var idx = DATA.findIndex(function (x) { return x.code === dw.code; });
+      if (idx >= 0) {
+        v.py = v.py || toPyCode(v.name);
+        DATA[idx] = v;
+        toast(kind === "submit" ? "已更新：" + v.name : "已暂存：" + v.name);
+      }
+    }
+
+    saveData();
+    document.body.classList.remove("drawer-open");
+    ST.dw = null;
+    ST.page = 1;
+    renderList();
+  }
+
+  /* ================= 弹窗 / Toast ================= */
+  function openModal(html) {
+    var mask = $("modalMask");
+    mask.innerHTML = '<div class="modal">' + html + "</div>";
+    mask.classList.add("show");
+  }
+  function closeModal() {
+    var mask = $("modalMask");
+    mask.classList.remove("show");
+    mask.innerHTML = "";
+  }
+  function confirmDialog(title, text, okText, onOk) {
+    openModal(
+      '<div class="modal-head"><span class="modal-title">' + esc(title) + "</span>"
+      + '<button class="drawer-close" data-close="1">'
+      + '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>'
+      + "</button></div>"
+      + '<div class="modal-body"><p class="modal-text">' + esc(text) + "</p></div>"
+      + '<div class="modal-foot"><button class="btn" data-close="1">取消</button>'
+      + '<button class="btn btn-primary" data-ok="1">' + esc(okText || "确定") + "</button></div>"
+    );
+    $("modalMask").querySelector("[data-ok]").addEventListener("click", function () {
+      closeModal();
+      if (onOk) onOk();
+    });
+  }
+
+  var toastTimer = null;
+  function toast(msg) {
+    var el = $("toast");
+    $("toastText").textContent = msg;
+    el.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { el.classList.remove("show"); }, 2200);
+  }
+
+  /* ================= 查询 / 重置 / 展开 ================= */
+  function applyFilters() {
+    ST.filters.kw = $("fltName").value.trim();
+    ST.filters.type = $("fltType").value;
+    ST.filters.category = $("fltCategory").value;
+    var rd = document.querySelector('input[name="fltShelf"]:checked');
+    ST.filters.shelf = rd ? rd.value : "all";
+    ST.page = 1;
+    renderList();
+  }
+
+  function resetFilters() {
+    $("fltName").value = "";
+    $("fltType").value = "";
+    $("fltCategory").value = "";
+    document.querySelector('input[name="fltShelf"][value="all"]').checked = true;
+    ST.filters = { kw: "", type: "", category: "", shelf: "all" };
+    ST.page = 1;
+    renderList();
+  }
+
+  function toggleExpand() {
+    ST.expanded = !ST.expanded;
+    Array.prototype.forEach.call(document.querySelectorAll(".mf-more"), function (el) {
+      el.classList.toggle("is-hidden", !ST.expanded);
+    });
+    var btn = $("btnExpand");
+    btn.classList.toggle("is-open", ST.expanded);
+    btn.childNodes[0].nodeValue = ST.expanded ? "收起" : "展开";
+  }
+
+  /* ================= 事件绑定 ================= */
+  function bindEvents() {
+    $("btnAdd").addEventListener("click", function () { openDrawer("create"); });
+    $("btnBlack").addEventListener("click", function () { location.href = "blacklist-manage.html"; });
+
+    $("btnSearch").addEventListener("click", applyFilters);
+    $("btnReset").addEventListener("click", resetFilters);
+    $("btnExpand").addEventListener("click", toggleExpand);
+    $("fltName").addEventListener("keydown", function (e) {
+      if (e.key === "Enter") applyFilters();
+    });
+
+    // 列表行操作
+    $("listBody").addEventListener("click", function (e) {
+      var btn = e.target.closest("button[data-act]");
+      if (!btn) return;
+      var act = btn.getAttribute("data-act");
+      var code = btn.getAttribute("data-id");
+      var v = findVendor(code);
+      if (!v) return;
+
+      if (act === "edit") openDrawer("edit", code);
+      else if (act === "view") openDrawer("detail", code);
+      else if (act === "on") {
+        if (v.black) { toast("黑名单企业不可启用，请先移出黑名单"); return; }
+        v.shelf = "启用";
+        saveData();
+        renderList();
+        toast("已启用：" + (v.name || v.code));
+      } else if (act === "off") {
+        confirmDialog("提示", "确认停用厂商「" + (v.name || v.code) + "」？", "停用", function () {
+          v.shelf = "停用";
+          saveData();
+          renderList();
+          toast("已停用：" + (v.name || v.code));
+        });
+      } else if (act === "del") {
+        confirmDialog("提示", "确认删除厂商「" + (v.name || v.code) + "」？", "删除", function () {
+          DATA = DATA.filter(function (x) { return x.code !== code; });
+          saveData();
+          renderList();
+          toast("已删除：" + (v.name || v.code));
+        });
+      }
+    });
+
+    // 分页
+    $("pagePrev").addEventListener("click", function () { if (ST.page > 1) { ST.page--; renderList(); } });
+    $("pageNext").addEventListener("click", function () {
+      var pages = Math.max(1, Math.ceil(filtered().length / ST.size));
+      if (ST.page < pages) { ST.page++; renderList(); }
+    });
+    $("pageNums").addEventListener("click", function (e) {
+      var b = e.target.closest("button[data-page]");
+      if (!b) return;
+      ST.page = parseInt(b.getAttribute("data-page"), 10);
+      renderList();
+    });
+    $("pageSize").addEventListener("change", function () {
+      ST.size = parseInt(this.value, 10);
+      ST.page = 1;
+      renderList();
+    });
+    $("pageJump").addEventListener("keydown", function (e) {
+      if (e.key !== "Enter") return;
+      var n = parseInt(this.value, 10);
+      var pages = Math.max(1, Math.ceil(filtered().length / ST.size));
+      if (isNaN(n)) n = 1;
+      ST.page = Math.min(pages, Math.max(1, n));
+      renderList();
+    });
+
+    // 抽屉页签
+    $("drawerTabs").addEventListener("click", function (e) {
+      var b = e.target.closest(".mf-tab");
+      if (!b) return;
+      switchTab(b.getAttribute("data-tab"));
+    });
+
+    // 抽屉关闭
+    $("drawerClose").addEventListener("click", function () { closeDrawer(false); });
+    $("drawerMask").addEventListener("click", function () { closeDrawer(false); });
+
+    // 抽屉底部操作
+    $("drawerFoot").addEventListener("click", function (e) {
+      var b = e.target.closest("button[data-foot]");
+      if (!b) return;
+      var kind = b.getAttribute("data-foot");
+      if (kind === "back") closeDrawer(false);
+      else saveDrawer(kind);
+    });
+
+    // 抽屉表单：输入即标记未保存；企业名称联动拼音码
+    $("drawerBody").addEventListener("input", function (e) {
+      if (!ST.dw || ST.dw.mode === "detail") return;
+      ST.dw.dirty = true;
+      if (e.target.classList.contains("is-invalid")) e.target.classList.remove("is-invalid");
+      if (e.target.getAttribute("data-k") === "name") {
+        var py = $("drawerBody").querySelector('[data-k="py"]');
+        if (py && (!py.value || py.value === toPyCode(ST.dw.draft.name || ""))) {
+          py.value = toPyCode(e.target.value.trim());
+          ST.dw.draft.py = py.value;
+        }
+      }
+    });
+    $("drawerBody").addEventListener("change", function (e) {
+      if (!ST.dw || ST.dw.mode === "detail") return;
+      ST.dw.dirty = true;
+      var up = e.target.closest("[data-upload]");
+      if (up) { toast("原型演示：照片上传待接入"); }
+    });
+
+    // 弹窗
+    $("modalMask").addEventListener("click", function (e) {
+      if (e.target.closest("[data-close]") || e.target === this) closeModal();
+    });
+  }
+
+  /* ================= 初始化 ================= */
+  loadData();
+  bindEvents();
+  renderList();
+})();
+</script>
+
+
+  <script src="nav.js"></script>
+</body></html>

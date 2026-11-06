@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>新增采购申请 · 区域药房协同管理系统</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ========== 顶部导航 ========== -->
+<header class="app-header">
+  <div class="header-left">
+    <div class="header-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3.2" y="9.4" width="17.6" height="5.2" rx="2.6" transform="rotate(-45 12 12)"/>
+        <path d="M8.4 15.6L15.6 8.4"/>
+      </svg>
+    </div>
+    <div class="header-title">区域药房协同管理系统</div>
+  </div>
+  <div class="header-right">
+    <div class="header-user" id="headerUser">
+      <span class="header-avatar">药</span>
+      <span class="header-user-name">—</span>
+    </div>
+  </div>
+</header>
+
+<div class="app-body">
+  <!-- ========== 左侧导航 ========== -->
+  <aside class="app-side" id="appSide"></aside>
+<!-- ========== 主区域 ========== -->
+  <main class="app-main">
+    <div class="tabbar">
+      <div class="tab">首页</div>
+      <div class="tab active">
+        采购申请
+        <button class="tab-close" id="tabClose" title="关闭">
+          <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="page sel-page">
+      <div class="sel-main">
+        <div class="page-head">
+          <div class="head-back">
+            <button class="back-btn" id="btnBack" title="返回采购申请列表">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+            </button>
+            <h1 class="page-title" id="pageTitle">新增采购申请</h1>
+          </div>
+        </div>
+
+        <div class="sel-card">
+          <div class="card-body">
+            <div class="form-wrap">
+
+              <!-- 基本信息（系统带出，只读） -->
+              <section class="block">
+                <div class="block-head"><h2 class="block-title">基本信息</h2></div>
+                <div class="form-grid-4">
+                  <div class="form-item">
+                    <label class="form-label">申请编号</label>
+                    <input class="input is-readonly" id="fCode" readonly>
+                  </div>
+                  <div class="form-item">
+                    <label class="form-label">创建人</label>
+                    <input class="input is-readonly" id="fCreator" readonly>
+                  </div>
+                  <div class="form-item">
+                    <label class="form-label">创建机构</label>
+                    <input class="input is-readonly" id="fOrg" readonly>
+                  </div>
+                  <div class="form-item">
+                    <label class="form-label">创建时间</label>
+                    <input class="input is-readonly" id="fCreatedAt" readonly>
+                  </div>
+                </div>
+              </section>
+
+              <!-- 药品明细 -->
+              <section class="block">
+                <div class="block-head">
+                  <h2 class="block-title">药品明细<span class="count" id="itemCount"></span></h2>
+                  <div class="block-acts">
+                    <button class="btn btn-primary btn-sm" id="btnAddItem">选择药品</button>
+                  </div>
+                </div>
+                <table class="data-table pur-table">
+                  <thead>
+                    <tr>
+                      <th style="width:140px;">药品编码</th>
+                      <th style="width:180px;">药品名称</th>
+                      <th style="width:170px;">药品规格</th>
+                      <th style="width:130px;">包装规格</th>
+                      <th>生产企业</th>
+                      <th style="width:130px;" class="num"><span class="req">*</span>需求量</th>
+                      <th style="width:70px;" class="col-acts">操作</th>
+                    </tr>
+                  </thead>
+                  <tbody id="itemBody"></tbody>
+                </table>
+              </section>
+
+            </div>
+          </div>
+
+          <div class="page-foot">
+            <button class="btn" id="btnCancel">取消</button>
+            <button class="btn" id="btnSave">暂存</button>
+            <button class="btn btn-primary" id="btnSubmit">提交</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="modal-mask" id="modalMask"></div>
+<div class="toast" id="toast">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+  <span id="toastText"></span>
+</div>
+
+<script src="mock.js"></script>
+<script src="selection-common.js"></script>
+<script src="purchase-common.js"></script>
+<script>
+(function () {
+  var $ = SEL.$, esc = SEL.esc;
+
+  var user = PUR.user();
+  if (!user) return;
+  if (!PUR.canAccess(user)) { location.href = "price-adjust.html"; return; }
+  if (user.role !== "village") { location.href = "purchase-request.html"; return; }
+
+  var editId = SEL.qs("id");
+  var list = PUR.load();
+  var req = editId ? PUR.byId(list, editId) : null;
+
+  if (editId && !req) { location.href = "purchase-request.html"; return; }
+  if (req && req.status !== "draft" && req.status !== "rejected") {
+    location.href = "purchase-request-detail.html?id=" + editId;
+    return;
+  }
+  if (req && !PUR.isCreator(req, user)) { location.href = "purchase-request.html"; return; }
+
+  /* 新建草稿 */
+  if (!req) {
+    req = {
+      id: SEL.newId(),
+      code: PUR.newCode(list),
+      creatorId: user.id,
+      creator: user.name,
+      creatorOrg: user.org,
+      createdAt: SEL.fmtNow(),
+      status: "draft",
+      items: [],
+      records: []
+    };
+  }
+
+  /* ---------------- 基本信息 ---------------- */
+  $("fCode").value = req.code;
+  $("fCreator").value = req.creator;
+  $("fOrg").value = req.creatorOrg;
+  $("fCreatedAt").value = req.createdAt;
+
+  if (editId) {
+    $("pageTitle").textContent = "编辑采购申请";
+    document.title = "编辑采购申请 · 区域药房协同管理系统";
+  }
+
+  /* ---------------- 药品明细 ---------------- */
+  function renderItems() {
+    $("itemCount").textContent = "（" + req.items.length + "）";
+    if (!req.items.length) {
+      $("itemBody").innerHTML = '<tr class="pa-empty-row"><td colspan="7">暂无药品明细，请点击右上角「选择药品」</td></tr>';
+      return;
+    }
+    $("itemBody").innerHTML = req.items.map(function (it, i) {
+      return "<tr>" +
+        "<td>" + esc(it.drugCode) + "</td>" +
+        '<td><div class="cell-ellipsis" title="' + esc(it.drugName) + '">' + esc(it.drugName) + "</div></td>" +
+        "<td>" + esc(it.spec) + "</td>" +
+        "<td>" + esc(it.pkgSpec) + "</td>" +
+        '<td><div class="cell-ellipsis" title="' + esc(it.vendor) + '">' + esc(it.vendor) + "</div></td>" +
+        '<td class="num"><input class="input pur-qty" data-ii="' + i + '" value="' + esc(it.qty) + '" placeholder="请输入"></td>' +
+        '<td class="col-acts"><button class="link-btn is-danger" data-del="' + i + '">删除</button></td>' +
+      "</tr>";
+    }).join("");
+  }
+
+  $("itemBody").addEventListener("input", function (e) {
+    var el = e.target.closest("[data-ii]");
+    if (!el) return;
+    var i = parseInt(el.getAttribute("data-ii"), 10);
+    if (!req.items[i]) return;
+    req.items[i].qty = el.value.trim();
+    el.classList.remove("is-invalid");
+  });
+
+  $("itemBody").addEventListener("click", function (e) {
+    var del = e.target.closest("[data-del]");
+    if (!del) return;
+    var i = parseInt(del.getAttribute("data-del"), 10);
+    var it = req.items[i];
+    SEL.confirmDialog({
+      title: "删除药品明细",
+      text: "确认删除「" + it.drugName + " / " + it.spec + "」这条明细？",
+      okText: "删除",
+      onOk: function () {
+        req.items.splice(i, 1);
+        renderItems();
+      }
+    });
+  });
+
+  /* ---------------- 选择药品（弹窗，4 列） ---------------- */
+  var specRows = [];
+  MOCK.drugs.forEach(function (d) {
+    d.specs.forEach(function (s, si) {
+      if (s.status === "off") return;
+      s.vendors.forEach(function (v, vi) {
+        specRows.push({
+          key: d.id + "_" + si + "_" + vi,
+          drugCode: s.code,
+          drugName: d.name,
+          spec: s.title,
+          pkgSpec: s.pkgSpec,
+          vendor: v.name
+        });
+      });
+    });
+  });
+
+  var pk = { filtered: specRows.slice(), checked: {} };
+
+  function openPicker() {
+    pk.filtered = specRows.slice();
+    pk.checked = {};
+
+    SEL.openModal(
+      '<div class="modal-head">' +
+        '<span class="modal-title">选择药品</span>' +
+        '<button class="drawer-close" data-close="1">' +
+          '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>' +
+        "</button>" +
+      "</div>" +
+      '<div class="modal-body">' +
+        '<div class="pa-pick-filter">' +
+          '<span class="filter-label">药品名称</span>' +
+          '<input class="input" id="pkName" placeholder="请输入药品名称" style="width:180px;">' +
+          '<div class="pa-pick-acts">' +
+            '<button class="btn" id="pkReset">重置</button>' +
+            '<button class="btn btn-primary" id="pkQuery">查询</button>' +
+          "</div>" +
+        "</div>" +
+        '<div class="pa-pick-wrap pur-pick-wrap" style="margin-top:12px;">' +
+          '<table class="data-table"><thead><tr>' +
+            '<th style="width:36px;"><input type="checkbox" id="pkAll" title="全选"></th>' +
+            '<th style="width:130px;">药品编码</th>' +
+            '<th style="width:170px;">药品名称</th>' +
+            '<th style="width:160px;">药品规格</th>' +
+            '<th>生产企业</th>' +
+          '</tr></thead><tbody id="pkBody"></tbody></table>' +
+        "</div>" +
+      "</div>" +
+      '<div class="modal-foot">' +
+        '<span class="pur-pick-count" style="margin-right:auto;font-size:12px;color:var(--text-tertiary);">已选 <b id="pkCount">0</b> 项</span>' +
+        '<button class="btn" data-close="1">取消</button>' +
+        '<button class="btn btn-primary" id="pkOk">确定</button>' +
+      "</div>"
+    );
+
+    document.querySelector("#modalMask .modal").classList.add("pa-modal");
+    renderPkBody();
+
+    $("pkQuery").addEventListener("click", doPkQuery);
+    $("pkName").addEventListener("keydown", function (e) { if (e.key === "Enter") doPkQuery(); });
+    $("pkReset").addEventListener("click", function () {
+      $("pkName").value = "";
+      doPkQuery();
+    });
+    $("pkAll").addEventListener("change", function () {
+      var on = this.checked;
+      pk.checked = {};
+      if (on) {
+        pk.filtered.forEach(function (s) {
+          if (!isAdded(s.key)) pk.checked[s.key] = true;
+        });
+      }
+      renderPkBody();
+    });
+    $("pkBody").addEventListener("change", function (e) {
+      var c = e.target.closest("input[data-key]");
+      if (!c) return;
+      var k = c.getAttribute("data-key");
+      if (c.checked) pk.checked[k] = true;
+      else delete pk.checked[k];
+      syncPkCount();
+    });
+    $("pkOk").addEventListener("click", confirmPick);
+  }
+
+  function doPkQuery() {
+    var name = $("pkName").value.trim().toLowerCase();
+    pk.filtered = specRows.filter(function (s) {
+      return !name || s.drugName.toLowerCase().indexOf(name) >= 0;
+    });
+    renderPkBody();
+  }
+
+  function isAdded(key) {
+    return req.items.some(function (it) { return it.key === key; });
+  }
+
+  function renderPkBody() {
+    var body = $("pkBody");
+    if (!pk.filtered.length) {
+      body.innerHTML = '<tr class="pa-pick-empty"><td colspan="5">未查询到匹配药品</td></tr>';
+      syncPkCount();
+      return;
+    }
+    body.innerHTML = pk.filtered.map(function (s) {
+      var added = isAdded(s.key);
+      return "<tr" + (added ? ' class="is-disabled"' : "") + ">" +
+        '<td><input type="checkbox" data-key="' + esc(s.key) + '"' +
+          (added ? " disabled" : "") + (pk.checked[s.key] ? " checked" : "") + "></td>" +
+        "<td>" + esc(s.drugCode) + "</td>" +
+        "<td>" + esc(s.drugName) + "</td>" +
+        "<td>" + esc(s.spec) + "</td>" +
+        '<td><div class="cell-ellipsis" title="' + esc(s.vendor) + '">' + esc(s.vendor) +
+          (added ? '<span class="pa-added">已添加</span>' : "") + "</div></td>" +
+      "</tr>";
+    }).join("");
+    syncPkCount();
+  }
+
+  function syncPkCount() {
+    var n = Object.keys(pk.checked).length;
+    var c = $("pkCount");
+    if (c) c.textContent = n;
+    var all = $("pkAll");
+    if (all) {
+      var selectable = pk.filtered.filter(function (s) { return !isAdded(s.key); });
+      all.disabled = !selectable.length;
+      all.checked = selectable.length > 0 && selectable.every(function (s) { return pk.checked[s.key]; });
+    }
+  }
+
+  function confirmPick() {
+    var keys = Object.keys(pk.checked);
+    if (!keys.length) { SEL.toast("请至少选择 1 个药品"); return; }
+    var added = 0;
+    keys.forEach(function (k) {
+      if (isAdded(k)) return;
+      var s = null;
+      specRows.forEach(function (x) { if (x.key === k) s = x; });
+      if (!s) return;
+      req.items.push({
+        key: s.key,
+        drugCode: s.drugCode,
+        drugName: s.drugName,
+        spec: s.spec,
+        pkgSpec: s.pkgSpec,
+        vendor: s.vendor,
+        qty: ""
+      });
+      added++;
+    });
+    SEL.closeModal();
+    document.body.classList.remove("modal-open");
+    renderItems();
+    SEL.toast("已新增 " + added + " 条药品明细");
+  }
+
+  $("btnAddItem").addEventListener("click", openPicker);
+
+  /* ---------------- 保存 / 提交 ---------------- */
+  function collect() {
+    $("itemBody").querySelectorAll("[data-ii]").forEach(function (el) {
+      var i = parseInt(el.getAttribute("data-ii"), 10);
+      if (req.items[i]) req.items[i].qty = el.value.trim();
+    });
+  }
+
+  function validate() {
+    var missing = [];
+    if (!req.items.length) missing.push("至少 1 条药品明细");
+    req.items.forEach(function (it, i) {
+      var el = document.querySelector('[data-ii="' + i + '"]');
+      var ok = PUR.isQty(it.qty);
+      if (el) el.classList.toggle("is-invalid", !ok);
+      if (!ok) missing.push("第 " + (i + 1) + " 行需求量须为正整数");
+    });
+    if (missing.length) {
+      SEL.toast("请完善：" + missing.join("、"));
+      return false;
+    }
+    return true;
+  }
+
+  function goBack() { location.href = "purchase-request.html"; }
+  $("btnBack").addEventListener("click", goBack);
+  $("tabClose").addEventListener("click", goBack);
+  $("btnCancel").addEventListener("click", goBack);
+
+  $("btnSave").addEventListener("click", function () {
+    collect();
+    if (!validate()) return;
+    PUR.persist(req);
+    SEL.toast("已暂存");
+    setTimeout(goBack, 400);
+  });
+
+  $("btnSubmit").addEventListener("click", function () {
+    collect();
+    if (!validate()) return;
+    req.status = "pending";
+    req.records.push({ node: "提交", person: req.creator, result: "已提交", opinion: "—", time: SEL.fmtNow() });
+    PUR.persist(req);
+    SEL.toast("已提交审核");
+    setTimeout(goBack, 400);
+  });
+
+  SEL.renderHeaderUser(user);
+  SEL.bindNav();
+  renderItems();
+})();
+</script>
+  <script src="nav.js"></script>
+</body>
+</html>

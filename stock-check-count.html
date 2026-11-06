@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>盘点核对 · 区域药房协同管理系统</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ========== 顶部导航 ========== -->
+<header class="app-header">
+  <div class="header-left">
+    <div class="header-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3.2" y="9.4" width="17.6" height="5.2" rx="2.6" transform="rotate(-45 12 12)"/>
+        <path d="M8.4 15.6L15.6 8.4"/>
+      </svg>
+    </div>
+    <div class="header-title">区域药房协同管理系统</div>
+  </div>
+  <div class="header-right">
+    <div class="header-user" id="headerUser" title="点击退出登录">
+      <span class="header-avatar">药</span>
+      <span class="header-user-name">—</span>
+      <svg class="user-arrow" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+    </div>
+  </div>
+</header>
+
+<div class="app-body">
+  <!-- ========== 左侧导航 ========== -->
+  <aside class="app-side" id="appSide"></aside>
+<!-- ========== 主区域 ========== -->
+  <main class="app-main">
+    <div class="tabbar">
+      <div class="tab">首页</div>
+      <div class="tab active">
+        盘点核对
+        <button class="tab-close" id="tabClose" title="关闭">
+          <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="page sel-page">
+      <div class="sel-main">
+        <!-- 标题行：返回 + 标题 + 单号（左），审核状态（右） -->
+        <div class="page-head">
+          <div class="page-head-left">
+            <button class="back-btn" id="btnBack">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+            </button>
+            <h1 class="page-title">盘点核对</h1>
+            <span class="pa-code" id="codeLabel">盘点单号：—</span>
+          </div>
+          <span class="status-text" id="statusLabel"></span>
+        </div>
+
+        <div class="sel-card">
+          <!-- 盘点信息：仅盘点名称可编辑，其余 label + 内容 -->
+          <div class="sc-info">
+            <div class="sc-info-grid">
+              <div class="sc-info-item">
+                <span class="form-label"><span class="req">*</span>盘点名称</span>
+                <input class="input" id="sName" maxlength="40">
+              </div>
+              <div class="sc-info-item">
+                <span class="form-label">机构</span>
+                <span class="text-value" id="sOrg">—</span>
+              </div>
+              <div class="sc-info-item">
+                <span class="form-label">药房</span>
+                <span class="text-value" id="sPharmacy">—</span>
+              </div>
+              <div class="sc-info-item">
+                <span class="form-label">库位</span>
+                <span class="text-value" id="sLoc">—</span>
+              </div>
+              <div class="sc-info-item">
+                <span class="form-label">药品种类</span>
+                <span class="text-value" id="sKind">—</span>
+              </div>
+              <div class="sc-info-item">
+                <span class="form-label">盘点时间</span>
+                <span class="text-value" id="sTime">—</span>
+              </div>
+              <div class="sc-info-item">
+                <span class="form-label">创建人</span>
+                <span class="text-value" id="sCreator">—</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 筛选区 -->
+          <div class="filter-bar sc-filter">
+            <div class="filter-item">
+              <span class="filter-label">药品分类</span>
+              <select class="select" id="fClass" style="width:200px;">
+                <option value="">全部分类</option>
+              </select>
+            </div>
+            <div class="filter-item">
+              <label class="check-item"><input type="checkbox" id="fDiff"> 只展示盈亏</label>
+            </div>
+            <div class="filter-item">
+              <label class="check-item"><input type="checkbox" id="fNoStock"> 过滤零库存</label>
+            </div>
+            <div class="filter-item">
+              <label class="check-item"><input type="checkbox" id="fStop"> 过滤停用药品</label>
+            </div>
+            <div class="filter-acts">
+              <button class="btn" id="btnReset">重置</button>
+              <button class="btn btn-primary" id="btnQuery">查询</button>
+            </div>
+          </div>
+
+          <!-- 明细列表 -->
+          <div class="sc-count-wrap">
+            <table class="data-table sc-count-table">
+              <colgroup>
+                <col style="width:140px;">
+                <col style="width:72px;">
+                <col style="width:170px;">
+                <col style="width:200px;">
+                <col style="width:96px;">
+                <col style="width:92px;">
+                <col style="width:190px;">
+                <col style="width:100px;">
+                <col style="width:82px;">
+                <col style="width:82px;">
+                <col style="width:72px;">
+                <col style="width:72px;">
+                <col style="width:124px;">
+                <col style="width:124px;">
+                <col style="width:112px;">
+                <col style="width:96px;">
+                <col style="width:108px;">
+              </colgroup>
+              <thead>
+                <tr>
+                  <th class="col-drug">药品名称</th>
+                  <th>药品剂型</th>
+                  <th>药品规格</th>
+                  <th>生产企业</th>
+                  <th>批次号</th>
+                  <th>账面数量</th>
+                  <th>盘点数量</th>
+                  <th>盈亏数量</th>
+                  <th>停用数量</th>
+                  <th>预减数量</th>
+                  <th>进货价</th>
+                  <th>零售价</th>
+                  <th>盈亏进货金额</th>
+                  <th>盈亏零售金额</th>
+                  <th>有效期</th>
+                  <th>药品分类</th>
+                  <th>最小换算系数</th>
+                </tr>
+              </thead>
+              <tbody id="tbody"></tbody>
+            </table>
+            <div class="table-empty" id="tableEmpty" style="display:none;">暂无数据</div>
+          </div>
+
+          <!-- 合计行（独立于横向滚动，列宽与表对齐） -->
+          <div class="sc-sum-bar" id="sumBar"></div>
+
+          <div class="pager">
+            <span id="pagerInfo"></span>
+            <div class="pager-ctrl">
+              <button class="pager-btn" id="pgPrev" title="上一页">
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+              </button>
+              <span class="pager-num" id="pgNum">1</span>
+              <button class="pager-btn" id="pgNext" title="下一页">
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 底部操作条 -->
+      <div class="page-foot">
+        <button class="btn" id="btnCancel">取消</button>
+        <button class="btn" id="btnSave">暂存</button>
+        <button class="btn btn-primary" id="btnSubmit">提交</button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="modal-mask" id="modalMask"></div>
+<div class="toast" id="toast">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+  <span id="toastText"></span>
+</div>
+
+<script src="mock.js"></script>
+<script src="selection-common.js"></script>
+<script src="stock-check-common.js"></script>
+<script>
+(function () {
+  var $ = SEL.$, esc = SEL.esc;
+
+  var user = SC.user();
+  if (!user) return;
+
+  var bill = null;
+  var state = { page: 1, size: 10, classVal: "", diff: false, noStock: false, stop: false };
+
+  /* ---------------- 初始化 ---------------- */
+  function init() {
+    var id = SEL.qs("id");
+    if (!id) { location.href = "stock-check.html"; return; }
+    var list = SC.load();
+    bill = SC.byId(list, id);
+    if (!bill) { SEL.toast("盘点单不存在"); location.href = "stock-check.html"; return; }
+
+    /* 仅在首次无明细时按账面库存生成，避免覆盖已录入的盘点数量 */
+    if (!bill.items || bill.items.length === 0) SC.fillItems(bill);
+
+    $("codeLabel").textContent = "盘点单号：" + bill.code;
+    $("statusLabel").textContent = "审核状态：" + SC.AUDIT[bill.auditStatus];
+    $("sName").value = bill.name;
+    $("sOrg").textContent = bill.orgName;
+    $("sPharmacy").textContent = bill.pharmacy;
+    $("sLoc").textContent = bill.location;
+    $("sKind").textContent = bill.kind;
+    $("sTime").textContent = bill.checkTime;
+    $("sCreator").textContent = bill.creator;
+
+    /* 药品分类：只列叶子节点 */
+    var fClass = $("fClass");
+    (MOCK.classTree || []).forEach(function (l1) {
+      (l1.children || []).forEach(function (l2) {
+        (l2.children || []).forEach(function (l3) {
+          var opt = document.createElement("option");
+          opt.value = l3.name;
+          opt.textContent = l3.name;
+          fClass.appendChild(opt);
+        });
+      });
+    });
+  }
+
+  /* ---------------- 行渲染 ---------------- */
+  function diffClass(pieces) {
+    return pieces > 0 ? "is-gain" : pieces < 0 ? "is-loss" : "";
+  }
+
+  /* 盘点数量输入框 */
+  function countInputs(it) {
+    var unit = it.unit || "盒";
+    if (!it.splitUnit) {
+      return '<input class="input sc-count-input" data-k="box" value="' + (it.countBox || 0) + '">' +
+             '<span class="sc-unit">' + esc(unit) + "</span>";
+    }
+    return '<input class="input sc-count-input" data-k="box" value="' + (it.countBox || 0) + '">' +
+           '<span class="sc-unit">' + esc(unit) + "</span>" +
+           '<input class="input sc-count-input sc-split-input" data-k="split" value="' + (it.countSplit || 0) + '">' +
+           '<span class="sc-unit">' + esc(it.splitUnit) + "</span>";
+  }
+
+  function rowHtml(it) {
+    var d = SC.diffOf(it);
+    var cls = diffClass(d.pieces);
+    return "<tr data-rk='" + it.key + "'>" +
+      "<td class='col-drug' title='" + esc(it.drugName) + "'>" + esc(it.drugName) + "</td>" +
+      "<td title='" + esc(it.drugForm) + "'>" + esc(it.drugForm) + "</td>" +
+      "<td title='" + esc(it.drugSpec) + "'>" + esc(it.drugSpec) + "</td>" +
+      "<td title='" + esc(it.vendor) + "'>" + esc(it.vendor) + "</td>" +
+      "<td>" + esc(it.batchNo) + "</td>" +
+      "<td title='" + esc(SC.fmtBoxes(it.bookQty, it.unit)) + "'>" + esc(SC.fmtBoxes(it.bookQty, it.unit)) + "</td>" +
+      "<td class='c-count'>" + countInputs(it) + "</td>" +
+      "<td class='c-diff " + cls + "'>" + esc(SC.fmtDiff(d.pieces, it.factor, it.unit, it.splitUnit)) + "</td>" +
+      "<td>" + esc(SC.fmtBoxes(it.stopQty, it.unit)) + "</td>" +
+      "<td>" + esc(SC.fmtBoxes(it.preReduce, it.unit)) + "</td>" +
+      "<td class='num'>¥" + it.purchase + "</td>" +
+      "<td class='num'>¥" + it.retail + "</td>" +
+      "<td class='num c-diffp " + cls + "'>¥" + SC.diffPurchase(it) + "</td>" +
+      "<td class='num c-diffr " + cls + "'>¥" + SC.diffRetail(it) + "</td>" +
+      "<td>" + esc(it.expDate) + "</td>" +
+      "<td title='" + esc(it.drugCategory) + "'>" + esc(it.drugCategory || "—") + "</td>" +
+      "<td>" + (it.minFactor || 1) + "</td>" +
+    "</tr>";
+  }
+
+  /* 只更新某一行的盈亏相关单元格（避免整表重渲染丢失输入） */
+  function refreshRow(it, tr) {
+    var d = SC.diffOf(it);
+    var cls = diffClass(d.pieces);
+    var diffTd = tr.querySelector(".c-diff");
+    var diffP = tr.querySelector(".c-diffp");
+    var diffR = tr.querySelector(".c-diffr");
+    diffTd.className = "c-diff " + cls;
+    diffTd.textContent = SC.fmtDiff(d.pieces, it.factor, it.unit, it.splitUnit);
+    diffP.className = "num c-diffp " + cls;
+    diffP.textContent = "¥" + SC.diffPurchase(it);
+    diffR.className = "num c-diffr " + cls;
+    diffR.textContent = "¥" + SC.diffRetail(it);
+    renderTfoot();
+  }
+
+  function sumBarHtml(s) {
+    return '<div class="sc-sum-row">' +
+      '<span class="sc-sum-total-label">合计</span>' +
+      '<span class="sc-sum-fill"></span>' +
+      '<span class="sc-sum-label">盈亏进货金额</span>' +
+      '<span class="num sc-sum-val">¥' + s.diffPurchase + '</span>' +
+      '<span class="sc-sum-label">盈亏零售金额</span>' +
+      '<span class="num sc-sum-val">¥' + s.diffRetail + '</span>' +
+      '<span class="sc-sum-book">账面进货金额 ¥' + s.bookPurchase + '　账面零售金额 ¥' + s.bookRetail + '</span>' +
+    '</div>';
+  }
+
+  function renderTfoot() {
+    var s = SC.sums(bill);
+    $("sumBar").innerHTML = sumBarHtml(s);
+  }
+
+  /* ---------------- 筛选 ---------------- */
+  function filtered() {
+    return bill.items.filter(function (it) {
+      if (state.classVal && it.drugCategory !== state.classVal) return false;
+      if (state.noStock && it.bookQty === 0) return false;
+      if (state.stop && it.stop === true) return false;
+      if (state.diff && SC.diffOf(it).pieces === 0) return false;
+      return true;
+    });
+  }
+
+  function renderTable() {
+    var rows = filtered();
+    var total = rows.length;
+    var pages = Math.max(1, Math.ceil(total / state.size));
+    if (state.page > pages) state.page = pages;
+    var start = (state.page - 1) * state.size;
+    var slice = rows.slice(start, start + state.size);
+
+    if (total === 0) {
+      $("tbody").innerHTML = '<tr class="sc-empty-row"><td colspan="17">没有符合条件的记录</td></tr>';
+    } else {
+      $("tbody").innerHTML = slice.map(rowHtml).join("");
+    }
+    renderTfoot();
+
+    $("pagerInfo").textContent = "共 " + total + " 条";
+    $("pgNum").textContent = state.page + " / " + pages;
+    $("pgPrev").disabled = state.page <= 1;
+    $("pgNext").disabled = state.page >= pages;
+  }
+
+  /* ---------------- 盘点数量输入 ---------------- */
+  function rowOf(rk) {
+    for (var i = 0; i < bill.items.length; i++) if (bill.items[i].key === rk) return bill.items[i];
+    return null;
+  }
+
+  function parseNum(v) {
+    var n = parseInt(String(v).replace(/[^\d]/g, ""), 10);
+    return isNaN(n) || n < 0 ? 0 : n;
+  }
+
+  $("tbody").addEventListener("input", function (e) {
+    var el = e.target;
+    if (!el.classList.contains("sc-count-input")) return;
+    var tr = el.closest("tr");
+    var it = rowOf(tr.getAttribute("data-rk"));
+    if (!it) return;
+
+    it.countBox = parseNum(tr.querySelector('[data-k="box"]').value);
+    var splitEl = tr.querySelector('[data-k="split"]');
+    it.countSplit = splitEl ? parseNum(splitEl.value) : 0;
+
+    refreshRow(it, tr);
+  });
+
+  $("tbody").addEventListener("blur", function (e) {
+    var el = e.target;
+    if (!el.classList.contains("sc-count-input")) return;
+    var tr = el.closest("tr");
+    var it = rowOf(tr.getAttribute("data-rk"));
+    if (!it) return;
+
+    /* 散数超出换算系数时进位到盒 */
+    var factor = it.factor || 1;
+    if (it.splitUnit && factor > 1 && it.countSplit >= factor) {
+      it.countBox += Math.floor(it.countSplit / factor);
+      it.countSplit = it.countSplit % factor;
+    }
+    tr.querySelector('[data-k="box"]').value = it.countBox;
+    var splitEl = tr.querySelector('[data-k="split"]');
+    if (splitEl) splitEl.value = it.countSplit;
+    refreshRow(it, tr);
+  }, true);
+
+  /* ---------------- 筛选 / 分页 ---------------- */
+  $("btnQuery").addEventListener("click", function () {
+    state.classVal = $("fClass").value;
+    state.diff = $("fDiff").checked;
+    state.noStock = $("fNoStock").checked;
+    state.stop = $("fStop").checked;
+    state.page = 1;
+    renderTable();
+  });
+
+  $("btnReset").addEventListener("click", function () {
+    state.classVal = ""; state.diff = false; state.noStock = false; state.stop = false; state.page = 1;
+    $("fClass").value = ""; $("fDiff").checked = false; $("fNoStock").checked = false; $("fStop").checked = false;
+    renderTable();
+  });
+
+  $("pgPrev").addEventListener("click", function () { state.page--; renderTable(); });
+  $("pgNext").addEventListener("click", function () { state.page++; renderTable(); });
+
+  /* ---------------- 底部操作 ---------------- */
+  function saveBill(status) {
+    bill.name = $("sName").value.trim() || bill.name;
+    if (status) bill.auditStatus = status;
+    SC.persist(bill);
+  }
+
+  $("btnCancel").addEventListener("click", function () {
+    SEL.confirmDialog({
+      title: "取消",
+      text: "确认离开盘点核对页？已填写的盘点数量将不会被保存。",
+      okText: "离开",
+      onOk: function () { location.href = "stock-check.html"; }
+    });
+  });
+
+  $("btnSave").addEventListener("click", function () {
+    saveBill("draft");
+    SEL.toast("已暂存");
+  });
+
+  $("btnSubmit").addEventListener("click", function () {
+    if (!$("sName").value.trim()) {
+      $("sName").classList.add("is-invalid");
+      SEL.toast("请填写盘点名称");
+      return;
+    }
+    if (!bill.items || bill.items.length === 0) {
+      SEL.toast("无盘点明细，无法提交");
+      return;
+    }
+    SEL.confirmDialog({
+      title: "提交审核",
+      text: "确认提交盘点单「" + bill.code + "」？提交后进入审核，期间不可编辑。",
+      okText: "提交",
+      onOk: function () {
+        saveBill("pending");
+        bill.records.push({ node: "提交", person: user.name, result: "已提交", opinion: "—", time: SEL.fmtNow() });
+        SC.persist(bill);
+        SEL.toast("已提交审核");
+        setTimeout(function () { location.href = "stock-check.html"; }, 400);
+      }
+    });
+  });
+
+  $("sName").addEventListener("input", function () { this.classList.remove("is-invalid"); });
+
+  $("btnBack").addEventListener("click", function () {
+    saveBill();
+    location.href = "stock-check.html";
+  });
+  $("tabClose").addEventListener("click", function () { location.href = "batch-management.html"; });
+  $("headerUser").addEventListener("click", function () {
+    SEL.confirmDialog({
+      title: "退出登录",
+      text: "确认退出当前账号「" + user.name + "」？退出后可切换其他账号（如审核人赵敏）。",
+      okText: "退出",
+      onOk: function () { SC.logout(); }
+    });
+  });
+
+  SEL.renderHeaderUser(user);
+  SEL.bindNav();
+  init();
+  renderTable();
+})();
+</script>
+  <script src="nav.js"></script>
+</body>
+</html>

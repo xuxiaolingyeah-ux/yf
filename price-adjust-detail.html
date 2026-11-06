@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>调价详情 · 区域药房协同管理系统</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ========== 顶部导航 ========== -->
+<header class="app-header">
+  <div class="header-left">
+    <div class="header-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3.2" y="9.4" width="17.6" height="5.2" rx="2.6" transform="rotate(-45 12 12)"/>
+        <path d="M8.4 15.6L15.6 8.4"/>
+      </svg>
+    </div>
+    <div class="header-title">区域药房协同管理系统</div>
+  </div>
+  <div class="header-right">
+    <div class="header-user" id="headerUser">
+      <span class="header-avatar">药</span>
+      <span class="header-user-name">—</span>
+    </div>
+  </div>
+</header>
+
+<div class="app-body">
+  <!-- ========== 左侧导航 ========== -->
+  <aside class="app-side" id="appSide"></aside>
+<!-- ========== 主区域 ========== -->
+  <main class="app-main">
+    <div class="tabbar">
+      <div class="tab">首页</div>
+      <div class="tab" data-href="price-adjust.html">药品调价</div>
+      <div class="tab active">
+        调价详情
+        <button class="tab-close" id="tabClose" title="关闭">
+          <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="page sel-page">
+      <div class="sel-main">
+        <div class="page-head">
+          <div class="head-back">
+            <button class="back-btn" id="btnBack" title="返回调价列表">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+            </button>
+            <h1 class="page-title">调价详情</h1>
+            <span class="pa-code" id="headCode">调价单号：—</span>
+          </div>
+          <span class="status-text" id="headStatus"></span>
+        </div>
+
+        <div class="sel-card" id="detailCard">
+          <!-- 快速定位：点击页签滚动到对应区块 -->
+          <div class="page-tabs" id="jumpTabs">
+            <span class="page-tab active" data-jump="top">申请详情</span>
+            <span class="page-tab" data-jump="records">审批记录</span>
+          </div>
+
+          <div class="card-body" id="detailBody" style="padding:16px;">
+            <div class="form-wrap">
+
+              <!-- 基本信息 -->
+              <section class="block" id="secInfo">
+                <div class="block-head"><h2 class="block-title">基本信息</h2></div>
+                <div class="form-grid-4">
+                  <div class="form-item">
+                    <span class="form-label">调价原因</span>
+                    <span class="text-value" id="vReason"></span>
+                  </div>
+                  <div class="form-item">
+                    <span class="form-label">调价范围</span>
+                    <span class="text-value" id="vRange"></span>
+                  </div>
+                  <div class="form-item">
+                    <span class="form-label">生效方式</span>
+                    <span class="text-value" id="vEffect"></span>
+                  </div>
+                  <div class="form-item">
+                    <span class="form-label">计划调价时间</span>
+                    <span class="text-value" id="vPlanTime"></span>
+                  </div>
+                  <div class="form-item">
+                    <span class="form-label">调价状态</span>
+                    <span class="text-value" id="vAdjustStatus"></span>
+                  </div>
+                  <div class="form-item">
+                    <span class="form-label">实际调价时间</span>
+                    <span class="text-value" id="vActualTime"></span>
+                  </div>
+                  <div class="form-item">
+                    <span class="form-label">创建人</span>
+                    <span class="text-value" id="vCreator"></span>
+                  </div>
+                  <div class="form-item">
+                    <span class="form-label">创建时间</span>
+                    <span class="text-value" id="vCreatedAt"></span>
+                  </div>
+                </div>
+              </section>
+
+              <!-- 调价明细 -->
+              <section class="block" id="secItems">
+                <div class="block-head">
+                  <h2 class="block-title">调价明细<span class="count" id="itemCount"></span></h2>
+                </div>
+                <div class="pa-detail-wrap">
+                  <div class="pa-detail-table">
+                    <div class="pa-detail-scroll">
+                      <table class="pa-table">
+                        <thead>
+                          <tr>
+                            <th class="pa-col-fixed-l" style="width:130px;">药品名称</th>
+                            <th style="width:120px;">药品编码</th>
+                            <th style="width:140px;">药品规格</th>
+                            <th style="width:180px;">生产企业</th>
+                            <th style="width:160px;">供应商</th>
+                            <th style="width:160px;">批准文号</th>
+                            <th style="width:90px;">批次号</th>
+                            <th style="width:70px;" class="num">库存量</th>
+                            <th style="width:100px;">生产日期</th>
+                            <th style="width:100px;">有效期</th>
+                            <th style="width:90px;" class="num">调前进货价</th>
+                            <th style="width:90px;" class="num">调前零售价</th>
+                            <th style="width:104px;" class="num">调后进货价</th>
+                            <th style="width:104px;" class="num">调后零售价</th>
+                            <th style="width:104px;" class="num">进货价差额合计</th>
+                            <th style="width:104px;" class="num">零售价差额合计</th>
+                          </tr>
+                        </thead>
+                        <tbody id="itemBody"></tbody>
+                      </table>
+                    </div>
+                    <div class="pa-sum-line">
+                      <span class="psl-title">调价明细合计</span>
+                      <span class="psl-item">明细条数<b id="pspCount">0</b></span>
+                      <span class="psl-item">进货价差额合计<b id="pspPurchase">0.00</b></span>
+                      <span class="psl-item">零售价差额合计<b id="pspRetail">0.00</b></span>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <!-- 审批记录 -->
+              <section class="block" id="secRecords">
+                <div class="block-head"><h2 class="block-title">审批记录</h2></div>
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th style="width:120px;">节点名称</th>
+                      <th style="width:110px;">审批人</th>
+                      <th style="width:110px;">审批结果</th>
+                      <th>审批意见</th>
+                      <th style="width:160px;">审批时间</th>
+                    </tr>
+                  </thead>
+                  <tbody id="recordBody"></tbody>
+                </table>
+              </section>
+
+            </div>
+          </div>
+        </div>
+
+        <div class="page-foot" id="pageFoot"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="modal-mask" id="modalMask"></div>
+<div class="toast" id="toast">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+  <span id="toastText"></span>
+</div>
+
+<script src="mock.js"></script>
+<script src="selection-common.js"></script>
+<script src="price-adjust-common.js"></script>
+<script>
+(function () {
+  var $ = SEL.$, esc = SEL.esc;
+
+  var user = PA.user();
+  if (!user) return;
+
+  var list = PA.load();
+  PA.tick(list);
+  var bill = PA.byId(list, SEL.qs("id"));
+  if (!bill) { location.href = "price-adjust.html"; return; }
+
+  /* view = 查看（只读）；audit = 审核（底部出现审批区） */
+  var mode = SEL.qs("mode") === "audit" ? "audit" : "view";
+
+  function canAudit() {
+    return mode === "audit" && bill.auditStatus === "pending" && PA.isAuditor(user);
+  }
+
+  /* ---------------- 渲染 ---------------- */
+  function renderDetail() {
+    document.title = "调价详情 " + bill.code + " · 区域药房协同管理系统";
+    $("headCode").textContent = "调价单号：" + bill.code;
+    $("headStatus").textContent = "审核状态：" + PA.AUDIT[bill.auditStatus];
+
+    $("vReason").textContent = bill.reason || "—";
+    $("vRange").textContent = bill.range || "—";
+    $("vEffect").textContent = PA.EFFECT[bill.effectType] || "—";
+    $("vPlanTime").textContent = bill.effectType === "scheduled" && bill.planTime ? bill.planTime : "--";
+    $("vAdjustStatus").textContent = PA.ADJUST[bill.adjustStatus] || "—";
+    $("vActualTime").textContent = bill.actualTime ? bill.actualTime : "--";
+    $("vCreator").textContent = bill.creator || "—";
+    $("vCreatedAt").textContent = bill.createdAt || "—";
+
+    $("itemCount").textContent = "（" + bill.items.length + "）";
+    if (!bill.items.length) {
+      $("itemBody").innerHTML = '<tr class="pa-empty-row"><td colspan="16">暂无调价明细</td></tr>';
+    } else {
+      $("itemBody").innerHTML = bill.items.map(function (it) {
+        return "<tr>" +
+          '<td class="pa-col-fixed-l"><div class="cell-ellipsis" title="' + esc(it.drugName) + '">' + esc(it.drugName) + "</div></td>" +
+          "<td>" + esc(it.drugCode) + "</td>" +
+          "<td>" + esc(it.spec) + "</td>" +
+          '<td><div class="cell-ellipsis" title="' + esc(it.vendor) + '">' + esc(it.vendor) + "</div></td>" +
+          '<td><div class="cell-ellipsis" title="' + esc(it.supplier) + '">' + esc(it.supplier) + "</div></td>" +
+          "<td>" + esc(it.approval) + "</td>" +
+          "<td>" + esc(it.batchNo) + "</td>" +
+          '<td class="num">' + it.stock + "</td>" +
+          "<td>" + esc(it.prodDate) + "</td>" +
+          "<td>" + esc(it.expDate) + "</td>" +
+          '<td class="num">' + PA.money(it.oldPurchase) + "</td>" +
+          '<td class="num">' + PA.money(it.oldRetail) + "</td>" +
+          '<td class="num">' + PA.money(it.newPurchase) + "</td>" +
+          '<td class="num">' + PA.money(it.newRetail) + "</td>" +
+          '<td class="num">' + PA.money(PA.rowPurchaseDiff(it)) + "</td>" +
+          '<td class="num">' + PA.money(PA.rowRetailDiff(it)) + "</td>" +
+        "</tr>";
+      }).join("");
+    }
+    var s = PA.sums(bill);
+    $("pspCount").textContent = bill.items.length;
+    $("pspPurchase").textContent = s.purchase;
+    $("pspRetail").textContent = s.retail;
+  }
+
+  function renderRecords() {
+    $("recordBody").innerHTML = bill.records.length
+      ? bill.records.map(function (r) {
+          return "<tr>" +
+            "<td>" + esc(r.node) + "</td>" +
+            "<td>" + esc(r.person) + "</td>" +
+            "<td>" + esc(r.result) + "</td>" +
+            '<td><div class="cell-ellipsis" title="' + esc(r.opinion) + '">' + esc(r.opinion) + "</div></td>" +
+            "<td>" + esc(r.time) + "</td>" +
+          "</tr>";
+        }).join("")
+      : '<tr><td colspan="5" class="pa-empty">暂无审批记录</td></tr>';
+  }
+
+  function renderFoot() {
+    if (canAudit()) {
+      $("detailCard").classList.add("has-foot");
+      $("pageFoot").innerHTML =
+        '<div class="approve-row">' +
+          '<label class="radio"><input type="radio" name="decision" value="pass" checked><span>通过</span></label>' +
+          '<label class="radio"><input type="radio" name="decision" value="reject"><span>拒绝</span></label>' +
+        '</div>' +
+        '<div class="approve-row">' +
+          '<textarea class="textarea" id="fOpinion" placeholder="审核意见（拒绝时必填）" maxlength="200"></textarea>' +
+        '</div>' +
+        '<div class="approve-row approve-btns">' +
+          '<button class="btn" data-act="cancel">取消</button>' +
+          '<button class="btn btn-primary" data-act="submit">提交</button>' +
+        '</div>';
+      $("fOpinion").addEventListener("input", function () {
+        this.classList.remove("is-invalid");
+      });
+      $("pageFoot").querySelectorAll('input[name="decision"]').forEach(function (radio) {
+        radio.addEventListener("change", function () {
+          $("fOpinion").classList.remove("is-invalid");
+        });
+      });
+    } else {
+      $("detailCard").classList.remove("has-foot");
+      $("pageFoot").innerHTML = '<button class="btn" data-act="cancel">返回</button>';
+    }
+  }
+
+  function renderAll() {
+    renderDetail();
+    renderRecords();
+    renderFoot();
+  }
+
+  /* ---------------- 审核 ---------------- */
+  function decide() {
+    var choice = $("pageFoot").querySelector('input[name="decision"]:checked');
+    var passed = !choice || choice.value === "pass";
+    var opinionEl = $("fOpinion");
+    var opinion = opinionEl ? opinionEl.value.trim() : "";
+    if (!passed && !opinion) {
+      opinionEl.classList.add("is-invalid");
+      SEL.toast("拒绝时必须填写审核意见");
+      return;
+    }
+    var now = SEL.fmtNow();
+    bill.records.push({
+      node: "审核",
+      person: user.name,
+      result: passed ? "通过" : "拒绝",
+      opinion: opinion || "—",
+      time: now
+    });
+    if (passed) {
+      bill.auditStatus = "approved";
+      if (bill.effectType === "immediate") {
+        bill.adjustStatus = "adjusted";
+        bill.actualTime = now;
+      }
+    } else {
+      bill.auditStatus = "rejected";
+    }
+    PA.persist(bill);
+    SEL.toast(passed ? "审核已通过" : "已拒绝，调价单已退回发起人");
+    renderAll();
+  }
+
+  /* ---------------- 快速定位：申请详情 / 审批记录 ---------------- */
+  var detailBody = $("detailBody");
+  var jumpTabs = $("jumpTabs");
+
+  function setActiveJump(name) {
+    [].slice.call(jumpTabs.children).forEach(function (t) {
+      t.classList.toggle("active", t.getAttribute("data-jump") === name);
+    });
+  }
+
+  function jumpTo(name) {
+    var top = 0;
+    if (name === "records") {
+      top = $("secRecords").getBoundingClientRect().top
+        - detailBody.getBoundingClientRect().top + detailBody.scrollTop;
+    }
+    detailBody.scrollTo({ top: top, behavior: "auto" });
+    setActiveJump(name);
+  }
+
+  jumpTabs.addEventListener("click", function (e) {
+    var tab = e.target.closest(".page-tab");
+    if (tab) jumpTo(tab.getAttribute("data-jump"));
+  });
+
+  detailBody.addEventListener("scroll", function () {
+    var offset = $("secRecords").getBoundingClientRect().top - detailBody.getBoundingClientRect().top;
+    var atBottom = detailBody.scrollTop > 0 &&
+      detailBody.scrollTop >= detailBody.scrollHeight - detailBody.clientHeight - 2;
+    setActiveJump(offset <= 24 || atBottom ? "records" : "top");
+  });
+
+  function goBack() { location.href = "price-adjust.html"; }
+  $("btnBack").addEventListener("click", goBack);
+  $("tabClose").addEventListener("click", goBack);
+
+  $("pageFoot").addEventListener("click", function (e) {
+    var btn = e.target.closest("[data-act]");
+    if (!btn) return;
+    var act = btn.getAttribute("data-act");
+    if (act === "cancel") goBack();
+    else if (act === "submit") decide();
+  });
+
+  SEL.renderHeaderUser(user);
+  SEL.bindNav();
+  renderAll();
+})();
+</script>
+  <script src="nav.js"></script>
+</body>
+</html>

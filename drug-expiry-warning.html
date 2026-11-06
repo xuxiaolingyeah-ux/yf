@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<title>药品效期预警 · 中心药房</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+/* ===== central-pharmacy-prototype UED v1.7 token ===== */
+:root{
+  --brand:#2B7FFF;          /* 主色 */
+  --brand-deep:#1677FF;
+  --brand-bg:#E6F1FB;       /* 浅蓝 */
+  --brand-bg-soft:#F0F5FF;  /* 更浅 */
+  --text-1:#1F1F1F;         /* 正文主 */
+  --text-2:#595959;         /* 正文次 */
+  --text-3:#8C8C8C;         /* 次要/占位 */
+  --text-4:#BFBFBF;
+  --line:rgba(0,0,0,.2);    /* 输入框边框 */
+  --line-light:#EBEEF5;
+  --border:#D9D9D9;
+  --green:#52C41A;
+  --red:#FF4D4F;
+  --amber:#FABE21;
+  --table-head:#E0EFFF;
+  --table-line:#BFDEFF;
+  --table-alt:#F6F9FD;
+  --table-hover:#E3EEFA;
+}
+*{box-sizing:border-box;}
+html,body{height:100%;}
+body{
+  margin:0;
+  font-family:"Microsoft YaHei","Helvetica Neue",Helvetica,"PingFang SC","Hiragino Sans GB",Arial,sans-serif;
+  font-size:13px;
+  color:var(--text-2);
+  background:#fff;
+  -webkit-font-smoothing:antialiased;
+}
+button,input,select{font-family:inherit;}
+
+/* ---------- 主体 ---------- */
+.app-body{flex:1;min-height:0;min-width:1280px;}
+.content{width:100%;height:100%;display:flex;flex-direction:column;background:#fff;}
+.app-body > .content{flex:1;min-width:0;width:auto;}
+
+/* ---------- 页面标题行 ---------- */
+.page-head{
+  height:56px;flex:0 0 56px;display:flex;align-items:center;
+  padding:0 20px;border-bottom:1px solid var(--line-light);background:#fff;
+}
+.page-title{font-size:16px;font-weight:600;color:var(--text-1);}
+.head-btns{margin-left:auto;display:flex;align-items:center;gap:8px;}
+
+/* ---------- 按钮 ---------- */
+.btn{
+  height:32px;padding:0 14px;border-radius:4px;border:1px solid var(--border);
+  background:#fff;color:var(--text-2);font-size:13px;font-weight:500;cursor:pointer;
+  display:inline-flex;align-items:center;justify-content:center;line-height:1;
+  transition:all .15s;
+}
+.btn:hover{border-color:var(--brand);color:var(--brand);}
+.btn-primary{background:var(--brand);border-color:var(--brand);color:#fff;}
+.btn-primary:hover{background:var(--brand-deep);border-color:var(--brand-deep);color:#fff;}
+.btn-ghost{background:#fff;border-color:var(--brand);color:var(--brand);}
+.btn-ghost:hover{background:var(--brand-bg);color:var(--brand);}
+.btn-ghost-blue{background:#fff;border-color:var(--brand);color:var(--brand);}
+.btn-ghost-blue:hover{background:var(--brand-bg);color:var(--brand);}
+.btn-text{
+  height:auto;border:none;background:transparent;color:var(--brand);
+  padding:0;font-size:13px;font-weight:500;display:inline-flex;align-items:center;gap:4px;
+}
+
+/* ---------- 筛选区 ---------- */
+.filter{
+  padding:16px 20px 8px;display:flex;align-items:flex-start;gap:16px;
+  flex-wrap:wrap;
+}
+.filter-main{flex:1;min-width:0;display:flex;flex-wrap:wrap;row-gap:12px;column-gap:20px;align-items:center;}
+.fitem{display:flex;align-items:center;height:32px;font-size:13px;color:var(--text-1);}
+.fitem > label{padding-right:6px;white-space:nowrap;color:var(--text-1);}
+.ctl{
+  height:32px;border:1px solid var(--border);border-radius:4px;background:#fff;
+  font-size:13px;color:var(--text-2);padding:0 28px 0 10px;width:210px;
+  outline:none;font-family:inherit;
+  display:inline-flex;align-items:center;transition:border-color .15s;
+}
+.ctl:hover{border-color:var(--brand);}
+.ctl:focus{border-color:var(--brand);box-shadow:0 0 0 2px rgba(43,127,255,.12);}
+.ctl::placeholder{color:var(--text-4);}
+.ctl:disabled{background:rgba(0,0,0,.04);color:var(--text-3);cursor:not-allowed;}
+.select-ctl{position:relative;width:180px;display:inline-block;}
+.select-ctl select{
+  appearance:none;width:100%;height:32px;border:1px solid var(--border);border-radius:4px;
+  background:#fff;padding:0 30px 0 10px;font-size:13px;color:var(--text-2);outline:none;font-family:inherit;
+  transition:border-color .15s;
+}
+.select-ctl select:hover{border-color:var(--brand);}
+.select-ctl select:focus{border-color:var(--brand);box-shadow:0 0 0 2px rgba(43,127,255,.12);}
+.select-ctl select:disabled{background:rgba(0,0,0,.04);color:var(--text-3);cursor:not-allowed;}
+.select-ctl .arrow{
+  position:absolute;right:10px;top:14px;border:4px solid transparent;
+  border-top-color:var(--text-4);pointer-events:none;
+}
+.select-wider{width:200px;}
+.select-narrow{width:140px;}
+.date-range{
+  display:flex;align-items:center;height:32px;border:1px solid var(--border);border-radius:4px;
+  width:320px;overflow:hidden;background:#fff;transition:border-color .15s;
+}
+.date-range:hover{border-color:var(--brand);}
+.date-range:focus-within{border-color:var(--brand);box-shadow:0 0 0 2px rgba(43,127,255,.12);}
+.date-range input{
+  border:none;outline:none;flex:1;min-width:0;height:30px;padding:0 10px;font-size:13px;color:var(--text-2);font-family:inherit;
+  background:transparent;
+}
+.date-range input::placeholder{color:var(--text-4);}
+.date-range input::-webkit-calendar-picker-indicator{opacity:0;width:0;}
+.date-range .sep{color:var(--text-4);padding:0 4px;}
+.date-range .clock{
+  width:32px;display:flex;align-items:center;justify-content:center;color:var(--text-4);
+}
+.date-range:focus-within .clock{color:var(--brand);}
+.filter-btns{display:flex;align-items:center;gap:8px;flex:0 0 auto;padding-top:0;}
+
+/* ---------- 表格 ---------- */
+.table-wrap{
+  flex:1;min-height:0;display:flex;flex-direction:column;position:relative;
+  margin:0 20px;border:1px solid var(--table-line);border-radius:4px;overflow:hidden;
+}
+.table-scroll{flex:1;min-height:0;overflow:auto;}
+.table-scroll::-webkit-scrollbar{width:10px;height:10px;}
+.table-scroll::-webkit-scrollbar-thumb{background:#D5E3F5;border-radius:5px;}
+.table-scroll::-webkit-scrollbar-track{background:#F5F8FD;}
+table{width:2290px;border-collapse:separate;border-spacing:0;table-layout:fixed;}
+thead th{
+  position:sticky;top:0;z-index:2;
+  height:36px;background:var(--table-head);color:var(--text-1);
+  font-size:13px;font-weight:600;text-align:center;
+  border-right:1px solid var(--table-line);border-bottom:1px solid var(--table-line);
+  padding:0;white-space:nowrap;
+}
+thead th:first-child{border-top-left-radius:4px;}
+thead th:last-child{border-top-right-radius:4px;border-right:none;}
+tbody td{
+  height:36px;padding:0 10px;font-size:13px;color:var(--text-2);text-align:center;
+  background:#fff;border-right:1px solid var(--table-line);border-bottom:1px solid var(--table-line);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+tbody td:last-child{border-right:none;}
+tbody tr:nth-child(even) td{background:var(--table-alt);}
+tbody tr:hover td{background:var(--table-hover);}
+tbody tr:nth-child(even):hover td{background:var(--table-hover);}
+td.left{text-align:left;}
+td.right{text-align:right;}
+/* 右侧固定两列 */
+th.sticky,td.sticky{position:sticky;z-index:3;}
+th.sticky{background:var(--table-head);}
+td.sticky{background:#fff;}
+tbody tr:nth-child(even) td.sticky{background:var(--table-alt);}
+tbody tr:hover td.sticky{background:var(--table-hover);}
+tbody tr:nth-child(even):hover td.sticky{background:var(--table-hover);}
+th.sticky-status{right:100px;}
+td.sticky-status{right:100px;}
+th.sticky-days,td.sticky-days{right:0;}
+th.sticky-status,td.sticky-status{box-shadow:-1px 0 0 var(--table-line);}
+th.sticky-days,td.sticky-days{box-shadow:-1px 0 0 var(--table-line);}
+.status{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--text-2);}
+.status i{width:6px;height:6px;border-radius:50%;display:inline-block;flex:0 0 6px;}
+.status .dot-green{background:var(--green);}
+.status .dot-red{background:var(--red);}
+.status .dot-amber{background:var(--amber);}
+.empty{
+  position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  color:var(--text-3);gap:10px;pointer-events:none;background:#fff;
+}
+.empty svg{width:52px;height:40px;color:#E0E0E0;}
+.empty[hidden]{display:none;}
+
+/* ---------- 合计条 ---------- */
+.sum-bar{
+  height:40px;flex:0 0 40px;display:flex;align-items:center;justify-content:space-between;
+  margin:0 20px;padding:0 16px;background:var(--brand-bg);border-top:1px solid var(--table-line);
+  border-radius:0 0 4px 4px;font-size:14px;font-weight:600;color:var(--text-1);
+}
+.sum-right{display:flex;align-items:center;gap:28px;}
+.money{color:var(--brand);font-weight:600;}
+
+/* ---------- 分页 ---------- */
+.pager{
+  height:48px;flex:0 0 48px;display:flex;align-items:center;justify-content:flex-end;gap:8px;
+  margin:0 20px;font-size:12px;color:var(--text-2);
+}
+.pager .total, .total{color:var(--text-2);}
+.sizes{
+  height:28px;border:1px solid var(--border);border-radius:4px;
+  background:#fff url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='5'><path d='M0 0l4 4 4-4' stroke='%238C8C8C' fill='none'/></svg>") no-repeat right 8px center;
+  font-size:12px;color:var(--text-2);padding:0 22px 0 10px;appearance:none;outline:none;font-family:inherit;
+  width:100px;cursor:pointer;
+}
+.sizes:hover{border-color:var(--brand);}
+.pager-btn{
+  min-width:28px;height:28px;border:1px solid var(--border);border-radius:4px;background:#fff;color:var(--text-2);
+  font-size:12px;cursor:pointer;padding:0 8px;transition:all .15s;
+}
+.pager-btn:hover:not(:disabled){border-color:var(--brand);color:var(--brand);}
+.pager-btn:disabled{color:var(--text-4);cursor:not-allowed;background:#fafafa;}
+.pager-num{
+  min-width:28px;height:28px;border-radius:4px;border:1px solid transparent;background:transparent;
+  font-size:12px;color:var(--text-1);cursor:pointer;padding:0 6px;transition:all .15s;
+}
+.pager-num:hover:not(.active){border-color:var(--border);}
+.pager-num.active{background:var(--brand);color:#fff;border-color:var(--brand);}
+.pager .more, .more{color:var(--text-3);padding:0 4px;}
+.jump{display:flex;align-items:center;gap:4px;margin-left:8px;font-size:12px;color:var(--text-2);}
+.jump input{
+  width:56px;height:28px;border:1px solid var(--border);border-radius:4px;text-align:center;
+  font-size:12px;color:var(--text-2);outline:none;font-family:inherit;
+}
+.jump input:focus{border-color:var(--brand);box-shadow:0 0 0 2px rgba(43,127,255,.12);}
+
+/* ---------- 效期提示设置（子视图） ---------- */
+.settings-view{flex:1;min-height:0;display:none;flex-direction:column;}
+.settings-view.show{display:flex;}
+.settings-filter{padding:16px 20px 8px;display:flex;align-items:center;gap:20px;flex-wrap:wrap;}
+.settings-table{
+  margin:0 20px;border:1px solid var(--table-line);flex:1;min-height:0;overflow:auto;
+  position:relative;border-radius:4px;
+}
+.settings-table table{width:100%;}
+.settings-table input.inline-num{
+  width:90px;height:28px;border:1px solid var(--border);border-radius:4px;background:#fff;
+  font-size:13px;color:var(--text-1);text-align:center;outline:none;font-family:inherit;
+  padding:0 6px;
+}
+.settings-table input.inline-num:hover{border-color:var(--brand);}
+.settings-table input.inline-num:focus{border-color:var(--brand);box-shadow:0 0 0 2px rgba(43,127,255,.12);}
+.settings-table input.inline-num.is-warn{border-color:var(--amber);background:#FFFBE6;}
+.settings-pager{
+  height:48px;display:flex;align-items:center;justify-content:flex-end;gap:8px;margin:0 20px;
+  font-size:12px;color:var(--text-2);
+}
+.settings-view .empty{position:absolute;}
+
+/* toast */
+.toast{
+  position:fixed;left:50%;top:80px;transform:translateX(-50%);
+  background:rgba(0,0,0,.78);color:#fff;font-size:13px;padding:10px 20px;border-radius:4px;
+  opacity:0;transition:opacity .2s;pointer-events:none;z-index:999;
+}
+.toast.show{opacity:1;}
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="header-left">
+    <div class="header-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+    </div>
+    <div class="header-title">区域药房协同管理系统</div>
+  </div>
+  <div class="header-right">
+    <div class="header-user">
+      <div class="header-avatar">赵</div>
+      <div class="header-user-name">赵敏 · 中心药房</div>
+    </div>
+  </div>
+</header>
+
+<div class="app-body">
+  <aside class="app-side" id="appSide"></aside>
+
+  <main class="content">
+    <!-- 标题行 -->
+    <div class="page-head">
+      <div class="page-title">药品效期预警</div>
+      <div class="head-btns" id="headBtns">
+        <button class="btn btn-ghost-blue" id="btnSetting">效期提示设置</button>
+      </div>
+    </div>
+
+    <!-- 列表视图 -->
+    <div id="listView" style="flex:1;min-height:0;display:flex;flex-direction:column;">
+      <!-- 筛选区 -->
+      <div class="filter">
+        <div class="filter-main" id="filterMain">
+          <div class="fitem"><label>机构：</label>
+            <div class="select-ctl">
+              <select disabled><option>山东大学齐鲁医院</option></select>
+              <span class="arrow"></span>
+            </div>
+          </div>
+          <div class="fitem"><label>药房：</label>
+            <div class="select-ctl">
+              <select id="pharmacySelect"></select>
+              <span class="arrow"></span>
+            </div>
+          </div>
+          <div class="fitem"><label>库位：</label>
+            <div class="select-ctl select-wider">
+              <select id="locationSelect"></select>
+              <span class="arrow"></span>
+            </div>
+          </div>
+          <div class="fitem"><label>药品：</label>
+            <input class="ctl" id="kw" placeholder="名称 / 编码 / 拼音码" autocomplete="off">
+          </div>
+          <div class="fitem"><label>状态：</label>
+            <div class="select-ctl select-narrow">
+              <select id="statusSelect">
+                <option value="all">全部</option>
+                <option value="expired">已过期</option>
+                <option value="soon">即将过期</option>
+                <option value="normal">未过期</option>
+              </select>
+              <span class="arrow"></span>
+            </div>
+          </div>
+          <div class="fitem"><label>入库时间：</label>
+            <div class="date-range">
+              <input type="date" id="dateFrom">
+              <span class="sep">~</span>
+              <input type="date" id="dateTo">
+              <span class="clock">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2">
+                  <circle cx="8" cy="8" r="6.2"/><path d="M8 4.6V8l2.4 1.6"/>
+                </svg>
+              </span>
+            </div>
+          </div>
+        </div>
+        <div class="filter-btns">
+          <button class="btn" id="btnReset">重置</button>
+          <button class="btn btn-primary" id="btnQuery">查询</button>
+        </div>
+      </div>
+
+      <!-- 表格 -->
+      <div class="table-wrap">
+        <div class="table-scroll" id="tableScroll">
+          <table>
+            <colgroup>
+              <col style="width:60px"><col style="width:150px"><col style="width:220px"><col style="width:190px">
+              <col style="width:150px"><col style="width:120px"><col style="width:100px"><col style="width:110px">
+              <col style="width:150px"><col style="width:110px"><col style="width:150px"><col style="width:220px">
+              <col style="width:190px"><col style="width:180px"><col style="width:90px"><col style="width:100px">
+            </colgroup>
+            <thead>
+              <tr>
+                <th>序号</th><th>药品编码</th><th>药品名称</th><th>药品规格</th><th>批号</th>
+                <th>有效期</th><th>库存量</th><th>进货价</th><th>进货价金额</th><th>零售价</th>
+                <th>零售价金额</th><th>生产企业</th><th>供货商</th><th>入库时间</th>
+                <th class="sticky sticky-status">效期状态</th>
+                <th class="sticky sticky-days">有效天数</th>
+              </tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+        <div class="empty" id="empty">
+          <svg viewBox="0 0 64 48" fill="none" stroke="currentColor" stroke-width="1.4">
+            <path d="M6 14h52v28a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V14z"/>
+            <path d="M6 14l6-8h40l6 8"/><path d="M26 24h12"/>
+          </svg>
+          <span>暂无数据</span>
+        </div>
+      </div>
+
+      <!-- 合计条 -->
+      <div class="sum-bar">
+        <span>整表合计：</span>
+        <div class="sum-right">
+          <span>进货价金额合计：<span class="money" id="sumPurchase">0.00</span></span>
+          <span>零售价金额合计：<span class="money" id="sumRetail">0.00</span></span>
+        </div>
+      </div>
+
+      <!-- 分页 -->
+      <div class="pager">
+        <span class="total" id="totalText">共 0 条</span>
+        <select class="sizes" id="pageSize">
+          <option value="12">12 条/页</option>
+          <option value="16" selected>16 条/页</option>
+          <option value="20">20 条/页</option>
+        </select>
+        <button class="pager-btn" id="prevPage">‹</button>
+        <span id="pagerNums" style="display:flex;align-items:center;gap:4px;"></span>
+        <button class="pager-btn" id="nextPage">›</button>
+        <span class="jump">跳至第 <input id="jumpInput" value="1"> 页</span>
+      </div>
+    </div>
+
+    <!-- 效期提示设置子视图 -->
+    <div class="settings-view" id="settingsView">
+      <div class="page-head" style="border-top:1px solid var(--line-light);">
+        <div class="page-title">效期提示设置</div>
+        <div class="head-btns"><button class="btn" id="btnBack">返回</button></div>
+      </div>
+      <div class="settings-filter">
+        <div class="fitem"><label>药品名称：</label>
+          <input class="ctl" id="setKw" placeholder="请输入药品名称 / 编码 / 拼音码" autocomplete="off" style="width:240px;">
+        </div>
+        <div class="fitem"><label>库存量：</label>
+          <div class="select-ctl">
+            <select id="setStock">
+              <option value="gt0">库存大于 0</option>
+              <option value="eq0">库存等于 0</option>
+              <option value="all">全部库存</option>
+            </select>
+            <span class="arrow"></span>
+          </div>
+        </div>
+        <div class="filter-btns" style="margin-left:auto;">
+          <button class="btn" id="setReset">重置</button>
+          <button class="btn btn-primary" id="setQuery">查询</button>
+        </div>
+      </div>
+      <div class="settings-table">
+        <table>
+          <colgroup>
+            <col style="width:64px"><col style="width:160px"><col style="width:24%"><col style="width:20%">
+            <col style="width:24%"><col style="width:180px"><col style="width:110px">
+          </colgroup>
+          <thead>
+            <tr>
+              <th>序号</th><th>药品编码</th><th>药品名称</th><th>药品规格</th>
+              <th>生产企业</th><th>效期提示天数（天）</th><th>库存量</th>
+            </tr>
+          </thead>
+          <tbody id="setTbody"></tbody>
+        </table>
+        <div class="empty" id="setEmpty">
+          <svg viewBox="0 0 64 48" fill="none" stroke="currentColor" stroke-width="1.4">
+            <path d="M6 14h52v28a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V14z"/>
+            <path d="M6 14l6-8h40l6 8"/><path d="M26 24h12"/>
+          </svg>
+          <span>暂无数据</span>
+        </div>
+      </div>
+      <div class="settings-pager">
+        <span class="total" id="setTotal">共 0 条</span>
+        <select class="sizes" id="setSize">
+          <option value="12">12 条/页</option>
+          <option value="16" selected>16 条/页</option>
+          <option value="20">20 条/页</option>
+        </select>
+        <button class="pager-btn" id="setPrev">‹</button>
+        <span id="setNums" style="display:flex;align-items:center;gap:4px;"></span>
+        <button class="pager-btn" id="setNext">›</button>
+        <span class="jump">跳至第 <input id="setJump" value="1"> 页</span>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  var RADIO_LABEL = { expired:'已过期', normal:'未过期', soon:'即将过期' };
+
+  /* ============================================================
+   *  机构 / 药房 / 库位 数据（三级独立下拉）
+   * ============================================================ */
+  var ORG = '山东大学齐鲁医院';
+  var PHARMACIES = [
+    { id:'out', name:'门诊药房', locations:[
+      { id:'out-west',  name:'门诊西药房' },
+      { id:'out-east',  name:'门诊中药房' }
+    ]},
+    { id:'in', name:'住院药房', locations:[
+      { id:'in-west',  name:'住院西药房' },
+      { id:'in-east',  name:'住院中药房' }
+    ]},
+    { id:'emerg', name:'急诊药房', locations:[
+      { id:'emerg-west', name:'急诊西药房' },
+      { id:'emerg-east', name:'急诊中药房' }
+    ]},
+    { id:'central', name:'中心药房', locations:[
+      { id:'center-store',  name:'中心药库' },
+      { id:'center-tcm',    name:'中药饮片库' },
+      { id:'center-ic',     name:'静脉用药调配中心（PIVAS）' }
+    ]}
+  ];
+
+  function fillPharmacies(){
+    var sel = $('pharmacySelect');
+    sel.innerHTML = PHARMACIES.map(function(p){
+      return '<option value="'+p.id+'">'+p.name+'</option>';
+    }).join('');
+    sel.value = PHARMACIES[0].id;
+    fillLocations(sel.value);
+  }
+  function fillLocations(pharmacyId){
+    var p = PHARMACIES.find(function(x){return x.id===pharmacyId}) || PHARMACIES[0];
+    var sel = $('locationSelect');
+    sel.innerHTML = p.locations.map(function(l){
+      return '<option value="'+l.id+'">'+l.name+'</option>';
+    }).join('');
+  }
+
+  /* ============================================================
+   *  Mock 数据
+   * ============================================================ */
+  var DRUGS = [
+    ['复方利血平片','1片*100片/瓶','常州制药厂有限公司',''],
+    ['阿莫西林胶囊','0.25g*24粒/盒','华北制药股份有限公司','国药控股山东有限公司'],
+    ['头孢克肟分散片','0.1g*12片/盒','齐鲁制药有限公司','华润山东医药有限公司'],
+    ['布洛芬缓释胶囊','0.3g*20粒/盒','中美天津史克制药有限公司','上药控股山东有限公司'],
+    ['注射用头孢曲松钠','1.0g*10支/盒','石药集团欧意药业有限公司','国药控股山东有限公司'],
+    ['氯化钠注射液','500ml*1瓶/瓶','山东新华制药股份有限公司','齐鲁医药有限公司'],
+    ['葡萄糖注射液','5%*500ml*1瓶/瓶','山东新华制药股份有限公司','齐鲁医药有限公司'],
+    ['二甲双胍缓释片','0.5g*30片/盒','正大天晴药业集团股份有限公司','华润山东医药有限公司'],
+    ['阿托伐他汀钙片','20mg*7片/盒','北京嘉林药业股份有限公司','国药控股山东有限公司'],
+    ['硝苯地平控释片','30mg*14片/盒','拜耳医药保健有限公司','上药控股山东有限公司'],
+    ['蒙脱石散','3g*10袋/盒','博福-益普生(天津)制药有限公司','国药控股山东有限公司'],
+    ['维生素C片','0.1g*100片/瓶','东北制药集团沈阳第一制药有限公司',''],
+    ['三唑仑','0.25g*10片/盒','江苏恩华药业股份有限公司','国药控股山东有限公司'],
+    ['艾司唑仑','0.3g*10片/盒','山东信谊制药有限公司','华润山东医药有限公司'],
+    ['司可巴比妥','0.5g*10片/盒','上海信谊药厂有限公司','上药控股山东有限公司'],
+    ['氯胺酮','0.2ml*10支/盒','福建古田药业有限公司','国药控股山东有限公司'],
+    ['咖啡因','0.26g*10片/盒','天津力生制药股份有限公司',''],
+    ['奥沙西泮','0.25g*10片/盒','山东齐鲁制药有限公司','齐鲁医药有限公司'],
+    ['注射用头孢呋辛钠','0.75g*10支/盒','广州白云山制药股份有限公司','华润山东医药有限公司'],
+    ['甲钴胺片','0.5mg*20片/盒','卫材(中国)药业有限公司','国药控股山东有限公司']
+  ];
+
+  function pad(n,w){ var s=''+n; while(s.length<w){ s='0'+s; } return s; }
+  function fmtDate(d){ return d.getFullYear()+'-'+pad(d.getMonth()+1,2)+'-'+pad(d.getDate(),2); }
+  function fmtDT(d){ return fmtDate(d)+' '+pad(d.getHours(),2)+':'+pad(d.getMinutes(),2)+':'+pad(d.getSeconds(),2); }
+  function pyCode(name){
+    var map = {
+      '复':'F','方':'F','利':'L','血':'X','平':'P','片':'P','阿':'A','莫':'M','西':'X','林':'L','胶':'J','囊':'N',
+      '头':'T','孢':'B','克':'K','肟':'W','分':'F','散':'S','布':'B','洛':'L','芬':'F','缓':'H','释':'S','注':'Z','射':'S','用':'Y','曲':'Q','松':'S','钠':'N','氯':'L','化':'H',
+      '葡':'P','萄':'T','糖':'T','液':'Y','二':'E','甲':'J','双':'S','胍':'G','他':'T','汀':'T','钙':'G','硝':'X','苯':'B','地':'D','控':'K','蒙':'M','脱':'T','石':'S','维':'W','生':'S','素':'S','三':'S','唑':'Z','仑':'L','艾':'A','司':'S','可':'K','比':'B','妥':'T','胺':'A','酮':'T','咖':'K','啡':'F','因':'Y','奥':'A','沙':'S','洋':'Y','呋':'F','辛':'X','钴':'G','霉':'M','素':'S'
+    };
+    var s='';
+    for(var i=0;i<name.length;i++){ var c=name.charAt(i); if(map[c]) s+=map[c]; }
+    return s || name.slice(0,4).toUpperCase();
+  }
+  var DRUG_PY = DRUGS.map(function(d){ return pyCode(d[0]); });
+
+  var LOC_IDS = PHARMACIES.reduce(function(arr,p){
+    p.locations.forEach(function(l){ arr.push(l.id); }); return arr;
+  }, []);
+
+  var rows = [];
+  (function build(){
+    var today = new Date(2026,10,4);
+    for(var i=0;i<560;i++){
+      var t = DRUGS[i % DRUGS.length];
+      var cyc = Math.floor(i / DRUGS.length);
+      var code = '10' + pad(1000 + (i % DRUGS.length)*13, 6) + pad(101 + (cyc % 7), 2);
+      var batch = i % 9 === 0 ? '' : 'PH' + (6000 + i % 400);
+      var exp = new Date(today.getTime());
+      if(i % 10 === 0){ exp.setTime(today.getTime() - (5 + (i % 40)) * 86400000); }
+      else if(i % 10 === 1 || i % 10 === 2){ exp.setTime(today.getTime() + (3 + (i % 60)) * 86400000); }
+      else { exp.setFullYear(2030 + (i % 25)); exp.setMonth(i % 12); exp.setDate((i % 27) + 1); }
+      var stock = i % 7 === 0 ? 25 : (100 + (i % 30) * 50);
+      var unit = t[1].indexOf('/盒') > -1 ? '盒' : (t[1].indexOf('/瓶') > -1 ? '瓶' : '支');
+      var purchase = 8 + (i % 18) * 3.5;
+      var retail = purchase * 1.15;
+      var inTime = new Date(today.getTime() - (i % 400) * 86400000);
+      inTime.setHours(8 + (i % 10), (i * 7) % 60, (i * 13) % 60);
+      var days = Math.round((exp.getTime() - today.getTime()) / 86400000);
+      rows.push({
+        idx: i + 1,
+        code: code,
+        name: t[0],
+        spec: t[1],
+        py: DRUG_PY[i % DRUGS.length],
+        batch: batch,
+        expiry: fmtDate(exp),
+        stock: stock,
+        unit: unit,
+        purchase: purchase,
+        retail: retail,
+        manufacturer: t[2],
+        supplier: t[3],
+        inTime: fmtDT(inTime),
+        days: days,
+        status: days < 0 ? 'expired' : (days <= 90 ? 'soon' : 'normal'),
+        locationId: LOC_IDS[i % LOC_IDS.length]
+      });
+    }
+  })();
+
+  /* 效期提示设置 数据：按 drug 维度 （去重后的药品名称为 key） */
+  var settings = {};
+  DRUGS.forEach(function(d, i){
+    var key = DRUG_PY[i] + '-' + d[0];
+    // 默认 60 天，头孢类 90 天，维生素 30 天
+    var days = 60;
+    if(d[0].indexOf('头孢') > -1 || d[0].indexOf('曲松') > -1) days = 90;
+    else if(d[0].indexOf('维生素') > -1) days = 30;
+    else if(d[0].indexOf('三唑仑') > -1 || d[0].indexOf('艾司唑仑') > -1) days = 90; // 精神类多提示
+    var stock = 200 + Math.floor(Math.random()*300);
+    settings[key] = {
+      code: '10' + pad(1000 + i*13, 6) + '01',
+      name: d[0],
+      spec: d[1],
+      manufacturer: d[2],
+      days: days,
+      stock: stock,
+      py: DRUG_PY[i],
+      _key: key
+    };
+  });
+  var settingsList = Object.values(settings);
+
+  /* ============================================================
+   *  状态与筛选
+   * ============================================================ */
+  var state = {
+    pharmacy: PHARMACIES[0].id,
+    location: PHARMACIES[0].locations[0].id,
+    kw: '',
+    status: 'all',
+    from: '',
+    to: '',
+    size: 16,
+    page: 1,
+    list: []
+  };
+  var setState = { kw:'', stock:'all', size:16, page:1 };
+
+  var STATUS_CLASS = { expired:'dot-red', normal:'dot-green', soon:'dot-amber' };
+
+  function money(n){
+    return Number(n).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  function pagerNums(totalPage, currentPage, containerId, clickHandler){
+    var out = [], nums = {}, i;
+    nums[1] = 1; nums[totalPage] = 1;
+    var from = Math.max(1, Math.min(currentPage - 2, Math.max(1, totalPage - 4)));
+    var to = Math.min(totalPage, from + 4);
+    for(i = from; i <= to; i++) nums[i] = 1;
+    var keys = Object.keys(nums).map(Number).sort(function(a,b){return a-b;});
+    var prev = 0;
+    keys.forEach(function(n){
+      if(prev && n - prev > 1) out.push('...');
+      out.push(n); prev = n;
+    });
+    var html = '';
+    out.forEach(function(n){
+      if(n === '...'){ html += '<span class="more">···</span>'; }
+      else {
+        html += '<button class="pager-num' + (n === currentPage ? ' active' : '') + '" data-page="' + n + '">' + n + '</button>';
+      }
+    });
+    $(containerId).innerHTML = html;
+    $(containerId).onclick = function(e){
+      var b = e.target.closest('[data-page]');
+      if(!b) return;
+      clickHandler(Number(b.getAttribute('data-page')));
+    };
+  }
+
+  function filtered(){
+    var kw = state.kw.trim().toLowerCase();
+    return rows.filter(function(r){
+      if(state.status !== 'all' && r.status !== state.status) return false;
+      if(state.location && r.locationId !== state.location) return false;
+      if(kw){
+        var hay = (r.name + ' ' + r.code + ' ' + r.py).toLowerCase();
+        if(hay.indexOf(kw) === -1) return false;
+      }
+      if(state.from && r.inTime.slice(0,10) < state.from) return false;
+      if(state.to && r.inTime.slice(0,10) > state.to) return false;
+      return true;
+    });
+  }
+
+  function tdsFor(r){
+    return '<td>' + r.idx + '</td>'
+      + '<td title="'+r.code+'">' + r.code + '</td>'
+      + '<td class="left" title="'+r.name+'">' + r.name + '</td>'
+      + '<td class="left" title="'+r.spec+'">' + r.spec + '</td>'
+      + '<td>' + (r.batch || '—') + '</td>'
+      + '<td>' + r.expiry + '</td>'
+      + '<td>' + r.stock + r.unit + '</td>'
+      + '<td>' + r.purchase.toFixed(2) + '</td>'
+      + '<td>' + money(r.purchase * r.stock) + '</td>'
+      + '<td>' + r.retail.toFixed(2) + '</td>'
+      + '<td>' + money(r.retail * r.stock) + '</td>'
+      + '<td class="left" title="'+r.manufacturer+'">' + r.manufacturer + '</td>'
+      + '<td class="left" title="'+r.supplier+'">' + (r.supplier || '—') + '</td>'
+      + '<td>' + r.inTime + '</td>'
+      + '<td class="sticky sticky-status"><span class="status"><i class="'+STATUS_CLASS[r.status]+'"></i><span>'+(RADIO_LABEL[r.status]||'未过期')+'</span></span></td>'
+      + '<td class="sticky sticky-days right">' + r.days + ' 天</td>';
+  }
+
+  function render(){
+    var list = filtered();
+    var total = list.length;
+    var totalPage = Math.max(1, Math.ceil(total / state.size));
+    if(state.page > totalPage) state.page = totalPage;
+    var start = (state.page - 1) * state.size;
+    var slice = list.slice(start, start + state.size);
+
+    $('tbody').innerHTML = slice.map(function(r){ return '<tr>' + tdsFor(r) + '</tr>'; }).join('');
+    $('empty').hidden = slice.length > 0;
+
+    var sumP = 0, sumR = 0;
+    list.forEach(function(r){ sumP += r.purchase * r.stock; sumR += r.retail * r.stock; });
+    $('sumPurchase').textContent = money(sumP);
+    $('sumRetail').textContent = money(sumR);
+
+    $('totalText').textContent = '共 ' + total + ' 条';
+    pagerNums(totalPage, state.page, 'pagerNums', function(n){ state.page = n; render(); });
+    $('prevPage').disabled = state.page <= 1;
+    $('nextPage').disabled = state.page >= totalPage;
+    $('jumpInput').value = state.page;
+  }
+
+  /* ============================================================
+   *  效期提示设置 筛选/渲染
+   * ============================================================ */
+  function filteredSet(){
+    var kw = setState.kw.trim().toLowerCase();
+    return settingsList.filter(function(s){
+      if(setState.stock === 'gt0' && s.stock <= 0) return false;
+      if(setState.stock === 'eq0' && s.stock > 0) return false;
+      if(kw){
+        var hay = (s.name + ' ' + s.code + ' ' + s.py).toLowerCase();
+        if(hay.indexOf(kw) === -1) return false;
+      }
+      return true;
+    });
+  }
+  function renderSet(){
+    var list = filteredSet();
+    var total = list.length;
+    var totalPage = Math.max(1, Math.ceil(total / setState.size));
+    if(setState.page > totalPage) setState.page = totalPage;
+    var start = (setState.page - 1) * setState.size;
+    var slice = list.slice(start, start + setState.size);
+
+    $('setTbody').innerHTML = slice.map(function(s){
+      var warnCls = s.days > 90 ? '' : ' is-warn';
+      return '<tr>'
+        + '<td>' + s.idx + '</td>'
+        + '<td>' + s.code + '</td>'
+        + '<td class="left" title="'+s.name+'">' + s.name + '</td>'
+        + '<td class="left" title="'+s.spec+'">' + s.spec + '</td>'
+        + '<td class="left" title="'+s.manufacturer+'">' + s.manufacturer + '</td>'
+        + '<td><input class="inline-num'+warnCls+'" data-key="'+s._key+'" type="number" min="1" max="365" value="'+s.days+'"> 天</td>'
+        + '<td>' + s.stock + '</td>'
+        + '</tr>';
+    }).join('');
+    $('setEmpty').hidden = slice.length > 0;
+
+    $('setTotal').textContent = '共 ' + total + ' 条';
+    pagerNums(totalPage, setState.page, 'setNums', function(n){ setState.page = n; renderSet(); });
+    $('setPrev').disabled = setState.page <= 1;
+    $('setNext').disabled = setState.page >= totalPage;
+    $('setJump').value = setState.page;
+  }
+
+  /* ============================================================
+   *  Toast
+   * ============================================================ */
+  function toast(msg){
+    var t = $('toast'); t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(t._tm);
+    t._tm = setTimeout(function(){ t.classList.remove('show'); }, 1600);
+  }
+
+  /* ============================================================
+   *  事件绑定 —— 列表
+   * ============================================================ */
+  $('pharmacySelect').addEventListener('change', function(){
+    state.pharmacy = this.value;
+    fillLocations(this.value);
+    state.location = $('locationSelect').value;
+  });
+  $('locationSelect').addEventListener('change', function(){
+    state.location = this.value;
+  });
+
+  $('btnQuery').addEventListener('click', function(){
+    state.kw = $('kw').value;
+    state.status = $('statusSelect').value;
+    state.from = $('dateFrom').value;
+    state.to = $('dateTo').value;
+    state.page = 1;
+    render();
+    toast('已查询');
+  });
+  $('btnReset').addEventListener('click', function(){
+    $('kw').value = '';
+    $('dateFrom').value = '';
+    $('dateTo').value = '';
+    $('statusSelect').value = 'all';
+    $('pharmacySelect').value = PHARMACIES[0].id;
+    fillLocations(PHARMACIES[0].id);
+    state.kw = ''; state.status = 'all'; state.from = ''; state.to = '';
+    state.pharmacy = PHARMACIES[0].id; state.location = PHARMACIES[0].locations[0].id;
+    state.page = 1;
+    render();
+    toast('已重置');
+  });
+  $('kw').addEventListener('keydown', function(e){ if(e.key === 'Enter') $('btnQuery').click(); });
+
+  $('pageSize').addEventListener('change', function(){ state.size = Number(this.value); state.page = 1; render(); });
+  $('prevPage').addEventListener('click', function(){ if(state.page > 1){ state.page--; render(); } });
+  $('nextPage').addEventListener('click', function(){ state.page++; render(); });
+  $('jumpInput').addEventListener('keydown', function(e){
+    if(e.key !== 'Enter') return;
+    var n = Number(this.value);
+    var totalPage = Math.max(1, Math.ceil(filtered().length / state.size));
+    if(n >= 1 && n <= totalPage){ state.page = n; render(); }
+    else { this.value = state.page; }
+  });
+
+  /* ============================================================
+   *  效期提示设置 —— 视图切换 + 筛选 + inline 编辑
+   * ============================================================ */
+  function showSettings(){
+    $('listView').style.display = 'none';
+    $('settingsView').classList.add('show');
+    // 先给每条 settings 加一个稳定的 idx（按原始数组序）
+    settingsList.forEach(function(s, i){ s.idx = i + 1; });
+    renderSet();
+  }
+  function backToList(){
+    $('settingsView').classList.remove('show');
+    $('listView').style.display = 'flex';
+    render();
+  }
+  $('btnSetting').addEventListener('click', showSettings);
+  $('btnBack').addEventListener('click', backToList);
+
+  $('setQuery').addEventListener('click', function(){
+    setState.kw = $('setKw').value;
+    setState.stock = $('setStock').value;
+    setState.page = 1;
+    renderSet();
+    toast('已查询');
+  });
+  $('setReset').addEventListener('click', function(){
+    $('setKw').value = ''; $('setStock').value = 'gt0';
+    setState.kw = ''; setState.stock = 'gt0'; setState.page = 1;
+    renderSet();
+  });
+  $('setKw').addEventListener('keydown', function(e){ if(e.key === 'Enter') $('setQuery').click(); });
+
+  $('setSize').addEventListener('change', function(){ setState.size = Number(this.value); setState.page = 1; renderSet(); });
+  $('setPrev').addEventListener('click', function(){ if(setState.page > 1){ setState.page--; renderSet(); } });
+  $('setNext').addEventListener('click', function(){ setState.page++; renderSet(); });
+  $('setJump').addEventListener('keydown', function(e){
+    if(e.key !== 'Enter') return;
+    var n = Number(this.value);
+    var totalPage = Math.max(1, Math.ceil(filteredSet().length / setState.size));
+    if(n >= 1 && n <= totalPage){ setState.page = n; renderSet(); }
+    else { this.value = setState.page; }
+  });
+
+  // 效期提示天数 inline 编辑（事件委托）
+  $('setTbody').addEventListener('change', function(e){
+    var t = e.target.closest('input.inline-num');
+    if(!t) return;
+    var key = t.getAttribute('data-key');
+    var v = Math.min(365, Math.max(1, parseInt(t.value, 10) || 60));
+    var s = settings[key];
+    if(!s) return;
+    s.days = v;
+    t.value = v;
+    toast('已更新 "' + s.name + '" 效期提示天数：' + v + ' 天');
+    // 同步更新主列表 rows 里的匹配项（同一药品名）
+    rows.forEach(function(r){
+      if(r.name === s.name) r.days = v; // 仅示意
+    });
+  });
+
+  /* ============================================================
+   *  初始化
+   * ============================================================ */
+  fillPharmacies();
+  render();
+})();
+</script>
+  <script src="nav.js"></script>
+</body>
+</html>

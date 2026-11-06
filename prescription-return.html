@@ -313,7 +313,17 @@
 
     <div class="page rt-page">
       <div class="page-head">
-        <h1 class="page-title">门诊处方退药（中药房）</h1>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <h1 class="page-title">门诊处方退药（中药房）</h1>
+          <span style="font-size:13px;color:var(--text-tertiary);">库位：</span>
+          <select class="select" style="width:180px;" id="rtLocation">
+            <option>中药房-1号架</option>
+            <option>中药房-2号架</option>
+            <option>中药房-3号架</option>
+            <option>西药房-1号架</option>
+            <option>西药房-2号架</option>
+          </select>
+        </div>
         <div class="rt-dacts">
           <span class="rt-state" id="rxState" style="display:none;">已退药</span>
           <button class="btn btn-sm btn-primary" id="btnReturn" disabled>退药</button>

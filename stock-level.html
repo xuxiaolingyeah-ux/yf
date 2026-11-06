@@ -401,8 +401,6 @@
         <div class="sl-head-left">
           <div class="sl-head-title">药品高低储设置</div>
           <div class="sl-head-fis">
-            <span class="sl-hlbl">机构：</span>
-            <select class="select sl-hsel" id="hOrg"></select>
             <span class="sl-hlbl">库位：</span>
             <select class="select sl-hsel" id="hLocation"></select>
           </div>
@@ -1460,16 +1458,8 @@
     });
   }
 
-  // ---- 初始化 标题行 select（机构、库位独立下拉，库位取所有库位并集） ----
+  // ---- 初始化 标题行 select（机构已隐藏，仅初始化库位） ----
   function fillHeadSelects(){
-    var orgSel = $("hOrg");
-    MOCK.orgs.forEach(function(o){
-      var opt = document.createElement("option");
-      opt.value = o.id; opt.textContent = o.name;
-      orgSel.appendChild(opt);
-    });
-    // 默认选中心药房
-    orgSel.value = "org-c";
     fillHeadLocation();
   }
   function fillHeadLocation(){

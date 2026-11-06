@@ -146,7 +146,7 @@
           <div class="sr-sec">
             <div class="sr-sec-head"><div class="sr-sec-title">退库信息</div></div>
             <div class="sr-form">
-              <div class="fi"><span class="lbl"><span class="req">*</span>退库机构：</span><div class="ctrl"><select class="select" id="fFromOrg"></select></div></div>
+              <div class="fi"><span class="lbl"><span class="req">*</span>退库机构：</span><div class="ctrl"><input class="input is-readonly" id="fFromOrg" readonly></div></div>
               <div class="fi"><span class="lbl"><span class="req">*</span>退库库位：</span><div class="ctrl"><select class="select" id="fFromLocation"></select></div></div>
               <div class="fi"><span class="lbl"><span class="req">*</span>接收机构：</span><div class="ctrl"><select class="select" id="fToOrg"></select></div></div>
               <div class="fi"><span class="lbl"><span class="req">*</span>接收库位：</span><div class="ctrl"><select class="select" id="fToLocation"></select></div></div>
@@ -337,7 +337,8 @@
   };
 
   /* ===== 初始化下拉 ===== */
-  $("#fFromOrg").innerHTML = SR.ORGS.map(function(o){return '<option value="'+o.id+'">'+SR.esc(o.name)+'</option>';}).join("");
+  /* 退库机构：只读，显示当前登录机构名称 */
+  $("#fFromOrg").value = (SR.orgOf(ST.fromOrgId) || {}).name || user.orgName || "";
   $("#fToOrg").innerHTML = '<option value="">请选择接收机构</option>' + SR.ORGS.map(function(o){return '<option value="'+o.id+'">'+SR.esc(o.name)+'</option>';}).join("");
   function fillFromLocations(){
     $("#fFromLocation").innerHTML = '<option value="">请选择库位</option>' + SR.allLocationsOf(ST.fromOrgId).map(function(l){return '<option value="'+SR.esc(l)+'">'+SR.esc(l)+'</option>';}).join("");
@@ -347,7 +348,6 @@
   }
   fillFromLocations(); fillToLocations();
 
-  $("#fFromOrg").addEventListener("change",function(){ ST.fromOrgId=this.value; ST.fromLocation=""; fillFromLocations(); });
   $("#fFromLocation").addEventListener("change",function(){ ST.fromLocation=this.value; });
   $("#fToOrg").addEventListener("change",function(){ ST.toOrgId=this.value; ST.toLocation=""; fillToLocations(); });
   $("#fToLocation").addEventListener("change",function(){ ST.toLocation=this.value; });
@@ -616,7 +616,7 @@
     ST.fromOrgId = editBill.fromOrgId; ST.fromLocation = editBill.fromLocation || "";
     ST.toOrgId = editBill.toOrgId; ST.toLocation = editBill.toLocation || "";
     ST.items = (editBill.items||[]).map(function(it){ return Object.assign(SR.blankItem(), it); });
-    $("#fFromOrg").value = ST.fromOrgId; fillFromLocations();
+    $("#fFromOrg").value = (SR.orgOf(ST.fromOrgId) || {}).name || ""; fillFromLocations();
     $("#fFromLocation").value = ST.fromLocation;
     $("#fToOrg").value = ST.toOrgId; fillToLocations();
     $("#fToLocation").value = ST.toLocation;
@@ -624,7 +624,7 @@
     $("#fTime").value = editBill.submitTime || "";
     $("#fTime").placeholder = "提交后回填";
   } else {
-    $("#fFromOrg").value = ST.fromOrgId; fillFromLocations();
+    $("#fFromOrg").value = (SR.orgOf(ST.fromOrgId) || {}).name || user.orgName || ""; fillFromLocations();
     $("#fCreator").value = user.name;
   }
   renderItems();

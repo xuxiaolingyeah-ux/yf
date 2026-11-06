@@ -147,10 +147,6 @@
         <div class="sa-head-title">药品高低储预警</div>
         <div class="sa-head-filters">
           <div class="sa-fi">
-            <span class="lbl">机构：</span>
-            <select class="select" id="fOrg"></select>
-          </div>
-          <div class="sa-fi">
             <span class="lbl">库位：</span>
             <select class="select" id="fLocation"></select>
           </div>
@@ -401,13 +397,7 @@
   }
 
   function initOrgOptions(){
-    // 机构下拉（默认当前登录机构）
-    var html = "";
-    MOCK.orgs.forEach(function(o){
-      html += '<option value="' + esc(o.id) + '">' + esc(o.name) + "</option>";
-    });
-    $("fOrg").innerHTML = html;
-    $("fOrg").value = CURRENT_ORG;
+    // 机构已隐藏，仅初始化库位
     fillLocationOptions();
   }
 
@@ -457,7 +447,6 @@
   }
 
   function resetFilter(){
-    $("fOrg").value = CURRENT_ORG;
     $("fKind").value = "";
     $("fStatus").value = "";
     $("fName").value = "";

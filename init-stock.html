@@ -476,6 +476,7 @@
   /* ================= 列表渲染 ================= */
   function renderList() {
     var rows = filtered();
+    console.log('[renderList] filtered rows=', rows.length, 'DATA.length=', DATA.length);
     var pages = Math.max(1, Math.ceil(rows.length / ST.size));
     if (ST.page > pages) ST.page = pages;
 
@@ -968,10 +969,13 @@
       text: "此操作将清空全部期初数据, 是否继续?",
       danger: true,
       onOk: function () {
+        console.log('[初始化] 开始, 当前 DATA.length=', DATA.length);
         DATA = [];
+        console.log('[初始化] 清空后 DATA.length=', DATA.length);
         saveData();
         ST.page = 1;
         renderList();
+        console.log('[初始化] renderList 完成');
         toast("初始化完成");
       }
     });

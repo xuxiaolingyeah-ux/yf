@@ -403,8 +403,6 @@
           <div class="sl-head-fis">
             <span class="sl-hlbl">机构：</span>
             <select class="select sl-hsel" id="hOrg"></select>
-            <span class="sl-hlbl">药房：</span>
-            <select class="select sl-hsel" id="hPharmacy"></select>
             <span class="sl-hlbl">库位：</span>
             <select class="select sl-hsel" id="hLocation"></select>
           </div>
@@ -1393,10 +1391,6 @@
   // 事件绑定
   // =====================================================================
   function bindEvents(){
-    // 标题行 select 级联
-    $("hOrg").onchange = fillHeadPharmacy;
-    $("hPharmacy").onchange = fillHeadLocation;
-
     // 筛选
     $("btnSearch").onclick = function(){ doFilter(); };
     $("btnReset").onclick = function(){
@@ -1466,7 +1460,7 @@
     });
   }
 
-  // ---- 初始化 标题行 select（机构→药房→库位，默认都选第一个有效值，不能为空） ----
+  // ---- 初始化 标题行 select（机构、库位独立下拉，库位取所有库位并集） ----
   function fillHeadSelects(){
     var orgSel = $("hOrg");
     MOCK.orgs.forEach(function(o){
@@ -1476,27 +1470,21 @@
     });
     // 默认选中心药房
     orgSel.value = "org-c";
-    fillHeadPharmacy();
-  }
-  function fillHeadPharmacy(){
-    var orgId = $("hOrg").value;
-    var phSel = $("hPharmacy");
-    phSel.innerHTML = "";
-    var phs = MOCK.pharmacies[orgId] || [];
-    phs.forEach(function(p){
-      var opt = document.createElement("option");
-      opt.value = p.id; opt.textContent = p.name;
-      phSel.appendChild(opt);
-    });
-    // 默认选第一个
-    if (phs.length > 0) phSel.value = phs[0].id;
     fillHeadLocation();
   }
   function fillHeadLocation(){
-    var phId = $("hPharmacy").value;
     var locSel = $("hLocation");
     locSel.innerHTML = "";
-    var locs = MOCK.locations[phId] || [];
+    var seen = {};
+    var map = MOCK.locations || {};
+    var locs = [];
+    Object.keys(map).forEach(function(phId){
+      (map[phId] || []).forEach(function(l){
+        if (seen[l.id]) return;
+        seen[l.id] = true;
+        locs.push(l);
+      });
+    });
     locs.forEach(function(l){
       var opt = document.createElement("option");
       opt.value = l.id; opt.textContent = l.name;

@@ -146,14 +146,12 @@
             <div class="sa-sec-title">增损信息</div>
             <div class="sa-form">
               <div class="fi"><span class="lbl"><span class="req">*</span>机构：</span><div class="ctrl"><select class="select" id="fOrg"></select></div></div>
-              <div class="fi"><span class="lbl"><span class="req">*</span>药房：</span><div class="ctrl"><select class="select" id="fPharmacy"><option value="">请选择药房</option></select></div></div>
               <div class="fi"><span class="lbl"><span class="req">*</span>库位：</span><div class="ctrl"><select class="select" id="fLocation"><option value="">请选择库位</option></select></div></div>
-              <div class="fi"></div>
               <div class="fi"><span class="lbl"><span class="req">*</span>增损方式：</span><div class="ctrl"><select class="select" id="fMethod"><option value="">请选择</option><option value="add">报增入库</option><option value="minus">报损出库</option></select></div></div>
               <div class="fi"><span class="lbl"><span class="req">*</span>增损原因：</span><div class="ctrl"><select class="select" id="fReason"><option value="">请选择</option></select></div></div>
               <div class="fi"><span class="lbl">提交人：</span><div class="ctrl"><input class="input is-readonly" id="fCreator" readonly></div></div>
               <div class="fi"><span class="lbl">提交时间：</span><div class="ctrl"><input class="input is-readonly" id="fTime" readonly></div></div>
-              <div class="fi fi-full"><span class="lbl">说明：</span><div class="ctrl"><textarea class="textarea" id="fRemark" placeholder="选填，如：定期盘点多出 50 盒阿莫西林，需附现场照片等" style="height:64px"></textarea></div></div>
+              <div class="fi" style="grid-column: span 2"><span class="lbl">说明：</span><div class="ctrl"><textarea class="textarea" id="fRemark" placeholder="选填，如：定期盘点多出 50 盒阿莫西林，需附现场照片等" style="height:64px"></textarea></div></div>
             </div>
           </div>
 
@@ -291,26 +289,27 @@
 
   /* ===== 页面状态 ===== */
   var ST = {
-    orgId: user.orgId, pharmacyId: "", location: "",
+    orgId: user.orgId, location: "",
     method: "", reason: "", remark: "",
     items: []
   };
 
   /* ===== 下拉初始化 ===== */
   $("#fOrg").innerHTML = SA.ORGS.map(function(o){return '<option value="'+o.id+'">'+SA.esc(o.name)+'</option>';}).join("");
-  function fillPharmacies(){
-    var o = SA.orgOf(ST.orgId);
-    $("#fPharmacy").innerHTML = '<option value="">请选择药房</option>' + (o?o.pharmacies.map(function(p){return '<option value="'+p.id+'">'+SA.esc(p.name)+'</option>';}).join(""):"");
-  }
+  $("#fOrg").value = ST.orgId;                 /* 默认当前机构 */
+  /* 库位下拉：不依赖药房，取所有库位的并集（指定机构时仅取该机构） */
   function fillLocations(){
-    var p = SA.pharmacyOf(ST.orgId, ST.pharmacyId);
-    $("#fLocation").innerHTML = '<option value="">请选择库位</option>' + (p?p.locations.map(function(l){return '<option>'+SA.esc(l)+'</option>';}).join(""):"");
+    var locs = [];
+    (ST.orgId ? [SA.orgOf(ST.orgId)] : SA.ORGS).forEach(function(o){
+      if(o) o.pharmacies.forEach(function(x){ locs = locs.concat(x.locations); });
+    });
+    locs = locs.filter(function(l,i){ return locs.indexOf(l) === i; });
+    $("#fLocation").innerHTML = '<option value="">请选择库位</option>' + locs.map(function(l){return '<option>'+SA.esc(l)+'</option>';}).join("");
   }
   $("#fReason").innerHTML = '<option value="">请选择</option>' + SA.REASONS.map(function(r){return '<option>'+r+'</option>';}).join("");
-  fillPharmacies(); fillLocations();
+  fillLocations();
 
-  $("#fOrg").addEventListener("change",function(){ ST.orgId=this.value; ST.pharmacyId=""; ST.location=""; fillPharmacies(); fillLocations(); });
-  $("#fPharmacy").addEventListener("change",function(){ ST.pharmacyId=this.value; ST.location=""; fillLocations(); });
+  $("#fOrg").addEventListener("change",function(){ ST.orgId=this.value; ST.location=""; fillLocations(); });
   $("#fLocation").addEventListener("change",function(){ ST.location=this.value; });
   $("#fMethod").addEventListener("change",function(){ ST.method=this.value; });
   $("#fReason").addEventListener("change",function(){ ST.reason=this.value; });
@@ -614,12 +613,11 @@
     $("#pageTitle").textContent = "编辑增损";
     $("#headCode").style.display = ""; $("#headCode").textContent = "增损单号：" + editBill.code;
     $("#headStatus").style.display = ""; $("#headStatus").textContent = "审核状态：" + SA.STATUS[editBill.status];
-    ST.orgId = editBill.orgId; ST.pharmacyId = editBill.pharmacyId; ST.location = editBill.location;
+    ST.orgId = editBill.orgId; ST.location = editBill.location;
     ST.method = editBill.method === "报增入库" ? "add" : (editBill.method === "报损出库" ? "minus" : "");
     ST.reason = editBill.reason; ST.remark = editBill.remark || "";
     ST.items = (editBill.items||[]).map(function(it){ var b = SA.blankItem(); for(var k in b) if(b.hasOwnProperty(k) && it[k]!==undefined) b[k]=it[k]; return b; });
-    $("#fOrg").value = ST.orgId; fillPharmacies();
-    $("#fPharmacy").value = ST.pharmacyId; fillLocations();
+    $("#fOrg").value = ST.orgId; fillLocations();
     $("#fLocation").value = ST.location;
     $("#fMethod").value = ST.method;
     $("#fReason").value = ST.reason;
@@ -638,7 +636,6 @@
   function validate(){
     var errs = [];
     markInvalid($("#fOrg"), !ST.orgId);            if(!ST.orgId) errs.push("机构");
-    markInvalid($("#fPharmacy"), !ST.pharmacyId);  if(!ST.pharmacyId) errs.push("药房");
     markInvalid($("#fLocation"), !ST.location);    if(!ST.location) errs.push("库位");
     markInvalid($("#fMethod"), !ST.method);        if(!ST.method) errs.push("增损方式");
     markInvalid($("#fReason"), !ST.reason);        if(!ST.reason) errs.push("增损原因");
@@ -664,7 +661,7 @@
       auditorRole: user.role==="village" ? "member" : "center",
       uploadStatus: "none", records: []
     };
-    b.orgId = ST.orgId; b.pharmacyId = ST.pharmacyId; b.location = ST.location;
+    b.orgId = ST.orgId; b.location = ST.location;
     b.method = methodLabel; b.reason = ST.reason; b.remark = ST.remark;
     b.items = ST.items.map(function(it){
       var copy = {}; for(var k in it) copy[k] = it[k]; return copy;

@@ -125,13 +125,10 @@
             <div class="si-sec-title">入库信息</div>
             <div class="si-view">
               <div class="fi"><span class="lbl">入库机构：</span><span class="val" id="vOrg"></span></div>
-              <div class="fi"><span class="lbl">入库药房：</span><span class="val" id="vPharmacy"></span></div>
               <div class="fi"><span class="lbl">入库库位：</span><span class="val" id="vLocation"></span></div>
-              <div class="fi"></div>
               <div class="fi"><span class="lbl">入库方式：</span><span class="val" id="vMethod"></span></div>
               <div class="fi"><span class="lbl">供应商：</span><span class="val" id="vSupplier"></span></div>
-              <div class="fi"><span class="lbl">验收情况：</span><span class="val" id="vAccept"></span></div>
-              <div class="fi"></div>
+              <div class="fi" style="grid-column: span 2"><span class="lbl">验收情况：</span><span class="val" id="vAccept"></span></div>
               <div class="fi"><span class="lbl">提交人：</span><span class="val" id="vCreator"></span></div>
               <div class="fi"><span class="lbl">提交时间：</span><span class="val" id="vTime"></span></div>
             </div>
@@ -225,14 +222,13 @@
   if(!bill){ location.href = "stock-in.html"; return; }
 
   function orgName(){ var o=SI.orgOf(bill.orgId); return o?o.name:"—"; }
-  function phName(){ var p=SI.pharmacyOf(bill.orgId,bill.pharmacyId); return p?p.name:"—"; }
   function setV(id, v){ $(id).textContent = (v===null||v===undefined||v==="") ? "—" : v; }
 
   /* ===== 基本信息渲染 ===== */
   function renderBase(){
     $("#headCode").textContent = "入库单号：" + bill.code;
     $("#headStatus").textContent = "审核状态：" + SI.STATUS[bill.status];
-    setV("#vOrg", orgName()); setV("#vPharmacy", phName()); setV("#vLocation", bill.location);
+    setV("#vOrg", orgName()); setV("#vLocation", bill.location);
     setV("#vMethod", bill.method); setV("#vSupplier", bill.supplier); setV("#vAccept", bill.accept);
     setV("#vCreator", bill.creatorName); setV("#vTime", bill.submitTime);
     setV("#vInvMode", bill.invoiceMode==="detail" ? "按明细" : "按汇总");

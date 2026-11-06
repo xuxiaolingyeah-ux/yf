@@ -115,10 +115,6 @@
     if (u) sessionStorage.setItem("SI_USER", JSON.stringify(u));
   }
   function orgOf(id) { return ORGS.filter(function (o) { return o.id === id; })[0] || null; }
-  function pharmacyOf(orgId, pid) {
-    var o = orgOf(orgId); if (!o) return null;
-    return o.pharmacies.filter(function (p) { return p.id === pid; })[0] || null;
-  }
 
   /* ---------- 入库单种子数据 ---------- */
   function item(drugCode, batchIdx, qty, unq, reason, invoiceNo, traces) {
@@ -245,7 +241,7 @@
     DRUGS: DRUGS, BATCHES: BATCHES,
     STATUS: STATUS, UPLOAD: UPLOAD,
     qs: qs, esc: esc, raw: raw, fmtNow: fmtNow, money: money, num2: num2,
-    currentUser: currentUser, setUser: setUser, orgOf: orgOf, pharmacyOf: pharmacyOf,
+    currentUser: currentUser, setUser: setUser, orgOf: orgOf,
     load: load, save: save, billOf: billOf, newCode: newCode,
     canAudit: canAudit, opsFor: opsFor,
     qualified: qualified, purchaseAmt: purchaseAmt, retailAmt: retailAmt, sums: sums

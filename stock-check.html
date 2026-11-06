@@ -69,12 +69,6 @@
               </select>
             </div>
             <div class="filter-item">
-              <span class="filter-label">药房</span>
-              <select class="select" id="fPharmacy" style="width:140px;">
-                <option value="">全部药房</option>
-              </select>
-            </div>
-            <div class="filter-item">
               <span class="filter-label">库位</span>
               <select class="select" id="fLoc" style="width:140px;">
                 <option value="">全部库位</option>
@@ -116,7 +110,6 @@
                     <th>盘点名称</th>
                     <th>盘点单号</th>
                     <th>机构</th>
-                    <th>药房</th>
                     <th>库位</th>
                     <th>药品种类</th>
                     <th>创建人</th>
@@ -166,7 +159,7 @@
   if (!user) return;
 
   var state = {
-    name: "", code: "", org: "", pharmacy: "", loc: "",
+    name: "", code: "", org: "", loc: "",
     kind: "", dateFrom: "", dateTo: "", audit: "",
     page: 1, size: 10
   };
@@ -187,14 +180,12 @@
       fKind.appendChild(opt);
     });
 
-    /* 药房下拉：默认全部 */
-    var fPharmacy = $("fPharmacy");
-    Object.keys(SC.PHARMACIES).forEach(function (k) {
-      SC.PHARMACIES[k].forEach(function (ph) {
-        var opt = document.createElement("option");
-        opt.value = ph.name; opt.textContent = ph.name;
-        fPharmacy.appendChild(opt);
-      });
+    /* 库位下拉：机构下全量库位 */
+    var fLoc = $("fLoc");
+    SC.locationsOf(SC.ORGS[0].id).forEach(function (l) {
+      var opt = document.createElement("option");
+      opt.value = l; opt.textContent = l;
+      fLoc.appendChild(opt);
     });
   }
 
@@ -205,7 +196,6 @@
       if (state.name && b.name.toLowerCase().indexOf(state.name.toLowerCase()) < 0) return false;
       if (state.code && b.code.toLowerCase().indexOf(state.code.toLowerCase()) < 0) return false;
       if (state.org && b.orgId !== state.org) return false;
-      if (state.pharmacy && b.pharmacy !== state.pharmacy) return false;
       if (state.loc && b.location !== state.loc) return false;
       if (state.kind && b.kind !== state.kind) return false;
       if (state.dateFrom || state.dateTo) {
@@ -235,7 +225,6 @@
         '<td title="' + esc(b.name) + '">' + esc(b.name) + "</td>" +
         "<td>" + esc(b.code) + "</td>" +
         '<td title="' + esc(b.orgName) + '">' + esc(b.orgName) + "</td>" +
-        "<td>" + esc(b.pharmacy) + "</td>" +
         "<td>" + esc(b.location) + "</td>" +
         "<td>" + esc(b.kind) + "</td>" +
         "<td>" + esc(b.creator) + "</td>" +
@@ -260,8 +249,8 @@
     var kindOpts = (MOCK.drugKinds || []).map(function (k) {
       return '<option value="' + esc(k) + '">' + esc(k) + "</option>";
     }).join("");
-    var phOpts = SC.PHARMACIES[SC.ORGS[0].id].map(function (ph) {
-      return '<option value="' + esc(ph.name) + '">' + esc(ph.name) + "</option>";
+    var locOpts = SC.locationsOf(SC.ORGS[0].id).map(function (l) {
+      return '<option value="' + esc(l) + '">' + esc(l) + "</option>";
     }).join("");
 
     SEL.openModal(
@@ -275,8 +264,7 @@
         '<div class="sc-modal-grid">' +
           '<div class="form-item"><span class="form-label"><span class="req">*</span>盘点名称</span><input class="input" id="mName" placeholder="请输入盘点名称" maxlength="40"></div>' +
           '<div class="form-item"><span class="form-label">机构</span><input class="input is-readonly" id="mOrg" value="' + esc(SC.ORGS[0].name) + '" readonly></div>' +
-          '<div class="form-item"><span class="form-label"><span class="req">*</span>药房名称</span><select class="select" id="mPharmacy"><option value="">请选择药房</option>' + phOpts + "</select></div>" +
-          '<div class="form-item"><span class="form-label"><span class="req">*</span>库位名称</span><select class="select" id="mLoc"><option value="">请选择库位</option></select></div>' +
+          '<div class="form-item"><span class="form-label"><span class="req">*</span>库位名称</span><select class="select" id="mLoc"><option value="">请选择库位</option>' + locOpts + "</select></div>" +
           '<div class="form-item"><span class="form-label"><span class="req">*</span>药品种类</span><select class="select" id="mKind"><option value="">请选择药品种类</option>' + kindOpts + "</select></div>" +
         "</div>" +
       "</div>" +
@@ -291,22 +279,7 @@
     $("mClose").addEventListener("click", SEL.closeModal);
     $("mCancel").addEventListener("click", SEL.closeModal);
 
-    /* 药房→库位 联动 */
-    $("mPharmacy").addEventListener("change", function () {
-      var pname = this.value;
-      var fLoc = $("mLoc");
-      fLoc.innerHTML = '<option value="">请选择库位</option>';
-      (SC.PHARMACIES[SC.ORGS[0].id] || []).forEach(function (ph) {
-        if (ph.name !== pname) return;
-        ph.locations.forEach(function (l) {
-          var opt = document.createElement("option");
-          opt.value = l; opt.textContent = l;
-          fLoc.appendChild(opt);
-        });
-      });
-    });
-
-    ["mName", "mPharmacy", "mLoc", "mKind"].forEach(function (id) {
+    ["mName", "mLoc", "mKind"].forEach(function (id) {
       var el = $(id);
       el.addEventListener("input", function () { this.classList.remove("is-invalid"); });
       el.addEventListener("change", function () { this.classList.remove("is-invalid"); });
@@ -318,13 +291,11 @@
 
   function submitCreate() {
     var name = $("mName").value.trim();
-    var pharmacy = $("mPharmacy").value;
     var loc = $("mLoc").value;
     var kind = $("mKind").value;
 
     var missing = [];
     if (!name) missing.push({ id: "mName", label: "盘点名称" });
-    if (!pharmacy) missing.push({ id: "mPharmacy", label: "药房名称" });
     if (!loc) missing.push({ id: "mLoc", label: "库位名称" });
     if (!kind) missing.push({ id: "mKind", label: "药品种类" });
     if (missing.length) {
@@ -341,7 +312,7 @@
       code: SC.newCode(list),
       name: name,
       orgId: org.id, orgName: org.name,
-      pharmacy: pharmacy, location: loc,
+      pharmacy: "", location: loc,
       kind: kind, checkTime: now,
       auditStatus: "draft",
       creatorId: user.id, creator: user.name, createdAt: now,
@@ -430,7 +401,6 @@
     state.name = $("fName").value.trim().toLowerCase();
     state.code = $("fCode").value.trim().toLowerCase();
     state.org = $("fOrg").value;
-    state.pharmacy = $("fPharmacy").value;
     state.loc = $("fLoc").value;
     state.kind = $("fKind").value;
     state.dateFrom = $("fDateFrom").value;
@@ -442,11 +412,11 @@
 
   $("btnReset").addEventListener("click", function () {
     $("fName").value = ""; $("fCode").value = "";
-    $("fOrg").value = ""; $("fPharmacy").value = ""; $("fLoc").value = "";
+    $("fOrg").value = ""; $("fLoc").value = "";
     $("fKind").value = "";
     $("fDateFrom").value = ""; $("fDateTo").value = "";
     $("fAudit").value = "";
-    state.name = state.code = state.org = state.pharmacy = state.loc = state.kind = state.audit = "";
+    state.name = state.code = state.org = state.loc = state.kind = state.audit = "";
     state.dateFrom = state.dateTo = "";
     state.page = 1;
     renderTable();

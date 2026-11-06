@@ -140,15 +140,12 @@
             <div class="sr-sec-title">退库信息</div>
             <div class="sr-view">
               <div class="fi"><span class="lbl">退库机构：</span><span class="val" id="vFromOrg"></span></div>
-              <div class="fi"><span class="lbl">退库药房：</span><span class="val" id="vFromPharmacy"></span></div>
               <div class="fi"><span class="lbl">退库库位：</span><span class="val" id="vFromLocation"></span></div>
               <div class="fi"><span class="lbl">提交人：</span><span class="val" id="vCreator"></span></div>
-
-              <div class="fi"><span class="lbl">接收机构：</span><span class="val" id="vToOrg"></span></div>
-              <div class="fi"><span class="lbl">接收药房：</span><span class="val" id="vToPharmacy"></span></div>
-              <div class="fi"><span class="lbl">接收库位：</span><span class="val" id="vToLocation"></span></div>
               <div class="fi"><span class="lbl">提交时间：</span><span class="val" id="vTime"></span></div>
 
+              <div class="fi"><span class="lbl">接收机构：</span><span class="val" id="vToOrg"></span></div>
+              <div class="fi"><span class="lbl">接收库位：</span><span class="val" id="vToLocation"></span></div>
               <div class="fi"><span class="lbl">出库单号：</span><span class="val" id="vOutCode"></span></div>
               <div class="fi"><span class="lbl">入库单号：</span><span class="val" id="vInCode"></span></div>
             </div>
@@ -308,7 +305,6 @@
   var bill = list.filter(function(b){return b.id===id;})[0];
   if(!bill){ location.href = "stock-return.html"; return; }
 
-  function phName(orgId, pid){ var p=SR.pharmacyOf(orgId,pid); return p?p.name:"—"; }
   function setV(sel, v){ $(sel).textContent = (v===null||v===undefined||v==="") ? "—" : v; }
 
   /* ===== 当前页面动作形态 ===== */
@@ -322,8 +318,8 @@
   function renderBase(){
     $("#headCode").textContent = "退库单号：" + bill.code;
     $("#headStatus").innerHTML = "<span>审核状态："+SR.esc(SR.AUDIT_STATUS[bill.auditStatus])+"</span><span>接收状态："+SR.esc(SR.RECV[bill.receiveStatus])+"</span>";
-    setV("#vFromOrg", SR.orgName(bill.fromOrgId)); setV("#vFromPharmacy", phName(bill.fromOrgId, bill.fromPharmacyId)); setV("#vFromLocation", bill.fromLocation);
-    setV("#vToOrg", SR.orgName(bill.toOrgId)); setV("#vToPharmacy", phName(bill.toOrgId, bill.toPharmacyId)); setV("#vToLocation", bill.toLocation);
+    setV("#vFromOrg", SR.orgName(bill.fromOrgId)); setV("#vFromLocation", bill.fromLocation);
+    setV("#vToOrg", SR.orgName(bill.toOrgId)); setV("#vToLocation", bill.toLocation);
     setV("#vCreator", bill.creatorName); setV("#vTime", bill.submitTime);
     setV("#vOutCode", bill.outCode ? bill.outCode : "—（出库后生成）");
     setV("#vInCode", bill.inCode ? bill.inCode : "—（入库后生成）");

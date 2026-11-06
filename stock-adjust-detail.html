@@ -137,7 +137,6 @@
             <div class="sa-sec-title">增损信息</div>
             <div class="sa-view">
               <div class="fi"><span class="lbl">机构：</span><span class="val" id="vOrg"></span></div>
-              <div class="fi"><span class="lbl">药房：</span><span class="val" id="vPh"></span></div>
               <div class="fi"><span class="lbl">库位：</span><span class="val" id="vLoc"></span></div>
               <div class="fi"><span class="lbl">增损方式：</span><span class="val" id="vMethod"></span></div>
               <div class="fi"><span class="lbl">增损原因：</span><span class="val" id="vReason"></span></div>
@@ -252,10 +251,8 @@
 
   /* ===== 基本信息 ===== */
   var orgName = (SA.orgOf(bill.orgId)||{}).name || "—";
-  var phName = (SA.pharmacyOf(bill.orgId, bill.pharmacyId)||{}).name || "—";
   document.title = (mode === "approve" ? "增损审核" : "增损详情") + " · 中心药房";
   $("#vOrg").textContent = orgName;
-  $("#vPh").textContent = phName;
   $("#vLoc").textContent = bill.location || "—";
   $("#vMethod").textContent = bill.method || "—";
   $("#vReason").textContent = bill.reason || "—";

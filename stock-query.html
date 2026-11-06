@@ -189,10 +189,6 @@
           <select class="select" id="fOrg"></select>
         </div>
         <div class="sq-fi">
-          <span class="lbl">药房：</span>
-          <select class="select" id="fPharmacy"><option value="">全部</option></select>
-        </div>
-        <div class="sq-fi">
           <span class="lbl">库位：</span>
           <select class="select" id="fLocation"><option value="">全部</option></select>
         </div>
@@ -314,34 +310,23 @@
     // 默认选当前机构（center 默认 org-c）
     var cur = ST.user.role === "center" ? "org-c" : ST.user.orgId;
     if (cur) sel.value = cur;
-    fillPharmacies();
-  }
-
-  // ---- 机构→药房 ----
-  function fillPharmacies(){
-    var orgId = $("fOrg").value;
-    var sel = $("fPharmacy");
-    sel.innerHTML = '<option value="">全部</option>';
-    var phs = MOCK.pharmacies[orgId] || [];
-    phs.forEach(function(p){
-      var o = document.createElement("option");
-      o.value = p.id; o.textContent = p.name;
-      sel.appendChild(o);
-    });
     fillLocations();
   }
 
-  // ---- 药房→库位 ----
+  // ---- 库位：所有库位的并集（去重） ----
   function fillLocations(){
-    var phId = $("fPharmacy").value;
     var sel = $("fLocation");
     sel.innerHTML = '<option value="">全部</option>';
-    if (!phId) return;
-    var locs = MOCK.locations[phId] || [];
-    locs.forEach(function(l){
-      var o = document.createElement("option");
-      o.value = l.id; o.textContent = l.name;
-      sel.appendChild(o);
+    var seen = {};
+    var map = MOCK.locations || {};
+    Object.keys(map).forEach(function(phId){
+      (map[phId] || []).forEach(function(l){
+        if (seen[l.id]) return;
+        seen[l.id] = true;
+        var o = document.createElement("option");
+        o.value = l.id; o.textContent = l.name;
+        sel.appendChild(o);
+      });
     });
   }
 
@@ -370,7 +355,6 @@
    */
   function getFilteredBatches(){
     var orgId = $("fOrg").value;
-    var phId = $("fPharmacy").value;
     var locId = $("fLocation").value;
     var nameQ = $("fName").value.trim().toLowerCase();
     var kind = $("fKind").value;
@@ -384,8 +368,6 @@
       } else {
         if (b.orgId !== ST.user.orgId) return false;
       }
-      // 药房
-      if (phId && b.pharmacyId !== phId) return false;
       // 库位（可为空，也可筛选空）
       if (locId) {
         if (b.locationId !== locId) return false;
@@ -748,20 +730,11 @@
     $("fKind").value = "";
     $("fClass").value = "";
     $("fStock").value = "";
+    // 机构保持当前，库位重置为全部
+    $("fLocation").value = "";
     ST.page = 1;
-    // 统计方式回批次
+    // 统计方式回批次（内部会重新查询）
     switchMode("batch");
-    // 机构保持当前，药房/库位重置到首项
-    fillPharmacies();
-    // 药房重置（选第一项有效药房）
-    setTimeout(function(){
-      var ph = $("fPharmacy");
-      for (var i=1; i<ph.options.length; i++) { if (ph.options[i].value) { ph.value = ph.options[i].value; break; } }
-      fillLocations();
-      var loc = $("fLocation");
-      for (var i=1; i<loc.options.length; i++) { if (loc.options[i].value) { loc.value = loc.options[i].value; break; } }
-      doFilter();
-    }, 0);
   }
 
   function switchMode(mode){
@@ -778,8 +751,7 @@
       t.onclick = function(){ switchMode(t.getAttribute("data-mode")); };
     });
     // 级联
-    $("fOrg").onchange = function(){ fillPharmacies(); };
-    $("fPharmacy").onchange = function(){ fillLocations(); };
+    $("fOrg").onchange = function(){ ST.page = 1; doFilter(); };
 
     // 查询/重置
     $("btnSearch").onclick = function(){ ST.page = 1; doFilter(); };
@@ -787,7 +759,7 @@
     // 回车
     document.addEventListener("keydown", function(e){
       if (e.key === "Enter") {
-        if (e.target && (e.target.id === "fName" || e.target.id === "fOrg" || e.target.id === "fPharmacy" || e.target.id === "fLocation" || e.target.id === "sqJump")) {
+        if (e.target && (e.target.id === "fName" || e.target.id === "fOrg" || e.target.id === "fLocation" || e.target.id === "sqJump")) {
           if (e.target.id === "sqJump") {
             var n = parseInt($("sqJump").value, 10);
             if (!isNaN(n) && n > 0) { ST.page = n; doFilter(); }

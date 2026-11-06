@@ -49,6 +49,7 @@ button,input,select{font-family:inherit;}
   padding:0 20px;border-bottom:1px solid var(--line-light);background:#fff;
 }
 .page-title{font-size:16px;font-weight:600;color:var(--text-1);}
+.head-ctx{display:flex;align-items:center;gap:16px;margin-left:24px;}
 .head-btns{margin-left:auto;display:flex;align-items:center;gap:8px;}
 
 /* ---------- 按钮 ---------- */
@@ -274,6 +275,20 @@ th.sticky-days,td.sticky-days{box-shadow:-1px 0 0 var(--table-line);}
     <!-- 标题行 -->
     <div class="page-head">
       <div class="page-title">药品效期预警</div>
+      <div class="head-ctx">
+        <div class="fitem"><label>机构：</label>
+          <div class="select-ctl">
+            <select disabled><option>山东大学齐鲁医院</option></select>
+            <span class="arrow"></span>
+          </div>
+        </div>
+        <div class="fitem"><label>库位：</label>
+          <div class="select-ctl select-wider">
+            <select id="locationSelect"></select>
+            <span class="arrow"></span>
+          </div>
+        </div>
+      </div>
       <div class="head-btns" id="headBtns">
         <button class="btn btn-ghost-blue" id="btnSetting">效期提示设置</button>
       </div>
@@ -284,24 +299,6 @@ th.sticky-days,td.sticky-days{box-shadow:-1px 0 0 var(--table-line);}
       <!-- 筛选区 -->
       <div class="filter">
         <div class="filter-main" id="filterMain">
-          <div class="fitem"><label>机构：</label>
-            <div class="select-ctl">
-              <select disabled><option>山东大学齐鲁医院</option></select>
-              <span class="arrow"></span>
-            </div>
-          </div>
-          <div class="fitem"><label>药房：</label>
-            <div class="select-ctl">
-              <select id="pharmacySelect"></select>
-              <span class="arrow"></span>
-            </div>
-          </div>
-          <div class="fitem"><label>库位：</label>
-            <div class="select-ctl select-wider">
-              <select id="locationSelect"></select>
-              <span class="arrow"></span>
-            </div>
-          </div>
           <div class="fitem"><label>药品：</label>
             <input class="ctl" id="kw" placeholder="名称 / 编码 / 拼音码" autocomplete="off">
           </div>
@@ -461,43 +458,27 @@ th.sticky-days,td.sticky-days{box-shadow:-1px 0 0 var(--table-line);}
   var RADIO_LABEL = { expired:'已过期', normal:'未过期', soon:'即将过期' };
 
   /* ============================================================
-   *  机构 / 药房 / 库位 数据（三级独立下拉）
+   *  机构 / 库位 数据（库位为全部库位的并集，去重）
    * ============================================================ */
   var ORG = '山东大学齐鲁医院';
-  var PHARMACIES = [
-    { id:'out', name:'门诊药房', locations:[
-      { id:'out-west',  name:'门诊西药房' },
-      { id:'out-east',  name:'门诊中药房' }
-    ]},
-    { id:'in', name:'住院药房', locations:[
-      { id:'in-west',  name:'住院西药房' },
-      { id:'in-east',  name:'住院中药房' }
-    ]},
-    { id:'emerg', name:'急诊药房', locations:[
-      { id:'emerg-west', name:'急诊西药房' },
-      { id:'emerg-east', name:'急诊中药房' }
-    ]},
-    { id:'central', name:'中心药房', locations:[
-      { id:'center-store',  name:'中心药库' },
-      { id:'center-tcm',    name:'中药饮片库' },
-      { id:'center-ic',     name:'静脉用药调配中心（PIVAS）' }
-    ]}
+  var LOCATIONS = [
+    { id:'out-west',      name:'门诊西药房' },
+    { id:'out-east',      name:'门诊中药房' },
+    { id:'in-west',       name:'住院西药房' },
+    { id:'in-east',       name:'住院中药房' },
+    { id:'emerg-west',    name:'急诊西药房' },
+    { id:'emerg-east',    name:'急诊中药房' },
+    { id:'center-store',  name:'中心药库' },
+    { id:'center-tcm',    name:'中药饮片库' },
+    { id:'center-ic',     name:'静脉用药调配中心（PIVAS）' }
   ];
 
-  function fillPharmacies(){
-    var sel = $('pharmacySelect');
-    sel.innerHTML = PHARMACIES.map(function(p){
-      return '<option value="'+p.id+'">'+p.name+'</option>';
-    }).join('');
-    sel.value = PHARMACIES[0].id;
-    fillLocations(sel.value);
-  }
-  function fillLocations(pharmacyId){
-    var p = PHARMACIES.find(function(x){return x.id===pharmacyId}) || PHARMACIES[0];
+  function fillLocations(){
     var sel = $('locationSelect');
-    sel.innerHTML = p.locations.map(function(l){
+    sel.innerHTML = LOCATIONS.map(function(l){
       return '<option value="'+l.id+'">'+l.name+'</option>';
     }).join('');
+    sel.value = LOCATIONS[0].id;
   }
 
   /* ============================================================
@@ -541,9 +522,7 @@ th.sticky-days,td.sticky-days{box-shadow:-1px 0 0 var(--table-line);}
   }
   var DRUG_PY = DRUGS.map(function(d){ return pyCode(d[0]); });
 
-  var LOC_IDS = PHARMACIES.reduce(function(arr,p){
-    p.locations.forEach(function(l){ arr.push(l.id); }); return arr;
-  }, []);
+  var LOC_IDS = LOCATIONS.map(function(l){ return l.id; });
 
   var rows = [];
   (function build(){
@@ -613,8 +592,7 @@ th.sticky-days,td.sticky-days{box-shadow:-1px 0 0 var(--table-line);}
    *  状态与筛选
    * ============================================================ */
   var state = {
-    pharmacy: PHARMACIES[0].id,
-    location: PHARMACIES[0].locations[0].id,
+    location: LOCATIONS[0].id,
     kw: '',
     status: 'all',
     from: '',
@@ -771,11 +749,6 @@ th.sticky-days,td.sticky-days{box-shadow:-1px 0 0 var(--table-line);}
   /* ============================================================
    *  事件绑定 —— 列表
    * ============================================================ */
-  $('pharmacySelect').addEventListener('change', function(){
-    state.pharmacy = this.value;
-    fillLocations(this.value);
-    state.location = $('locationSelect').value;
-  });
   $('locationSelect').addEventListener('change', function(){
     state.location = this.value;
   });
@@ -794,10 +767,9 @@ th.sticky-days,td.sticky-days{box-shadow:-1px 0 0 var(--table-line);}
     $('dateFrom').value = '';
     $('dateTo').value = '';
     $('statusSelect').value = 'all';
-    $('pharmacySelect').value = PHARMACIES[0].id;
-    fillLocations(PHARMACIES[0].id);
+    $('locationSelect').value = LOCATIONS[0].id;
     state.kw = ''; state.status = 'all'; state.from = ''; state.to = '';
-    state.pharmacy = PHARMACIES[0].id; state.location = PHARMACIES[0].locations[0].id;
+    state.location = LOCATIONS[0].id;
     state.page = 1;
     render();
     toast('已重置');
@@ -878,7 +850,7 @@ th.sticky-days,td.sticky-days{box-shadow:-1px 0 0 var(--table-line);}
   /* ============================================================
    *  初始化
    * ============================================================ */
-  fillPharmacies();
+  fillLocations();
   render();
 })();
 </script>

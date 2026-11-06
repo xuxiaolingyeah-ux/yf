@@ -138,9 +138,15 @@
     if (u) { sessionStorage.setItem("SR_USER", JSON.stringify(u)); sessionStorage.setItem("SI_USER", JSON.stringify(u)); }
   }
   function orgOf(id) { return ORGS.filter(function (o) { return o.id === id; })[0] || null; }
-  function pharmacyOf(orgId, pid) {
-    var o = orgOf(orgId); if (!o) return null;
-    return o.pharmacies.filter(function (p) { return p.id === pid; })[0] || null;
+  /* 库位全量：机构下所有库位的并集（不再做上级级联） */
+  function allLocationsOf(orgId) {
+    var o = orgOf(orgId), seen = {}, out = [];
+    if (o) o.pharmacies.forEach(function (p) {
+      p.locations.forEach(function (l) {
+        if (!seen[l]) { seen[l] = 1; out.push(l); }
+      });
+    });
+    return out;
   }
   function orgName(id) { var o = orgOf(id); return o ? o.name : "—"; }
   function upperOrgOf(orgId) { return UPPER[orgId] || "o3"; }
@@ -350,7 +356,7 @@
     USERS: USERS, ORGS: ORGS, REASONS: REASONS, DRUGS: DRUGS, BATCHES: BATCHES, INBOUNDS: INBOUNDS,
     AUDIT_STATUS: AUDIT_STATUS, RECV: RECV,
     qs: qs, esc: esc, raw: raw, fmtNow: fmtNow, money: money, num2: num2,
-    currentUser: currentUser, setUser: setUser, orgOf: orgOf, pharmacyOf: pharmacyOf, orgName: orgName, upperOrgOf: upperOrgOf,
+    currentUser: currentUser, setUser: setUser, orgOf: orgOf, allLocationsOf: allLocationsOf, orgName: orgName, upperOrgOf: upperOrgOf,
     traceCodes: traceCodes, drugOf: drugOf, batchOf: batchOf, blankItem: blankItem, itemOf: itemOf,
     load: load, save: save, billOf: billOf, newCode: newCode,
     canAudit: canAudit, opsFor: opsFor,

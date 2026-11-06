@@ -70,14 +70,8 @@
                     <input class="input is-readonly" id="fOutOrg" readonly>
                   </div>
                   <div class="form-item">
-                    <span class="form-label"><span class="req">*</span>出库药房</span>
-                    <select class="select" id="fPharmacy">
-                      <option value="">请选择</option>
-                    </select>
-                  </div>
-                  <div class="form-item">
                     <span class="form-label"><span class="req">*</span>出库库位</span>
-                    <select class="select" id="fLocation" disabled>
+                    <select class="select" id="fLocation">
                       <option value="">请选择</option>
                     </select>
                   </div>
@@ -183,7 +177,6 @@
   function renderApplyInfo() {
     $("applyInfo").innerHTML =
       infoItem("申请机构", bill.applyOrgName) +
-      infoItem("申请药房", bill.applyPharmacyName) +
       infoItem("申请库位", bill.applyLocationName) +
       infoItem("提交人", bill.creator) +
       infoItem("提交时间", bill.submitTime) +
@@ -196,23 +189,13 @@
       '<span class="text-value">' + esc(v || "—") + "</span></div>";
   }
 
-  function renderPharmacy() {
-    var list = TR.pharmaciesOf(outOrg);
-    $("fPharmacy").innerHTML = '<option value="">请选择</option>' + list.map(function (p) {
-      return '<option value="' + p.id + '">' + esc(p.name) + "</option>";
-    }).join("");
-    $("fOutOrg").value = TR.orgName(outOrg);
-    if (bill.outPharmacy) $("fPharmacy").value = bill.outPharmacy;
-    renderLocation();
-  }
   function renderLocation() {
-    var ph = $("fPharmacy").value;
-    var list = ph ? TR.locationsOf(ph) : [];
-    $("fLocation").disabled = !ph;
+    var list = TR.locationsOfOrg(outOrg);
     $("fLocation").innerHTML = '<option value="">请选择</option>' + list.map(function (l) {
       return '<option value="' + l.id + '">' + esc(l.name) + "</option>";
     }).join("");
-    if (bill.outLocation && ph === bill.outPharmacy) $("fLocation").value = bill.outLocation;
+    $("fOutOrg").value = TR.orgName(outOrg);
+    if (bill.outLocation) $("fLocation").value = bill.outLocation;
   }
 
   function moneyOf(g) {
@@ -490,9 +473,7 @@
   /* ---------------- 校验 / 确认出库 ---------------- */
   function confirmOut() {
     var bad = [];
-    $("fPharmacy").classList.remove("is-invalid");
     $("fLocation").classList.remove("is-invalid");
-    if (!$("fPharmacy").value) { $("fPharmacy").classList.add("is-invalid"); bad.push("出库药房"); }
     if (!$("fLocation").value) { $("fLocation").classList.add("is-invalid"); bad.push("出库库位"); }
 
     var totalRows = 0, qtyBad = false, scanBad = null;
@@ -514,13 +495,10 @@
     if (bad.length) { SEL.toast("请完善：" + bad.join("、")); return; }
     if (scanBad) { SEL.toast(scanBad + "，请扫码或使用「自动补齐（演示）」后再提交"); return; }
 
-    var ph = TR.pharmaciesOf(outOrg).filter(function (p) { return p.id === $("fPharmacy").value; })[0];
-    var loc = TR.locationsOf(ph.id).filter(function (l) { return l.id === $("fLocation").value; })[0];
+    var loc = TR.locationsOfOrg(outOrg).filter(function (l) { return l.id === $("fLocation").value; })[0];
     var code = TR.newOutCode(TR.load());
     bill.outOrg = outOrg;
     bill.outOrgName = TR.orgName(outOrg);
-    bill.outPharmacy = ph.id;
-    bill.outPharmacyName = ph.name;
     bill.outLocation = loc.id;
     bill.outLocationName = loc.name;
     bill.outCode = code;
@@ -538,12 +516,6 @@
   document.title = "调拨出库 " + bill.code + " · 区域药房协同管理系统";
   $("btnBack").addEventListener("click", function () { location.href = "transfer.html"; });
   $("tabClose").addEventListener("click", function () { location.href = "transfer.html"; });
-  $("fPharmacy").addEventListener("change", function () {
-    this.classList.remove("is-invalid");
-    bill.outPharmacy = this.value;
-    bill.outLocation = "";
-    renderLocation();
-  });
   $("fLocation").addEventListener("change", function () { this.classList.remove("is-invalid"); });
   $("btnConfirm").addEventListener("click", confirmOut);
   $("btnCancel").addEventListener("click", function () { location.href = "transfer.html"; });
@@ -603,7 +575,7 @@
   });
 
   renderApplyInfo();
-  renderPharmacy();
+  renderLocation();
   renderAll();
   SEL.renderHeaderUser(user);
   SEL.bindNav();

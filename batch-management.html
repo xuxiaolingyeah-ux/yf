@@ -275,12 +275,7 @@
             <div class="page-title">药品批次管理</div>
             <div class="bm-ctx">
               <span class="ctx-lbl">库位：</span>
-              <select class="select" id="selLocation">
-                <option>全部库位</option>
-                <option>村卫生室药房</option>
-                <option>A 区库房</option>
-                <option>B 区库房</option>
-              </select>
+              <select class="select" id="selLocation"></select>
             </div>
           </div>
           <div class="bm-acts">
@@ -419,7 +414,7 @@
                 <th style="width:60px">基药</th>
                 <th style="width:100px">国家谈判药物</th>
                 <th style="width:80px">集采标识</th>
-                <th style="width:140px">入库时间</th>
+                <th style="width:140px">最早入库时间</th>
                 <th style="width:130px">入库单号</th>
                 <th style="width:80px">制剂单位</th>
                 <th style="width:100px">最小包装单位</th>
@@ -614,6 +609,7 @@
 <!-- toast -->
 <div id="toast" style="position:fixed;top:70px;left:50%;transform:translateX(-50%);padding:8px 16px;background:rgba(0,0,0,.78);color:#fff;border-radius:4px;font-size:13px;z-index:9999;display:none"></div>
 
+<script src="mock.js"></script>
 <script>
 (function(){
   "use strict";
@@ -624,18 +620,18 @@
 
   /* ===== Mock 批次数据 ===== */
   var BATCHES = [
-    {status:"on",name:"阿莫西林胶囊",code:"1210500301",kind:"西药",spec:"0.25g*24粒/盒",minFactor:24,availQty:480,sendQty:480,sendUnit:"粒",batchNo:"20260101",expire:"2028-01-01",outPrice:12.50,splitOutPrice:0.52,stockQty:480,stockBig:20,stopQty:0,preQty:0,vendor:"华北制药股份有限公司",inPrice:8.20,splitInPrice:0.34,outTotal:6000.00,supplier:"山东医药集团",approval:"H13023917",essential:"是",negotiated:"否",volume:"是",inTime:"2026-01-05 09:20:11",inNo:"RK20260105001",prepUnit:"粒",minPkgUnit:"盒",toxic:"否",spirit:"否",form:"胶囊剂",insCode:"XJ01CA0401010101032",insName:"阿莫西林",split:"是",priority:"是"},
-    {status:"on",name:"阿莫西林胶囊",code:"1210500301",kind:"西药",spec:"0.5g*12粒/盒",minFactor:12,availQty:240,sendQty:240,sendUnit:"粒",batchNo:"20260115",expire:"2028-01-14",outPrice:18.80,splitOutPrice:1.57,stockQty:240,stockBig:20,stopQty:0,preQty:0,vendor:"石药集团中诺药业（石家庄）有限公司",inPrice:12.50,splitInPrice:1.04,outTotal:4512.00,supplier:"济南医药供应站",approval:"H20033293",essential:"是",negotiated:"否",volume:"否",inTime:"2026-01-16 14:05:33",inNo:"RK20260116003",prepUnit:"粒",minPkgUnit:"盒",toxic:"否",spirit:"否",form:"胶囊剂",insCode:"XJ01CA0401010102032",insName:"阿莫西林",split:"是",priority:"否"},
-    {status:"on",name:"头孢克肟分散片",code:"1210500501",kind:"西药",spec:"0.1g*6片/盒",minFactor:6,availQty:180,sendQty:180,sendUnit:"片",batchNo:"20260201",expire:"2028-01-31",outPrice:24.60,splitOutPrice:4.10,stockQty:180,stockBig:30,stopQty:0,preQty:0,vendor:"上海信谊药厂有限公司",inPrice:16.80,splitInPrice:2.80,outTotal:4428.00,supplier:"上海医药分销",approval:"H31020315",essential:"否",negotiated:"是",volume:"否",inTime:"2026-02-02 10:12:45",inNo:"RK20260202001",prepUnit:"片",minPkgUnit:"盒",toxic:"否",spirit:"否",form:"片剂",insCode:"XJ01DD0401010101032",insName:"头孢克肟",split:"是",priority:"是"},
-    {status:"off",name:"布洛芬缓释胶囊",code:"1210500601",kind:"西药",spec:"0.3g*20粒/盒",minFactor:20,availQty:0,sendQty:0,sendUnit:"粒",batchNo:"20251201",expire:"2027-11-30",outPrice:22.00,splitOutPrice:1.10,stockQty:0,stockBig:0,stopQty:60,preQty:0,vendor:"中美天津史克制药有限公司",inPrice:15.00,splitInPrice:0.75,outTotal:0,supplier:"天津医药集团",approval:"H10900089",essential:"是",negotiated:"否",volume:"否",inTime:"2025-12-05 08:30:00",inNo:"RK20251205002",prepUnit:"粒",minPkgUnit:"盒",toxic:"否",spirit:"否",form:"胶囊剂",insCode:"XJ02CA0301010101032",insName:"布洛芬",split:"是",priority:"否"},
-    {status:"on",name:"奥美拉唑肠溶胶囊",code:"1210500901",kind:"西药",spec:"20mg*14粒/盒",minFactor:14,availQty:280,sendQty:280,sendUnit:"粒",batchNo:"20260301",expire:"2028-02-28",outPrice:35.80,splitOutPrice:2.56,stockQty:280,stockBig:20,stopQty:0,preQty:0,vendor:"常州四药制药有限公司",inPrice:24.00,splitInPrice:1.71,outTotal:10024.00,supplier:"常州药业股份",approval:"H10950185",essential:"是",negotiated:"是",volume:"是",inTime:"2026-03-02 16:40:20",inNo:"RK20260302005",prepUnit:"粒",minPkgUnit:"盒",toxic:"否",spirit:"否",form:"胶囊剂",insCode:"XA02BC0101010101032",insName:"奥美拉唑",split:"是",priority:"是"},
-    {status:"on",name:"复方甘草片",code:"1210501101",kind:"中成药",spec:"100片/瓶",minFactor:100,availQty:500,sendQty:500,sendUnit:"片",batchNo:"20260215",expire:"2027-08-14",outPrice:8.50,splitOutPrice:0.085,stockQty:500,stockBig:5,stopQty:0,preQty:0,vendor:"广州白云山制药股份有限公司",inPrice:5.20,splitInPrice:0.052,outTotal:4250.00,supplier:"广州医药集团",approval:"Z44021234",essential:"否",negotiated:"否",volume:"否",inTime:"2026-02-16 11:22:10",inNo:"RK20260216002",prepUnit:"片",minPkgUnit:"瓶",toxic:"否",spirit:"否",form:"片剂",insCode:"ZC09AA0101010101032",insName:"复方甘草",split:"否",priority:"否"},
-    {status:"on",name:"硝苯地平控释片",code:"1210501201",kind:"西药",spec:"30mg*7片/盒",minFactor:7,availQty:210,sendQty:210,sendUnit:"片",batchNo:"20260310",expire:"2028-03-09",outPrice:29.80,splitOutPrice:4.26,stockQty:210,stockBig:30,stopQty:0,preQty:0,vendor:"拜耳医药保健有限公司",inPrice:20.50,splitInPrice:2.93,outTotal:6258.00,supplier:"拜耳医药保健",approval:"J20180015",essential:"是",negotiated:"是",volume:"否",inTime:"2026-03-11 09:15:00",inNo:"RK20260311001",prepUnit:"片",minPkgUnit:"盒",toxic:"否",spirit:"否",form:"片剂",insCode:"XC08CA0101010101032",insName:"硝苯地平",split:"是",priority:"是"},
-    {status:"on",name:"盐酸二甲双胍片",code:"1210501301",kind:"西药",spec:"0.5g*20片/盒",minFactor:20,availQty:400,sendQty:400,sendUnit:"片",batchNo:"20260120",expire:"2028-01-19",outPrice:15.60,splitOutPrice:0.78,stockQty:400,stockBig:20,stopQty:0,preQty:0,vendor:"中美上海施贵宝制药有限公司",inPrice:10.20,splitInPrice:0.51,outTotal:6240.00,supplier:"上海施贵宝",approval:"H31020246",essential:"是",negotiated:"否",volume:"是",inTime:"2026-01-21 13:50:33",inNo:"RK20260121004",prepUnit:"片",minPkgUnit:"盒",toxic:"否",spirit:"否",form:"片剂",insCode:"XA10BA0101010101032",insName:"二甲双胍",split:"是",priority:"否"},
-    {status:"on",name:"左氧氟沙星片",code:"1210501401",kind:"西药",spec:"0.5g*4片/盒",minFactor:4,availQty:120,sendQty:120,sendUnit:"片",batchNo:"20260220",expire:"2028-02-19",outPrice:32.00,splitOutPrice:8.00,stockQty:120,stockBig:30,stopQty:0,preQty:0,vendor:"第一三共制药（北京）有限公司",inPrice:22.00,splitInPrice:5.50,outTotal:3840.00,supplier:"第一三共制药",approval:"H20000567",essential:"否",negotiated:"否",volume:"否",inTime:"2026-02-21 15:30:00",inNo:"RK20260221002",prepUnit:"片",minPkgUnit:"盒",toxic:"否",spirit:"否",form:"片剂",insCode:"XJ01MA0101010101032",insName:"左氧氟沙星",split:"是",priority:"是"},
-    {status:"on",name:"双歧杆菌三联活菌胶囊",code:"1210501501",kind:"生物制品",spec:"0.21g*24粒/盒",minFactor:24,availQty:192,sendQty:192,sendUnit:"粒",batchNo:"20260305",expire:"2027-09-04",outPrice:26.50,splitOutPrice:1.10,stockQty:192,stockBig:8,stopQty:0,preQty:0,vendor:"上海上药信谊药厂有限公司",inPrice:18.00,splitInPrice:0.75,outTotal:5088.00,supplier:"上海信谊",approval:"S10950031",essential:"否",negotiated:"否",volume:"否",inTime:"2026-03-06 10:00:00",inNo:"RK20260306001",prepUnit:"粒",minPkgUnit:"盒",toxic:"否",spirit:"否",form:"胶囊剂",insCode:"XA07FA0101010101032",insName:"双歧杆菌",split:"否",priority:"否"},
-    {status:"on",name:"阿托伐他汀钙片",code:"1210501601",kind:"西药",spec:"20mg*7片/盒",minFactor:7,availQty:350,sendQty:350,sendUnit:"片",batchNo:"20260208",expire:"2028-02-07",outPrice:38.90,splitOutPrice:5.56,stockQty:350,stockBig:50,stopQty:0,preQty:0,vendor:"辉瑞制药有限公司",inPrice:26.50,splitInPrice:3.79,outTotal:13615.00,supplier:"辉瑞制药",approval:"H20051408",essential:"是",negotiated:"是",volume:"是",inTime:"2026-02-09 09:45:20",inNo:"RK20260209002",prepUnit:"片",minPkgUnit:"盒",toxic:"否",spirit:"否",form:"片剂",insCode:"XC10AA0101010101032",insName:"阿托伐他汀",split:"是",priority:"是"},
-    {status:"on",name:"氯雷他定片",code:"1210501701",kind:"西药",spec:"10mg*6片/盒",minFactor:6,availQty:150,sendQty:150,sendUnit:"片",batchNo:"20260315",expire:"2028-03-14",outPrice:16.80,splitOutPrice:2.80,stockQty:150,stockBig:25,stopQty:0,preQty:0,vendor:"扬子江药业集团",inPrice:11.20,splitInPrice:1.87,outTotal:2520.00,supplier:"扬子江药业",approval:"H20040785",essential:"否",negotiated:"否",volume:"否",inTime:"2026-03-16 14:20:00",inNo:"RK20260316003",prepUnit:"片",minPkgUnit:"盒",toxic:"否",spirit:"否",form:"片剂",insCode:"XR02A0101010101032",insName:"氯雷他定",split:"是",priority:"否"}
+    {locationId:"loc-c1-A", locationName:"A区-01", status:"on",name:"阿莫西林胶囊",code:"1210500301",kind:"西药",spec:"0.25g*24粒/盒",minFactor:24,availQty:480,sendQty:480,sendUnit:"粒",batchNo:"20260101",expire:"2028-01-01",outPrice:12.50,splitOutPrice:0.52,stockQty:480,stockBig:20,stopQty:0,preQty:0,vendor:"华北制药股份有限公司",inPrice:8.20,splitInPrice:0.34,outTotal:6000.00,supplier:"山东医药集团",approval:"H13023917",essential:"是",negotiated:"否",volume:"是",firstInTime:"2026-01-05 09:20:11",inNos:["RK20260105001","RK20260106002"],prepUnit:"粒",minPkgUnit:"盒",toxic:"否",spirit:"否",form:"胶囊剂",insCode:"XJ01CA0401010101032",insName:"阿莫西林",split:"是",priority:"是"},
+    {locationId:"loc-c1-A", locationName:"A区-01", status:"on",name:"阿莫西林胶囊",code:"1210500301",kind:"西药",spec:"0.5g*12粒/盒",minFactor:12,availQty:240,sendQty:240,sendUnit:"粒",batchNo:"20260115",expire:"2028-01-14",outPrice:18.80,splitOutPrice:1.57,stockQty:240,stockBig:20,stopQty:0,preQty:0,vendor:"石药集团中诺药业（石家庄）有限公司",inPrice:12.50,splitInPrice:1.04,outTotal:4512.00,supplier:"济南医药供应站",approval:"H20033293",essential:"是",negotiated:"否",volume:"否",firstInTime:"2026-01-16 14:05:33",inNos:["RK20260116003"],prepUnit:"粒",minPkgUnit:"盒",toxic:"否",spirit:"否",form:"胶囊剂",insCode:"XJ01CA0401010102032",insName:"阿莫西林",split:"是",priority:"否"},
+    {locationId:"loc-c1-B", locationName:"B区-03", status:"on",name:"头孢克肟分散片",code:"1210500501",kind:"西药",spec:"0.1g*6片/盒",minFactor:6,availQty:180,sendQty:180,sendUnit:"片",batchNo:"20260201",expire:"2028-01-31",outPrice:24.60,splitOutPrice:4.10,stockQty:180,stockBig:30,stopQty:0,preQty:0,vendor:"上海信谊药厂有限公司",inPrice:16.80,splitInPrice:2.80,outTotal:4428.00,supplier:"上海医药分销",approval:"H31020315",essential:"否",negotiated:"是",volume:"否",firstInTime:"2026-02-02 10:12:45",inNos:["RK20260202001","RK20260203004","RK20260205006"],prepUnit:"片",minPkgUnit:"盒",toxic:"否",spirit:"否",form:"片剂",insCode:"XJ01DD0401010101032",insName:"头孢克肟",split:"是",priority:"是"},
+    {locationId:"loc-c1-B", locationName:"B区-03", status:"off",name:"布洛芬缓释胶囊",code:"1210500601",kind:"西药",spec:"0.3g*20粒/盒",minFactor:20,availQty:0,sendQty:0,sendUnit:"粒",batchNo:"20251201",expire:"2027-11-30",outPrice:22.00,splitOutPrice:1.10,stockQty:0,stockBig:0,stopQty:60,preQty:0,vendor:"中美天津史克制药有限公司",inPrice:15.00,splitInPrice:0.75,outTotal:0,supplier:"天津医药集团",approval:"H10900089",essential:"是",negotiated:"否",volume:"否",firstInTime:"2025-12-05 08:30:00",inNos:["RK20251205002","RK20251208003"],prepUnit:"粒",minPkgUnit:"盒",toxic:"否",spirit:"否",form:"胶囊剂",insCode:"XJ02CA0301010101032",insName:"布洛芬",split:"是",priority:"否"},
+    {locationId:"loc-c2-A", locationName:"A区-05", status:"on",name:"奥美拉唑肠溶胶囊",code:"1210500901",kind:"西药",spec:"20mg*14粒/盒",minFactor:14,availQty:280,sendQty:280,sendUnit:"粒",batchNo:"20260301",expire:"2028-02-28",outPrice:35.80,splitOutPrice:2.56,stockQty:280,stockBig:20,stopQty:0,preQty:0,vendor:"常州四药制药有限公司",inPrice:24.00,splitInPrice:1.71,outTotal:10024.00,supplier:"常州药业股份",approval:"H10950185",essential:"是",negotiated:"是",volume:"是",firstInTime:"2026-03-02 16:40:20",inNos:["RK20260302005"],prepUnit:"粒",minPkgUnit:"盒",toxic:"否",spirit:"否",form:"胶囊剂",insCode:"XA02BC0101010101032",insName:"奥美拉唑",split:"是",priority:"是"},
+    {locationId:"loc-c2-A", locationName:"A区-05", status:"on",name:"复方甘草片",code:"1210501101",kind:"中成药",spec:"100片/瓶",minFactor:100,availQty:500,sendQty:500,sendUnit:"片",batchNo:"20260215",expire:"2027-08-14",outPrice:8.50,splitOutPrice:0.085,stockQty:500,stockBig:5,stopQty:0,preQty:0,vendor:"广州白云山制药股份有限公司",inPrice:5.20,splitInPrice:0.052,outTotal:4250.00,supplier:"广州医药集团",approval:"Z44021234",essential:"否",negotiated:"否",volume:"否",firstInTime:"2026-02-16 11:22:10",inNos:["RK20260216002","RK20260218007"],prepUnit:"片",minPkgUnit:"瓶",toxic:"否",spirit:"否",form:"片剂",insCode:"ZC09AA0101010101032",insName:"复方甘草",split:"否",priority:"否"},
+    {locationId:"loc-a1-1-A", locationName:"门诊区-A1", status:"on",name:"硝苯地平控释片",code:"1210501201",kind:"西药",spec:"30mg*7片/盒",minFactor:7,availQty:210,sendQty:210,sendUnit:"片",batchNo:"20260310",expire:"2028-03-09",outPrice:29.80,splitOutPrice:4.26,stockQty:210,stockBig:30,stopQty:0,preQty:0,vendor:"拜耳医药保健有限公司",inPrice:20.50,splitInPrice:2.93,outTotal:6258.00,supplier:"拜耳医药保健",approval:"J20180015",essential:"是",negotiated:"是",volume:"否",firstInTime:"2026-03-11 09:15:00",inNos:["RK20260311001","RK20260312003","RK20260313005"],prepUnit:"片",minPkgUnit:"盒",toxic:"否",spirit:"否",form:"片剂",insCode:"XC08CA0101010101032",insName:"硝苯地平",split:"是",priority:"是"},
+    {locationId:"loc-a1-1-B", locationName:"门诊区-B2", status:"on",name:"盐酸二甲双胍片",code:"1210501301",kind:"西药",spec:"0.5g*20片/盒",minFactor:20,availQty:400,sendQty:400,sendUnit:"片",batchNo:"20260120",expire:"2028-01-19",outPrice:15.60,splitOutPrice:0.78,stockQty:400,stockBig:20,stopQty:0,preQty:0,vendor:"中美上海施贵宝制药有限公司",inPrice:10.20,splitInPrice:0.51,outTotal:6240.00,supplier:"上海施贵宝",approval:"H31020246",essential:"是",negotiated:"否",volume:"是",firstInTime:"2026-01-21 13:50:33",inNos:["RK20260121004"],prepUnit:"片",minPkgUnit:"盒",toxic:"否",spirit:"否",form:"片剂",insCode:"XA10BA0101010101032",insName:"二甲双胍",split:"是",priority:"否"},
+    {locationId:"loc-a1-2-A", locationName:"急诊区-A1", status:"on",name:"左氧氟沙星片",code:"1210501401",kind:"西药",spec:"0.5g*4片/盒",minFactor:4,availQty:120,sendQty:120,sendUnit:"片",batchNo:"20260220",expire:"2028-02-19",outPrice:32.00,splitOutPrice:8.00,stockQty:120,stockBig:30,stopQty:0,preQty:0,vendor:"第一三共制药（北京）有限公司",inPrice:22.00,splitInPrice:5.50,outTotal:3840.00,supplier:"第一三共制药",approval:"H20000567",essential:"否",negotiated:"否",volume:"否",firstInTime:"2026-02-21 15:30:00",inNos:["RK20260221002","RK20260222003"],prepUnit:"片",minPkgUnit:"盒",toxic:"否",spirit:"否",form:"片剂",insCode:"XJ01MA0101010101032",insName:"左氧氟沙星",split:"是",priority:"是"},
+    {locationId:"loc-v1-A", locationName:"西药柜-A1", status:"on",name:"双歧杆菌三联活菌胶囊",code:"1210501501",kind:"生物制品",spec:"0.21g*24粒/盒",minFactor:24,availQty:192,sendQty:192,sendUnit:"粒",batchNo:"20260305",expire:"2027-09-04",outPrice:26.50,splitOutPrice:1.10,stockQty:192,stockBig:8,stopQty:0,preQty:0,vendor:"上海上药信谊药厂有限公司",inPrice:18.00,splitInPrice:0.75,outTotal:5088.00,supplier:"上海信谊",approval:"S10950031",essential:"否",negotiated:"否",volume:"否",firstInTime:"2026-03-06 10:00:00",inNos:["RK20260306001"],prepUnit:"粒",minPkgUnit:"盒",toxic:"否",spirit:"否",form:"胶囊剂",insCode:"XA07FA0101010101032",insName:"双歧杆菌",split:"否",priority:"否"},
+    {locationId:"loc-v1-B", locationName:"中成药柜-B2", status:"on",name:"阿托伐他汀钙片",code:"1210501601",kind:"西药",spec:"20mg*7片/盒",minFactor:7,availQty:350,sendQty:350,sendUnit:"片",batchNo:"20260208",expire:"2028-02-07",outPrice:38.90,splitOutPrice:5.56,stockQty:350,stockBig:50,stopQty:0,preQty:0,vendor:"辉瑞制药有限公司",inPrice:26.50,splitInPrice:3.79,outTotal:13615.00,supplier:"辉瑞制药",approval:"H20051408",essential:"是",negotiated:"是",volume:"是",firstInTime:"2026-02-09 09:45:20",inNos:["RK20260209002","RK20260210004"],prepUnit:"片",minPkgUnit:"盒",toxic:"否",spirit:"否",form:"片剂",insCode:"XC10AA0101010101032",insName:"阿托伐他汀",split:"是",priority:"是"},
+    {locationId:"loc-c1-A", locationName:"A区-01", status:"on",name:"氯雷他定片",code:"1210501701",kind:"西药",spec:"10mg*6片/盒",minFactor:6,availQty:150,sendQty:150,sendUnit:"片",batchNo:"20260315",expire:"2028-03-14",outPrice:16.80,splitOutPrice:2.80,stockQty:150,stockBig:25,stopQty:0,preQty:0,vendor:"扬子江药业集团",inPrice:11.20,splitInPrice:1.87,outTotal:2520.00,supplier:"扬子江药业",approval:"H20040785",essential:"否",negotiated:"否",volume:"否",firstInTime:"2026-03-16 14:20:00",inNos:["RK20260316003","RK20260317005","RK20260318008"],prepUnit:"片",minPkgUnit:"盒",toxic:"否",spirit:"否",form:"片剂",insCode:"XR02A0101010101032",insName:"氯雷他定",split:"是",priority:"否"}
   ];
 
   var VENDORS = ["华北制药股份有限公司","哈药集团制药总厂","石药集团中诺药业（石家庄）有限公司","山东鲁抗医药股份有限公司","珠海联邦制药股份有限公司中山分公司","上海信谊药厂有限公司","广州白云山制药股份有限公司","中美天津史克制药有限公司","常州四药制药有限公司","拜耳医药保健有限公司","中美上海施贵宝制药有限公司","第一三共制药（北京）有限公司","上海上药信谊药厂有限公司","辉瑞制药有限公司","扬子江药业集团"];
@@ -651,6 +647,19 @@
     DRUG_KINDS.forEach(function(k){var o=document.createElement("option");o.value=k;o.textContent=k;$("#fKind").appendChild(o);});
     FORMS.forEach(function(f){var o=document.createElement("option");o.value=f;o.textContent=f;$("#fForm").appendChild(o);});
     CLASSES.forEach(function(c){var o=document.createElement("option");o.value=c;o.textContent=c;$("#fClass").appendChild(o);});
+    // 初始化库位下拉：从 MOCK.locations 取全部库位并集（不含"全部库位"）
+    if(window.MOCK && MOCK.locations){
+      var locSel = $("#selLocation");
+      var allLocs = [];
+      Object.keys(MOCK.locations).forEach(function(phId){
+        MOCK.locations[phId].forEach(function(loc){ allLocs.push(loc); });
+      });
+      allLocs.forEach(function(loc){
+        var o=document.createElement("option");
+        o.value=loc.id; o.textContent=loc.name; locSel.appendChild(o);
+      });
+      if(allLocs.length>0) locSel.value = allLocs[0].id;
+    }
   }
 
   /* ===== 渲染表格 ===== */
@@ -693,8 +702,8 @@
           '<td>'+esc(r.essential)+'</td>'+
           '<td>'+esc(r.negotiated)+'</td>'+
           '<td>'+esc(r.volume)+'</td>'+
-          '<td>'+esc(r.inTime)+'</td>'+
-          '<td>'+esc(r.inNo)+'</td>'+
+          '<td>'+esc(r.firstInTime)+'</td>'+
+          '<td title="'+esc((r.inNos||[]).join("、"))+'">'+esc((r.inNos||[]).slice(0,2).join("、"))+((r.inNos||[]).length>2?"…":"")+'</td>'+
           '<td>'+esc(r.prepUnit)+'</td>'+
           '<td>'+esc(r.minPkgUnit)+'</td>'+
           '<td>'+esc(r.toxic)+'</td>'+
@@ -745,6 +754,7 @@
 
   /* ===== 筛选 ===== */
   function doFilter(){
+    var locId = $("#selLocation").value;   // 必选库位条件
     var name=$("#fName").value.trim().toLowerCase(), vendor=$("#pkVendorInput").value.trim();
     var cls=$("#fClass").value, kind=$("#fKind").value, status=$("#fStatus").value, split=$("#fSplit").value;
     var supplier=$("#pkSupplierInput").value.trim(), stockOp=$("#fStockOp").value, stockVal=parseFloat($("#fStockVal").value);
@@ -752,6 +762,8 @@
     var toxic=$("#fToxic").value, spirit=$("#fSpirit").value, form=$("#fForm").value;
 
     ST.filtered = BATCHES.filter(function(r){
+      // 库位为必选条件（不能选"全部库位"）
+      if(locId && r.locationId !== locId) return false;
       if(name && r.name.toLowerCase().indexOf(name)<0 && r.code.toLowerCase().indexOf(name)<0) return false;
       if(vendor && r.vendor!==vendor) return false;
       if(kind && r.kind!==kind) return false;
@@ -784,7 +796,10 @@
     $("#pkSupplierInput").value=""; $("#pkSupplierInput").classList.remove("is-filled");
     $$("#filterBar select").forEach(function(s){if(s.id!=="fStockOp") s.value="";});
     $("#fStockVal").value="";
-    ST.filtered=BATCHES.slice(); ST.page=1; renderTable();
+    // 重置库位到第一个（必选条件，无"全部"）
+    var locSel = $("#selLocation");
+    if(locSel.options.length>0) locSel.value = locSel.options[0].value;
+    doFilter();
   }
 
   /* ===== pk 选择器 ===== */
@@ -845,7 +860,7 @@
       $("#fApproval").value=r.approval;
       $("#fBatchNo").value=r.batchNo;
       $("#fExpire").value=r.expire;
-      $("#fProduce").value=r.inTime.split(" ")[0];
+      $("#fProduce").value=r.firstInTime.split(" ")[0];
       $("#fInPrice").value=r.inPrice;
       $("#fOutPrice").value=r.outPrice;
       $("#pkSupInput").value=r.supplier; $("#pkSupInput").classList.add("is-filled");
@@ -904,6 +919,8 @@
     $("#btnReset").addEventListener("click", resetFilter);
     $("#btnExport").addEventListener("click", function(){toast("导出成功（模拟）");});
     $("#btnAddBatch").addEventListener("click", function(){openBatchDrawer(null);});
+    // 库位切换 → 重新筛选
+    $("#selLocation").addEventListener("change", doFilter);
 
     // 筛选展开/收起
     $("#btnToggle").addEventListener("click", function(){
@@ -997,14 +1014,19 @@
           splitOutPrice:+(outPrice/factor).toFixed(2),splitInPrice:+(inPrice/factor).toFixed(2),supplier:sup});
         toast("保存成功");
       }else{
+        var locSel = $("#selLocation");
         var newRec={
+          locationId: locSel.value,
+          locationName: locSel.selectedOptions[0] ? locSel.selectedOptions[0].textContent : "",
           status:"on",name:d.name,code:d.code,kind:"西药",spec:d.spec,minFactor:factor,
           availQty:0,sendQty:0,sendUnit:"盒",batchNo:batchNo,expire:expire,
           outPrice:outPrice,splitOutPrice:+(outPrice/factor).toFixed(2),stockQty:0,stockBig:0,
           stopQty:0,preQty:0,vendor:d.vendor,inPrice:inPrice,splitInPrice:+(inPrice/factor).toFixed(2),
           outTotal:0,supplier:sup,approval:d.approval,essential:"否",
-          negotiated:"否",volume:"否",inTime:new Date().toLocaleString("zh-CN",{hour12:false}).replace(/\//g,"-"),
-          inNo:"RK"+Date.now().toString().slice(-10),prepUnit:"盒",minPkgUnit:"盒",
+          negotiated:"否",volume:"否",
+          firstInTime: new Date().toLocaleString("zh-CN",{hour12:false}).replace(/\//g,"-"),
+          inNos: ["RK"+Date.now().toString().slice(-10)],
+          prepUnit:"盒",minPkgUnit:"盒",
           toxic:"否",spirit:"否",form:"—",insCode:"—",insName:d.name,split:"否",priority:"否"
         };
         BATCHES.unshift(newRec);
@@ -1096,7 +1118,7 @@
 
   initSelects();
   bindEvents();
-  renderTable();
+  doFilter();  // 初始化后按默认库位过滤
 })();
 </script>
   <script src="nav.js"></script>

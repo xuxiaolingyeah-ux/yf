@@ -279,8 +279,6 @@
             </div>
           </div>
           <div class="bm-acts">
-            <button class="btn" id="btnExport">导出</button>
-            <button class="btn" id="btnSplit">批量拆零</button>
             <button class="btn" id="btnPriority">批量优先出库</button>
             <button class="btn btn-primary" id="btnAddBatch">新增批次</button>
           </div>
@@ -917,7 +915,6 @@
   function bindEvents(){
     $("#btnSearch").addEventListener("click", doFilter);
     $("#btnReset").addEventListener("click", resetFilter);
-    $("#btnExport").addEventListener("click", function(){toast("导出成功（模拟）");});
     $("#btnAddBatch").addEventListener("click", function(){openBatchDrawer(null);});
     // 库位切换 → 重新筛选
     $("#selLocation").addEventListener("change", doFilter);
@@ -1066,7 +1063,6 @@
     });
 
     // 批量操作：已勾选则直接设置；未勾选则打开选择抽屉
-    $("#btnSplit").addEventListener("click",function(){batchApply("split","拆零");});
     $("#btnPriority").addEventListener("click",function(){batchApply("priority","优先出库");});
     function batchApply(field, label){
       if(listSel.size===0){ openActDrawer(field==="split"?"split":"priority"); return; }

@@ -4022,13 +4022,15 @@ body.black-open .drawer.is-black { transform: translateX(0); }
 .sys-user-btn {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 4px 8px;
-  border-radius: 8px;
+  gap: 6px;
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 6px;
   cursor: pointer;
   user-select: none;
+  color: var(--text-inverse);
 }
-.sys-user-btn:hover { background: var(--bg-page); }
+.sys-user-btn:hover { background: rgba(255, 255, 255, 0.14); }
 .sys-avatar,
 .sys-pop-avatar {
   width: 30px;
@@ -4043,9 +4045,9 @@ body.black-open .drawer.is-black { transform: translateX(0); }
   flex: none;
 }
 .sys-user-meta { display: flex; flex-direction: column; line-height: 1.25; }
-.sys-user-name { font-size: 13px; font-weight: 600; color: var(--text-primary); }
-.sys-user-sub { font-size: 11px; color: var(--text-tertiary); }
-.sys-user-caret { width: 14px; height: 14px; color: var(--text-tertiary); }
+.sys-user-name { font-size: 13px; font-weight: 500; color: var(--text-inverse); }
+.sys-user-sub { font-size: 11px; color: rgba(255, 255, 255, 0.7); }
+.sys-user-caret { width: 14px; height: 14px; color: rgba(255, 255, 255, 0.75); }
 .sys-user-pop {
   position: absolute;
   right: 0;

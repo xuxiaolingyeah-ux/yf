@@ -161,9 +161,7 @@
     wrap.id = "sysUser";
     wrap.innerHTML =
       '<div class="sys-user-btn" id="sysUserBtn">' +
-        '<span class="sys-avatar">' + me.name.charAt(0) + "</span>" +
-        '<span class="sys-user-meta"><span class="sys-user-name">' + me.name + "</span>" +
-        '<span class="sys-user-sub">' + me.roleName + "</span></span>" +
+        '<span class="sys-user-name">' + me.name + "</span>" +
         svg('<path d="M6 9l6 6 6-6"/>', "sys-user-caret") +
       "</div>" +
       '<div class="sys-user-pop" id="sysUserPop">' +

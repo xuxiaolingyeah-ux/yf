@@ -1095,7 +1095,12 @@
     var h = now.getHours();
     var greet = h < 12 ? "上午好" : (h < 18 ? "下午好" : "晚上好");
     var wd = ["星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"][now.getDay()];
-    $("hmGreet").textContent = greet + "，赵敏";
+    var greetUser = "赵敏";
+    try {
+      var su = JSON.parse(sessionStorage.getItem("SEL_USER") || "null");
+      if (su && su.name) greetUser = su.name;
+    } catch (e) { /* ignore */ }
+    $("hmGreet").textContent = greet + "，" + greetUser;
     $("hmDate").textContent = now.getFullYear() + "年" + (now.getMonth() + 1) + "月" + now.getDate() + "日 " + wd;
   })();
   renderPeriod();

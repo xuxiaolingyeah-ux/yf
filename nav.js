@@ -115,21 +115,105 @@
     });
   }
 
-  function syncUser() {
-    var name = "赵敏";
+  /* ---------- 统一账号菜单 ---------- */
+  var FALLBACK_USERS = [
+    { id: "u1", account: "wangfang", name: "王芳", org: "青河村卫生室", role: "village", roleName: "村室发起人" },
+    { id: "u2", account: "liqiang", name: "李强", org: "城东社区卫生服务中心", role: "member", roleName: "成员机构（可发起、可审核）" },
+    { id: "u3", account: "zhaomin", name: "赵敏", org: "区域中心药房", role: "center", roleName: "中心药房审核人" },
+    { id: "u4", account: "chenjing", name: "陈静", org: "区域中心药房", role: "pharmacist", roleName: "中心药房·发起人" }
+  ];
+
+  function demoUsers() {
+    return (window.MOCK && MOCK.users && MOCK.users.length) ? MOCK.users : FALLBACK_USERS;
+  }
+
+  function currentUser() {
     try {
       var raw = sessionStorage.getItem("SEL_USER");
       if (raw) {
         var u = JSON.parse(raw);
-        if (u && u.name) name = u.name;
+        if (u && u.name) return u;
       }
     } catch (e) { /* ignore */ }
-    var nameEl = document.querySelector(".header-user-name");
-    var avatarEl = document.querySelector(".header-avatar");
-    if (nameEl) nameEl.textContent = name;
-    if (avatarEl) avatarEl.textContent = name.charAt(0);
+    var list = demoUsers();
+    return list.filter(function (u) { return u.name === "赵敏"; })[0] || list[0];
+  }
+
+  function renderUser() {
+    var right = document.querySelector(".header-right") || document.querySelector(".header-inner");
+    if (!right) return;
+    var old = document.getElementById("sysUser");
+    if (old) old.parentNode.removeChild(old);
+
+    var me = currentUser();
+    var list = demoUsers();
+    var items = list.map(function (u) {
+      var active = u.account === me.account || u.name === me.name;
+      return '<div class="sys-pop-item' + (active ? " active" : "") + '" data-acc="' + u.account + '">' +
+        '<span class="sys-pop-avatar" style="width:26px;height:26px;font-size:12px;">' + u.name.charAt(0) + "</span>" +
+        '<span class="sys-pop-item-info"><span class="sys-pop-item-name">' + u.name + "</span>" +
+        '<span class="sys-pop-item-role">' + u.org + " · " + u.roleName + "</span></span>" +
+        (active ? '<span class="sys-pop-check">当前</span>' : "") + "</div>";
+    }).join("");
+
+    var wrap = document.createElement("div");
+    wrap.className = "sys-user";
+    wrap.id = "sysUser";
+    wrap.innerHTML =
+      '<div class="sys-user-btn" id="sysUserBtn">' +
+        '<span class="sys-avatar">' + me.name.charAt(0) + "</span>" +
+        '<span class="sys-user-meta"><span class="sys-user-name">' + me.name + "</span>" +
+        '<span class="sys-user-sub">' + me.roleName + "</span></span>" +
+        svg('<path d="M6 9l6 6 6-6"/>', "sys-user-caret") +
+      "</div>" +
+      '<div class="sys-user-pop" id="sysUserPop">' +
+        '<div class="sys-pop-head"><span class="sys-pop-avatar">' + me.name.charAt(0) + "</span>" +
+          '<div><div class="sys-pop-name">' + me.name + "</div>" +
+          '<div class="sys-pop-org">' + me.org + " · " + me.roleName + "</div></div></div>" +
+        '<div class="sys-pop-label">切换演示身份</div>' + items +
+        '<div class="sys-pop-foot"><button type="button" data-act="home">返回首页</button>' +
+        '<button type="button" data-act="logout">退出登录</button></div>' +
+      "</div>";
+    right.appendChild(wrap);
+
+    var btn = document.getElementById("sysUserBtn");
+    var pop = document.getElementById("sysUserPop");
+    btn.addEventListener("click", function (e) {
+      e.stopPropagation();
+      pop.classList.toggle("show");
+    });
+    document.addEventListener("click", function () { pop.classList.remove("show"); });
+    pop.addEventListener("click", function (e) { e.stopPropagation(); });
+
+    wrap.querySelectorAll(".sys-pop-item").forEach(function (el) {
+      el.addEventListener("click", function () {
+        var acc = el.getAttribute("data-acc");
+        var user = demoUsers().filter(function (u) { return u.account === acc; })[0];
+        if (!user) return;
+        try {
+          sessionStorage.setItem("SEL_USER", JSON.stringify({
+            id: user.id, account: user.account, name: user.name,
+            org: user.org, role: user.role, roleName: user.roleName
+          }));
+        } catch (err) { /* ignore */ }
+        location.reload();
+      });
+    });
+
+    pop.querySelectorAll("[data-act]").forEach(function (el) {
+      el.addEventListener("click", function () {
+        var act = el.getAttribute("data-act");
+        if (act === "home") { location.href = "home.html"; return; }
+        try {
+          ["SEL_USER", "OB_USER", "SI_USER", "SA_USER", "SR_USER", "SC_RETURN"].forEach(function (k) {
+            sessionStorage.removeItem(k);
+          });
+        } catch (err) { /* ignore */ }
+        location.href = "login.html";
+      });
+    });
   }
 
   render();
-  syncUser();
+  renderUser();
 })();

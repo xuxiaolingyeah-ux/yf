@@ -132,7 +132,8 @@
 <!-- toast -->
 <div id="toast" style="position:fixed;top:70px;left:50%;transform:translateX(-50%);padding:8px 16px;background:rgba(0,0,0,.78);color:#fff;border-radius:4px;font-size:13px;z-index:9999;display:none"></div>
 
-<script src="outbound-common.js"></script>
+<script src="identity.js"></script>
+  <script src="outbound-common.js"></script>
 <script>
 (function(){
   "use strict";
@@ -182,6 +183,18 @@
   }).join("");
 
   /* ===== 查询 / 重置 ===== */
+  function p2(n){ return (n < 10 ? "0" : "") + n; }
+  /* 草稿没有提交时间，用创建时写入 id 的时间戳排序，保证新草稿排在最前 */
+  function sortKey(b){
+    if(b.submitTime) return b.submitTime;
+    var m = /^c(\d{12,})$/.exec(b.id || "");
+    if(m){
+      var d = new Date(Number(m[1]));
+      return d.getFullYear() + "-" + p2(d.getMonth()+1) + "-" + p2(d.getDate()) + " "
+        + p2(d.getHours()) + ":" + p2(d.getMinutes()) + ":" + p2(d.getSeconds());
+    }
+    return "";
+  }
   function applyFilter(){
     var code = $("#fCode").value.trim();
     var org = $("#fOrg").value, inOrg = $("#fInOrg").value, method = $("#fMethod").value;
@@ -197,7 +210,11 @@
       if(t1 && d < t1) return false;
       if(t2 && d > t2) return false;
       return true;
-    }).sort(function(a,b){ return (b.submitTime||"") < (a.submitTime||"") ? -1 : 1; });
+    }).sort(function(a,b){
+      var ka = sortKey(a), kb = sortKey(b);
+      if(ka === kb) return 0;
+      return ka < kb ? 1 : -1;
+    });
     ST.page = 1;
     renderTable();
   }

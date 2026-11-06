@@ -94,6 +94,8 @@
 .od-foot .btns { display: flex; justify-content: flex-end; gap: 8px; }
 /* 追溯码弹窗 */
 .od-trace .modal { width: 720px; max-width: 92vw; }
+.od-trace-search { margin-bottom: 12px; }
+.od-trace-search .input { width: 260px; }
 .od-trace-table { width: 100%; border-collapse: collapse; font-size: 13px; }
 .od-trace-table th { background: var(--table-head); height: 36px; padding: 0 10px; text-align: left; font-weight: 500; color: var(--text-secondary); white-space: nowrap; border-bottom: 1px solid var(--border); }
 .od-trace-table td { padding: 7px 10px; border-bottom: 1px solid var(--border); white-space: nowrap; font-family: var(--font-mono); font-size: 12px; }
@@ -247,6 +249,9 @@
       </button>
     </div>
     <div class="modal-body">
+      <div class="od-trace-search">
+        <input class="input" id="traceKey" placeholder="输入药品追溯码搜索" autocomplete="off">
+      </div>
       <table class="od-trace-table">
         <thead><tr><th style="width:56px">序号</th><th>药品追溯码</th><th>药品名称</th><th>规格</th><th>批次号</th></tr></thead>
         <tbody id="traceBody"></tbody>
@@ -262,7 +267,8 @@
 <!-- toast -->
 <div id="toast" style="position:fixed;top:70px;left:50%;transform:translateX(-50%);padding:8px 16px;background:rgba(0,0,0,.78);color:#fff;border-radius:4px;font-size:13px;z-index:9999;display:none"></div>
 
-<script src="outbound-common.js"></script>
+<script src="identity.js"></script>
+  <script src="outbound-common.js"></script>
 <script>
 (function(){
   "use strict";
@@ -377,17 +383,33 @@
     });
   }
 
-  /* ===== 追溯码清单（只读） ===== */
-  function openTrace(i){
-    var it = bill.items[i];
-    var ts = it.traces || [];
-    $("#traceTitle").textContent = "追溯码清单 — " + it.name + " " + it.spec;
-    $("#traceEmpty").style.display = ts.length ? "none" : "block";
-    $("#traceBody").innerHTML = ts.map(function(code, idx){
+  /* ===== 追溯码清单（只读，支持按追溯码搜索） ===== */
+  var traceIdx = -1;
+  function renderTraceList(){
+    var it = bill.items[traceIdx];
+    if(!it) return;
+    var key = $("#traceKey").value.trim();
+    var all = it.traces || [];
+    var shown = all.map(function(c, i){ return { c: c, i: i }; }).filter(function(x){
+      return !key || x.c.indexOf(key) >= 0;
+    });
+    $("#traceEmpty").textContent = all.length ? "未找到匹配的追溯码" : "该药品暂无追溯码";
+    $("#traceEmpty").style.display = shown.length ? "none" : "block";
+    $("#traceBody").innerHTML = shown.map(function(x){
+      var code = x.c, idx = x.i;
       return "<tr><td>"+(idx+1)+"</td><td>"+OB.esc(code)+"</td><td>"+OB.esc(it.name)+"</td><td>"+OB.esc(it.spec)+"</td><td>"+OB.esc(it.batch)+"</td></tr>";
     }).join("");
-    $("#traceMask").classList.add("show");
   }
+  function openTrace(i){
+    traceIdx = i;
+    var it = bill.items[i];
+    $("#traceTitle").textContent = "追溯码清单 — " + it.name + " " + it.spec;
+    $("#traceKey").value = "";
+    renderTraceList();
+    $("#traceMask").classList.add("show");
+    setTimeout(function(){ $("#traceKey").focus(); }, 60);
+  }
+  $("#traceKey").addEventListener("input", renderTraceList);
   function closeTrace(){ $("#traceMask").classList.remove("show"); }
   $("#traceClose").addEventListener("click", closeTrace);
   $("#traceOk").addEventListener("click", closeTrace);

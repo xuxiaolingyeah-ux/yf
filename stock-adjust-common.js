@@ -61,7 +61,15 @@
 
   /* ---------- 当前用户 ---------- */
   function currentUser() {
-    try { var u = JSON.parse(sessionStorage.getItem("SA_USER") || "null"); if (u && u.id) return u; } catch (e) {}
+    try {
+      /* 优先跟随全站统一身份，按姓名映射到本模块用户 */
+      var sel = JSON.parse(sessionStorage.getItem("SEL_USER") || "null");
+      if (sel && sel.name) {
+        var matched = USERS.filter(function (x) { return x.name === sel.name; })[0];
+        if (matched) return matched;
+      }
+      var u = JSON.parse(sessionStorage.getItem("SA_USER") || "null"); if (u && u.id) return u;
+    } catch (e) {}
     return USERS[0];
   }
   function setUser(id) {

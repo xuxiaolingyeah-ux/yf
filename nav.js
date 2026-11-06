@@ -80,7 +80,9 @@
 
   function hasRole(roles, role) {
     if (!roles) return true;
-    return roles.indexOf(role) >= 0;
+    /* pharmacist（中心药房·发起人）与 center（中心药房审核人）共享全部权限 */
+    var normalized = role === "pharmacist" ? "center" : role;
+    return roles.indexOf(normalized) >= 0;
   }
 
   function render() {

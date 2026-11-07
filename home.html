@@ -290,51 +290,35 @@
 .hm-task-count.is-danger { color: #B91C1C; }
 .hm-task-count.is-muted { color: var(--text-tertiary); }
 
-/* 智能补货建议 */
-.hm-ai {
-  margin-top: 12px;
-  background: linear-gradient(155deg, #F7FAFF 0%, var(--bg-page) 62%);
-  border-color: rgba(43, 127, 255, .16);
-}
+/* AI 高低储分析 */
 .hm-ai-head { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
 .hm-ai-title { font-size: 13px; font-weight: 500; color: var(--text-primary); }
 .hm-ai-sub { font-size: 12px; color: var(--text-tertiary); border: 1px solid var(--border); border-radius: 10px; padding: 1px 8px; }
-.hm-ai-item { padding: 8px 0; border-bottom: 1px solid var(--border); }
-.hm-ai-item:last-child { border-bottom: none; }
-.hm-ai-line { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
-.hm-ai-name { font-size: 13px; color: var(--text-primary); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-.hm-ai-qty { font-size: 13px; font-weight: 500; color: var(--text-primary); font-family: var(--font-mono); white-space: nowrap; }
-.hm-ai-qty em { font-style: normal; font-size: 12px; font-weight: 400; color: var(--text-tertiary); margin-right: 3px; }
-.hm-ai-subline { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 4px; }
-.hm-ai-meta { font-size: 12px; color: var(--text-tertiary); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-.hm-fb { display: flex; align-items: center; gap: 4px; flex: none; }
-.hm-fb-btn {
-  width: 22px; height: 22px;
-  display: inline-grid; place-items: center;
-  border: 1px solid transparent; border-radius: 50%;
-  background: transparent;
-  color: var(--text-tertiary); cursor: pointer;
+.hm-ai-list { max-height: 138px; overflow-y: auto; padding-right: 4px; scrollbar-gutter: stable; }
+.hm-ai-list::-webkit-scrollbar { width: 4px; }
+.hm-ai-list::-webkit-scrollbar-thumb { background: rgba(0,0,0,.18); border-radius: 2px; }
+.hm-ai-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
 }
-.hm-fb-btn svg { width: 13px; height: 13px; }
-.hm-fb-btn:hover:not(.is-up):not(.is-down) { color: var(--text-secondary); background: var(--bg-page); border-color: var(--border); }
-.hm-fb-btn.is-up { color: var(--primary-dark); background: var(--primary-light); border-color: var(--primary-light); }
-.hm-fb-btn.is-down { color: #A8071A; background: var(--danger-bg); border-color: var(--danger-border); }
+.hm-ai-row:last-child { border-bottom: none; }
+.hm-ai-rank { flex: none; width: 16px; font-family: var(--font-mono); font-size: 12px; color: var(--text-tertiary); }
+.hm-ai-name { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: var(--text-primary); }
+.hm-ai-grain { flex: none; font-size: 11px; color: var(--text-tertiary); }
+.hm-ai-type { flex: none; color: var(--text-secondary); }
+.hm-ai-lv { flex: none; width: 24px; text-align: right; font-weight: 500; }
+.hm-ai-lv.lv-high { color: #B91C1C; }
+.hm-ai-lv.lv-mid { color: #B45309; }
 .hm-ai-foot {
   display: flex; align-items: center; justify-content: space-between;
   margin-top: 2px; padding-top: 10px;
   border-top: 1px solid var(--border);
 }
-.hm-ai-gen { font-size: 12px; color: var(--text-tertiary); }
-.hm-pager { display: flex; align-items: center; gap: 6px; }
-.hm-pg-btn {
-  width: 24px; height: 24px; padding: 0;
-  display: grid; place-items: center;
-  border: 1px solid var(--border); border-radius: var(--radius);
-  background: var(--bg-white); color: var(--text-secondary);
-}
-.hm-pg-btn:hover:not(:disabled) { border-color: var(--primary); color: var(--primary-dark); }
-.hm-pg-btn:disabled { color: var(--text-placeholder); cursor: not-allowed; }
-.hm-pg-num { font-size: 12px; color: var(--text-secondary); font-family: var(--font-mono); }
+.hm-ai-gen { font-size: 12px; color: var(--text-tertiary); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.hm-ai-more { flex: none; font-size: 12px; color: var(--primary-dark); cursor: pointer; text-decoration: none; }
+.hm-ai-more:hover { text-decoration: underline; }
 
 /* toast */
 .hm-toast {
@@ -349,8 +333,6 @@
 
 /* 焦点可见性 */
 .hm-ico:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
-.hm-fb-btn:focus-visible,
-.hm-pg-btn:focus-visible,
 .hm-range-ok:focus-visible,
 .hm-date:focus-visible {
   outline: 2px solid var(--primary); outline-offset: 2px;
@@ -561,24 +543,16 @@
 
             <div class="hm-panel hm-ai">
               <div class="hm-ai-head">
-                <span class="hm-ai-title">智能补货建议</span>
-                <span class="hm-ai-sub">仅供参考</span>
+                <span class="hm-ai-title">AI 高低储分析</span>
+                <span class="hm-ai-sub">每日 09:00 更新</span>
               </div>
-              <div id="hmAiList"><div class="hm-ai-item"><div class="hm-ai-line"><span class="hm-ai-name" title="头孢曲松钠 1g">头孢曲松钠 1g</span><span class="hm-ai-qty"><em>建议</em>1,200 支</span></div><div class="hm-ai-subline"><span class="hm-ai-meta">依据：可用 0 支 · 日均 148 支 · 近 3 月日均 +18%</span><span class="hm-fb"><button class="hm-fb-btn" data-fb="up" aria-label="点赞" aria-pressed="false"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="8.5" width="3" height="9" rx="1"></rect><path d="M6 17.5V9.3l3.2-5.1a1.9 1.9 0 0 1 3.4 1.1l-.6 3.4h4a1.7 1.7 0 0 1 1.65 2.15l-1.05 4.4a1.7 1.7 0 0 1-1.65 1.25H6z"></path></svg></button><button class="hm-fb-btn" data-fb="down" aria-label="踩一脚" aria-pressed="false"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><g transform="translate(0,20) scale(1,-1)"><rect x="2.5" y="8.5" width="3" height="9" rx="1"></rect><path d="M6 17.5V9.3l3.2-5.1a1.9 1.9 0 0 1 3.4 1.1l-.6 3.4h4a1.7 1.7 0 0 1 1.65 2.15l-1.05 4.4a1.7 1.7 0 0 1-1.65 1.25H6z"></path></g></svg></button></span></div></div><div class="hm-ai-item"><div class="hm-ai-line"><span class="hm-ai-name" title="氯化钠注射液 0.9% 500ml">氯化钠注射液 0.9% 500ml</span><span class="hm-ai-qty"><em>建议</em>2,000 瓶</span></div><div class="hm-ai-subline"><span class="hm-ai-meta">依据：可用 210 瓶 · 日均 460 瓶 · 按 7 天安全库存补足</span><span class="hm-fb"><button class="hm-fb-btn" data-fb="up" aria-label="点赞" aria-pressed="false"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="8.5" width="3" height="9" rx="1"></rect><path d="M6 17.5V9.3l3.2-5.1a1.9 1.9 0 0 1 3.4 1.1l-.6 3.4h4a1.7 1.7 0 0 1 1.65 2.15l-1.05 4.4a1.7 1.7 0 0 1-1.65 1.25H6z"></path></svg></button><button class="hm-fb-btn" data-fb="down" aria-label="踩一脚" aria-pressed="false"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><g transform="translate(0,20) scale(1,-1)"><rect x="2.5" y="8.5" width="3" height="9" rx="1"></rect><path d="M6 17.5V9.3l3.2-5.1a1.9 1.9 0 0 1 3.4 1.1l-.6 3.4h4a1.7 1.7 0 0 1 1.65 2.15l-1.05 4.4a1.7 1.7 0 0 1-1.65 1.25H6z"></path></g></svg></button></span></div></div><div class="hm-ai-item"><div class="hm-ai-line"><span class="hm-ai-name" title="人血白蛋白 10g">人血白蛋白 10g</span><span class="hm-ai-qty"><em>建议</em>40 瓶</span></div><div class="hm-ai-subline"><span class="hm-ai-meta">依据：可用 6 瓶 · 日均 12 瓶 · 缺药登记 4 次，到货 7 天</span><span class="hm-fb"><button class="hm-fb-btn" data-fb="up" aria-label="点赞" aria-pressed="false"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="8.5" width="3" height="9" rx="1"></rect><path d="M6 17.5V9.3l3.2-5.1a1.9 1.9 0 0 1 3.4 1.1l-.6 3.4h4a1.7 1.7 0 0 1 1.65 2.15l-1.05 4.4a1.7 1.7 0 0 1-1.65 1.25H6z"></path></svg></button><button class="hm-fb-btn" data-fb="down" aria-label="踩一脚" aria-pressed="false"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><g transform="translate(0,20) scale(1,-1)"><rect x="2.5" y="8.5" width="3" height="9" rx="1"></rect><path d="M6 17.5V9.3l3.2-5.1a1.9 1.9 0 0 1 3.4 1.1l-.6 3.4h4a1.7 1.7 0 0 1 1.65 2.15l-1.05 4.4a1.7 1.7 0 0 1-1.65 1.25H6z"></path></g></svg></button></span></div></div><div class="hm-ai-item"><div class="hm-ai-line"><span class="hm-ai-name" title="注射用头孢他啶 1g">注射用头孢他啶 1g</span><span class="hm-ai-qty"><em>建议</em>800 支</span></div><div class="hm-ai-subline"><span class="hm-ai-meta">依据：可用 40 支 · 日均 92 支 · 近 3 月日均 +12%</span><span class="hm-fb"><button class="hm-fb-btn" data-fb="up" aria-label="点赞" aria-pressed="false"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="8.5" width="3" height="9" rx="1"></rect><path d="M6 17.5V9.3l3.2-5.1a1.9 1.9 0 0 1 3.4 1.1l-.6 3.4h4a1.7 1.7 0 0 1 1.65 2.15l-1.05 4.4a1.7 1.7 0 0 1-1.65 1.25H6z"></path></svg></button><button class="hm-fb-btn" data-fb="down" aria-label="踩一脚" aria-pressed="false"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><g transform="translate(0,20) scale(1,-1)"><rect x="2.5" y="8.5" width="3" height="9" rx="1"></rect><path d="M6 17.5V9.3l3.2-5.1a1.9 1.9 0 0 1 3.4 1.1l-.6 3.4h4a1.7 1.7 0 0 1 1.65 2.15l-1.05 4.4a1.7 1.7 0 0 1-1.65 1.25H6z"></path></g></svg></button></span></div></div><div class="hm-ai-item"><div class="hm-ai-line"><span class="hm-ai-name" title="葡萄糖注射液 5% 500ml">葡萄糖注射液 5% 500ml</span><span class="hm-ai-qty"><em>建议</em>1,600 袋</span></div><div class="hm-ai-subline"><span class="hm-ai-meta">依据：可用 320 袋 · 日均 510 袋 · 消耗平稳</span><span class="hm-fb"><button class="hm-fb-btn" data-fb="up" aria-label="点赞" aria-pressed="false"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="8.5" width="3" height="9" rx="1"></rect><path d="M6 17.5V9.3l3.2-5.1a1.9 1.9 0 0 1 3.4 1.1l-.6 3.4h4a1.7 1.7 0 0 1 1.65 2.15l-1.05 4.4a1.7 1.7 0 0 1-1.65 1.25H6z"></path></svg></button><button class="hm-fb-btn" data-fb="down" aria-label="踩一脚" aria-pressed="false"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><g transform="translate(0,20) scale(1,-1)"><rect x="2.5" y="8.5" width="3" height="9" rx="1"></rect><path d="M6 17.5V9.3l3.2-5.1a1.9 1.9 0 0 1 3.4 1.1l-.6 3.4h4a1.7 1.7 0 0 1 1.65 2.15l-1.05 4.4a1.7 1.7 0 0 1-1.65 1.25H6z"></path></g></svg></button></span></div></div></div>
+              <div class="hm-ai-list" id="hmAiList"></div>
               <div class="hm-ai-foot">
-                <span class="hm-ai-gen">09:00 生成 · 反馈仅用于优化预测</span>
-                <div class="hm-pager">
-                  <button class="hm-pg-btn" id="hmPgPrev" aria-label="上一页" disabled="">
-                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"></path></svg>
-                  </button>
-                  <span class="hm-pg-num" id="hmPgNum">1 / 2</span>
-                  <button class="hm-pg-btn" id="hmPgNext" aria-label="下一页">
-                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg>
-                  </button>
-                </div>
+                <span class="hm-ai-gen">已触发传统高低储预警的配置对象不重复展示</span>
+                <a class="hm-ai-more" href="stock-level.html?aiReport=1">查看完整日报</a>
               </div>
             </div>
-          </section>
+</section>
 
         </div>
       </div>
@@ -591,7 +565,7 @@
 <script>
 (function () {
   var $ = function (id) { return document.getElementById(id); };
-  var ST = { period: "month", customFrom: "", customTo: "", topMode: "amt", aiPage: 1 };
+  var ST = { period: "month", customFrom: "", customTo: "", topMode: "amt" };
 
   /* ---------- 数据 ---------- */
   var M6 = ["6 月", "7 月", "8 月", "9 月", "10 月", "11 月"];
@@ -708,21 +682,12 @@
     { name: "药品高储预警", count: 3, href: "stock-alert.html", tone: "muted" }
   ];
 
-  var AI_PAGES = [
-    [
-      { name: "头孢曲松钠 1g", qty: "1,200 支", meta: "可用 0 支 · 日均 148 支 · 近 3 月日均 +18%" },
-      { name: "氯化钠注射液 0.9% 500ml", qty: "2,000 瓶", meta: "可用 210 瓶 · 日均 460 瓶 · 按 7 天安全库存补足" },
-      { name: "人血白蛋白 10g", qty: "40 瓶", meta: "可用 6 瓶 · 日均 12 瓶 · 缺药登记 4 次，到货 7 天" },
-      { name: "注射用头孢他啶 1g", qty: "800 支", meta: "可用 40 支 · 日均 92 支 · 近 3 月日均 +12%" },
-      { name: "葡萄糖注射液 5% 500ml", qty: "1,600 袋", meta: "可用 320 袋 · 日均 510 袋 · 消耗平稳" }
-    ],
-    [
-      { name: "硫酸镁注射液 10ml", qty: "600 支", meta: "可用 95 支 · 日均 130 支 · 去年同期需求上浮" },
-      { name: "注射用甲泼尼龙 40mg", qty: "200 支", meta: "可用 12 支 · 日均 36 支 · 缺药登记 2 次" },
-      { name: "复方氯化钠注射液 500ml", qty: "900 瓶", meta: "可用 180 瓶 · 日均 260 瓶 · 消耗平稳" },
-      { name: "奥美拉唑注射液 40mg", qty: "500 支", meta: "可用 8 支 · 日均 45 支 · 近 3 月日均 +22%" },
-      { name: "甘露醇注射液 20% 250ml", qty: "300 瓶", meta: "可用 60 瓶 · 日均 88 瓶 · 消耗平稳" }
-    ]
+  var AI_RISKS = [
+    { rank: 1, name: "999感冒灵颗粒", grain: "品规级", type: "潜在断供风险", level: "高" },
+    { rank: 2, name: "阿莫西林胶囊 0.25g", grain: "厂商级", type: "低储值可能偏低", level: "高" },
+    { rank: 3, name: "盐酸二甲双胍片 0.5g", grain: "品规级", type: "高储值可能偏高", level: "中" },
+    { rank: 4, name: "布洛芬混悬液 100ml", grain: "厂商级", type: "库存积压风险", level: "中" },
+    { rank: 5, name: "某抗菌药物注射剂", grain: "品规级", type: "消耗异常波动", level: "中" }
   ];
 
   /* ---------- 趋势图 ---------- */
@@ -870,42 +835,21 @@
     }).join("");
   }
 
-  /* ---------- 补货建议 ---------- */
-  function thumbs(dir) {
-    var g = dir === "up" ? "" : '<g transform="translate(0,20) scale(1,-1)">';
-    var end = dir === "up" ? "" : "</g>";
-    return '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">' +
-      g +
-      '<rect x="2.5" y="8.5" width="3" height="9" rx="1"/>' +
-      '<path d="M6 17.5V9.3l3.2-5.1a1.9 1.9 0 0 1 3.4 1.1l-.6 3.4h4a1.7 1.7 0 0 1 1.65 2.15l-1.05 4.4a1.7 1.7 0 0 1-1.65 1.25H6z"/>' +
-      end + "</svg>";
-  }
-
+  /* ---------- AI 高低储分析 ---------- */
   function renderAi() {
-    var rows = AI_PAGES[ST.aiPage - 1] || [];
-    $("hmAiList").innerHTML = rows.map(function (r) {
-      return '<div class="hm-ai-item">' +
-        '<div class="hm-ai-line">' +
-          '<span class="hm-ai-name" title="' + r.name + '">' + r.name + "</span>" +
-          '<span class="hm-ai-qty"><em>建议</em>' + r.qty + "</span>" +
-        "</div>" +
-        '<div class="hm-ai-subline">' +
-          '<span class="hm-ai-meta">依据：' + r.meta + "</span>" +
-          '<span class="hm-fb">' +
-            '<button class="hm-fb-btn" data-fb="up" aria-label="点赞" aria-pressed="false">' + thumbs("up") + "</button>" +
-            '<button class="hm-fb-btn" data-fb="down" aria-label="踩一脚" aria-pressed="false">' + thumbs("down") + "</button>" +
-          "</span>" +
-        "</div>" +
+    $("hmAiList").innerHTML = AI_RISKS.map(function (r) {
+      var lv = r.level === "高" ? "lv-high" : "lv-mid";
+      return '<div class="hm-ai-row">' +
+        '<span class="hm-ai-rank">' + r.rank + "</span>" +
+        '<span class="hm-ai-name" title="' + r.name + '">' + r.name + "</span>" +
+        '<span class="hm-ai-grain">' + r.grain + "</span>" +
+        '<span class="hm-ai-type">' + r.type + "</span>" +
+        '<span class="hm-ai-lv ' + lv + '">' + r.level + "</span>" +
       "</div>";
     }).join("");
-    $("hmPgNum").textContent = ST.aiPage + " / " + AI_PAGES.length;
-    $("hmPgPrev").disabled = ST.aiPage === 1;
-    $("hmPgNext").disabled = ST.aiPage === AI_PAGES.length;
   }
 
   /* ---------- 事件 ---------- */
-  $("hmMask").addEventListener("click", closeDrawer);
-  $("hmDrawerClose").addEventListener("click", closeDrawer);
   Array.prototype.forEach.call($("hmPeriod").children, function (el) {
     el.addEventListener("click", function () {
       var p = el.getAttribute("data-period");
@@ -935,30 +879,6 @@
       ST.topMode = el.getAttribute("data-mode");
       renderTop();
     });
-  });
-
-  $("hmPgPrev").addEventListener("click", function () {
-    if (ST.aiPage > 1) { ST.aiPage -= 1; renderAi(); }
-  });
-  $("hmPgNext").addEventListener("click", function () {
-    if (ST.aiPage < AI_PAGES.length) { ST.aiPage += 1; renderAi(); }
-  });
-
-  $("hmAiList").addEventListener("click", function (e) {
-    var btn = e.target.closest(".hm-fb-btn");
-    if (!btn) return;
-    var wrap = btn.parentNode;
-    var kind = btn.getAttribute("data-fb");
-    var wasOn = btn.classList.contains(kind === "up" ? "is-up" : "is-down");
-    Array.prototype.forEach.call(wrap.querySelectorAll(".hm-fb-btn"), function (b) {
-      b.classList.remove("is-up", "is-down");
-      b.setAttribute("aria-pressed", "false");
-    });
-    if (!wasOn) {
-      btn.classList.add(kind === "up" ? "is-up" : "is-down");
-      btn.setAttribute("aria-pressed", "true");
-      toast(kind === "up" ? "已点赞，反馈已记录" : "已记录，会用于优化预测");
-    }
   });
 
   document.addEventListener("click", function (e) {

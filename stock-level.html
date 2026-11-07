@@ -1463,6 +1463,8 @@ body.daily-open #dailyMask { opacity: 1 !important; pointer-events: auto !import
     $("btnAIDaily").onclick = openAIDaily;
     $("dailyClose").onclick = closeAIDaily;
     $("dailyMask").onclick = closeAIDaily;
+    // 支持首页带参直达：stock-level.html?aiReport=1 自动打开 AI 日报
+    if (new URLSearchParams(location.search).get("aiReport") === "1") openAIDaily();
     $("rulesClose").onclick = closeRulesDrawer;
     $("rulesMask").onclick = closeRulesDrawer;
 

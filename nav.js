@@ -16,7 +16,8 @@
      roles 省略 = 四角色均可见；
      ["center"] 仅中心药房（含 pharmacist，发起人/审核人共享权限）；
      ["center","member","village"] = 三类药房人员可见、HIS 对接人员不可见；
-     ["his"] 仅 HIS 对接人员可见。 */
+     ["his"] 仅 HIS 对接人员可见。
+     hideFor = 账号例外名单：命中账号（如 zhaomin/chenjing）即使角色匹配也隐藏该项。 */
   var C3 = ["center", "member", "village"];
   var NAV = [
     { name: "首页", icon: "home", href: "home.html", files: ["home.html"], roles: C3 },
@@ -47,14 +48,15 @@
       { name: "中药饮片处方开具", href: "prescription-tcm.html", files: ["prescription-tcm.html"] },
       { name: "西药处方开具", href: "prescription-western.html", files: ["prescription-western.html"] },
       { name: "门诊处方发药", href: "prescription-dispensing.html", files: ["prescription-dispensing.html"] },
+      { name: "门诊处方送药", href: "prescription-delivery.html", files: ["prescription-delivery.html"] },
       { name: "门诊处方退药", href: "prescription-return.html", files: ["prescription-return.html"] },
       { name: "预减管理", href: "pre-deduction.html", files: ["pre-deduction.html"] }
     ], roles: ["his"] },
     { name: "统计查询", icon: "stat", items: [
       { name: "库存查询", href: "stock-query.html", files: ["stock-query.html"], roles: ["center"] },
-      { name: "处方查询", href: "prescription-query.html", files: ["prescription-query.html"], roles: ["center"] },
-      { name: "药品消耗明细", href: "drug-consumption.html", files: ["drug-consumption.html"], roles: ["center"] }
-    ], roles: ["center"] },
+      { name: "处方查询", href: "prescription-query.html", files: ["prescription-query.html"], roles: ["center", "his"], hideFor: ["zhaomin", "chenjing"] },
+      { name: "药品消耗明细", href: "drug-consumption.html", files: ["drug-consumption.html"], roles: ["center", "his"] }
+    ], roles: ["center", "his"] },
     { name: "系统维护", icon: "sys", items: [
       { name: "企业管理", href: "manufacturer-manage.html", files: ["manufacturer-manage.html", "blacklist-manage.html"], roles: ["center"] },
       { name: "供应商分配", href: "supplier-allocation.html", files: ["supplier-allocation.html"], roles: ["center"] },
@@ -89,6 +91,11 @@
     return roles.indexOf(normalized) >= 0;
   }
 
+  /* 账号级例外：hideFor 名单中的账号即使角色匹配也隐藏 */
+  function hiddenFor(item, me) {
+    return !!(item.hideFor && me && item.hideFor.indexOf(me.account) >= 0);
+  }
+
   function render() {
     var side = document.getElementById("appSide") || document.querySelector(".app-side");
     if (!side) return;
@@ -110,7 +117,7 @@
       }
       /* 过滤二级子项 */
       var visibleItems = (group.items || []).filter(function (item) {
-        return hasRole(item.roles, role);
+        return hasRole(item.roles, role) && !hiddenFor(item, me);
       });
       if (!visibleItems.length) return;
 

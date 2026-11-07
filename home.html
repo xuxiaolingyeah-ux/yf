@@ -291,9 +291,10 @@
 .hm-task-count.is-muted { color: var(--text-tertiary); }
 
 /* AI 高低储分析 */
-.hm-ai-head { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.hm-ai { margin-top: 12px; }
+.hm-ai-head { display: flex; align-items: center; gap: 12px; margin-bottom: 4px; }
 .hm-ai-title { font-size: 13px; font-weight: 500; color: var(--text-primary); }
-.hm-ai-sub { font-size: 12px; color: var(--text-tertiary); border: 1px solid var(--border); border-radius: 10px; padding: 1px 8px; }
+.hm-ai-upd { margin-left: auto; font-size: 12px; color: var(--text-tertiary); }
 .hm-ai-list { max-height: 138px; overflow-y: auto; padding-right: 4px; scrollbar-gutter: stable; }
 .hm-ai-list::-webkit-scrollbar { width: 4px; }
 .hm-ai-list::-webkit-scrollbar-thumb { background: rgba(0,0,0,.18); border-radius: 2px; }
@@ -544,12 +545,12 @@
             <div class="hm-panel hm-ai">
               <div class="hm-ai-head">
                 <span class="hm-ai-title">AI 高低储分析</span>
-                <span class="hm-ai-sub">每日 09:00 更新</span>
+                <span class="hm-ai-upd" id="hmAiUpdated"></span>
+                <a class="hm-ai-more" href="stock-level.html?aiReport=1">查看完整日报</a>
               </div>
               <div class="hm-ai-list" id="hmAiList"></div>
               <div class="hm-ai-foot">
-                <span class="hm-ai-gen">已触发传统高低储预警的配置对象不重复展示</span>
-                <a class="hm-ai-more" href="stock-level.html?aiReport=1">查看完整日报</a>
+                <span class="hm-ai-gen">已触发传统高低储预警的配置对象不重复展示 · 建议不自动修改配置</span>
               </div>
             </div>
 </section>
@@ -847,6 +848,8 @@
         '<span class="hm-ai-lv ' + lv + '">' + r.level + "</span>" +
       "</div>";
     }).join("");
+    var now = new Date();
+    $("hmAiUpdated").textContent = "更新于 " + (now.getMonth() + 1) + "月" + now.getDate() + "日 09:00";
   }
 
   /* ---------- 事件 ---------- */

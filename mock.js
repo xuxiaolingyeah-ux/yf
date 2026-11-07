@@ -581,13 +581,14 @@ window.MOCK.parseVkey = function (key) {
 
 /* ==========================================================================
    药品目录遴选：演示账号与申请数据
-   role: village=村室发起人 member=成员机构 center=中心药房
+   role: village=村室发起人 member=成员机构 center=中心药房 pharmacist=中心药房·发起人 his=HIS对接人员
    status: draft/member/center/rejected/approved
    ========================================================================== */
 MOCK.users = [
   { id: "u1", account: "wangfang", password: "123456", name: "王芳", org: "青河村卫生室", role: "village", roleName: "村室发起人" },
   { id: "u2", account: "liqiang", password: "123456", name: "李强", org: "城东社区卫生服务中心", role: "member", roleName: "成员机构（可发起、可审核）" },
-  { id: "u3", account: "zhaomin", password: "123456", name: "赵敏", org: "区域中心药房", role: "center", roleName: "中心药房审核人" }
+  { id: "u3", account: "zhaomin", password: "123456", name: "赵敏", org: "区域中心药房", role: "center", roleName: "中心药房审核人" },
+  { id: "u5", account: "sunlei", password: "123456", name: "孙磊", org: "信息中心 · HIS 对接", role: "his", roleName: "HIS 对接人员" }
 ];
 
 MOCK.selections = [

@@ -13,49 +13,53 @@
   };
 
   /* 一级 → 二级 → 页面。左侧导航只渲染到二级，三级页面由页面内按钮进入。
-     roles: ["center"] 表示仅中心药房可见；省略或写三角色表示全员可见。 */
+     roles 省略 = 四角色均可见；
+     ["center"] 仅中心药房（含 pharmacist，发起人/审核人共享权限）；
+     ["center","member","village"] = 三类药房人员可见、HIS 对接人员不可见；
+     ["his"] 仅 HIS 对接人员可见。 */
+  var C3 = ["center", "member", "village"];
   var NAV = [
-    { name: "首页", icon: "home", href: "home.html", files: ["home.html"] },
+    { name: "首页", icon: "home", href: "home.html", files: ["home.html"], roles: C3 },
     { name: "药品管理", icon: "drug", items: [
       { name: "药品目录管理", href: "drug-catalog.html", files: ["drug-catalog.html", "drug-create.html"], roles: ["center"] },
-      { name: "机构药品目录", href: "org-drug-catalog.html", files: ["org-drug-catalog.html", "org-drug-select.html"] },
-      { name: "药品目录遴选", href: "drug-selection.html", files: ["drug-selection.html", "drug-selection-create.html", "drug-selection-detail.html"] }
+      { name: "机构药品目录", href: "org-drug-catalog.html", files: ["org-drug-catalog.html", "org-drug-select.html"], roles: C3 },
+      { name: "药品目录遴选", href: "drug-selection.html", files: ["drug-selection.html", "drug-selection-create.html", "drug-selection-detail.html"], roles: C3 }
     ] },
     { name: "库存管理", icon: "stock", items: [
-      { name: "药品期初管理", href: "init-stock.html", files: ["init-stock.html"] },
-      { name: "药品批次管理", href: "batch-management.html", files: ["batch-management.html"] },
-      { name: "药品入库", href: "stock-in.html", files: ["stock-in.html", "stock-in-create.html", "stock-in-detail.html"] },
-      { name: "药品出库", href: "outbound.html", files: ["outbound.html", "outbound-create.html", "outbound-detail.html"] },
-      { name: "药品增损", href: "stock-adjust.html", files: ["stock-adjust.html", "stock-adjust-create.html", "stock-adjust-detail.html"] },
-      { name: "药品调拨管理", href: "transfer.html", files: ["transfer.html", "transfer-create.html", "transfer-detail.html", "transfer-outbound.html", "transfer-inbound.html", "transfer-audit-center.html", "transfer-audit-member.html"] },
-      { name: "药品退库", href: "stock-return.html", files: ["stock-return.html", "stock-return-create.html", "stock-return-detail.html"] },
-      { name: "库存盘点", href: "stock-check.html", files: ["stock-check.html", "stock-check-count.html", "stock-check-detail.html"] }
+      { name: "药品期初管理", href: "init-stock.html", files: ["init-stock.html"], roles: C3 },
+      { name: "药品批次管理", href: "batch-management.html", files: ["batch-management.html"], roles: ["center"] },
+      { name: "药品入库", href: "stock-in.html", files: ["stock-in.html", "stock-in-create.html", "stock-in-detail.html"], roles: C3 },
+      { name: "药品出库", href: "outbound.html", files: ["outbound.html", "outbound-create.html", "outbound-detail.html"], roles: C3 },
+      { name: "药品增损", href: "stock-adjust.html", files: ["stock-adjust.html", "stock-adjust-create.html", "stock-adjust-detail.html"], roles: C3 },
+      { name: "药品调拨管理", href: "transfer.html", files: ["transfer.html", "transfer-create.html", "transfer-detail.html", "transfer-outbound.html", "transfer-inbound.html", "transfer-audit-center.html", "transfer-audit-member.html"], roles: C3 },
+      { name: "药品退库", href: "stock-return.html", files: ["stock-return.html", "stock-return-create.html", "stock-return-detail.html"], roles: C3 },
+      { name: "库存盘点", href: "stock-check.html", files: ["stock-check.html", "stock-check-count.html", "stock-check-detail.html"], roles: ["center"] }
     ] },
     { name: "物价管理", icon: "price", items: [
       { name: "药品调价", href: "price-adjust.html", files: ["price-adjust.html", "price-adjust-create.html", "price-adjust-detail.html"], roles: ["center"] }
     ], roles: ["center"] },
     { name: "预警管理", icon: "alert", items: [
-      { name: "药品效期预警", href: "drug-expiry-warning.html", files: ["drug-expiry-warning.html"] },
-      { name: "药品高低储设置", href: "stock-level.html", files: ["stock-level.html"] },
-      { name: "药品高低储预警", href: "stock-alert.html", files: ["stock-alert.html"] }
-    ] },
+      { name: "药品效期预警", href: "drug-expiry-warning.html", files: ["drug-expiry-warning.html"], roles: ["center"] },
+      { name: "药品高低储设置", href: "stock-level.html", files: ["stock-level.html"], roles: ["center"] },
+      { name: "药品高低储预警", href: "stock-alert.html", files: ["stock-alert.html"], roles: ["center"] }
+    ], roles: ["center"] },
     { name: "门诊处方管理", icon: "rx", items: [
       { name: "中药饮片处方开具", href: "prescription-tcm.html", files: ["prescription-tcm.html"] },
       { name: "西药处方开具", href: "prescription-western.html", files: ["prescription-western.html"] },
       { name: "门诊处方发药", href: "prescription-dispensing.html", files: ["prescription-dispensing.html"] },
       { name: "门诊处方退药", href: "prescription-return.html", files: ["prescription-return.html"] },
       { name: "预减管理", href: "pre-deduction.html", files: ["pre-deduction.html"] }
-    ] },
+    ], roles: ["his"] },
     { name: "统计查询", icon: "stat", items: [
-      { name: "库存查询", href: "stock-query.html", files: ["stock-query.html"] },
-      { name: "处方查询", href: "prescription-query.html", files: ["prescription-query.html"] },
-      { name: "药品消耗明细", href: "drug-consumption.html", files: ["drug-consumption.html"] }
+      { name: "库存查询", href: "stock-query.html", files: ["stock-query.html"], roles: ["center", "member"] },
+      { name: "处方查询", href: "prescription-query.html", files: ["prescription-query.html"], roles: ["center"] },
+      { name: "药品消耗明细", href: "drug-consumption.html", files: ["drug-consumption.html"], roles: ["center"] }
     ] },
     { name: "系统维护", icon: "sys", items: [
       { name: "企业管理", href: "manufacturer-manage.html", files: ["manufacturer-manage.html", "blacklist-manage.html"], roles: ["center"] },
       { name: "供应商分配", href: "supplier-allocation.html", files: ["supplier-allocation.html"], roles: ["center"] },
       { name: "医保对码", href: "medical-insurance-mapping.html", files: ["medical-insurance-mapping.html"], roles: ["center"] },
-      { name: "库位维护", href: "pharmacy-maintenance.html", files: ["pharmacy-maintenance.html"] },
+      { name: "库位维护", href: "pharmacy-maintenance.html", files: ["pharmacy-maintenance.html"], roles: C3 },
       { name: "特殊参数设置", href: "param-settings.html", files: ["param-settings.html"], roles: ["center"] }
     ] }
   ];
@@ -139,7 +143,8 @@
     { id: "u1", account: "wangfang", name: "王芳", org: "青河村卫生室", role: "village", roleName: "村室发起人" },
     { id: "u2", account: "liqiang", name: "李强", org: "城东社区卫生服务中心", role: "member", roleName: "成员机构（可发起、可审核）" },
     { id: "u3", account: "zhaomin", name: "赵敏", org: "区域中心药房", role: "center", roleName: "中心药房审核人" },
-    { id: "u4", account: "chenjing", name: "陈静", org: "区域中心药房", role: "pharmacist", roleName: "中心药房·发起人" }
+    { id: "u4", account: "chenjing", name: "陈静", org: "区域中心药房", role: "pharmacist", roleName: "中心药房·发起人" },
+    { id: "u5", account: "sunlei", name: "孙磊", org: "信息中心 · HIS 对接", role: "his", roleName: "HIS 对接人员" }
   ];
 
   function demoUsers() {

@@ -388,6 +388,39 @@
   .hm-kpi:hover { transform: none; }
   .hm-card { animation: none !important; }
 }
+/* ===== 村室/成员机构首页（简化版） ===== */
+.hmq-actions { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
+.hmq-act { background: var(--bg-page); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 14px 10px; text-align: center; cursor: pointer; transition: border-color .15s; }
+.hmq-act:hover { border-color: var(--primary); }
+.hmq-act .hmq-name { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+.hmq-act .hmq-desc { font-size: 12px; color: var(--text-tertiary); margin-top: 2px; }
+.hmq-act.is-main { background: var(--primary); border-color: var(--primary); }
+.hmq-act.is-main .hmq-name { color: #fff; }
+.hmq-act.is-main .hmq-desc { color: rgba(255,255,255,.78); }
+.hmq-cols { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+.hmq-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+.hmq-tab { padding: 4px 12px; border-radius: 999px; border: 1px solid var(--border); font-size: 12px; color: var(--text-secondary); cursor: pointer; background: var(--bg-white); }
+.hmq-tab.is-on { background: var(--primary); border-color: var(--primary); color: #fff; }
+.hmq-rows { margin-top: 10px; border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; background: var(--bg-white); }
+.hmq-row { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-bottom: 1px solid var(--border); cursor: pointer; }
+.hmq-row:last-child { border-bottom: none; }
+.hmq-row:hover { background: var(--bg-page); }
+.hmq-row.is-hide { display: none; }
+.hmq-type { flex: none; font-size: 11px; padding: 2px 8px; border-radius: 4px; background: var(--bg-page); border: 1px solid var(--border); color: var(--text-secondary); }
+.hmq-main { flex: 1; min-width: 0; }
+.hmq-no { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+.hmq-desc { font-size: 12px; color: var(--text-tertiary); margin-top: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hmq-time { flex: none; font-size: 12px; color: var(--text-tertiary); }
+.hmq-st { flex: none; font-size: 12px; padding: 2px 10px; border-radius: 999px; }
+.hmq-st-blue { background: #E6F1FB; color: #185FA5; }
+.hmq-st-amber { background: #FAEEDA; color: #854F0B; }
+.hmq-st-red { background: #FCEBEB; color: #A32D2D; }
+.hmq-st-green { background: #EAF3DE; color: #3B6D11; }
+.hmq-todo { border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 4px 0; background: var(--bg-white); }
+.hmq-todo-item { display: flex; align-items: center; justify-content: space-between; padding: 11px 14px; border-bottom: 1px solid var(--border); cursor: pointer; font-size: 13px; color: var(--text-primary); }
+.hmq-todo-item:last-child { border-bottom: none; }
+.hmq-todo-item:hover { background: var(--bg-page); }
+.hmq-todo-num { font-size: 13px; font-weight: 600; color: #A32D2D; }
 </style>
 </head>
 <body>
@@ -420,7 +453,7 @@
           <div>
             <div class="hm-greet-title" id="hmGreet">上午好，赵敏</div>
             <div class="hm-greet-sub">
-              <span>区域中心药房</span>
+              <span id="hmOrg">区域中心药房</span>
               <span id="hmDate">2026年11月6日 星期五</span>
             </div>
           </div>
@@ -429,7 +462,7 @@
           </div>
         </div>
 
-        <div class="hm-body">
+        <div class="hm-body" id="hmBody">
 
           <!-- ===== 01 整体指标 ===== -->
           <section class="hm-card">
@@ -616,6 +649,14 @@
 (function () {
   var $ = function (id) { return document.getElementById(id); };
   var ST = { period: "month", customFrom: "", customTo: "", topMode: "amt", aiPage: 1 };
+
+  /* ---------- 角色分流 ---------- */
+  /* 村室/成员机构：共享简化首页；HIS 对接人员：无首页，直跳门诊处方；其余（中心药房 pharmacist/center）走默认看板 */
+  var SEL_ME = null;
+  try { SEL_ME = JSON.parse(sessionStorage.getItem("SEL_USER") || "null"); } catch (e) { SEL_ME = null; }
+  var SEL_ROLE = (SEL_ME && SEL_ME.role) || "center";
+  if (SEL_ROLE === "his") { location.replace("prescription-tcm.html"); return; }
+  if (SEL_ROLE === "village" || SEL_ROLE === "member") { renderOrgHome(SEL_ROLE, SEL_ME); return; }
 
   /* ---------- 数据 ---------- */
   var M6 = ["6 月", "7 月", "8 月", "9 月", "10 月", "11 月"];
@@ -1087,6 +1128,121 @@
     t.classList.add("is-on");
     clearTimeout(toastTimer);
     toastTimer = setTimeout(function () { t.classList.remove("is-on"); }, 2000);
+  }
+
+  /* ---------- 村室/成员机构首页（共享，差异仅在待办） ---------- */
+  function renderOrgHome(role, me) {
+    var orgName = (me && me.org) || (role === "member" ? "城东社区卫生服务中心" : "青河村卫生室");
+    var orgEl = document.getElementById("hmOrg");
+    if (orgEl) orgEl.textContent = orgName;
+
+    var now = new Date();
+    var h = now.getHours();
+    var greet = h < 12 ? "上午好" : (h < 18 ? "下午好" : "晚上好");
+    var greetEl = document.getElementById("hmGreet");
+    if (greetEl) greetEl.textContent = greet + "，" + ((me && me.name) || "用户");
+    var wd = ["星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"][now.getDay()];
+    var dateEl = document.getElementById("hmDate");
+    if (dateEl) dateEl.textContent = now.getFullYear() + "年" + (now.getMonth() + 1) + "月" + now.getDate() + "日 " + wd;
+
+    var QUICK = [
+      { name: "发起调拨申请", desc: "向中心药房要药", href: "transfer-create.html", main: true },
+      { name: "药品入库", desc: "登记到货入库", href: "stock-in-create.html" },
+      { name: "药品退库", desc: "退回中心药房", href: "stock-return-create.html" },
+      { name: "机构药品目录", desc: "查看可用药品", href: "org-drug-catalog.html" },
+      { name: "目录遴选申请", desc: "申请新增品种", href: "drug-selection-create.html" }
+    ];
+
+    /* 我的申请单：调拨 / 入库 / 出库 / 增损 / 退库 / 目录遴选 */
+    var APPS = [
+      { key: "db", type: "调拨申请", no: "DB2026110701", desc: "3 个品种：阿莫西林胶囊、奥美拉唑肠溶胶囊、藿香正气水", time: "今天 09:12", st: "中心药房审核中", tone: "blue", href: "transfer.html" },
+      { key: "db", type: "调拨申请", no: "DB2026110503", desc: "5 个品种 · 中心药房已出库", time: "11月5日 14:40", st: "待收货确认", tone: "amber", href: "transfer-inbound.html" },
+      { key: "tk", type: "退库申请", no: "TK2026110302", desc: "2 个品种：近效期药品退回", time: "11月3日 10:05", st: "已驳回", tone: "red", href: "stock-return.html" },
+      { key: "rk", type: "入库申请", no: "RK2026103108", desc: "调拨到货入库 · 5 个品种", time: "10月31日 16:20", st: "已入库", tone: "green", href: "stock-in.html" },
+      { key: "ck", type: "出库申请", no: "CK2026102905", desc: "门诊领用出库 · 4 个品种", time: "10月29日 09:30", st: "审核中", tone: "blue", href: "outbound.html" },
+      { key: "zs", type: "增损申请", no: "ZS2026102811", desc: "报损 2 个品规（运输破损）", time: "10月28日 15:12", st: "审核中", tone: "blue", href: "stock-adjust.html" },
+      { key: "lx", type: "目录遴选", no: "LX2026102809", desc: "四季度补充 · 申请新增 3 个品种", time: "10月28日 09:12", st: "审核中", tone: "blue", href: "drug-selection.html" },
+      { key: "db", type: "调拨申请", no: "DB2026102502", desc: "4 个品种 · 已完成收货入库", time: "10月25日 11:30", st: "已完成", tone: "green", href: "transfer.html" }
+    ];
+
+    var TABS = [
+      { key: "all", name: "全部" },
+      { key: "db", name: "调拨" },
+      { key: "rk", name: "入库" },
+      { key: "ck", name: "出库" },
+      { key: "zs", name: "增损" },
+      { key: "tk", name: "退库" },
+      { key: "lx", name: "遴选" }
+    ];
+
+    /* 待办：村室只关注收货；成员机构需审核村室申请并完成出库/入库 */
+    var TODOS = role === "member" ? [
+      { name: "村室申请待审核", count: 3, href: "transfer.html" },
+      { name: "审核通过 · 待出库", count: 2, href: "outbound.html" },
+      { name: "调拨到货 · 待入库", count: 1, href: "stock-in.html" }
+    ] : [
+      { name: "调拨到货 · 待收货入库", count: 1, href: "transfer-inbound.html" }
+    ];
+    var todoTotal = TODOS.reduce(function (s, t) { return s + t.count; }, 0);
+
+    var quickHtml = QUICK.map(function (q) {
+      return '<div class="hmq-act' + (q.main ? " is-main" : "") + '" data-href="' + q.href + '">' +
+        '<div class="hmq-name">' + q.name + '</div><div class="hmq-desc">' + q.desc + '</div></div>';
+    }).join("");
+
+    var tabsHtml = TABS.map(function (t, i) {
+      return '<span class="hmq-tab' + (i === 0 ? " is-on" : "") + '" data-key="' + t.key + '">' + t.name + '</span>';
+    }).join("");
+
+    var rowsHtml = APPS.map(function (a) {
+      return '<div class="hmq-row" data-key="' + a.key + '" data-href="' + a.href + '">' +
+        '<span class="hmq-type">' + a.type + '</span>' +
+        '<span class="hmq-main"><div class="hmq-no">' + a.no + '</div><div class="hmq-desc" title="' + a.desc + '">' + a.desc + '</div></span>' +
+        '<span class="hmq-time">' + a.time + '</span>' +
+        '<span class="hmq-st hmq-st-' + a.tone + '">' + a.st + '</span></div>';
+    }).join("");
+
+    var todosHtml = TODOS.map(function (t) {
+      return '<div class="hmq-todo-item" data-href="' + t.href + '"><span>' + t.name + '</span>' +
+        '<span class="hmq-todo-num">' + t.count + '</span></div>';
+    }).join("");
+
+    var body = document.getElementById("hmBody");
+    body.innerHTML =
+      '<section class="hm-card">' +
+        '<div class="hm-sec-head"><span class="hm-sec-title">快捷操作</span></div>' +
+        '<div class="hmq-actions">' + quickHtml + '</div>' +
+      '</section>' +
+      '<section class="hm-card">' +
+        '<div class="hm-sec-head"><span class="hm-sec-title">我的申请单</span></div>' +
+        '<div class="hmq-tabs" id="hmqTabs">' + tabsHtml + '</div>' +
+        '<div class="hmq-rows" id="hmqRows">' + rowsHtml + '</div>' +
+      '</section>' +
+      '<section class="hm-card">' +
+        '<div class="hm-sec-head"><span class="hm-sec-title">待办事项</span><span class="hm-list-count">' + todoTotal + '</span></div>' +
+        '<div class="hmq-todo">' + todosHtml + '</div>' +
+      '</section>';
+
+    /* 跳转绑定 */
+    body.querySelectorAll("[data-href]").forEach(function (el) {
+      el.addEventListener("click", function () { location.href = el.getAttribute("data-href"); });
+    });
+
+    /* 申请单类型筛选 */
+    var tabs = body.querySelectorAll(".hmq-tab");
+    tabs.forEach(function (tab) {
+      tab.addEventListener("click", function () {
+        tabs.forEach(function (t) { t.classList.remove("is-on"); });
+        tab.classList.add("is-on");
+        var key = tab.getAttribute("data-key");
+        body.querySelectorAll(".hmq-row").forEach(function (row) {
+          row.classList.toggle("is-hide", key !== "all" && row.getAttribute("data-key") !== key);
+        });
+      });
+    });
+
+    var refresh = document.getElementById("hmRefresh");
+    if (refresh) refresh.addEventListener("click", function () { location.reload(); });
   }
 
   /* ---------- 初始化 ---------- */

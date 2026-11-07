@@ -3887,6 +3887,28 @@ input, select { font-family: inherit; font-size: inherit; }
   width: 800px;
   max-width: calc(100vw - 40px);
 }
+
+/* ---------- 快捷对照：右侧抽屉 ---------- */
+.modal-mask.is-mi-drawer {
+  inset: var(--h-header) 0 0 0;
+  align-items: stretch;
+  justify-content: flex-end;
+}
+.modal.is-mi-drawer {
+  width: 880px;
+  max-width: calc(100vw - 80px);
+  height: 100%;
+  max-height: 100%;
+  border-radius: 0;
+  box-shadow: -6px 0 20px rgba(0, 0, 0, 0.14);
+  animation: miDrawerIn 0.25s ease;
+}
+.modal.is-mi-drawer .mi-steps { margin: -20px -20px 16px; }
+.modal.is-mi-drawer .mi-preview-wrap { max-height: calc(100vh - 300px); }
+@keyframes miDrawerIn {
+  from { transform: translateX(32px); opacity: 0.5; }
+  to { transform: none; opacity: 1; }
+}
 body.black-open .drawer-mask { opacity: 1; pointer-events: auto; }
 body.black-open .drawer.is-black { transform: translateX(0); }
 .drawer.is-black { width: 640px; }

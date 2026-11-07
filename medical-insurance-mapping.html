@@ -513,14 +513,16 @@
   }
 
   /* ---------------- 通用弹窗 / Toast ---------------- */
-  function openModal(html, extraCls) {
+  function openModal(html, extraCls, maskCls) {
     var mask = $("modalMask");
+    mask.className = "modal-mask" + (maskCls ? " " + maskCls : "");
     mask.innerHTML = '<div class="modal' + (extraCls ? " " + extraCls : "") + '">' + html + '</div>';
     mask.classList.add("show");
   }
   function closeModal() {
     var mask = $("modalMask");
     mask.classList.remove("show");
+    mask.className = "modal-mask";
     mask.innerHTML = "";
     state.quick = null;
   }
@@ -720,7 +722,8 @@
       '</div>' +
       '<div class="modal-body">' + quickStepBar(q.step) + panel + '</div>' +
       '<div class="modal-foot">' + quickFoot(q.step) + '</div>',
-      "mi-lg"
+      "is-mi-drawer",
+      "is-mi-drawer"
     );
   }
 

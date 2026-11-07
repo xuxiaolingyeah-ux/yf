@@ -47,6 +47,7 @@
       { name: "中药饮片处方开具", href: "prescription-tcm.html", files: ["prescription-tcm.html"] },
       { name: "西药处方开具", href: "prescription-western.html", files: ["prescription-western.html"] },
       { name: "门诊处方发药", href: "prescription-dispensing.html", files: ["prescription-dispensing.html"] },
+      { name: "门诊处方送药", href: "prescription-delivery.html", files: ["prescription-delivery.html"] },
       { name: "门诊处方退药", href: "prescription-return.html", files: ["prescription-return.html"] },
       { name: "预减管理", href: "pre-deduction.html", files: ["pre-deduction.html"] }
     ], roles: ["his"] },

@@ -51,10 +51,10 @@
       { name: "预减管理", href: "pre-deduction.html", files: ["pre-deduction.html"] }
     ], roles: ["his"] },
     { name: "统计查询", icon: "stat", items: [
-      { name: "库存查询", href: "stock-query.html", files: ["stock-query.html"], roles: ["center", "member"] },
+      { name: "库存查询", href: "stock-query.html", files: ["stock-query.html"], roles: ["center"] },
       { name: "处方查询", href: "prescription-query.html", files: ["prescription-query.html"], roles: ["center"] },
       { name: "药品消耗明细", href: "drug-consumption.html", files: ["drug-consumption.html"], roles: ["center"] }
-    ] },
+    ], roles: ["center"] },
     { name: "系统维护", icon: "sys", items: [
       { name: "企业管理", href: "manufacturer-manage.html", files: ["manufacturer-manage.html", "blacklist-manage.html"], roles: ["center"] },
       { name: "供应商分配", href: "supplier-allocation.html", files: ["supplier-allocation.html"], roles: ["center"] },

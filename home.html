@@ -264,7 +264,8 @@
 .hm-tval { font-size: 13px; font-weight: 500; color: var(--text-primary); font-family: var(--font-mono); white-space: nowrap; text-align: right; }
 
 /* 待办与预警 */
-.hm-grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.hm-split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.45fr); gap: 12px; align-items: stretch; }
+.hm-split-left { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 .hm-list-head {
   display: flex; align-items: center; justify-content: space-between;
   padding-right: 12px;
@@ -291,16 +292,16 @@
 .hm-task-count.is-muted { color: var(--text-tertiary); }
 
 /* AI 高低储分析 */
-.hm-ai { margin-top: 12px; }
+.hm-ai { display: flex; flex-direction: column; min-width: 0; }
 .hm-ai-head { display: flex; align-items: center; gap: 12px; margin-bottom: 4px; }
 .hm-ai-title { font-size: 13px; font-weight: 500; color: var(--text-primary); }
 .hm-ai-upd { margin-left: auto; font-size: 12px; color: var(--text-tertiary); }
-.hm-ai-list { max-height: 138px; overflow-y: auto; padding-right: 4px; scrollbar-gutter: stable; }
+.hm-ai-list { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow-y: auto; padding-right: 4px; scrollbar-gutter: stable; }
 .hm-ai-list::-webkit-scrollbar { width: 4px; }
 .hm-ai-list::-webkit-scrollbar-thumb { background: rgba(0,0,0,.18); border-radius: 2px; }
 .hm-ai-row {
+  flex: 1; min-height: 40px; max-height: 56px;
   display: flex; align-items: center; gap: 10px;
-  padding: 10px 0;
   border-bottom: 1px solid var(--border);
   font-size: 13px;
 }
@@ -312,6 +313,9 @@
 .hm-ai-lv { flex: none; width: 24px; text-align: right; font-weight: 500; }
 .hm-ai-lv.lv-high { color: #B91C1C; }
 .hm-ai-lv.lv-mid { color: #B45309; }
+.hm-ai-suggest { margin-top: 10px; padding: 10px 14px; background: var(--bg-page); border-radius: var(--radius); }
+.hm-ai-suggest-title { font-size: 12px; font-weight: 500; color: var(--text-secondary); margin-bottom: 4px; }
+.hm-ai-suggest-item { font-size: 12px; line-height: 1.8; color: var(--text-tertiary); }
 .hm-ai-foot {
   display: flex; align-items: center; justify-content: space-between;
   margin-top: 2px; padding-top: 10px;
@@ -524,33 +528,41 @@
               <span class="hm-sec-title">待办与预警</span>
             </div>
 
-            <div class="hm-grid2">
-              <div class="hm-panel">
-                <div class="hm-list-head">
-                  <span class="hm-list-title">待处理任务</span>
-                  <span class="hm-list-count">36</span>
+            <div class="hm-split">
+              <div class="hm-split-left">
+                <div class="hm-panel">
+                  <div class="hm-list-head">
+                    <span class="hm-list-title">待处理任务</span>
+                    <span class="hm-list-count">36</span>
+                  </div>
+                  <div class="hm-list" id="hmTaskList"><div class="hm-task" data-href="prescription-dispensing.html"><span>待发药</span><span class="hm-task-count">20</span></div><div class="hm-task" data-href="transfer.html"><span>待处理调拨单</span><span class="hm-task-count">3</span></div><div class="hm-task" data-href="stock-return.html"><span>待处理退库申请</span><span class="hm-task-count">2</span></div><div class="hm-task" data-href="outbound.html"><span>待核出库单</span><span class="hm-task-count">5</span></div><div class="hm-task" data-href="stock-in.html"><span>待核入库单</span><span class="hm-task-count">4</span></div><div class="hm-task" data-href="stock-adjust.html"><span>待核增损单</span><span class="hm-task-count">1</span></div><div class="hm-task" data-href="stock-check.html"><span>待审盘点 / 调价</span><span class="hm-task-count">1</span></div></div>
                 </div>
-                <div class="hm-list" id="hmTaskList"><div class="hm-task" data-href="prescription-dispensing.html"><span>待发药</span><span class="hm-task-count">20</span></div><div class="hm-task" data-href="transfer.html"><span>待处理调拨单</span><span class="hm-task-count">3</span></div><div class="hm-task" data-href="stock-return.html"><span>待处理退库申请</span><span class="hm-task-count">2</span></div><div class="hm-task" data-href="outbound.html"><span>待核出库单</span><span class="hm-task-count">5</span></div><div class="hm-task" data-href="stock-in.html"><span>待核入库单</span><span class="hm-task-count">4</span></div><div class="hm-task" data-href="stock-adjust.html"><span>待核增损单</span><span class="hm-task-count">1</span></div><div class="hm-task" data-href="stock-check.html"><span>待审盘点 / 调价</span><span class="hm-task-count">1</span></div></div>
+
+                <div class="hm-panel">
+                  <div class="hm-list-head">
+                    <span class="hm-list-title">预警任务</span>
+                    <span class="hm-list-count">17</span>
+                  </div>
+                  <div class="hm-list" id="hmAlertList"><div class="hm-task is-quiet"><span>近效期预警</span><span class="hm-task-count">8</span></div><div class="hm-task" data-href="stock-alert.html"><span>药品低储预警</span><span class="hm-task-count">6</span></div><div class="hm-task" data-href="stock-alert.html"><span>药品高储预警</span><span class="hm-task-count">3</span></div></div>
+                </div>
               </div>
 
-              <div class="hm-panel">
-                <div class="hm-list-head">
-                  <span class="hm-list-title">预警任务</span>
-                  <span class="hm-list-count">17</span>
+              <div class="hm-panel hm-ai">
+                <div class="hm-ai-head">
+                  <span class="hm-ai-title">AI 高低储分析</span>
+                  <span class="hm-ai-upd" id="hmAiUpdated"></span>
+                  <a class="hm-ai-more" href="stock-level.html?aiReport=1">查看完整日报</a>
                 </div>
-                <div class="hm-list" id="hmAlertList"><div class="hm-task is-quiet"><span>近效期预警</span><span class="hm-task-count">8</span></div><div class="hm-task" data-href="stock-alert.html"><span>药品低储预警</span><span class="hm-task-count">6</span></div><div class="hm-task" data-href="stock-alert.html"><span>药品高储预警</span><span class="hm-task-count">3</span></div></div>
-              </div>
-            </div>
-
-            <div class="hm-panel hm-ai">
-              <div class="hm-ai-head">
-                <span class="hm-ai-title">AI 高低储分析</span>
-                <span class="hm-ai-upd" id="hmAiUpdated"></span>
-                <a class="hm-ai-more" href="stock-level.html?aiReport=1">查看完整日报</a>
-              </div>
-              <div class="hm-ai-list" id="hmAiList"></div>
-              <div class="hm-ai-foot">
-                <span class="hm-ai-gen">已触发传统高低储预警的配置对象不重复展示 · 建议不自动修改配置</span>
+                <div class="hm-ai-list" id="hmAiList"></div>
+                <div class="hm-ai-suggest">
+                  <div class="hm-ai-suggest-title">今日整体优化建议</div>
+                  <div class="hm-ai-suggest-item">1. 对近期消耗明显增长的药品，结合补货周期复核低储配置。</div>
+                  <div class="hm-ai-suggest-item">2. 对长期消耗偏低的药品，结合实际储备要求复核高储配置。</div>
+                  <div class="hm-ai-suggest-item">3. 对短期消耗大幅波动的药品，先核实业务记录，避免误判为持续需求增长。</div>
+                </div>
+                <div class="hm-ai-foot">
+                  <span class="hm-ai-gen">已触发传统高低储预警的配置对象不重复展示 · 建议不自动修改配置</span>
+                </div>
               </div>
             </div>
 </section>

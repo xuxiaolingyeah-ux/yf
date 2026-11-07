@@ -392,6 +392,10 @@
 .hmq-todo-item:last-child { border-bottom: none; }
 .hmq-todo-item:hover { background: var(--bg-page); }
 .hmq-todo-num { font-size: 13px; font-weight: 600; color: #A32D2D; }
+.hmq-mod-head { display: flex; align-items: center; gap: 8px; margin: 2px 0 10px; }
+.hmq-mod-title { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+.hmq-mod-sub { font-size: 12px; color: var(--text-tertiary); }
+.hmq-mod-count { font-size: 12px; font-weight: 600; color: #A32D2D; background: #FCEBEB; border-radius: 999px; padding: 1px 8px; }
 </style>
 </head>
 <body>
@@ -969,19 +973,18 @@
       { name: "目录遴选申请", desc: "申请新增品种", href: "drug-selection-create.html" }
     ];
 
-    /* 我的申请单：调拨 / 入库 / 出库 / 增损 / 退库 / 目录遴选 */
+    /* 今日申请进度：我的申请 = 登录人今日发起 + 今日状态有更新的申请单 */
     var APPS = [
-      { key: "db", type: "调拨申请", no: "DB2026110701", desc: "3 个品种：阿莫西林胶囊、奥美拉唑肠溶胶囊、藿香正气水", time: "今天 09:12", st: "中心药房审核中", tone: "blue", href: "transfer.html" },
-      { key: "db", type: "调拨申请", no: "DB2026110503", desc: "5 个品种 · 中心药房已出库", time: "11月5日 14:40", st: "待收货确认", tone: "amber", href: "transfer-inbound.html" },
-      { key: "tk", type: "退库申请", no: "TK2026110302", desc: "2 个品种：近效期药品退回", time: "11月3日 10:05", st: "已驳回", tone: "red", href: "stock-return.html" },
-      { key: "rk", type: "入库申请", no: "RK2026103108", desc: "调拨到货入库 · 5 个品种", time: "10月31日 16:20", st: "已入库", tone: "green", href: "stock-in.html" },
-      { key: "ck", type: "出库申请", no: "CK2026102905", desc: "门诊领用出库 · 4 个品种", time: "10月29日 09:30", st: "审核中", tone: "blue", href: "outbound.html" },
-      { key: "zs", type: "增损申请", no: "ZS2026102811", desc: "报损 2 个品规（运输破损）", time: "10月28日 15:12", st: "审核中", tone: "blue", href: "stock-adjust.html" },
-      { key: "lx", type: "目录遴选", no: "LX2026102809", desc: "四季度补充 · 申请新增 3 个品种", time: "10月28日 09:12", st: "审核中", tone: "blue", href: "drug-selection.html" },
-      { key: "db", type: "调拨申请", no: "DB2026102502", desc: "4 个品种 · 已完成收货入库", time: "10月25日 11:30", st: "已完成", tone: "green", href: "transfer.html" }
+      { key: "db", type: "调拨申请", desc: "3 个药品品种：阿莫西林胶囊、奥美拉唑肠溶胶囊等", time: "今天 09:12", st: "中心药房审核中", tone: "blue", href: "transfer-detail.html" },
+      { key: "db", type: "调拨申请", desc: "5 个药品品种：布洛芬片、维生素C片等", time: "今天 10:36", st: "待收货确认", tone: "amber", href: "transfer-inbound.html" },
+      { key: "rk", type: "入库申请", desc: "5 个药品品种：阿莫西林胶囊、藿香正气水等", time: "今天 08:47", st: "待入库登记", tone: "blue", href: "stock-in-create.html" },
+      { key: "ck", type: "出库申请", desc: "4 个药品品种：对乙酰氨基酚片、感冒灵颗粒等", time: "今天 10:22", st: "审核中", tone: "blue", href: "outbound-detail.html" },
+      { key: "zs", type: "增损申请", desc: "2 个药品品种：葡萄糖注射液、氯化钠注射液等", time: "今天 09:58", st: "审核中", tone: "blue", href: "stock-adjust-detail.html" },
+      { key: "tk", type: "退库申请", desc: "2 个药品品种：氨溴索口服液、复方甘草片等", time: "今天 11:02", st: "已驳回", tone: "red", href: "stock-return-detail.html" },
+      { key: "lx", type: "目录遴选", desc: "四季度药品目录补充申请", time: "今天 10:15", st: "中心药房审核中", tone: "blue", href: "drug-selection-detail.html" }
     ];
 
-    var TABS = [
+    var APP_TABS = [
       { key: "all", name: "全部" },
       { key: "db", name: "调拨" },
       { key: "rk", name: "入库" },
@@ -991,36 +994,50 @@
       { key: "lx", name: "遴选" }
     ];
 
-    /* 待办：村室只关注收货；成员机构需审核村室申请并完成出库/入库 */
-    var TODOS = role === "member" ? [
-      { name: "村室申请待审核", count: 3, href: "transfer.html" },
-      { name: "审核通过 · 待出库", count: 2, href: "outbound.html" },
-      { name: "调拨到货 · 待入库", count: 1, href: "stock-in.html" }
+    /* 待办任务：当前处理节点为登录人的任务，按类型区分，点击进入对应审核/出入库页面 */
+    var TASKS = role === "member" ? [
+      { key: "db", type: "调拨申请", desc: "3 个药品品种：阿莫西林胶囊、奥美拉唑肠溶胶囊等", node: "待机构审核", tone: "amber", href: "transfer-audit-member.html" },
+      { key: "db", type: "调拨申请", desc: "5 个药品品种：布洛芬片、维生素C片等", node: "待出库", tone: "blue", href: "transfer-outbound.html" },
+      { key: "db", type: "调拨申请", desc: "4 个药品品种：左氧氟沙星片、罗红霉素胶囊等", node: "待入库", tone: "blue", href: "transfer-inbound.html" },
+      { key: "rk", type: "入库申请", desc: "3 个药品品种：头孢克肟分散片、蒲地蓝消炎口服液等", node: "待入库", tone: "blue", href: "stock-in-create.html" },
+      { key: "zs", type: "增损申请", desc: "2 个药品品种：葡萄糖注射液、氯化钠注射液等", node: "待审核", tone: "amber", href: "stock-adjust-detail.html" }
     ] : [
-      { name: "调拨到货 · 待收货入库", count: 1, href: "transfer-inbound.html" }
+      { key: "db", type: "调拨申请", desc: "5 个药品品种：布洛芬片、维生素C片等", node: "待收货入库", tone: "amber", href: "transfer-inbound.html" },
+      { key: "rk", type: "入库申请", desc: "5 个药品品种：阿莫西林胶囊、藿香正气水等", node: "待入库", tone: "blue", href: "stock-in-create.html" },
+      { key: "zs", type: "增损申请", desc: "2 个药品品种：葡萄糖注射液、氯化钠注射液等", node: "待处理", tone: "amber", href: "stock-adjust-detail.html" }
     ];
-    var todoTotal = TODOS.reduce(function (s, t) { return s + t.count; }, 0);
+
+    var TASK_TABS = [
+      { key: "all", name: "全部" },
+      { key: "db", name: "调拨" },
+      { key: "rk", name: "入库" },
+      { key: "zs", name: "增损" }
+    ];
 
     var quickHtml = QUICK.map(function (q) {
       return '<div class="hmq-act' + (q.main ? " is-main" : "") + '" data-href="' + q.href + '">' +
         '<div class="hmq-name">' + q.name + '</div><div class="hmq-desc">' + q.desc + '</div></div>';
     }).join("");
 
-    var tabsHtml = TABS.map(function (t, i) {
-      return '<span class="hmq-tab' + (i === 0 ? " is-on" : "") + '" data-key="' + t.key + '">' + t.name + '</span>';
-    }).join("");
+    var tabsHtml = function (tabs, first) {
+      return tabs.map(function (t, i) {
+        return '<span class="hmq-tab' + (i === (first ? 0 : -1) ? " is-on" : "") + '" data-key="' + t.key + '">' + t.name + '</span>';
+      }).join("");
+    };
 
-    var rowsHtml = APPS.map(function (a) {
+    var appRowsHtml = APPS.map(function (a) {
       return '<div class="hmq-row" data-key="' + a.key + '" data-href="' + a.href + '">' +
         '<span class="hmq-type">' + a.type + '</span>' +
-        '<span class="hmq-main"><div class="hmq-no">' + a.no + '</div><div class="hmq-desc" title="' + a.desc + '">' + a.desc + '</div></span>' +
+        '<span class="hmq-main"><div class="hmq-no" title="' + a.desc + '">' + a.desc + '</div></span>' +
         '<span class="hmq-time">' + a.time + '</span>' +
         '<span class="hmq-st hmq-st-' + a.tone + '">' + a.st + '</span></div>';
     }).join("");
 
-    var todosHtml = TODOS.map(function (t) {
-      return '<div class="hmq-todo-item" data-href="' + t.href + '"><span>' + t.name + '</span>' +
-        '<span class="hmq-todo-num">' + t.count + '</span></div>';
+    var taskRowsHtml = TASKS.map(function (t) {
+      return '<div class="hmq-row" data-key="' + t.key + '" data-href="' + t.href + '">' +
+        '<span class="hmq-type">' + t.type + '</span>' +
+        '<span class="hmq-main"><div class="hmq-no" title="' + t.desc + '">' + t.desc + '</div></span>' +
+        '<span class="hmq-st hmq-st-' + t.tone + '">' + t.node + '</span></div>';
     }).join("");
 
     var body = document.getElementById("hmBody");
@@ -1030,13 +1047,19 @@
         '<div class="hmq-actions">' + quickHtml + '</div>' +
       '</section>' +
       '<section class="hm-card">' +
-        '<div class="hm-sec-head"><span class="hm-sec-title">我的申请单</span></div>' +
-        '<div class="hmq-tabs" id="hmqTabs">' + tabsHtml + '</div>' +
-        '<div class="hmq-rows" id="hmqRows">' + rowsHtml + '</div>' +
-      '</section>' +
-      '<section class="hm-card">' +
-        '<div class="hm-sec-head"><span class="hm-sec-title">待办事项</span><span class="hm-list-count">' + todoTotal + '</span></div>' +
-        '<div class="hmq-todo">' + todosHtml + '</div>' +
+        '<div class="hm-sec-head"><span class="hm-sec-title">今日申请进度</span></div>' +
+        '<div class="hmq-cols">' +
+          '<div>' +
+            '<div class="hmq-mod-head"><span class="hmq-mod-title">我的申请</span><span class="hmq-mod-sub">今日发起 + 今日状态有更新</span></div>' +
+            '<div class="hmq-tabs">' + tabsHtml(APP_TABS, true) + '</div>' +
+            '<div class="hmq-rows">' + appRowsHtml + '</div>' +
+          '</div>' +
+          '<div>' +
+            '<div class="hmq-mod-head"><span class="hmq-mod-title">待办任务</span><span class="hmq-mod-count">' + TASKS.length + '</span></div>' +
+            '<div class="hmq-tabs">' + tabsHtml(TASK_TABS, true) + '</div>' +
+            '<div class="hmq-rows">' + taskRowsHtml + '</div>' +
+          '</div>' +
+        '</div>' +
       '</section>';
 
     /* 跳转绑定 */
@@ -1044,15 +1067,17 @@
       el.addEventListener("click", function () { location.href = el.getAttribute("data-href"); });
     });
 
-    /* 申请单类型筛选 */
-    var tabs = body.querySelectorAll(".hmq-tab");
-    tabs.forEach(function (tab) {
-      tab.addEventListener("click", function () {
-        tabs.forEach(function (t) { t.classList.remove("is-on"); });
-        tab.classList.add("is-on");
-        var key = tab.getAttribute("data-key");
-        body.querySelectorAll(".hmq-row").forEach(function (row) {
-          row.classList.toggle("is-hide", key !== "all" && row.getAttribute("data-key") !== key);
+    /* 类型筛选：每个模块的 tabs 只作用于自己容器内的行 */
+    body.querySelectorAll(".hmq-cols > div").forEach(function (col) {
+      var tabs = col.querySelectorAll(".hmq-tab");
+      tabs.forEach(function (tab) {
+        tab.addEventListener("click", function () {
+          tabs.forEach(function (t) { t.classList.remove("is-on"); });
+          tab.classList.add("is-on");
+          var key = tab.getAttribute("data-key");
+          col.querySelectorAll(".hmq-row").forEach(function (row) {
+            row.classList.toggle("is-hide", key !== "all" && row.getAttribute("data-key") !== key);
+          });
         });
       });
     });

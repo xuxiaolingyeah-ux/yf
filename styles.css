@@ -3491,6 +3491,16 @@ input, select { font-family: inherit; font-size: inherit; }
 .mi-note { font-size: 12px; color: var(--text-tertiary); line-height: 1.7; margin-top: 8px; }
 .mi-note b { color: var(--text-secondary); font-weight: 500; }
 .mi-pairs { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.mi-pair {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.mi-pair:last-child { border-bottom: none; }
+.mi-pair:hover { background: var(--primary-lighter); }
 .mi-pair-field { width: 200px; flex: none; font-size: 13px; color: var(--text-primary); }
 .mi-pair-arrow { flex: none; color: var(--text-placeholder); font-size: 12px; }
 .mi-pair-ins { font-size: 13px; color: var(--text-secondary); }

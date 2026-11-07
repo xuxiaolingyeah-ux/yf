@@ -1,10 +1,9 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<html lang="zh-CN" data-page-node-id="pRHgACG2fEUEhlhBipspYX"><head data-page-node-id="GGOb2c1YeR4bAmZfkhTt7d">
+<meta charset="UTF-8" data-page-node-id="e7emEpHcgBH5zI4a36BVta">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" data-page-node-id="RTgO44XITLGb4m1pkKWIob">
 <title>药品高低储设置 · 中心药房</title>
-<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="styles.css" data-page-node-id="fQ3dTGT7pRiHKcQ4m3Vl9l">
 <style>
 /* ===== 药品高低储设置 局部样式 ===== */
 .sl-page { background: var(--bg-page); }
@@ -45,21 +44,98 @@
 .sl-filter-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
 
 /* Tab 区 */
-.sl-tabs-wrap { padding: 8px 16px 4px; }
-
-/* 批量操作栏 */
-.sl-batch-bar {
-  display: none;
-  align-items: center; gap: 8px;
-  padding: 10px 16px;
-  background: var(--primary-lighter);
-  border-bottom: 1px solid var(--border-light);
-  font-size: 12px; color: var(--primary-dark);
+.sl-tabs-wrap { padding: 8px 16px 4px; display: flex; align-items: center; justify-content: space-between; }
+/* 保留胶囊样式：无底色无边框，选中项用主题浅色底 */
+.sl-tabs-wrap .page-tabs {
+  flex: 1;
+  background: transparent;
+  padding: 0;
+  gap: 4px;
+  border: none;
+  border-radius: 6px;
+  align-self: center;
+  width: fit-content;
 }
-.sl-batch-bar.show { display: flex; }
-.sl-batch-bar b { color: var(--text-primary); font-weight: 500; }
-.sl-batch-bar .btn { margin-left: auto; }
-.sl-batch-bar .btn + .btn { margin-left: 8px; }
+.sl-tabs-wrap .page-tab.active {
+  background: var(--primary-lighter);
+  color: var(--primary-dark);
+  box-shadow: none;
+}
+.sl-batch-entry { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
+/* 标题行右侧 */
+.sl-head-right { display: flex; align-items: center; gap: 14px; }
+.sl-ai-daily-link {
+  font-size: 13px;
+  color: var(--primary);
+  cursor: pointer;
+  user-select: none;
+}
+.sl-ai-daily-link:hover { color: var(--primary-dark); text-decoration: underline; }
+
+/* AI 日报抽屉（独立 open 状态，避免与规则管理抽屉联动） */
+.sl-daily-drawer { width: 640px; }
+body:not(.daily-open) .sl-daily-drawer { transform: translateX(100%) !important; }
+body.daily-open .sl-daily-drawer { transform: translateX(0) !important; }
+body:not(.daily-open) #dailyMask { opacity: 0 !important; pointer-events: none !important; }
+body.daily-open #dailyMask { opacity: 1 !important; pointer-events: auto !important; }
+
+/* 日报内容 */
+.sl-daily { font-size: 13px; color: var(--text-primary); line-height: 1.7; }
+.sl-daily-meta { font-size: 12px; color: var(--text-tertiary); margin-bottom: 14px; }
+.sl-daily-sec { margin-bottom: 18px; }
+.sl-daily-sec-title {
+  font-size: 13px; font-weight: 500; color: var(--text-primary);
+  margin-bottom: 8px;
+  padding-left: 8px;
+  border-left: 3px solid var(--primary);
+  line-height: 1.4;
+}
+.sl-daily-summary {
+  background: var(--bg-page);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  color: var(--text-secondary);
+}
+.sl-daily-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.sl-daily-table th, .sl-daily-table td {
+  border-bottom: 1px solid var(--border);
+  padding: 7px 6px;
+  text-align: left;
+  white-space: nowrap;
+}
+.sl-daily-table th { color: var(--text-tertiary); font-weight: 400; }
+.sl-daily-table td { color: var(--text-secondary); }
+.sl-daily-table .drug-name { color: var(--text-primary); }
+.sl-risk-tag { display: inline-block; padding: 0 6px; border-radius: 3px; font-size: 12px; line-height: 20px; }
+.sl-risk-tag.high { background: rgba(232,61,14,.08); color: var(--danger); }
+.sl-risk-tag.mid { background: rgba(255,150,30,.12); color: var(--warning); }
+.sl-daily-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  background: var(--bg-white);
+}
+.sl-daily-card-title { font-size: 13px; font-weight: 500; margin-bottom: 4px; }
+.sl-daily-kv { font-size: 12px; color: var(--text-secondary); margin: 2px 0; }
+.sl-daily-kv b { color: var(--text-primary); font-weight: 500; }
+.sl-daily-ol, .sl-daily-ul { padding-left: 18px; margin: 0; }
+.sl-daily-ol li, .sl-daily-ul li {
+  margin-bottom: 6px;
+  color: var(--text-secondary);
+  padding-left: 2px;
+}
+/* 分页行左侧：选中信息 */
+.sl-pager .sl-sel-wrap { color: var(--text-secondary); }
+.sl-pager .sl-sel-wrap b { color: var(--text-primary); font-weight: 500; }
+.sl-pager .sl-clear-sel {
+  color: var(--primary);
+  cursor: pointer;
+  margin-left: 8px;
+  user-select: none;
+}
+.sl-pager .sl-clear-sel:hover { color: var(--primary-dark); text-decoration: underline; }
 
 /* 表格 */
 .sl-table-wrap { flex: 1; overflow: auto; min-height: 0; }
@@ -109,41 +185,6 @@
 }
 .sl-table .cell-select:focus { outline: none; border-color: var(--primary-dark); }
 
-/* AI 建议单元（值 + ℹ️icon） */
-.sl-ai-cell { display: inline-flex; align-items: center; gap: 4px; }
-.sl-ai-icon {
-  width: 14px; height: 14px;
-  display: inline-flex; align-items: center; justify-content: center;
-  color: var(--primary);
-  cursor: pointer;
-  border-radius: 50%;
-  position: relative;
-}
-.sl-ai-icon:hover { color: var(--primary-dark); }
-.sl-ai-icon:hover::after {
-  content: attr(data-tip);
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 50%; transform: translateX(-50%);
-  padding: 4px 8px;
-  background: rgba(0,0,0,.75);
-  color: #fff; font-size: 12px; white-space: nowrap;
-  border-radius: 3px;
-  z-index: 20;
-  pointer-events: none;
-}
-
-/* 状态标签（更新方式） */
-.sl-mode-tag {
-  display: inline-block;
-  padding: 1px 6px;
-  border-radius: 2px;
-  font-size: 12px;
-  line-height: 1.6;
-}
-.sl-mode-tag.manual { color: var(--text-secondary); }
-.sl-mode-tag.auto { color: var(--primary-dark); }
-.sl-mode-tag.ai { color: var(--warning); }
 
 /* 分页 */
 .sl-pager {
@@ -287,62 +328,6 @@
   margin-top: 16px;
 }
 
-/* AI 原因 Popover（定位在 icon 旁边） */
-.sl-ai-popover {
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 50%; transform: translateX(-50%);
-  width: 360px; max-width: 380px;
-  background: #fff;
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-2);
-  padding: 14px 16px;
-  z-index: 30;
-  pointer-events: auto;
-  line-height: 1.65;
-  font-size: 13px;
-  color: var(--text-primary);
-}
-.sl-ai-popover.is-hidden { display: none; }
-.sl-ai-popover::before {
-  content: "";
-  position: absolute;
-  top: -5px; left: 50%; transform: translateX(-50%) rotate(45deg);
-  width: 9px; height: 9px;
-  background: #fff;
-  border-left: 1px solid var(--border-light);
-  border-top: 1px solid var(--border-light);
-}
-.sl-ai-popover .sl-ai-summary {
-  background: var(--primary-lighter);
-  border-left: 3px solid var(--primary);
-  padding: 10px 12px;
-  border-radius: 0 var(--radius) var(--radius) 0;
-  font-size: 13px; color: var(--text-primary);
-  line-height: 1.65;
-  margin-bottom: 12px;
-}
-.sl-ai-popover .sl-ai-points-title {
-  font-size: 12px; font-weight: 500; color: var(--text-secondary);
-  margin-bottom: 6px;
-}
-.sl-ai-popover .sl-ai-points { padding-left: 0; list-style: none; margin: 0; }
-.sl-ai-popover .sl-ai-points li {
-  position: relative;
-  padding-left: 16px;
-  font-size: 12px; color: var(--text-secondary);
-  line-height: 1.65;
-  margin-bottom: 4px;
-}
-.sl-ai-popover .sl-ai-points li::before {
-  content: "•";
-  position: absolute;
-  left: 4px; top: 0;
-  color: var(--primary);
-}
-
-/* 批量设置 Dialog */
 .sl-batch-dialog .modal-body { padding: 20px 24px; }
 .sl-batch-form { display: grid; grid-template-columns: 120px 1fr; gap: 14px 16px; align-items: center; }
 .sl-batch-form .form-label { font-size: 13px; color: var(--text-secondary); text-align: right; }
@@ -358,130 +343,124 @@
 /* Toast */
 .toast { position: fixed; top: 68px; left: 50%; }
 </style>
-</head>
-<body class="sl-page">
+<style id="__dm_no_drag_style__">* { -webkit-user-drag: none !important; }</style><style id="__dm_bindable_badge_style__">[data-sp-bindable="database"]{outline:1px dashed #0088ff;outline-offset:2px;border-radius:4px;}[data-sp-bindable="database"] *{pointer-events:none !important;transition:none !important;animation:none !important;}[data-sp-bindable="database"]{transition:none !important;animation:none !important;}</style></head>
+<body class="sl-page" data-page-node-id="PuDpZzw1z9W1WpmMszzDaB" style="">
 
 <!-- ========== 顶部导航 ========== -->
-<header class="app-header">
-  <div class="header-left">
-    <div class="header-logo">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z"/></svg>
+<header class="app-header" data-page-node-id="UwPUVLbmolfkYLOPjFj1m8">
+  <div class="header-left" data-page-node-id="x0NGKmTXmkpuD3QN9hmkZ4">
+    <div class="header-logo" data-page-node-id="stYubyRDUjohMjpoCUMRHm">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" data-page-node-id="CKdiOU3gepvmZ6YlKE4hSe"><path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z" data-page-node-id="ROFYHvMBIMnyQrcU1CnYXu"></path></svg>
     </div>
-    <div class="header-title">区域药房协同管理系统</div>
+    <div class="header-title" data-page-node-id="R6hXHPJNC5iFRD5DSM6TbH">区域药房协同管理系统</div>
   </div>
-  <div class="header-right">
-    <div class="header-user">
-      <div class="header-avatar">赵</div>
-      <div class="header-user-name">赵敏 · 中心药房</div>
+  <div class="header-right" data-page-node-id="y51ArHF1irzI96b8pV8MG5">
+    <div class="header-user" data-page-node-id="BZfRYXdLf2gpvhllavyuh6">
+      <div class="header-avatar" data-page-node-id="lEExCUrIaSI6n75DRmQ9Zj">赵</div>
+      <div class="header-user-name" data-page-node-id="BWqHlp5YWl6KgGexYF2Ncu">赵敏 · 中心药房</div>
     </div>
-  </div>
+  <div class="sys-user" id="sysUser"><div class="sys-user-btn" id="sysUserBtn"><span class="sys-user-name">赵敏</span><svg class="sys-user-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg></div><div class="sys-user-pop" id="sysUserPop"><div class="sys-pop-head"><span class="sys-pop-avatar">赵</span><div><div class="sys-pop-name">赵敏</div><div class="sys-pop-org">区域中心药房 · 中心药房审核人</div></div></div><div class="sys-pop-label">切换演示身份</div><div class="sys-pop-item" data-acc="wangfang"><span class="sys-pop-avatar" style="width:26px;height:26px;font-size:12px;">王</span><span class="sys-pop-item-info"><span class="sys-pop-item-name">王芳</span><span class="sys-pop-item-role">青河村卫生室 · 村室发起人</span></span></div><div class="sys-pop-item" data-acc="liqiang"><span class="sys-pop-avatar" style="width:26px;height:26px;font-size:12px;">李</span><span class="sys-pop-item-info"><span class="sys-pop-item-name">李强</span><span class="sys-pop-item-role">城东社区卫生服务中心 · 成员机构（可发起、可审核）</span></span></div><div class="sys-pop-item active" data-acc="zhaomin"><span class="sys-pop-avatar" style="width:26px;height:26px;font-size:12px;">赵</span><span class="sys-pop-item-info"><span class="sys-pop-item-name">赵敏</span><span class="sys-pop-item-role">区域中心药房 · 中心药房审核人</span></span><span class="sys-pop-check">当前</span></div><div class="sys-pop-item" data-acc="chenjing"><span class="sys-pop-avatar" style="width:26px;height:26px;font-size:12px;">陈</span><span class="sys-pop-item-info"><span class="sys-pop-item-name">陈静</span><span class="sys-pop-item-role">区域中心药房 · 中心药房·发起人</span></span></div><div class="sys-pop-foot"><button type="button" data-act="home">返回首页</button><button type="button" data-act="logout">退出登录</button></div></div></div></div>
 </header>
 
 <!-- ========== 主体 ========== -->
-<div class="app-body">
+<div class="app-body" data-page-node-id="i64eY1HXvjAKEzQVVGWViS">
 
   <!-- 左侧导航 -->
-  <aside class="app-side" id="appSide"></aside>
+  <aside class="app-side" id="appSide" data-page-node-id="1APtiqCHFPgjD6gceQdpZb"><div class="nav-group"><div class="nav-item" data-href="home.html"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg><span class="nav-label">首页</span></div></div><div class="nav-group"><div class="nav-item nav-toggle"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h6l2 3h8v13H4z"></path></svg><span class="nav-label">药品管理</span><svg class="nav-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"></path></svg></div><div class="nav-sub"><div class="nav-sub-item" data-href="drug-catalog.html">药品目录管理</div><div class="nav-sub-item" data-href="org-drug-catalog.html">机构药品目录</div><div class="nav-sub-item" data-href="drug-selection.html">药品目录遴选</div></div></div><div class="nav-group"><div class="nav-item nav-toggle"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8l9-5 9 5-9 5-9-5z"></path><path d="M3 8v8l9 5 9-5V8"></path></svg><span class="nav-label">库存管理</span><svg class="nav-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"></path></svg></div><div class="nav-sub"><div class="nav-sub-item" data-href="init-stock.html">药品期初管理</div><div class="nav-sub-item" data-href="batch-management.html">药品批次管理</div><div class="nav-sub-item" data-href="stock-in.html">药品入库</div><div class="nav-sub-item" data-href="outbound.html">药品出库</div><div class="nav-sub-item" data-href="stock-adjust.html">药品增损</div><div class="nav-sub-item" data-href="transfer.html">药品调拨管理</div><div class="nav-sub-item" data-href="stock-return.html">药品退库</div><div class="nav-sub-item" data-href="stock-check.html">库存盘点</div></div></div><div class="nav-group"><div class="nav-item nav-toggle"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12l-8 8-9-9V3h11l6 6z"></path><circle cx="7.5" cy="7.5" r="1.2"></circle></svg><span class="nav-label">物价管理</span><svg class="nav-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"></path></svg></div><div class="nav-sub"><div class="nav-sub-item" data-href="price-adjust.html">药品调价</div></div></div><div class="nav-group"><div class="nav-item nav-toggle"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 16H3z"></path><path d="M12 8v5"></path><circle cx="12" cy="16" r="1"></circle></svg><span class="nav-label">预警管理</span><svg class="nav-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"></path></svg></div><div class="nav-sub"><div class="nav-sub-item" data-href="drug-expiry-warning.html">药品效期预警</div><div class="nav-sub-item" data-href="stock-level.html">药品高低储设置</div><div class="nav-sub-item" data-href="stock-alert.html">药品高低储预警</div></div></div><div class="nav-group"><div class="nav-item nav-toggle"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"></rect><path d="M9 4.5V3h6v1.5M9 10h6M9 14h6"></path></svg><span class="nav-label">门诊处方管理</span><svg class="nav-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"></path></svg></div><div class="nav-sub"><div class="nav-sub-item" data-href="prescription-tcm.html">中药饮片处方开具</div><div class="nav-sub-item" data-href="prescription-western.html">西药处方开具</div><div class="nav-sub-item" data-href="prescription-dispensing.html">门诊处方发药</div><div class="nav-sub-item" data-href="prescription-return.html">门诊处方退药</div><div class="nav-sub-item" data-href="pre-deduction.html">预减管理</div></div></div><div class="nav-group"><div class="nav-item nav-toggle"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"></path></svg><span class="nav-label">统计查询</span><svg class="nav-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"></path></svg></div><div class="nav-sub"><div class="nav-sub-item" data-href="stock-query.html">库存查询</div><div class="nav-sub-item" data-href="prescription-query.html">处方查询</div><div class="nav-sub-item" data-href="drug-consumption.html">药品消耗明细</div></div></div><div class="nav-group"><div class="nav-item nav-toggle"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"></circle><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"></path></svg><span class="nav-label">系统维护</span><svg class="nav-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"></path></svg></div><div class="nav-sub"><div class="nav-sub-item" data-href="manufacturer-manage.html">企业管理</div><div class="nav-sub-item" data-href="supplier-allocation.html">供应商分配</div><div class="nav-sub-item" data-href="medical-insurance-mapping.html">医保对码</div><div class="nav-sub-item" data-href="pharmacy-maintenance.html">库位维护</div><div class="nav-sub-item" data-href="param-settings.html">特殊参数设置</div></div></div></aside>
 <!-- 主区 -->
-  <main class="app-main">
-    <div class="tabbar">
-      <div class="tab" onclick="location.href='drug-catalog.html'">首页</div>
-      <div class="tab active">
+  <main class="app-main" data-page-node-id="reyzBHd4pLbHL5Q3SDc3W4">
+    <div class="tabbar" data-page-node-id="Iyxx0ptnib06zOcgH28xH8">
+      <div class="tab" onclick="location.href='drug-catalog.html'" data-page-node-id="dS8maVBJX0ByHIJ6OTu6XM">首页</div>
+      <div class="tab active" data-page-node-id="7AHHp6EuoFM4dkZFA2j6hy">
         药品高低储设置
-        <button class="tab-close" title="关闭" onclick="location.href='drug-catalog.html'">
-          <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 5l14 14M19 5L5 19"/></svg>
+        <button class="tab-close" title="关闭" onclick="location.href='drug-catalog.html'" data-page-node-id="X2kQsU41Tb0A409JPbC1IU">
+          <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4" data-page-node-id="qq9DeTw6035jB4IYxjmPOE"><path d="M5 5l14 14M19 5L5 19" data-page-node-id="QZsGVna2AVeV8gUIwPAG72"></path></svg>
         </button>
       </div>
     </div>
 
-    <div class="sl-card">
+    <div class="sl-card" data-page-node-id="7OmJSF2umKKLdEUgCiqMll">
 
       <!-- ========== 标题行 ========== -->
-      <div class="sl-head">
-        <div class="sl-head-left">
-          <div class="sl-head-title">药品高低储设置</div>
-          <div class="sl-head-fis">
-            <span class="sl-hlbl">库位：</span>
-            <select class="select sl-hsel" id="hLocation"></select>
+      <div class="sl-head" data-page-node-id="oxhyDPb1L0JL10ZH8lRtsw">
+        <div class="sl-head-left" data-page-node-id="ExJGhxVZGXmCYUMVDjWO0l">
+          <div class="sl-head-title" data-page-node-id="Fj2fUYj79aapQ97q2VQ7aE">药品高低储设置</div>
+          <div class="sl-head-fis" data-page-node-id="MGodOTiGTHGmmG0SboNMx4">
+            <span class="sl-hlbl" data-page-node-id="4rAu4u30Q8uYApHLuBfhf2">库位：</span>
+            <select class="select sl-hsel" id="hLocation" data-page-node-id="iBt4NFw91LtE3AxKxo2FYN"><option value="loc-c1-A">A区-01</option><option value="loc-c1-B">B区-03</option><option value="loc-c2-A">A区-05</option><option value="loc-a1-1-A">门诊区-A1</option><option value="loc-a1-1-B">门诊区-B2</option><option value="loc-a1-2-A">急诊区-A1</option><option value="loc-a2-1-A">住院区-A1</option><option value="loc-a2-1-B">住院区-B2</option><option value="loc-a2-2-A">门诊区-A1</option><option value="loc-a3-1-A">中药区-A1</option><option value="loc-v1-A">西药柜-A1</option><option value="loc-v1-B">中成药柜-B2</option><option value="loc-m1-1-A">门诊区-A1</option><option value="loc-m1-1-B">门诊区-B2</option><option value="loc-m1-2-A">公卫区-A1</option></select>
           </div>
         </div>
-        <div>
-          <button class="btn btn-sm" id="btnRules">规则管理</button>
+        <div class="sl-head-right" data-page-node-id="s8B8nL7KaRv6hUTP75Cx5Z">
+          <span class="sl-ai-daily-link" id="btnAIDaily" data-page-node-id="b3DM6BH27HQcVdoNTXWGVK">AI 日报</span>
+          <button class="btn btn-sm" id="btnRules" data-page-node-id="kXGbF0hJZAdiLerbDCTCGG">规则管理</button>
         </div>
       </div>
 
       <!-- ========== 筛选区 ========== -->
-      <div class="sl-filter">
-        <div class="sl-fi">
-          <span class="lbl">药品种类：</span>
-          <select class="select" id="fKind">
-            <option value="">全部</option>
-            <option value="西药">西药</option>
-            <option value="中成药">中成药</option>
-            <option value="中药饮片">中药饮片</option>
-            <option value="生物制品">生物制品</option>
+      <div class="sl-filter" data-page-node-id="ABI1k7riWRUONPaSgSFxXe">
+        <div class="sl-fi" data-page-node-id="ePWvCuTZHd6CiHKTObLDwu">
+          <span class="lbl" data-page-node-id="QrbACEV3YNoHb2pNXY9az7">药品种类：</span>
+          <select class="select" id="fKind" data-page-node-id="U7u2KHI3ABL0EMqrWrYnsB">
+            <option value="" data-page-node-id="ELPcCq9KQGt3UETeBB1FM0">全部</option>
+            <option value="西药" data-page-node-id="HlM7jqqkjDIqczXe7S4FS5">西药</option>
+            <option value="中成药" data-page-node-id="6veRaHKeJIMl9ZJTT4CF7Q">中成药</option>
+            <option value="中药饮片" data-page-node-id="CNMT8VT4dlZA1mXsyJL8X7">中药饮片</option>
+            <option value="生物制品" data-page-node-id="RMMkzHc718U8Ry5Js5BqsV">生物制品</option>
           </select>
         </div>
-        <div class="sl-fi">
-          <span class="lbl">药品名称：</span>
-          <input class="input sl-name-input" id="fName" placeholder="名称 / 编码 / 拼音码" autocomplete="off">
+        <div class="sl-fi" data-page-node-id="a8Wt5nqXBSWTdmFTb2khG0">
+          <span class="lbl" data-page-node-id="oDHy40WL9tIHyefNzhOmcc">药品名称：</span>
+          <input class="input sl-name-input" id="fName" placeholder="名称 / 编码 / 拼音码" autocomplete="off" data-page-node-id="LlVSyCX4Z4USTh9O4PFJTS">
         </div>
-        <div class="sl-fi">
-          <span class="lbl">更新方式：</span>
-          <select class="select" id="fMode">
-            <option value="">全部</option>
-            <option value="manual">人工</option>
-            <option value="auto">自动计算</option>
-            <option value="ai">AI</option>
+        <div class="sl-fi" data-page-node-id="BV7jQBkS89qRUHXU4a8eCA">
+          <span class="lbl" data-page-node-id="29FUQlFb975J0EERq7Qbgv">更新方式：</span>
+          <select class="select" id="fMode" data-page-node-id="NQfEyr4wEEoXXzGsKxWO2t">
+            <option value="" data-page-node-id="uop2rZc5FmVswgFwEYxPuF">全部</option>
+            <option value="manual" data-page-node-id="BdtoE8hvG0i0C6LexSORn6">人工</option>
+            <option value="auto" data-page-node-id="Sp0aMUiPUw2NHp3kw8jE4n">自动计算</option>
           </select>
         </div>
-        <div class="sl-filter-actions">
-          <button class="btn btn-sm" id="btnReset">重置</button>
-          <button class="btn btn-sm btn-primary" id="btnSearch">查询</button>
+        <div class="sl-filter-actions" data-page-node-id="E9ypIuZCJbyNCBdqcytUuQ">
+          <button class="btn btn-sm" id="btnReset" data-page-node-id="wwbtvCqJYbzRNDgyHmAGYt">重置</button>
+          <button class="btn btn-sm btn-primary" id="btnSearch" data-page-node-id="0aFQzmF5SQJXNpFJbjGbpJ">查询</button>
         </div>
       </div>
 
-      <!-- ========== Tab 切换 ========== -->
-      <div class="sl-tabs-wrap">
-        <div class="page-tabs" id="slMainTabs">
-          <div class="page-tab active" data-tab="spec">品规</div>
-          <div class="page-tab" data-tab="vendor">厂商</div>
+      <!-- ========== Tab 切换 + 批量设置入口 ========== -->
+      <div class="sl-tabs-wrap" data-page-node-id="iSAktDtOCDIvIUihwimQ0b">
+        <div class="page-tabs" id="slMainTabs" data-page-node-id="z28WrMHUNCCoKzu2S4Uhd4" style="border-color: transparent;">
+          <div class="page-tab active" data-tab="spec" data-page-node-id="Jas28ITJnzl2vUhb1fHn16">品规</div>
+          <div class="page-tab" data-tab="vendor" data-page-node-id="GUY8XJ2NiOSZ9gyW8EjQI4">厂商</div>
         </div>
-      </div>
-
-      <!-- ========== 批量操作栏 ========== -->
-      <div class="sl-batch-bar" id="batchBar">
-        <span>已选中 <b id="selCount">0</b> 项</span>
-        <button class="btn btn-sm btn-primary" id="btnBatchManual">人工设置</button>
-        <button class="btn btn-sm btn-primary" id="btnBatchRule">规则设置</button>
-        <button class="btn btn-sm btn-primary" id="btnBatchAI">AI设置</button>
-        <button class="btn btn-sm" id="btnClearSel">取消选择</button>
+        <div class="sl-batch-entry" data-page-node-id="HCgFkS98ubbfUYOtOOXMic">
+          <button class="btn btn-sm btn-primary" id="btnBatchSet" data-page-node-id="4NvNxzdcyrSBElfPaKQ05C">批量设置</button>
+        </div>
       </div>
 
       <!-- ========== 表格 ========== -->
-      <div class="sl-table-wrap">
-        <table class="sl-table" id="slTable">
-          <thead id="slThead"></thead>
-          <tbody id="slTbody"></tbody>
+      <div class="sl-table-wrap" data-page-node-id="HgXERyzsjBdsEXX9ea0Nis">
+        <table class="sl-table" id="slTable" data-page-node-id="tUZm7Iu7CfATXG29GrWrbR">
+          <thead id="slThead" data-page-node-id="X7j6imjLpJoDIVvFXRFG9n"><tr><th style="width:36px"><input type="checkbox" id="thCheckAll"></th><th style="width:110px">品规编码</th><th style="width:180px">药品名称</th><th style="width:140px">药品规格</th><th style="width:80px">药品种类</th><th style="width:80px">库存量</th><th style="width:100px">库存上限</th><th style="width:100px">库存下限</th><th style="width:60px">单位</th><th style="width:120px">更新方式</th><th style="width:160px">更新规则</th></tr></thead>
+          <tbody id="slTbody" data-page-node-id="Jvl0xGWKGefz97AqxzABKc"><tr data-key="d1_0" class=""><td class=""><input type="checkbox" class="row-chk" data-key="d1_0"></td><td class="">1010400101</td><td class=""><div title="阿莫西林胶囊">阿莫西林胶囊</div></td><td class=""><div title="0.25g * 24粒/盒">0.25g * 24粒/盒</div></td><td class="">西药</td><td class="num">180</td><td class=""><input class="cell-input" data-act="upper" data-key="d1_0" type="number" min="0" value="100"></td><td class=""><input class="cell-input" data-act="lower" data-key="d1_0" type="number" min="0" value="20"></td><td class="">盒</td><td class=""><select class="cell-select" data-act="updateMode" data-key="d1_0"><option value="manual" selected="">人工</option><option value="auto">自动计算</option></select></td><td class=""><span style="color:var(--text-tertiary)">—</span></td></tr><tr data-key="d1_1" class=""><td class=""><input type="checkbox" class="row-chk" data-key="d1_1"></td><td class="">1010400102</td><td class=""><div title="阿莫西林胶囊">阿莫西林胶囊</div></td><td class=""><div title="0.5g * 12粒/盒">0.5g * 12粒/盒</div></td><td class="">西药</td><td class="num">86</td><td class="">40</td><td class="">10</td><td class="">盒</td><td class=""><select class="cell-select" data-act="updateMode" data-key="d1_1"><option value="manual">人工</option><option value="auto" selected="">自动计算</option></select></td><td class=""><select class="cell-select" data-act="ruleId" data-key="d1_1" style="width:100%"><option value="">请选择规则</option><option value="r1">感冒类药品自动补货规则</option><option value="r2">常用慢性病药品补货规则</option><option value="r3" selected="">抗生素类药品补货规则</option></select></td></tr><tr data-key="d2_0" class=""><td class=""><input type="checkbox" class="row-chk" data-key="d2_0"></td><td class="">1010400201</td><td class=""><div title="阿莫西林颗粒">阿莫西林颗粒</div></td><td class=""><div title="0.125g * 20袋/盒">0.125g * 20袋/盒</div></td><td class="">西药</td><td class="num">420</td><td class="">200</td><td class="">50</td><td class="">盒</td><td class=""><select class="cell-select" data-act="updateMode" data-key="d2_0"><option value="manual">人工</option><option value="auto">自动计算</option></select></td><td class=""><span style="color:var(--text-tertiary)">—</span></td></tr><tr data-key="d2_1" class=""><td class=""><input type="checkbox" class="row-chk" data-key="d2_1"></td><td class="">1010400202</td><td class=""><div title="阿莫西林颗粒">阿莫西林颗粒</div></td><td class=""><div title="0.25g * 12袋/盒">0.25g * 12袋/盒</div></td><td class="">西药</td><td class="num">0</td><td class=""><input class="cell-input" data-act="upper" data-key="d2_1" type="number" min="0" value="30"></td><td class=""><input class="cell-input" data-act="lower" data-key="d2_1" type="number" min="0" value="5"></td><td class="">盒</td><td class=""><select class="cell-select" data-act="updateMode" data-key="d2_1"><option value="manual" selected="">人工</option><option value="auto">自动计算</option></select></td><td class=""><span style="color:var(--text-tertiary)">—</span></td></tr><tr data-key="d3_0" class=""><td class=""><input type="checkbox" class="row-chk" data-key="d3_0"></td><td class="">1010400301</td><td class=""><div title="注射用阿莫西林钠">注射用阿莫西林钠</div></td><td class=""><div title="0.5g * 10支/盒">0.5g * 10支/盒</div></td><td class="">西药</td><td class="num">15</td><td class="">20</td><td class="">5</td><td class="">盒</td><td class=""><select class="cell-select" data-act="updateMode" data-key="d3_0"><option value="manual">人工</option><option value="auto" selected="">自动计算</option></select></td><td class=""><select class="cell-select" data-act="ruleId" data-key="d3_0" style="width:100%"><option value="">请选择规则</option><option value="r1">感冒类药品自动补货规则</option><option value="r2" selected="">常用慢性病药品补货规则</option><option value="r3">抗生素类药品补货规则</option></select></td></tr><tr data-key="d5_0" class=""><td class=""><input type="checkbox" class="row-chk" data-key="d5_0"></td><td class="">1010400501</td><td class=""><div title="头孢呋辛酯片">头孢呋辛酯片</div></td><td class=""><div title="0.25g * 12片/盒">0.25g * 12片/盒</div></td><td class="">西药</td><td class="num">435</td><td class="">80</td><td class="">15</td><td class="">盒</td><td class=""><select class="cell-select" data-act="updateMode" data-key="d5_0"><option value="manual">人工</option><option value="auto" selected="">自动计算</option></select></td><td class=""><select class="cell-select" data-act="ruleId" data-key="d5_0" style="width:100%"><option value="">请选择规则</option><option value="r1" selected="">感冒类药品自动补货规则</option><option value="r2">常用慢性病药品补货规则</option><option value="r3">抗生素类药品补货规则</option></select></td></tr><tr data-key="d5_1" class=""><td class=""><input type="checkbox" class="row-chk" data-key="d5_1"></td><td class="">1010400502</td><td class=""><div title="头孢呋辛酯片">头孢呋辛酯片</div></td><td class=""><div title="0.125g * 24片/盒">0.125g * 24片/盒</div></td><td class="">西药</td><td class="num">175</td><td class="">35</td><td class="">8</td><td class="">盒</td><td class=""><select class="cell-select" data-act="updateMode" data-key="d5_1"><option value="manual">人工</option><option value="auto">自动计算</option></select></td><td class=""><span style="color:var(--text-tertiary)">—</span></td></tr><tr data-key="d6_0" class=""><td class=""><input type="checkbox" class="row-chk" data-key="d6_0"></td><td class="">1010400601</td><td class=""><div title="布洛芬缓释胶囊">布洛芬缓释胶囊</div></td><td class=""><div title="0.3g * 20粒/盒">0.3g * 20粒/盒</div></td><td class="">西药</td><td class="num">950</td><td class=""><input class="cell-input" data-act="upper" data-key="d6_0" type="number" min="0" value="300"></td><td class=""><input class="cell-input" data-act="lower" data-key="d6_0" type="number" min="0" value="80"></td><td class="">盒</td><td class=""><select class="cell-select" data-act="updateMode" data-key="d6_0"><option value="manual" selected="">人工</option><option value="auto">自动计算</option></select></td><td class=""><span style="color:var(--text-tertiary)">—</span></td></tr><tr data-key="d7_0" class=""><td class=""><input type="checkbox" class="row-chk" data-key="d7_0"></td><td class="">1010400701</td><td class=""><div title="连花清瘟胶囊">连花清瘟胶囊</div></td><td class=""><div title="0.35g * 24粒/盒">0.35g * 24粒/盒</div></td><td class="">中成药</td><td class="num">910</td><td class="">400</td><td class="">100</td><td class="">盒</td><td class=""><select class="cell-select" data-act="updateMode" data-key="d7_0"><option value="manual">人工</option><option value="auto">自动计算</option></select></td><td class=""><span style="color:var(--text-tertiary)">—</span></td></tr><tr data-key="d8_0" class=""><td class=""><input type="checkbox" class="row-chk" data-key="d8_0"></td><td class="">1010400801</td><td class=""><div title="金银花">金银花</div></td><td class=""><div title="1kg/袋">1kg/袋</div></td><td class="">中药饮片</td><td class="num">25</td><td class="">80</td><td class="">15</td><td class="">袋</td><td class=""><select class="cell-select" data-act="updateMode" data-key="d8_0"><option value="manual">人工</option><option value="auto" selected="">自动计算</option></select></td><td class=""><select class="cell-select" data-act="ruleId" data-key="d8_0" style="width:100%"><option value="">请选择规则</option><option value="r1">感冒类药品自动补货规则</option><option value="r2" selected="">常用慢性病药品补货规则</option><option value="r3">抗生素类药品补货规则</option></select></td></tr></tbody>
         </table>
       </div>
 
       <!-- ========== 分页 ========== -->
-      <div class="sl-pager">
-        <div class="sl-pager-left">共 <b id="slTotal">0</b> 条</div>
-        <div class="sl-pager-right">
-          <select class="select" id="slPageSize">
-            <option value="10">10条/页</option>
-            <option value="20" selected>20条/页</option>
-            <option value="30">30条/页</option>
-            <option value="50">50条/页</option>
+      <div class="sl-pager" data-page-node-id="IO45Jq3Yh1j6dRtVWACQrP">
+        <div class="sl-pager-left" data-page-node-id="3V6gOxd2bEnlAD3091ILaZ">共 <b id="slTotal" data-page-node-id="pLV1EzZ976lK6vsfpSe5Rg">10</b> 条<span class="sl-sel-wrap" id="selWrap" data-page-node-id="OKibhsfUFS9I1EDlITfK63">，已选中 <b id="selCount" data-page-node-id="GvgmlBDXS4QcQhNfobnpAw">0</b> 条<span class="sl-clear-sel" id="btnClearSel" data-page-node-id="pU75RUtYdvhdADcYdrJdEi">取消选择</span></span></div>
+        <div class="sl-pager-right" data-page-node-id="iK4Ez2dezZMtv4GtQ2FQOe">
+          <select class="select" id="slPageSize" data-page-node-id="91KZE4BYcTj23GDuuwzlQ5">
+            <option value="10" data-page-node-id="YAILg4akVfE2u8C8B8nPZX">10条/页</option>
+            <option value="20" selected="" data-page-node-id="4X59dXkZv3qc3gv1FmdXLe">20条/页</option>
+            <option value="30" data-page-node-id="CQD2PHnsgiWk7FXmNZBRjr">30条/页</option>
+            <option value="50" data-page-node-id="OnnfFqxaxB0PuWPFDStn2S">50条/页</option>
           </select>
-          <button class="pager-btn" id="slPrev">‹</button>
-          <div id="slNums"></div>
-          <button class="pager-btn" id="slNext">›</button>
-          <span>跳至第</span>
-          <input class="jump-input" id="slJump" value="1">
-          <span>页</span>
+          <button class="pager-btn" id="slPrev" data-page-node-id="ykwvesHVdERTMi8tY6C1jR" disabled="">‹</button>
+          <div id="slNums" data-page-node-id="jsjIdTUMWCpHakcl8RitCV"><span class="pager-num is-cur" data-p="1" style="cursor:pointer">1</span></div>
+          <button class="pager-btn" id="slNext" data-page-node-id="3Rjr9h7xpagDyrNnxR8fLu" disabled="">›</button>
+          <span data-page-node-id="o3zLBoVUPbzcQavLm8VbXB">跳至第</span>
+          <input class="jump-input" id="slJump" value="1" data-page-node-id="mRiTNMmoWNYBWT6oAIzlgO">
+          <span data-page-node-id="5A9ryeftRxrwMyyh904RSt">页</span>
         </div>
       </div>
     </div>
@@ -489,32 +468,46 @@
 </div>
 
 <!-- ========== 规则管理抽屉 ========== -->
-<div class="drawer-mask" id="rulesMask"></div>
-<div class="drawer is-edit sl-rules-drawer" id="rulesDrawer">
-  <div class="drawer-head">
-    <div class="drawer-title">规则管理</div>
-    <button class="drawer-close" id="rulesClose" aria-label="关闭">
-      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 5l14 14M19 5L5 19"/></svg>
+<div class="drawer-mask" id="rulesMask" data-page-node-id="6Ctig1BuDsahUbYbqQXHcZ"></div>
+<div class="drawer is-edit sl-rules-drawer" id="rulesDrawer" data-page-node-id="5BfmL4Fc4DarD6TRKH2R5W">
+  <div class="drawer-head" data-page-node-id="GbVqd7bvIf9ArRPAyUrr4r">
+    <div class="drawer-title" data-page-node-id="fzrYQJdjEYy64blYvL8H8P">规则管理</div>
+    <button class="drawer-close" id="rulesClose" aria-label="关闭" data-page-node-id="UVWuzVFiFwVhPoFX7xrRoV">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" data-page-node-id="hV6y8oQ3dgYSdCQaLLQBDA"><path d="M5 5l14 14M19 5L5 19" data-page-node-id="swr6xgXmBLrI2TSEBr0ETn"></path></svg>
     </button>
   </div>
-  <div class="drawer-body" id="rulesBody">
-    <div id="rulesList"></div>
-    <button class="sl-add-rule" id="btnAddRule">+ 新增规则</button>
+  <div class="drawer-body" id="rulesBody" data-page-node-id="9CxN3NhsD6FLjx1BbtwLpQ">
+    <div id="rulesList" data-page-node-id="HOhlJkPrMdvuol4VR6BJeJ"></div>
+    <button class="sl-add-rule" id="btnAddRule" data-page-node-id="mZ0hGZONzM4vvNRicftDg7">+ 新增规则</button>
+  </div>
+</div>
+
+<!-- ========== AI 日报抽屉 ========== -->
+<div class="drawer-mask" id="dailyMask" data-page-node-id="nGefbALDib4LE943XnLG90"></div>
+<div class="drawer sl-daily-drawer" id="dailyDrawer" data-page-node-id="EmJFFF2p9dF2d3E3kryxBr">
+  <div class="drawer-head" data-page-node-id="PjDvXcIrTvEW1omjAPQ5az">
+    <div class="drawer-title" data-page-node-id="fMItkeRyAEabuj2tcad06n">AI 高低储分析日报</div>
+    <button class="drawer-close" id="dailyClose" aria-label="关闭" data-page-node-id="IFJ0OKXZeBTzDbBk3swMSM">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" data-page-node-id="ue5r0ssThzvxZIxIbq1N2O"><path d="M5 5l14 14M19 5L5 19" data-page-node-id="RaR4YVWyYCkHPs4Gfu6Lau"></path></svg>
+    </button>
+  </div>
+  <div class="drawer-body" data-page-node-id="EUZDaolS8vfEHSzuAYoAPc">
+    <div class="sl-daily" id="dailyContent" data-page-node-id="V7l5HgjFypGPPQYDwEyN6P"></div>
   </div>
 </div>
 
 <!-- ========== 通用 Dialog ========== -->
-<div class="modal-mask" id="genMask">
-  <div class="modal" id="genModal">
-    <div class="modal-head">
-      <div class="modal-title" id="genTitle"></div>
-      <button class="modal-close" id="genClose" aria-label="关闭">
-        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 5l14 14M19 5L5 19"/></svg>
+<div class="modal-mask" id="genMask" data-page-node-id="mBEllro1spErC16nn4ygg9">
+  <div class="modal" id="genModal" data-page-node-id="O6834mOFqhKALs3wTcQ8Zf">
+    <div class="modal-head" data-page-node-id="nOkwruG3TnU5aRr5xoB3P2">
+      <div class="modal-title" id="genTitle" data-page-node-id="BtzJXUnJ4ewvzuZhzwVHVT"></div>
+      <button class="modal-close" id="genClose" aria-label="关闭" data-page-node-id="KHFI5dWqslScVd4pRFaFkg">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" data-page-node-id="lsywFzvZAHgMSMIRpnPrJH"><path d="M5 5l14 14M19 5L5 19" data-page-node-id="kBWENWAxWeW7ppA76S6T7z"></path></svg>
       </button>
     </div>
-    <div class="modal-body" id="genBody"></div>
-    <div class="modal-foot">
-      <div class="modal-foot-right" id="genFoot"></div>
+    <div class="modal-body" id="genBody" data-page-node-id="IcXDaT9vE7q15WH26y4s7C"></div>
+    <div class="modal-foot" data-page-node-id="ST9u3372lGCTA63DdNdqub">
+      <div class="modal-foot-right" id="genFoot" data-page-node-id="abLO8ObgAXnFxuIDgKRjiw"></div>
     </div>
   </div>
 </div>
@@ -593,7 +586,7 @@
         var sl = ST.data[key];
         if (!sl) {
           // 未初始化的品规也给一条基础数据
-          sl = { stock: 0, upper: 0, lower: 0, unit: s.pkgUnit||"盒", updateMode: "manual", ruleId: "", aiUpper: 0, aiLower: 0 };
+          sl = { stock: 0, upper: 0, lower: 0, unit: s.pkgUnit||"盒", updateMode: "manual", ruleId: "" };
           ST.data[key] = sl;
         }
         rows.push({
@@ -604,8 +597,7 @@
           kind: d.kind,
           unit: sl.unit,
           stock: sl.stock, upper: sl.upper, lower: sl.lower,
-          updateMode: sl.updateMode, ruleId: sl.ruleId,
-          aiUpper: sl.aiUpper, aiLower: sl.aiLower
+          updateMode: sl.updateMode, ruleId: sl.ruleId
         });
       });
     });
@@ -623,7 +615,7 @@
           // 厂商级高低储：复用同 spec 的 sl 数据（简化 demo）
           var key = d.id + "_" + si;
           var vkey = key + "_" + vi;
-          var sl = ST.data[key] || { stock: 0, upper: 0, lower: 0, unit: s.pkgUnit||"盒", updateMode: "manual", ruleId: "", aiUpper: 0, aiLower: 0 };
+          var sl = ST.data[key] || { stock: 0, upper: 0, lower: 0, unit: s.pkgUnit||"盒", updateMode: "manual", ruleId: "" };
           rows.push({
             rowKey: vkey, specKey: key, type: "vendor",
             drugId: d.id, si: si, vi: vi,
@@ -632,8 +624,7 @@
             kind: d.kind,
             unit: sl.unit,
             stock: sl.stock, upper: sl.upper, lower: sl.lower,
-            updateMode: sl.updateMode, ruleId: sl.ruleId,
-            aiUpper: sl.aiUpper, aiLower: sl.aiLower
+            updateMode: sl.updateMode, ruleId: sl.ruleId
           });
         });
       });
@@ -686,9 +677,7 @@
     { key: "lower", label: "库存下限", width: 100 },
     { key: "unit", label: "单位", width: 60 },
     { key: "updateMode", label: "更新方式", width: 120 },
-    { key: "ruleName", label: "更新规则", width: 160 },
-    { key: "aiUpper", label: "AI建议上限", width: 120 },
-    { key: "aiLower", label: "AI建议下限", width: 120 }
+    { key: "ruleName", label: "更新规则", width: 160 }
   ];
 
   // 厂商 tab 列
@@ -704,9 +693,7 @@
     { key: "lower", label: "库存下限", width: 100 },
     { key: "unit", label: "单位", width: 60 },
     { key: "updateMode", label: "更新方式", width: 120 },
-    { key: "ruleName", label: "更新规则", width: 160 },
-    { key: "aiUpper", label: "AI建议上限", width: 120 },
-    { key: "aiLower", label: "AI建议下限", width: 120 }
+    { key: "ruleName", label: "更新规则", width: 160 }
   ];
 
   function currentCols(){ return ST.tab === "spec" ? SPEC_COLS : VENDOR_COLS; }
@@ -816,7 +803,6 @@
         return '<select class="cell-select" data-act="updateMode" data-key="'+r.rowKey+'">' +
           '<option value="manual"'+(sl.updateMode==="manual"?" selected":"")+'>人工</option>' +
           '<option value="auto"'+(sl.updateMode==="auto"?" selected":"")+'>自动计算</option>' +
-          '<option value="ai"'+(sl.updateMode==="ai"?" selected":"")+'>AI</option>' +
           '</select>';
 
       // 更新规则：auto 时可下拉，其他时显示"—"
@@ -829,17 +815,6 @@
         } else {
           return '<span style="color:var(--text-tertiary)">—</span>';
         }
-
-      // AI 建议值：值 + ℹ️ icon
-      case "aiUpper":
-      case "aiLower": {
-        var val = col.key === "aiUpper" ? r.aiUpper : r.aiLower;
-        return '<div class="sl-ai-cell">'+val+
-          '<span class="sl-ai-icon" data-tip="查看原因" data-reason-key="'+r.rowKey+'" title="查看原因">' +
-          '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>' +
-          '</span>' +
-          '</div>';
-      }
 
       default: return "";
     }
@@ -866,21 +841,7 @@
         var sk = specKeyOf(key);
         var val = this.value;
         var sl = ST.data[sk];
-        var oldMode = sl.updateMode;
-        sl.updateMode = val;
-
-        if (val === "ai") {
-          // 采纳 AI 建议
-          confirmDialog("采纳 AI 建议", "确定要采纳 AI 建议的库存上/下限吗？", function(){
-            sl.upper = sl.aiUpper;
-            sl.lower = sl.aiLower;
-            sl.ruleId = "";
-            showToast("已采纳 AI 建议");
-            renderAll();
-          });
-          // 不立即渲染，等用户确认
-          sl.updateMode = oldMode; // 先保持，等确认回调再真正切换
-        } else if (val === "manual") {
+        if (val === "manual") {
           sl.ruleId = "";
           renderTbody();
         } else if (val === "auto") {
@@ -963,32 +924,6 @@
         if (e.key === "Enter") { e.preventDefault(); validateAndSave(); }
       });
     });
-
-    // AI icon 点击 → popover（挂 body 避免被 table overflow 裁剪）
-    tbody.querySelectorAll(".sl-ai-icon").forEach(function(icon){
-      icon.onclick = function(e){
-        e.stopPropagation();
-        var key = this.getAttribute("data-reason-key");
-        var sk = specKeyOf(key);
-        var sl = ST.data[sk] || {};
-        // 如果同一个 icon 已显示 → 关闭
-        if (ST._activePopoverKey === key) { closeAllPopovers(); return; }
-        closeAllPopovers();
-        // 构造 popover
-        var popoverHTML = buildAIReasonHTML(key, sl);
-        var wrap = document.createElement("div");
-        wrap.innerHTML = popoverHTML;
-        var popover = wrap.firstElementChild;
-        // 定位：以 icon 为锚点，在 body 里绝对定位
-        var rect = this.getBoundingClientRect();
-        popover.style.position = "fixed";
-        popover.style.left = (rect.left + rect.width/2) + "px";
-        popover.style.top = (rect.bottom + 6) + "px";
-        popover.style.transform = "translateX(-50%)";
-        document.body.appendChild(popover);
-        ST._activePopoverKey = key;
-      };
-    });
   }
 
   function renderPager(){
@@ -1010,51 +945,13 @@
 
   function renderBatchBar(){
     var cnt = Object.keys(ST.selected).filter(function(k){ return ST.selected[k]; }).length;
-    if (cnt > 0) {
-      $("batchBar").classList.add("show");
-      $("selCount").textContent = cnt;
-    } else {
-      $("batchBar").classList.remove("show");
-    }
+    $("selCount").textContent = cnt;
+    $("selWrap").style.display = cnt > 0 ? "" : "none";
   }
 
   function renderAll(){
     if (ST.tab === "vendor" && !ST._vendorRows) buildVendorRows();
     renderTable();
-  }
-
-  // =====================================================================
-  // AI 原因 Popover（渲染在 tbody 里，icon 旁边）
-  // =====================================================================
-
-  // 渲染 AI popover 的 HTML 内容字符串
-  function buildAIReasonHTML(rowKey, sl){
-    var r = MOCK.aiReasons[rowKey];
-    if (!r) {
-      return '<div class="sl-ai-popover">' +
-        '<div class="sl-ai-summary">暂无 AI 建议原因数据。</div>' +
-      '</div>';
-    }
-    var tpl = MOCK.aiReasonTemplates[r.tpl];
-    var summary = tpl.summary;
-    var points = tpl.points.map(function(p){
-      return p.replace(/\{recent\}/g, r.recent).replace(/\{daily\}/g, r.daily)
-              .replace(/\{prevDaily\}/g, r.prevDaily).replace(/\{growth\}/g, r.growth)
-              .replace(/\{cycle\}/g, r.cycle).replace(/\{aiMax\}/g, r.aiMax)
-              .replace(/\{aiMin\}/g, r.aiMin)
-              .replace(/\{curMax\}/g, sl.upper).replace(/\{curMin\}/g, sl.lower);
-    });
-    return '<div class="sl-ai-popover">' +
-      '<div class="sl-ai-summary">'+esc(summary)+'</div>' +
-      '<div class="sl-ai-points-title">推荐依据</div>' +
-      '<ul class="sl-ai-points">' + points.map(function(p){ return '<li>'+esc(p)+'</li>'; }).join("") + '</ul>' +
-    '</div>';
-  }
-
-  // 关闭所有 popover（点击空白处或 ESC 触发）
-  function closeAllPopovers(){
-    document.querySelectorAll(".sl-ai-popover").forEach(function(p){ p.remove(); });
-    ST._activePopoverKey = "";
   }
 
   // =====================================================================
@@ -1072,90 +969,217 @@
     return Object.keys(set);
   }
 
-  function openBatchManual(){
-    $("genTitle").textContent = "人工设置库存上/下限";
+  function openBatchSet(){
+    var keys = selectedKeys();
+    if (keys.length === 0) { showToast("请先勾选需要设置的记录", false); return; }
+
+    $("genTitle").textContent = "批量设置高低储";
     $("genModal").style.width = "480px";
+    var ruleOpts = ST.rules.map(function(r){ return '<option value="'+r.id+'">'+esc(r.name)+'</option>'; }).join("");
     $("genBody").innerHTML =
       '<div class="sl-batch-form">' +
-      '<div class="form-label"><span class="req">*</span>库存上限</div>' +
-      '<div><input class="input" id="bmUpper" type="number" min="0" placeholder="请输入库存上限"><div class="field-hint">≥ 0</div></div>' +
-      '<div class="form-label"><span class="req">*</span>库存下限</div>' +
-      '<div><input class="input" id="bmLower" type="number" min="0" placeholder="请输入库存下限"><div class="field-hint">≥ 0，且 ≤ 上限</div></div>' +
+      '<div class="form-label"><span class="req">*</span>更新方式</div>' +
+      '<div>' +
+        '<label style="margin-right:16px;cursor:pointer;"><input type="radio" name="bsMode" value="manual" checked> 人工</label>' +
+        '<label style="cursor:pointer;"><input type="radio" name="bsMode" value="auto"> 自动计算</label>' +
+      '</div>' +
+      '<div class="form-label" id="bsUpperLbl"><span class="req">*</span>库存上限</div>' +
+      '<div id="bsUpperWrap"><input class="input" id="bsUpper" type="number" min="0" placeholder="请输入库存上限"><div class="field-hint">≥ 0</div></div>' +
+      '<div class="form-label" id="bsLowerLbl"><span class="req">*</span>库存下限</div>' +
+      '<div id="bsLowerWrap"><input class="input" id="bsLower" type="number" min="0" placeholder="请输入库存下限"><div class="field-hint">≥ 0，且 ≤ 上限</div></div>' +
+      '<div class="form-label" id="bsRuleLbl" style="display:none;"><span class="req">*</span>更新规则</div>' +
+      '<div id="bsRuleWrap" style="display:none;"><select class="select" id="bsRule">'+ruleOpts+'</select><div class="field-hint">确定后按所选规则批量计算库存上/下限</div></div>' +
       '</div>';
     $("genFoot").innerHTML =
-      '<button class="btn" id="bmCancel">取消</button>' +
-      '<button class="btn btn-primary" id="bmOk">确定</button>';
+      '<button class="btn" id="bsCancel">取消</button>' +
+      '<button class="btn btn-primary" id="bsOk">确定</button>';
     $("genMask").classList.add("show");
-    $("bmCancel").onclick = closeGenDialog;
-    $("genClose").onclick = closeGenDialog;
-    $("bmOk").onclick = function(){
-      var upper = parseFloat($("bmUpper").value);
-      var lower = parseFloat($("bmLower").value);
-      if (isNaN(upper) || upper < 0) { showToast("请输入有效的库存上限", false); return; }
-      if (isNaN(lower) || lower < 0) { showToast("请输入有效的库存下限", false); return; }
-      if (lower > upper) { showToast("下限不能大于上限", false); return; }
-      var keys = selectedSpecKeys();
-      keys.forEach(function(k){
-        ST.data[k].updateMode = "manual";
-        ST.data[k].ruleId = "";
-        ST.data[k].upper = upper;
-        ST.data[k].lower = lower;
-      });
-      showToast("已批量设置 " + keys.length + " 条");
-      ST.selected = {};
-      closeGenDialog();
-      renderAll();
-    };
-  }
 
-  function openBatchRule(){
-    $("genTitle").textContent = "规则设置";
-    $("genModal").style.width = "480px";
-    var opts = ST.rules.map(function(r){ return '<option value="'+r.id+'">'+esc(r.name)+'</option>'; }).join("");
-    $("genBody").innerHTML =
-      '<div class="sl-batch-form">' +
-      '<div class="form-label"><span class="req">*</span>选择规则</div>' +
-      '<select class="select" id="brRule">'+opts+'</select>' +
-      '</div>';
-    $("genFoot").innerHTML =
-      '<button class="btn" id="brCancel">取消</button>' +
-      '<button class="btn btn-primary" id="brOk">确定</button>';
-    $("genMask").classList.add("show");
-    $("brCancel").onclick = closeGenDialog;
-    $("genClose").onclick = closeGenDialog;
-    $("brOk").onclick = function(){
-      var ruleId = $("brRule").value;
-      var rule = ST.rules.find(function(r){ return r.id === ruleId; });
-      if (!rule) return;
-      var keys = selectedSpecKeys();
-      keys.forEach(function(k){
-        ST.data[k].updateMode = "auto";
-        ST.data[k].ruleId = ruleId;
-        ST.data[k].upper = Math.round(10 * rule.upperCoef);
-        ST.data[k].lower = Math.round(10 * rule.lowerCoef);
-      });
-      // 更新引用计数（mock 用）
-      MOCK.ruleRefCount[ruleId] = (MOCK.ruleRefCount[ruleId]||0) + keys.length;
-      showToast("已切换为自动计算（规则：" + rule.name + "）");
-      ST.selected = {};
-      closeGenDialog();
-      renderAll();
-    };
-  }
-
-  function openBatchAI(){
-    confirmDialog("AI 设置", "确定要采纳所选 " + selectedKeys().length + " 条记录的 AI 建议库存上/下限吗？", function(){
-      var keys = selectedSpecKeys();
-      keys.forEach(function(k){
-        ST.data[k].updateMode = "ai";
-        ST.data[k].ruleId = "";
-        ST.data[k].upper = ST.data[k].aiUpper;
-        ST.data[k].lower = ST.data[k].aiLower;
-      });
-      showToast("已采纳 " + keys.length + " 条 AI 建议");
-      ST.selected = {};
-      renderAll();
+    // 更新方式切换：人工 → 输入上下限；自动计算 → 选择规则
+    function syncModeFields(){
+      var mode = document.querySelector('input[name="bsMode"]:checked').value;
+      var isManual = mode === "manual";
+      $("bsUpperLbl").style.display = isManual ? "" : "none";
+      $("bsLowerLbl").style.display = isManual ? "" : "none";
+      $("bsUpperWrap").style.display = isManual ? "" : "none";
+      $("bsLowerWrap").style.display = isManual ? "" : "none";
+      $("bsRuleLbl").style.display = isManual ? "none" : "";
+      $("bsRuleWrap").style.display = isManual ? "none" : "";
+    }
+    document.querySelectorAll('input[name="bsMode"]').forEach(function(rd){
+      rd.onchange = syncModeFields;
     });
+
+    $("bsCancel").onclick = closeGenDialog;
+    $("genClose").onclick = closeGenDialog;
+    $("bsOk").onclick = function(){
+      var mode = document.querySelector('input[name="bsMode"]:checked').value;
+      var specKeys = selectedSpecKeys();
+
+      if (mode === "manual") {
+        var upper = parseFloat($("bsUpper").value);
+        var lower = parseFloat($("bsLower").value);
+        if (isNaN(upper) || upper < 0) { showToast("请输入有效的库存上限", false); return; }
+        if (isNaN(lower) || lower < 0) { showToast("请输入有效的库存下限", false); return; }
+        if (lower > upper) { showToast("下限不能大于上限", false); return; }
+        specKeys.forEach(function(k){
+          ST.data[k].updateMode = "manual";
+          ST.data[k].ruleId = "";
+          ST.data[k].upper = upper;
+          ST.data[k].lower = lower;
+        });
+        showToast("已批量设置 " + specKeys.length + " 条");
+      } else {
+        var ruleId = $("bsRule").value;
+        var rule = ST.rules.find(function(r){ return r.id === ruleId; });
+        if (!rule) { showToast("请选择更新规则", false); return; }
+        specKeys.forEach(function(k){
+          ST.data[k].updateMode = "auto";
+          ST.data[k].ruleId = ruleId;
+          ST.data[k].upper = Math.round(10 * rule.upperCoef);
+          ST.data[k].lower = Math.round(10 * rule.lowerCoef);
+        });
+        // 更新引用计数（mock 用）
+        MOCK.ruleRefCount[ruleId] = (MOCK.ruleRefCount[ruleId]||0) + specKeys.length;
+        showToast("已按规则「" + rule.name + "」批量设置 " + specKeys.length + " 条");
+      }
+
+      ST.selected = {};
+      closeGenDialog();
+      renderAll();
+    };
+  }
+
+
+  // =====================================================================
+  // AI 日报（右侧抽屉）
+  // =====================================================================
+
+  var DAILY_DATA = {
+    meta: "分析范围：中心药房自身库存｜统计周期：近7天、30天、90天",
+    summary: "今日发现部分药品虽然尚未触发传统高低储预警，但近期消耗趋势与现有库存配置存在偏差。其中，999感冒灵颗粒近期消耗明显增长，库存支撑能力可能下降；部分药品则存在高储配置偏高、库存周转放缓的情况。建议优先关注以下风险对象。",
+    risks: [
+      { rank: 1, name: "999感冒灵颗粒", grain: "品规级", type: "潜在断供风险", level: "高",
+        detail: [
+          ["当前库存", "500盒"], ["低储值", "100盒"],
+          ["近7天日均消耗", "35盒"], ["近30天日均消耗", "10盒"],
+          ["风险原因", "近期消耗达到近30天的3.5倍，库存支撑能力下降。"],
+          ["AI 建议", "复核低储值配置，并关注近期消耗增长是否持续。"]
+        ] },
+      { rank: 2, name: "阿莫西林胶囊 0.25g", grain: "厂商级", type: "低储值可能偏低", level: "高",
+        detail: [
+          ["设置对象", "某制药有限公司"], ["当前库存", "300盒"], ["低储值", "50盒"],
+          ["近30天日均消耗", "10盒"],
+          ["风险原因", "当前低储值仅相当于约5天的近期消耗量。"],
+          ["AI 建议", "结合实际补货周期，复核该生产厂商对应的低储值。"]
+        ] },
+      { rank: 3, name: "盐酸二甲双胍片 0.5g", grain: "品规级", type: "高储值可能偏高", level: "中",
+        detail: [
+          ["当前库存", "450盒"], ["高储值", "1,000盒"],
+          ["近90天日均消耗", "4盒"],
+          ["风险原因", "高储值相当于约250天的历史日均消耗量。"],
+          ["AI 建议", "结合采购批量和储备要求，复核高储值设置。"]
+        ] },
+      { rank: 4, name: "布洛芬混悬液 100ml", grain: "厂商级", type: "库存积压风险", level: "中",
+        detail: [
+          ["设置对象", "某药业有限公司"], ["当前库存", "600瓶"],
+          ["近90天日均消耗", "8瓶"], ["近30天日均消耗", "2瓶"],
+          ["风险原因", "近期消耗明显下降，库存周转可能放缓。"],
+          ["AI 建议", "核实需求变化，并结合批次有效期评估积压风险。"]
+        ] },
+      { rank: 5, name: "某抗菌药物注射剂", grain: "品规级", type: "消耗异常波动", level: "中",
+        detail: [
+          ["当前库存", "200支"],
+          ["近30天日均消耗", "5支"], ["近7天日均消耗", "28支"],
+          ["风险原因", "近期消耗明显偏离历史水平。"],
+          ["AI 建议", "核实近期调拨及发药记录，判断是否存在持续需求增长。"]
+        ] }
+    ],
+    actions: [
+      "对近期消耗明显增长的药品，结合补货周期复核低储配置。",
+      "对长期消耗偏低的药品，结合实际储备要求复核高储配置。",
+      "对短期消耗大幅波动的药品，先核实业务记录，避免将一次性集中调拨误判为持续需求增长。"
+    ],
+    notes: [
+      "本日报仅分析中心药房自身库存。",
+      "已触发传统高低储预警的同一配置对象不重复展示。",
+      "品规级建议适用于该品规全部生产厂商；厂商级建议仅适用于指定生产厂商。",
+      "库存支撑天数按照当前可用库存及对应周期日均消耗估算，冻结库存不计入。",
+      "本日报仅提供分析建议，不自动修改高低储配置。"
+    ]
+  };
+
+  function riskTagHTML(level){
+    var cls = level === "高" ? "high" : "mid";
+    return '<span class="sl-risk-tag '+cls+'">'+level+'</span>';
+  }
+
+  function renderDailyContent(){
+    var d = DAILY_DATA;
+    var html = "";
+
+    // 分析范围
+    html += '<div class="sl-daily-meta">'+esc(d.meta)+'</div>';
+
+    // 一、今日分析摘要
+    html += '<div class="sl-daily-sec">' +
+      '<div class="sl-daily-sec-title">一、今日分析摘要</div>' +
+      '<div class="sl-daily-summary">'+esc(d.summary)+'</div>' +
+    '</div>';
+
+    // 二、重点风险及 AI 建议
+    html += '<div class="sl-daily-sec">' +
+      '<div class="sl-daily-sec-title">二、重点风险及 AI 建议</div>' +
+      '<table class="sl-daily-table">' +
+        '<thead><tr><th>排名</th><th>药品名称及规格</th><th>设置粒度</th><th>风险类型</th><th>风险等级</th></tr></thead>' +
+        '<tbody>' +
+        d.risks.map(function(r){
+          return '<tr>' +
+            '<td>'+r.rank+'</td>' +
+            '<td class="drug-name">'+esc(r.name)+'</td>' +
+            '<td>'+esc(r.grain)+'</td>' +
+            '<td>'+esc(r.type)+'</td>' +
+            '<td>'+riskTagHTML(r.level)+'</td>' +
+          '</tr>';
+        }).join("") +
+        '</tbody>' +
+      '</table>' +
+      '<div style="height:10px"></div>' +
+      d.risks.map(function(r){
+        return '<div class="sl-daily-card">' +
+          '<div class="sl-daily-card-title">'+r.rank+'. '+esc(r.name)+'｜'+esc(r.type)+' '+riskTagHTML(r.level)+'</div>' +
+          r.detail.map(function(kv){
+            return '<div class="sl-daily-kv"><b>'+esc(kv[0])+'：</b>'+esc(kv[1])+'</div>';
+          }).join("") +
+        '</div>';
+      }).join("") +
+    '</div>';
+
+    // 三、今日整体优化建议
+    html += '<div class="sl-daily-sec">' +
+      '<div class="sl-daily-sec-title">三、今日整体优化建议</div>' +
+      '<ol class="sl-daily-ol">' +
+        d.actions.map(function(a){ return '<li>'+esc(a)+'</li>'; }).join("") +
+      '</ol>' +
+    '</div>';
+
+    // 四、数据说明
+    html += '<div class="sl-daily-sec">' +
+      '<div class="sl-daily-sec-title">四、数据说明</div>' +
+      '<ul class="sl-daily-ul">' +
+        d.notes.map(function(n){ return '<li>'+esc(n)+'</li>'; }).join("") +
+      '</ul>' +
+    '</div>';
+
+    $("dailyContent").innerHTML = html;
+  }
+
+  function openAIDaily(){
+    renderDailyContent();
+    document.body.classList.add("daily-open");
+  }
+  function closeAIDaily(){
+    document.body.classList.remove("daily-open");
   }
 
   // =====================================================================
@@ -1427,9 +1451,7 @@
     });
 
     // 批量操作
-    $("btnBatchManual").onclick = openBatchManual;
-    $("btnBatchRule").onclick = openBatchRule;
-    $("btnBatchAI").onclick = openBatchAI;
+    $("btnBatchSet").onclick = openBatchSet;
     $("btnClearSel").onclick = function(){
       ST.selected = {};
       renderAll();
@@ -1437,6 +1459,10 @@
 
     // 规则管理抽屉
     $("btnRules").onclick = openRulesDrawer;
+    // AI 日报
+    $("btnAIDaily").onclick = openAIDaily;
+    $("dailyClose").onclick = closeAIDaily;
+    $("dailyMask").onclick = closeAIDaily;
     $("rulesClose").onclick = closeRulesDrawer;
     $("rulesMask").onclick = closeRulesDrawer;
 
@@ -1446,16 +1472,6 @@
       ST.ruleDraft = blankRule();
       renderRulesList();
     };
-
-    // AI popover：点击空白关闭 + ESC 关闭
-    document.addEventListener("click", function(e){
-      if (!e.target.closest(".sl-ai-popover") && !e.target.closest(".sl-ai-icon")) {
-        closeAllPopovers();
-      }
-    });
-    document.addEventListener("keydown", function(e){
-      if (e.key === "Escape") closeAllPopovers();
-    });
   }
 
   // ---- 初始化 标题行 select（机构已隐藏，仅初始化库位） ----
@@ -1493,5 +1509,6 @@
 })();
 </script>
   <script src="nav.js"></script>
-</body>
-</html>
+
+
+</body></html>

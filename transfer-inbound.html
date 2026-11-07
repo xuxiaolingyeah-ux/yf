@@ -88,24 +88,25 @@
               <section class="block">
                 <div class="block-head">
                   <h2 class="block-title">药品明细</h2>
-                  <span class="tr-in-hint">入库量不得超过调拨量；不合格需选择原因，可用「剔除追溯码」标记不合格</span>
+                  <span class="tr-in-hint">入库数量、不合格数量由「扫码核对」结果自动计算；不合格需选择原因，可在扫码核对中标记</span>
                 </div>
                 <div class="tr-stage-table is-scroll">
                   <table class="data-table tr-tree tr-in-tree">
                     <thead>
                       <tr>
-                        <th style="width:124px;">药品名称</th>
-                        <th style="width:108px;">药品规格</th>
-                        <th style="width:88px;">药品编码</th>
-                        <th style="width:70px;" class="num">申请数量</th>
-                        <th style="width:70px;" class="num">调拨数量</th>
-                        <th style="width:46px;" class="num">差额</th>
-                        <th style="width:82px;" class="num"><span class="req">*</span>入库数量</th>
-                        <th style="width:92px;" class="num"><span class="req">*</span>不合格数量</th>
-                        <th style="width:92px;">不合格原因</th>
-                        <th style="width:108px;" class="num">进货价金额合计</th>
-                        <th style="width:108px;" class="num">零售价金额合计</th>
-                        <th style="width:90px;">操作</th>
+                        <th style="width:36px;"></th>
+                        <th style="width:180px;">药品名称</th>
+                        <th style="width:140px;">药品规格</th>
+                        <th style="width:120px;">品规编码</th>
+                        <th style="width:80px;" class="num">申请数量</th>
+                        <th style="width:80px;" class="num">调拨数量</th>
+                        <th style="width:80px;" class="num">入库数量</th>
+                        <th style="width:84px;" class="num">不合格数量</th>
+                        <th style="width:120px;"><span class="req">*</span>不合格原因</th>
+                        <th style="width:120px;" class="num">进货价金额合计</th>
+                        <th style="width:120px;" class="num">零售价金额合计</th>
+                        <th style="width:90px;" class="num">追溯码核对</th>
+                        <th style="width:96px;">操作</th>
                       </tr>
                     </thead>
                     <tbody id="rowBody"></tbody>
@@ -157,15 +158,18 @@
 
   var expanded = {};
   var traceGi = -1;
+  var drawerMode = "verify";
 
   bill.batches.forEach(function (g) {
     (g.rows || []).forEach(function (r) {
       if (!r.traceCodes) r.traceCodes = [];
       if (!r.badCodes) r.badCodes = [];
+      if (!r.verified) r.verified = [];
+      if (!r.extraCodes) r.extraCodes = [];
     });
-    if (g.inQty === undefined) g.inQty = TR.allocated(g);
     if (!g.badReason) g.badReason = "";
-    distribute(g);
+    if (!g.unknownExtras) g.unknownExtras = [];
+    syncQty(g);
   });
 
   function isOpen(g) { return expanded[g.key] !== undefined ? expanded[g.key] : (g.rows || []).length > 0; }
@@ -174,40 +178,42 @@
     (g.rows || []).forEach(function (r) { n += (r.badCodes || []).length; });
     return n;
   }
-  function diffOf(g) { return g.applyQty - TR.allocated(g); }
+  function okCount(g) {
+    var n = 0;
+    (g.rows || []).forEach(function (r) { n += (r.verified || []).length; });
+    return n;
+  }
+  function extraCount(g) {
+    var n = (g.unknownExtras || []).length;
+    (g.rows || []).forEach(function (r) { n += (r.extraCodes || []).length; });
+    return n;
+  }
+  function manifestCount(g) {
+    var n = 0;
+    (g.rows || []).forEach(function (r) { n += (r.traceCodes || []).length; });
+    return n;
+  }
   function moneyOf(g) {
     var p = 0, rt = 0;
     (g.rows || []).forEach(function (r) {
-      var good = Math.max(0, (Number(r.inQty) || 0) - (Number(r.badQty) || 0));
-      p += good * (Number(r.purchase) || 0);
-      rt += good * (Number(r.retail) || 0);
+      var ok = (r.verified || []).length;
+      p += ok * (Number(r.purchase) || 0);
+      rt += ok * (Number(r.retail) || 0);
     });
     return { purchase: TR.money(p), retail: TR.money(rt) };
   }
 
-  /* 入库数量按批次顺序分配；批次不合格数量由追溯码倒推 */
-  function distribute(g) {
-    var remain = Number(g.inQty) || 0;
+  /* 数量由扫码结果驱动：入库数量 = 已核合格码数；不合格数量 = 标记不合格码数 */
+  function syncQty(g) {
+    var ok = 0, bad = 0;
     (g.rows || []).forEach(function (r) {
-      var out = Number(r.outQty) || 0;
-      var q = Math.max(0, Math.min(remain, out));
-      r.inQty = q;
-      remain -= q;
+      r.inQty = (r.verified || []).length;
       r.badQty = (r.badCodes || []).length;
+      ok += r.inQty;
+      bad += r.badQty;
     });
-  }
-
-  /* 按前 n 个追溯码标记不合格，其余合格 */
-  function syncBad(g, n) {
-    var picked = 0;
-    (g.rows || []).forEach(function (r) {
-      var rowBad = [];
-      (r.traceCodes || []).forEach(function (c) {
-        if (picked < n) { picked++; rowBad.push(c); }
-      });
-      r.badCodes = rowBad;
-      r.badQty = rowBad.length;
-    });
+    g.inQty = ok;
+    g.badQty = bad;
   }
 
   function infoItem(l, v) {
@@ -237,21 +243,22 @@
       var rows = g.rows || [];
       var open = isOpen(g);
       var badN = badCount(g);
+      var okN = okCount(g);
+      var mCount = manifestCount(g);
       var m = moneyOf(g);
+      var done = mCount > 0 && okN + badN >= mCount;
       var html =
         '<tr class="tr-tree-parent">' +
           '<td><button class="tr-expander' + (open ? " is-open" : "") + '" data-toggle="' + idx + '" title="展开/收起">' +
             '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>' +
-          "</button>" + esc(g.drugName) + "</td>" +
+          "</button></td>" +
+          "<td>" + esc(g.drugName) + "</td>" +
           "<td>" + esc(g.spec) + "</td>" +
           "<td>" + esc(g.drugCode) + "</td>" +
           '<td class="num">' + g.applyQty + "</td>" +
           '<td class="num">' + TR.allocated(g) + "</td>" +
-          '<td class="num">' + diffOf(g) + "</td>" +
-          '<td class="num"><input class="input tr-qty" type="text" inputmode="numeric" value="' + g.inQty +
-            '" data-g="' + idx + '" data-field="inQty"></td>' +
-          '<td class="num"><input class="input tr-qty" type="text" inputmode="numeric" value="' + badN +
-            '" data-g="' + idx + '" data-field="badQty"></td>' +
+          '<td class="num">' + (mCount ? okN : "—") + "</td>" +
+          '<td class="num' + (badN ? " is-bad-num" : "") + '">' + badN + "</td>" +
           '<td><select class="select tr-reason" data-g="' + idx + '" data-field="badReason"' + (badN > 0 ? "" : " disabled") + ">" +
             '<option value="">请选择</option>' +
             TR.BAD_REASONS.map(function (x) {
@@ -260,67 +267,166 @@
           "</select></td>" +
           '<td class="num">' + m.purchase + "</td>" +
           '<td class="num">' + m.retail + "</td>" +
-          '<td><button class="link-btn" data-trace="' + idx + '">剔除追溯码</button></td>' +
+          '<td class="num tr-check-cell' + (done ? " is-done" : okN > 0 ? " is-doing" : "") + '">' + (mCount ? okN + "/" + mCount : "—") + "</td>" +
+          '<td><button class="link-btn" data-trace="' + idx + '">' + (done ? "查看核对" : "扫码核对") + "</button></td>" +
         "</tr>";
 
       if (open) {
-        html += '<tr class="tr-child-wrap"><td colspan="12"><table class="tr-child-table"><thead><tr>' +
+        html += '<tr class="tr-child-wrap"><td></td><td colspan="12"><table class="tr-child-table"><thead><tr>' +
           '<th style="width:120px;">批次号</th>' +
-          '<th style="width:170px;">生产企业</th>' +
+          '<th style="width:150px;">生产企业</th>' +
           '<th style="width:95px;">有效期</th>' +
           '<th style="width:90px;" class="num">进货价</th>' +
           '<th style="width:90px;" class="num">零售价</th>' +
-          '<th style="width:100px;" class="num">出库数量</th>' +
-          '<th style="width:120px;" class="num">进货价金额合计</th>' +
-          '<th style="width:120px;" class="num">零售价金额合计</th>' +
+          '<th style="width:90px;" class="num">入库数量</th>' +
+          '<th style="width:90px;" class="num">不合格数量</th>' +
+          '<th style="width:90px;" class="num">追溯码核对</th>' +
         "</tr></thead><tbody>";
         if (!rows.length) {
           html += '<tr class="tr-child-empty"><td colspan="8">暂无出库批次</td></tr>';
         } else {
           html += rows.map(function (r) {
-            var good = Math.max(0, (Number(r.inQty) || 0) - (Number(r.badQty) || 0));
+            var v = (r.verified || []).length;
             return "<tr>" +
               "<td>" + esc(r.batchNo) + "</td>" +
               "<td>" + esc(r.vendor) + "</td>" +
               "<td>" + esc(r.expDate) + "</td>" +
               '<td class="num">' + TR.money(r.purchase) + "</td>" +
               '<td class="num">' + TR.money(r.retail) + "</td>" +
-              '<td class="num">' + r.outQty + "</td>" +
-              '<td class="num">' + TR.money(good * (Number(r.purchase) || 0)) + "</td>" +
-              '<td class="num">' + TR.money(good * (Number(r.retail) || 0)) + "</td>" +
+              '<td class="num">' + v + "</td>" +
+              '<td class="num">' + (r.badCodes || []).length + "</td>" +
+              '<td class="num">' + v + "/" + (r.traceCodes || []).length + "</td>" +
             "</tr>";
           }).join("");
         }
         html += "</tbody></table></td></tr>";
       }
       return html;
-    }).join("") : '<tr><td colspan="12" class="tr-empty-cell">暂无药品明细</td></tr>';
+    }).join("") : '<tr><td colspan="13" class="tr-empty-cell">暂无药品明细</td></tr>';
     renderSums();
   }
 
   function renderSums() {
-    var s = TR.inSums(bill);
-    $("sumIn").textContent = s.totalIn;
-    $("sumBad").textContent = s.totalBad;
-    $("sumGood").textContent = s.good;
-    $("sumPurchase").textContent = s.purchase;
-    $("sumRetail").textContent = s.retail;
+    var totalIn = 0, totalBad = 0, purchase = 0, retail = 0;
+    bill.batches.forEach(function (g) {
+      (g.rows || []).forEach(function (r) {
+        var v = (r.verified || []).length;
+        var b = (r.badCodes || []).length;
+        totalIn += v + b;
+        totalBad += b;
+        purchase += v * (Number(r.purchase) || 0);
+        retail += v * (Number(r.retail) || 0);
+      });
+    });
+    $("sumIn").textContent = totalIn;
+    $("sumBad").textContent = totalBad;
+    $("sumGood").textContent = totalIn;
+    $("sumPurchase").textContent = TR.money(purchase);
+    $("sumRetail").textContent = TR.money(retail);
   }
 
   function renderAll() {
     renderRows();
   }
 
-  /* ---------------- 追溯码抽屉 ---------------- */
-  /* ---------------- 剔除追溯码抽屉 ---------------- */
+  /* ---------------- 扫码核对抽屉 ---------------- */
   function closeDrawer() {
     document.body.classList.remove("drawer-open");
     $("drawerMask").innerHTML = "";
     traceGi = -1;
   }
 
+  function codeOwnerRow(g, code) {
+    var owner = null;
+    (g.rows || []).forEach(function (r) {
+      if ((r.traceCodes || []).indexOf(code) >= 0) owner = r;
+    });
+    return owner;
+  }
+
+  function stateOfCode(r, c) {
+    if ((r.badCodes || []).indexOf(c) >= 0) return "bad";
+    if ((r.verified || []).indexOf(c) >= 0) return "ok";
+    return "pending";
+  }
+
+  /* 非本单码：按码内批次号（TRC+批次号 前缀）归入对应批次；识别不了归入「未识别批次」 */
+  function addExtra(g, code) {
+    var host = null;
+    (g.rows || []).forEach(function (r) {
+      if (code.indexOf("TRC" + r.batchNo) === 0) host = r;
+    });
+    if (host) {
+      if ((host.extraCodes || []).indexOf(code) >= 0) { SEL.toast("该追溯码已在非本单码列表中"); return; }
+      host.extraCodes.push(code);
+      SEL.toast("已登记为非本单码（批次 " + host.batchNo + "）");
+    } else {
+      g.unknownExtras = g.unknownExtras || [];
+      if (g.unknownExtras.indexOf(code) >= 0) { SEL.toast("该追溯码已在非本单码列表中"); return; }
+      g.unknownExtras.push(code);
+      SEL.toast("已登记为非本单码（未识别批次）");
+    }
+  }
+
+  function verifyScan(g, code) {
+    var owner = codeOwnerRow(g, code);
+    if (!owner) { addExtra(g, code); return; }
+    var st = stateOfCode(owner, code);
+    if (st === "bad") {
+      owner.badCodes.splice(owner.badCodes.indexOf(code), 1);
+      owner.verified.push(code);
+      SEL.toast("已恢复合格并核对");
+    } else if (st === "ok") {
+      SEL.toast("该追溯码已核对");
+    } else {
+      owner.verified.push(code);
+    }
+  }
+
+  function badScan(g, code) {
+    var owner = codeOwnerRow(g, code);
+    if (!owner) { addExtra(g, code); return; }
+    var st = stateOfCode(owner, code);
+    if (st === "bad") { SEL.toast("该追溯码已标记为不合格"); return; }
+    if (st === "ok") owner.verified.splice(owner.verified.indexOf(code), 1);
+    owner.badCodes.push(code);
+  }
+
+  function undoScan(g, code) {
+    var hit = false;
+    (g.rows || []).forEach(function (r) {
+      if (hit) return;
+      var at = (r.badCodes || []).indexOf(code);
+      if (at >= 0) { r.badCodes.splice(at, 1); hit = true; return; }
+      at = (r.verified || []).indexOf(code);
+      if (at >= 0) { r.verified.splice(at, 1); hit = true; return; }
+      at = (r.extraCodes || []).indexOf(code);
+      if (at >= 0) { r.extraCodes.splice(at, 1); hit = true; }
+    });
+    if (!hit) {
+      g.unknownExtras = g.unknownExtras || [];
+      var at = g.unknownExtras.indexOf(code);
+      if (at >= 0) { g.unknownExtras.splice(at, 1); hit = true; }
+    }
+    if (!hit) SEL.toast("未找到该追溯码的核对记录");
+  }
+
+  function chipHtml(c, st, ri) {
+    var cls = "tr-code-chip" + (st === "ok" ? " is-ok" : st === "bad" ? " is-bad" : st === "extra" ? " is-extra" : "");
+    return '<span class="' + cls + '" data-code="' + esc(c) + '" data-ri="' + ri + '" data-st="' + st + '">' + esc(c) + "</span>";
+  }
+
+  function groupHtml(batchNo, expDate, stat, chips) {
+    return '<div class="tr-code-group">' +
+      '<div class="tr-code-head"><b>批次 ' + esc(batchNo) +
+        (expDate ? ' <span class="tr-code-exp">· 效期 ' + esc(expDate) + "</span>" : "") + "</b>" +
+        '<span class="count">' + esc(stat) + "</span></div>" +
+      '<div class="tr-code-chips">' + chips + "</div></div>";
+  }
+
   function openTrace(idx) {
     traceGi = idx;
+    drawerMode = "verify";
     expanded[bill.batches[idx].key] = true;
     renderRows();
     var g = bill.batches[idx];
@@ -328,137 +434,175 @@
     mask.innerHTML =
       '<div class="drawer is-pa">' +
         '<div class="drawer-head">' +
-          '<span class="drawer-title">剔除追溯码 · ' + esc(g.drugName) + "</span>" +
+          '<span class="drawer-title">扫码核对 · ' + esc(g.drugName) + "</span>" +
           '<button class="drawer-close" data-drawer-close="1"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg></button>' +
         "</div>" +
-        '<div class="drawer-body tr-scan-body" id="traceBody"></div>' +
-        '<div class="drawer-foot"><button class="btn" data-drawer-close="1">关闭</button></div>' +
+        '<div class="drawer-body tr-scan-body trv-body" id="traceBody"></div>' +
+        '<div class="drawer-foot">' +
+          '<button class="btn" data-drawer-close="1">取消</button>' +
+          '<button class="btn btn-primary" id="traceConfirm">确认核对</button>' +
+        "</div>" +
       "</div>";
     document.body.classList.add("drawer-open");
     renderTrace();
+    $("traceConfirm").addEventListener("click", function () {
+      if (badCount(g) > 0 && !g.badReason) {
+        var sel = $("badReasonSel");
+        if (sel) sel.classList.add("is-invalid");
+        SEL.toast("存在不合格追溯码，请先选择不合格原因");
+        return;
+      }
+      closeDrawer();
+      SEL.toast("核对结果已确认；少发、多发差异将随入库结果回传出库方");
+      renderRows();
+    });
   }
 
   function renderTrace() {
     if (traceGi < 0) return;
     var g = bill.batches[traceGi];
+    var mCount = manifestCount(g), okN = okCount(g), badN = badCount(g), extraN = extraCount(g);
     var body = $("traceBody");
+    if (!body) return;
+
+    var modeBtn = function (m, label) {
+      return '<span class="trv-mode' + (drawerMode === m ? " is-active" : "") + '" data-mode="' + m + '">' + label + "</span>";
+    };
+    var groups = (g.rows || []).map(function (r, ri) {
+      var codes = r.traceCodes || [];
+      var v = (r.verified || []).length, b = (r.badCodes || []).length, e = (r.extraCodes || []).length;
+      var chips = codes.map(function (c) { return chipHtml(c, stateOfCode(r, c), ri); }).join("");
+      chips += (r.extraCodes || []).map(function (c) { return chipHtml(c, "extra", ri); }).join("");
+      if (!chips) chips = '<span class="tr-code-empty">该批次暂无追溯码</span>';
+      var stat = "已核 " + v + "/" + codes.length + " · 不合格 " + b + (e ? " · 非本单码 " + e : "");
+      return groupHtml(r.batchNo, r.expDate, stat, chips);
+    });
+    if ((g.unknownExtras || []).length) {
+      groups.push(groupHtml("未识别批次", "", "非本单码 " + g.unknownExtras.length,
+        g.unknownExtras.map(function (c) { return chipHtml(c, "extra", -1); }).join("")));
+    }
+
     body.innerHTML =
-      '<div class="tr-scan-headline">' +
-        '<span class="name">' + esc(g.drugName) + "</span>" +
-        '<span class="meta">' + esc(g.spec) + "</span>" +
-        '<span class="meta">调拨 ' + TR.allocated(g) + " 个</span>" +
-        '<span class="meta">入库 ' + (Number(g.inQty) || 0) + " 个</span>" +
-        '<span class="meta">不合格 ' + badCount(g) + " 个</span>" +
+      '<div class="trv-stats">' +
+        '<div class="trv-stat"><span class="label">应到码数</span><b>' + mCount + "</b></div>" +
+        '<div class="trv-stat is-ok"><span class="label">已核码数</span><b>' + okN + "</b></div>" +
+        '<div class="trv-stat is-bad"><span class="label">不合格</span><b>' + badN + "</b></div>" +
+        '<div class="trv-stat is-extra"><span class="label">非本单码</span><b>' + extraN + "</b></div>" +
       "</div>" +
       '<div class="tr-scan-input">' +
-        '<input class="input" id="traceCode" placeholder="扫描或输入追溯码后回车，扫到即标记不合格" autocomplete="off">' +
-        '<button class="btn" id="traceAdd">标记不合格</button>' +
+        '<div class="trv-modes">' +
+          modeBtn("verify", "扫码核对") +
+          modeBtn("bad", "标记不合格") +
+          modeBtn("undo", "撤销扫码") +
+        "</div>" +
+        '<input class="input" id="traceCode" placeholder="' + (drawerMode === "undo" ? "扫描需撤销的追溯码后回车" : "扫描或输入追溯码后回车") + '" autocomplete="off">' +
+        '<button class="btn" id="traceAdd">录入</button>' +
       "</div>" +
-      '<div class="tr-scan-tip">点击标签可在「合格 / 不合格」之间切换；不合格数量与标记数量自动同步，且不超过入库数量。</div>' +
-      ((g.rows || []).length ? g.rows.map(function (r, ri) {
-        var codes = r.traceCodes || [];
-        var bad = r.badCodes || [];
-        return '<div class="tr-code-group">' +
-          '<div class="tr-code-head"><b>批次 ' + esc(r.batchNo) + "</b>" +
-            '<span class="count ' + (bad.length ? "is-bad" : "") + '">合格 ' + (codes.length - bad.length) + " / 不合格 " + bad.length + "</span></div>" +
-          '<div class="tr-code-chips">' + (codes.length ? codes.map(function (c) {
-            var isBad = bad.indexOf(c) >= 0;
-            return '<span class="tr-code-chip' + (isBad ? " is-bad" : "") + '" data-togglecode="' + esc(c) + '" data-ri="' + ri + '" title="点击切换合格 / 不合格">' +
-              esc(c) + "</span>";
-          }).join("") : '<span class="tr-code-empty">该批次暂无追溯码</span>') + "</div>" +
-        "</div>";
-      }).join("") : '<div class="tr-code-empty">暂无出库批次</div>');
+      '<div class="trv-reason"><span class="label">' + (badN > 0 ? '<i class="req">*</i>' : "") + '不合格原因</span><select class="select" id="badReasonSel">' +
+        '<option value="">请选择</option>' +
+        TR.BAD_REASONS.map(function (x) {
+          return '<option value="' + x + '"' + (g.badReason === x ? " selected" : "") + ">" + x + "</option>";
+        }).join("") +
+      "</select></div>" +
+      '<div class="trv-legend">' +
+        '<span><i style="background:#D9D9D9;"></i>未扫码</span>' +
+        '<span><i style="background:#52C41A;"></i>核对无误</span>' +
+        '<span><i style="background:#FF4D4F;"></i>不合格</span>' +
+        '<span><i style="background:#FA8C16;"></i>非本单码</span>' +
+      "</div>" +
+      groups.join("");
 
     var input = $("traceCode");
-    function mark() {
+    function submit() {
       var code = input.value.trim().toUpperCase();
       if (!code) return;
-      var owner = null;
-      (g.rows || []).forEach(function (r) {
-        if ((r.traceCodes || []).indexOf(code) >= 0) owner = r;
-      });
-      if (!owner) {
-        SEL.toast("该追溯码不在本药品批次内，无法标记");
-        input.value = "";
-        return;
-      }
-      if ((owner.badCodes || []).indexOf(code) >= 0) {
-        SEL.toast("该追溯码已标记为不合格");
-        input.value = "";
-        return;
-      }
-      if (badCount(g) >= (Number(g.inQty) || 0)) {
-        SEL.toast("不合格数量已达入库数量上限");
-        input.value = "";
-        return;
-      }
-      owner.badCodes.push(code);
-      owner.badQty = owner.badCodes.length;
-      if (!g.badReason) g.badReason = TR.BAD_REASONS[0];
+      if (drawerMode === "undo") undoScan(g, code);
+      else if (drawerMode === "bad") badScan(g, code);
+      else verifyScan(g, code);
+      input.value = "";
+      syncQty(g);
       renderTrace();
       renderRows();
+      setTimeout(function () { var el = $("traceCode"); if (el) el.focus(); }, 0);
     }
     input.addEventListener("keydown", function (e) {
-      if (e.key === "Enter") { e.preventDefault(); mark(); }
+      if (e.key === "Enter") { e.preventDefault(); submit(); }
     });
-    $("traceAdd").addEventListener("click", mark);
-    body.addEventListener("click", function (e) {
-      var chip = e.target.closest("[data-togglecode]");
-      if (!chip) return;
-      var r = g.rows[parseInt(chip.getAttribute("data-ri"), 10)];
-      if (!r) return;
-      var code = chip.getAttribute("data-togglecode");
-      var at = (r.badCodes || []).indexOf(code);
-      if (at >= 0) {
-        r.badCodes.splice(at, 1);
-      } else {
-        if (badCount(g) >= (Number(g.inQty) || 0)) {
-          SEL.toast("不合格数量已达入库数量上限");
-          return;
-        }
-        r.badCodes.push(code);
-      }
-      r.badQty = r.badCodes.length;
-      if (badCount(g) > 0 && !g.badReason) g.badReason = TR.BAD_REASONS[0];
-      renderTrace();
+    $("traceAdd").addEventListener("click", submit);
+
+    [].slice.call(body.querySelectorAll(".trv-mode")).forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        drawerMode = btn.getAttribute("data-mode");
+        renderTrace();
+        setTimeout(function () { var el = $("traceCode"); if (el) el.focus(); }, 0);
+      });
+    });
+
+    $("badReasonSel").addEventListener("change", function (e) {
+      g.badReason = e.target.value;
+      e.target.classList.remove("is-invalid");
       renderRows();
     });
+
+    body.onclick = function (e) {
+      var chip = e.target.closest("[data-code]");
+      if (!chip) return;
+      var code = chip.getAttribute("data-code");
+      var ri = parseInt(chip.getAttribute("data-ri"), 10);
+      var st = chip.getAttribute("data-st");
+      var r = ri >= 0 ? g.rows[ri] : null;
+      if (drawerMode === "bad") {
+        /* 标记不合格模式：点标签直接标记不合格 */
+        if (st === "bad" && r) {
+          r.badCodes.splice(r.badCodes.indexOf(code), 1);
+        } else if (r) {
+          var vi = (r.verified || []).indexOf(code);
+          if (vi >= 0) r.verified.splice(vi, 1);
+          if ((r.badCodes || []).indexOf(code) < 0) r.badCodes.push(code);
+        }
+      } else if (drawerMode === "undo") {
+        /* 撤销扫码模式：点标签撤销当前状态 */
+        if (st === "bad" && r) {
+          r.badCodes.splice(r.badCodes.indexOf(code), 1);
+        } else if (st === "ok" && r) {
+          r.verified.splice(r.verified.indexOf(code), 1);
+        } else if (st === "extra") {
+          if (r) r.extraCodes.splice((r.extraCodes || []).indexOf(code), 1);
+          else {
+            g.unknownExtras = g.unknownExtras || [];
+            g.unknownExtras.splice(g.unknownExtras.indexOf(code), 1);
+          }
+        }
+      } else if (drawerMode === "verify") {
+        /* 扫码核对模式：待核对→核对；已核对→撤销；不合格→恢复合格并核对 */
+        if (r) verifyScan(g, code);
+        return;
+      }
+      syncQty(g);
+      renderTrace();
+      renderRows();
+    };
     setTimeout(function () { input.focus(); }, 50);
   }
 
   /* ---------------- 校验 / 确认入库 ---------------- */
   function confirmIn() {
-    var invalid = false;
+    if (!bill.batches.length) { SEL.toast("暂无药品明细"); return; }
+    var invalid = false, anyScan = false;
     bill.batches.forEach(function (g) {
-      var alloc = TR.allocated(g);
-      var inQty = TR.intVal(g.inQty);
-      var badN = badCount(g);
-      if (isNaN(inQty) || inQty < 1 || inQty > alloc) invalid = true;
-      if (badN > (isNaN(inQty) ? 0 : inQty)) invalid = true;
-      if (badN > 0 && !g.badReason) invalid = true;
+      if (badCount(g) > 0 && !g.badReason) invalid = true;
+      if (okCount(g) + badCount(g) > 0) anyScan = true;
     });
-    [].slice.call($("rowBody").querySelectorAll("[data-g]")).forEach(function (el) {
+    [].slice.call($("rowBody").querySelectorAll("select[data-g]")).forEach(function (el) {
       var g = bill.batches[parseInt(el.getAttribute("data-g"), 10)];
-      var field = el.getAttribute("data-field");
-      var ok = true;
-      if (field === "inQty") {
-        var v = TR.intVal(el.value);
-        ok = !isNaN(v) && v >= 1 && v <= TR.allocated(g);
-      } else if (field === "badQty") {
-        var bv = TR.intVal(el.value);
-        ok = !isNaN(bv) && bv >= 0 && bv <= (TR.intVal(g.inQty) || 0);
-      } else if (field === "badReason") {
-        ok = !(badCount(g) > 0 && !el.value);
-      }
+      var ok = !(badCount(g) > 0 && !el.value);
       el.classList.toggle("is-invalid", !ok);
     });
-    if (invalid) { SEL.toast("请检查入库数量、不合格数量及不合格原因"); return; }
-    if (!bill.batches.length) { SEL.toast("暂无药品明细"); return; }
+    if (invalid) { SEL.toast("请为不合格药品选择不合格原因"); return; }
+    if (!anyScan) { SEL.toast("请先扫码核对追溯码后再确认入库"); return; }
 
     bill.batches.forEach(function (g) {
-      g.inQty = TR.intVal(g.inQty);
-      g.badQty = badCount(g);
-      distribute(g);
+      syncQty(g);
     });
 
     var code = TR.newInCode(TR.load());
@@ -502,19 +646,8 @@
     if (field === "badReason") {
       g.badReason = el.value;
       el.classList.remove("is-invalid");
-      return;
+      if (badCount(g) > 0 && !g.badReason) el.classList.add("is-invalid");
     }
-    var v = TR.intVal(el.value);
-    if (field === "inQty") {
-      g.inQty = isNaN(v) ? 0 : v;
-      if (badCount(g) > (Number(g.inQty) || 0)) syncBad(g, Number(g.inQty) || 0);
-      distribute(g);
-    } else {
-      var n = isNaN(v) ? 0 : Math.max(0, Math.min(v, Number(g.inQty) || 0));
-      syncBad(g, n);
-      if (n > 0 && !g.badReason) g.badReason = TR.BAD_REASONS[0];
-    }
-    renderRows();
   });
 
   document.addEventListener("click", function (e) {

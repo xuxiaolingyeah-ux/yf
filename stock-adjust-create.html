@@ -331,6 +331,7 @@
       ['供应商','','150px'],
       ['批准文号','','150px'],
       ['有效期','','110px'],
+      ['追溯码进度','num','96px'],
       ['操作','col-acts','160px']
     ];
     $("#itemsHead").innerHTML = '<tr>'+cols.map(function(c){return '<th class="'+c[1]+'" style="width:'+c[2]+'">'+c[0]+'</th>';}).join("")+'</tr>';
@@ -357,6 +358,11 @@
       h += '<td class="cell-ellipsis" title="'+SA.esc(it.supplier)+'">'+SA.esc(it.supplier)+'</td>';
       h += '<td class="cell-ellipsis" title="'+SA.esc(it.approval)+'">'+SA.esc(it.approval)+'</td>';
       h += '<td>'+SA.esc(it.expiry)+'</td>';
+      var tNeed = it.qty ? Number(it.qty) : 0;
+      var tHave = (it.traces||[]).length;
+      var tFull = tNeed > 0 && tHave === tNeed;
+      var tColor = tFull ? 'var(--success)' : tHave>0 ? 'var(--warning)' : (ST.method==='minus' ? 'var(--text-tertiary)' : 'var(--text-tertiary)');
+      h += '<td class="num" data-c="traceProg" style="color:'+tColor+';font-weight:'+(tFull?'500':'400')+'">'+tHave+'/'+tNeed+'</td>';
       h += '<td class="col-acts"><a class="link-btn" data-act="trace" data-idx="'+i+'">录入追溯码</a><a class="link-btn is-danger" data-act="del" data-idx="'+i+'">删除</a></td>';
       h += '</tr>';
       return h;
@@ -369,6 +375,14 @@
     if(!tr) return;
     var pa = tr.querySelector('[data-c="pamt"]'); if(pa) pa.textContent = SA.num2(SA.purchaseAmt(it));
     var ra = tr.querySelector('[data-c="ramt"]'); if(ra) ra.textContent = SA.num2(SA.retailAmt(it));
+    var tp = tr.querySelector('[data-c="traceProg"]');
+    if(tp){
+      var tNeed = it.qty ? Number(it.qty) : 0;
+      var tHave = (it.traces||[]).length;
+      tp.textContent = tHave+"/"+tNeed;
+      tp.style.color = (tNeed>0 && tHave===tNeed) ? "var(--success)" : tHave>0 ? "var(--warning)" : "var(--text-tertiary)";
+      tp.style.fontWeight = (tNeed>0 && tHave===tNeed) ? "500" : "400";
+    }
     updateSums();
   }
   function updateSums(){
@@ -548,7 +562,8 @@
   function renderTrace(){
     var it = ST.items[traceIdx];
     var limit = it.qty ? Number(it.qty) : 9999;
-    $("#traceTip").textContent = "已录入 "+traceDraft.length+" 个" + (it.qty ? " / 上限 "+limit+" 个" : "");
+    var isMinus = ST.method === "minus";
+    $("#traceTip").textContent = "已录入 "+traceDraft.length+" 个" + (it.qty ? " / 上限 "+limit+" 个" : "") + (isMinus ? "；报损允许少于增损数量，差额原因请在整单「说明」中注明" : "");
     $("#traceEmpty").style.display = traceDraft.length ? "none" : "block";
     $("#traceBody").innerHTML = traceDraft.map(function(t, i){
       return '<tr><td>'+SA.esc(t.code)+'</td><td>'+SA.esc(t.name)+'</td><td>'+SA.esc(t.spec)+'</td><td>'+SA.esc(t.vendor)+'</td><td>'+SA.esc(t.approval)+'</td>'
@@ -645,6 +660,11 @@
       else {
         if(it.qty==="" || !NUM_RE.test(String(it.qty)) || Number(it.qty)<=0) errs.push(n+"增损数量");
         else if(ST.method==="minus" && Number(it.qty) > Number(it.stockQty||0)) errs.push(n+"报损数量不能超过库存量");
+        var tNeed = it.qty ? Number(it.qty) : 0;
+        var tHave = (it.traces||[]).length;
+        if(ST.method==="add" && tHave !== tNeed) errs.push(n+"追溯码数量（已录 "+tHave+" / 应录 "+tNeed+"）");
+        if(ST.method==="minus" && tHave > tNeed) errs.push(n+"追溯码数量不能超过增损数量");
+        if(ST.method==="minus" && tNeed > 0 && tHave < tNeed && !ST.remark.trim()) errs.push(n+"追溯码差额原因（请在整单「说明」中注明）");
       }
     });
     return errs;

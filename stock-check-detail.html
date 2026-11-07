@@ -187,21 +187,6 @@
               </div>
             </section>
 
-            <!-- 关联单据 -->
-            <section class="block" id="secLink" style="display:none;">
-              <div class="block-head"><h2 class="block-title">关联单据</h2></div>
-              <div class="form-grid-4">
-                <div class="form-item">
-                  <span class="form-label">盘盈入库单</span>
-                  <span class="text-value" id="dInCode">—</span>
-                </div>
-                <div class="form-item">
-                  <span class="form-label">盘亏出库单</span>
-                  <span class="text-value" id="dOutCode">—</span>
-                </div>
-              </div>
-            </section>
-
             <!-- 审批记录 -->
             <section class="block" id="secRecords">
               <div class="block-head"><h2 class="block-title">审批记录</h2></div>
@@ -278,12 +263,6 @@
     $("dCreator").textContent = bill.creator;
     $("dCreatedAt").textContent = bill.createdAt;
     $("itemCount").textContent = "（" + (bill.items || []).length + "）";
-
-    if (bill.auditStatus === "approved" && bill.inCode) {
-      $("secLink").style.display = "";
-      $("dInCode").textContent = bill.inCode;
-      $("dOutCode").textContent = bill.outCode || "—";
-    }
 
     /* 药品分类下拉：只列叶子节点 */
     var fClass = $("fClass");

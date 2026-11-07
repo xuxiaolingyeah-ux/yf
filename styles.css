@@ -2925,13 +2925,13 @@ input, select { font-family: inherit; font-size: inherit; }
 }
 .tr-expander svg { width: 10px; height: 10px; transition: transform 0.15s; }
 .tr-expander.is-open svg { transform: rotate(90deg); }
-.tr-tree-parent td { background: #F8FBFF; }
+.tr-tree-parent td { background: var(--bg-white); font-weight: 500; }
 .tr-tree-parent td:first-child { padding-left: 8px; }
 .tr-child-wrap > td { padding: 0 !important; background: var(--bg-white) !important; border-bottom: 1px solid var(--border); }
 .tr-child-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; table-layout: fixed; }
 .tr-child-table th {
   height: 32px; padding: 0 12px; text-align: left; font-weight: 400;
-  font-size: 12px; color: var(--text-tertiary); background: #F7FAFF;
+  font-size: 12px; color: var(--text-tertiary); background: #F7F8FA;
   white-space: nowrap;
 }
 .tr-child-table td { padding: 8px 12px; border-top: 1px solid var(--border-light); vertical-align: middle; }
@@ -2941,10 +2941,14 @@ input, select { font-family: inherit; font-size: inherit; }
 .tr-child-empty td { text-align: center; color: var(--text-placeholder); padding: 22px 0 !important; }
 .tr-child-table .tr-act-cell {
   position: sticky; right: 0; z-index: 1;
-  background: var(--bg-white);
+  background: #F7F8FA;
   box-shadow: -6px 0 6px -6px rgba(0, 0, 0, 0.12);
 }
-.tr-child-table th.tr-act-cell { background: #F7FAFF; }
+.tr-child-table th.tr-act-cell { background: #F7F8FA; }
+/* 批次子行统一灰底：阻断外层 data-table 斑马纹/悬停色透传到嵌套表 */
+.tr-child-table tbody tr,
+.tr-child-table tbody tr:nth-child(even),
+.tr-child-table tbody tr:hover { background: #F7F8FA; }
 
 /* 明细表格下方的合计行（不放进表格内） */
 .tr-sum-line {
@@ -3007,17 +3011,48 @@ input, select { font-family: inherit; font-size: inherit; }
 .tr-in-table .select { height: 28px; width: 148px; }
 .tr-in-table .select:disabled { background: var(--bg-disabled); color: var(--text-tertiary); }
 .tr-in-table .is-invalid { border-color: var(--danger); }
-.tr-in-tree { min-width: 1078px; table-layout: fixed; }
+.tr-in-tree { min-width: 1346px; table-layout: fixed; }
 .tr-in-tree th, .tr-in-tree td { padding-left: 8px; padding-right: 8px; }
 .tr-in-tree th:first-child, .tr-in-tree td:first-child { padding-left: 14px; }
 .tr-in-tree th { overflow: hidden; text-overflow: ellipsis; }
+/* 固定列：展开箭头 + 药品名称固定左侧 */
+.tr-in-tree > thead > tr > th:nth-child(1),
+.tr-in-tree > tbody > tr > td:nth-child(1) {
+  position: sticky; left: 0; z-index: 3;
+  background: var(--bg-white);
+}
+.tr-in-tree > thead > tr > th:nth-child(1) { background: var(--table-head); }
+.tr-in-tree > thead > tr > th:nth-child(2),
+.tr-in-tree > tbody > tr.tr-tree-parent > td:nth-child(2),
+.tr-in-tree > tbody > tr.tr-child-wrap > td:nth-child(2) {
+  position: sticky; left: 36px; z-index: 3;
+  background: var(--bg-white);
+  box-shadow: 6px 0 6px -6px rgba(0, 0, 0, 0.12);
+}
+.tr-in-tree > thead > tr > th:nth-child(2) { background: var(--table-head); }
+/* 固定列：追溯码核对 + 操作固定右侧 */
+.tr-in-tree > thead > tr > th:nth-last-child(2),
+.tr-in-tree > tbody > tr.tr-tree-parent > td:nth-last-child(2) {
+  position: sticky; right: 96px; z-index: 2;
+  background: var(--bg-white);
+  box-shadow: -6px 0 6px -6px rgba(0, 0, 0, 0.12);
+}
+.tr-in-tree > thead > tr > th:nth-last-child(2) { background: var(--table-head); }
 .tr-in-tree > thead > tr > th:last-child,
 .tr-in-tree > tbody > tr.tr-tree-parent > td:last-child {
-  position: sticky; right: 0; z-index: 1;
+  position: sticky; right: 0; z-index: 2;
   background: var(--bg-white);
   box-shadow: -6px 0 6px -6px rgba(0, 0, 0, 0.12);
 }
 .tr-in-tree > thead > tr > th:last-child { background: var(--table-head); }
+.tr-in-tree > tbody > tr.tr-child-wrap > td:nth-last-child(2),
+.tr-in-tree > tbody > tr.tr-child-wrap > td:last-child {
+  background: var(--bg-white);
+}
+.tr-in-tree .tr-check-cell { color: var(--text-tertiary); }
+.tr-in-tree .tr-check-cell.is-doing { color: var(--warning); font-weight: 500; }
+.tr-in-tree .tr-check-cell.is-done { color: var(--success); font-weight: 500; }
+.tr-in-tree td.num.is-bad-num { color: var(--danger); }
 .tr-in-tree .tr-qty { height: 28px; width: 68px; text-align: right; }
 .tr-in-tree .tr-reason { height: 28px; width: 80px; }
 .tr-in-tree .tr-reason:disabled { background: var(--bg-disabled); color: var(--text-tertiary); }
@@ -3039,6 +3074,38 @@ input, select { font-family: inherit; font-size: inherit; }
   flex: none; display: flex; align-items: center; justify-content: center; gap: 12px;
   padding: 12px 16px; border-top: 1px solid var(--border); background: var(--bg-white);
 }
+
+/* ---------- 扫码核对抽屉（调拨入库 / 退库签收共用） ---------- */
+.trv-stats { display: flex; gap: 8px; }
+.trv-stat { flex: 1; background: var(--bg-page); border-radius: var(--radius-lg); padding: 8px 12px; }
+.trv-stat .label { font-size: 12px; color: var(--text-secondary); }
+.trv-stat b { display: block; font-size: 20px; font-weight: 500; line-height: 1.4; font-variant-numeric: tabular-nums; }
+.trv-stat.is-ok b { color: var(--success); }
+.trv-stat.is-bad b { color: var(--danger); }
+.trv-stat.is-extra b { color: var(--warning); }
+.trv-modes { display: inline-flex; border: 1px solid var(--border-btn); border-radius: var(--radius); overflow: hidden; flex: none; }
+.trv-mode { padding: 6px 12px; font-size: 12px; color: var(--text-secondary); cursor: pointer; background: var(--bg-white); white-space: nowrap; }
+.trv-mode + .trv-mode { border-left: 1px solid var(--border); }
+.trv-mode.is-active { background: var(--primary-light); color: var(--primary-dark); font-weight: 500; }
+.trv-reason { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+.trv-reason .label { font-size: 12px; color: var(--text-secondary); white-space: nowrap; }
+.trv-reason .select { height: 28px; flex: 1; min-width: 0; }
+.trv-reason .select.is-invalid { border-color: var(--danger); }
+.trv-reason .req { color: var(--danger); margin-right: 2px; font-style: normal; }
+.trv-badline { margin-top: 10px; font-size: 13px; color: var(--text-secondary); }
+.trv-badline b { color: var(--text-primary); font-weight: 500; }
+/* 退库详情：追溯码明细抽屉（与扫码核对抽屉互斥显示） */
+#viewMask { display: none; }
+body.view-open #viewMask { display: block; opacity: 1; pointer-events: auto; }
+body.view-open #viewMask .drawer { transform: translateX(0); }
+.trv-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 10px; font-size: 12px; color: var(--text-secondary); }
+.trv-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+.trv-body .tr-code-chip { background: var(--bg-disabled); border-color: var(--border-btn); color: var(--text-secondary); }
+.trv-body .tr-code-chip.is-ok { background: var(--success-bg); border-color: rgba(82, 196, 26, 0.45); color: #2E7D0E; }
+.trv-body .tr-code-chip.is-bad { background: var(--danger-bg); border-color: var(--danger-border); color: var(--danger); text-decoration: none; }
+.trv-body .tr-code-chip.is-extra { background: var(--warning-bg); border-color: var(--warning); color: #8C5308; }
+.tr-code-head .tr-code-exp { font-weight: 400; color: var(--text-tertiary); }
+.tr-code-head .count { margin-left: auto; }
 
 /* 批次选择弹窗 */
 .tr-batch-modal { width: 880px; }

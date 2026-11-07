@@ -213,54 +213,35 @@
   </div>
 </div>
 
-<!-- ========== 弹窗：剔除追溯码（入库，勾选不合格） ========== -->
-<div class="modal-mask sr-trace" id="badMask">
-  <div class="modal">
-    <div class="modal-head">
-      <div class="modal-title" id="badTitle">剔除追溯码</div>
-      <button class="drawer-close" id="badClose" title="关闭">
+<!-- ========== 抽屉：扫码核对（签收入库） ========== -->
+<div class="drawer-mask" id="verifyMask">
+  <div class="drawer is-pa" id="verifyDrawer">
+    <div class="drawer-head">
+      <span class="drawer-title" id="verifyTitle">扫码核对</span>
+      <button class="drawer-close" id="verifyClose" title="关闭">
         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
       </button>
     </div>
-    <div class="modal-body">
-      <div class="sr-trace-input">
-        <input class="input" id="badInput" placeholder="扫码或手工输入药品追溯码，回车剔除" autocomplete="off">
-        <button class="btn" id="badScan">模拟扫码</button>
-      </div>
-      <div class="sr-trace-tip" id="badTip">勾选需要剔除的不合格追溯码</div>
-      <table class="sr-trace-table">
-        <thead>
-          <tr><th style="width:70px">不合格</th><th>药品追溯码</th></tr>
-        </thead>
-        <tbody id="badBody"></tbody>
-      </table>
-      <div class="sr-trace-empty" id="badEmpty" style="display:none">该批次暂无追溯码</div>
-    </div>
-    <div class="modal-foot">
-      <button class="btn" id="badCancel">取消</button>
-      <button class="btn btn-primary" id="badOk">确定</button>
+    <div class="drawer-body trv-body" id="verifyBody"></div>
+    <div class="drawer-foot">
+      <button class="btn" id="verifyCancel">取消</button>
+      <button class="btn btn-primary" id="verifyOk">确认核对</button>
     </div>
   </div>
 </div>
 
-<!-- ========== 弹窗：追溯码明细（只读） ========== -->
-<div class="modal-mask sr-trace" id="viewMask">
-  <div class="modal">
-    <div class="modal-head">
-      <div class="modal-title" id="viewTitle">追溯码明细</div>
+<!-- ========== 抽屉：追溯码明细（只读） ========== -->
+<div class="drawer-mask" id="viewMask">
+  <div class="drawer is-pa">
+    <div class="drawer-head">
+      <span class="drawer-title" id="viewTitle">追溯码明细</span>
       <button class="drawer-close" id="viewClose" title="关闭">
         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
       </button>
     </div>
-    <div class="modal-body">
-      <table class="sr-trace-table">
-        <thead><tr><th>药品追溯码</th><th>药品名称</th><th>药品规格</th><th style="width:90px">状态</th></tr></thead>
-        <tbody id="viewBody"></tbody>
-      </table>
-      <div class="sr-trace-empty" id="viewEmpty" style="display:none">该药品暂未录入追溯码</div>
-    </div>
-    <div class="modal-foot">
-      <button class="btn btn-primary" id="viewOk">关闭</button>
+    <div class="drawer-body trv-body" id="viewBody"></div>
+    <div class="drawer-foot">
+      <button class="btn" id="viewOk">关闭</button>
     </div>
   </div>
 </div>
@@ -326,20 +307,20 @@
   }
 
   /* ===== 药品明细 ===== */
+  /* 签收态数量由扫码结果驱动：入库数量=已核合格码数，不合格数量=标记不合格码数 */
+  function syncItemQty(it){
+    if(!isIn) return;
+    it.inQty = (it.verified||[]).length;
+    it.unqQty = (it.badCodes||[]).length;
+  }
   function renderItems(){
-    /* 入库态初始化默认值：入库数量 = 退库数量 - 不合格数量 */
-    if(isIn){
-      bill.items.forEach(function(it){
-        if(it.inQty==="" || it.inQty===undefined || it.inQty===null) it.inQty = Number(it.qty||0) - Number(it.unqQty||0);
-      });
-    }
     var cols = [
       ["药品名称","col-drug","150px"],["药品编码","","100px"],["药品规格","","100px"],["生产企业","","180px"],
       ["包装规格","","90px"],["批次号","","96px"],["当前库存量","num","86px"],["退库数量","num","86px"],
       ["进货价","num","84px"],["零售价","num","84px"],["进货价金额合计","num","110px"],["零售价金额合计","num","110px"],["有效期","","96px"]
     ];
-    if(isIn || bill.receiveStatus==="done") cols.push(["入库数量","num","92px"],["不合格数量","num","92px"],["不合格原因","","130px"]);
-    if(hasTraceCol) cols.push([isOut?"追溯码":"操作","col-acts",isOut?"110px":"110px"]);
+    if(isIn || bill.receiveStatus==="done") cols.push(["入库数量","num","92px"],["不合格数量","num","92px"],["不合格原因","","130px"],["追溯码核对","num","96px"]);
+    if(hasTraceCol) cols.push([isOut?"追溯码":"操作","col-acts","110px"]);
     $("#itemsHead").innerHTML = "<tr>"+cols.map(function(c){
       return '<th class="'+(c[1]||"")+'" style="width:'+c[2]+'">'+c[0]+'</th>';
     }).join("")+"</tr>";
@@ -354,20 +335,24 @@
       h += '<td class="num">'+SR.num2(it.purchase)+'</td><td class="num">'+SR.num2(it.retail)+'</td>';
       h += '<td class="num">'+SR.num2(SR.purchaseAmt(it))+'</td><td class="num">'+SR.num2(SR.retailAmt(it))+"</td>";
       h += "<td>"+SR.esc(it.expiry)+"</td>";
+      var vDone = false;
       if(isIn){
-        h += '<td><input class="cell-input" type="number" min="0" data-f="inQty" data-idx="'+i+'" value="'+SR.raw(it.inQty)+'"></td>';
-        h += '<td><input class="cell-input" type="number" min="0" data-f="unqQty" data-idx="'+i+'" value="'+SR.raw(it.unqQty)+'"></td>';
-        var opts = '<option value="">请选择</option>' + SR.REASONS.map(function(r){return '<option'+(r===it.unqReason?' selected':'')+'>'+r+'</option>';}).join("");
-        h += '<td><select class="cell-select" data-f="unqReason" data-idx="'+i+'"'+(Number(it.unqQty)>0?'':' disabled')+'>'+opts+'</select></td>';
+        var v = (it.verified||[]).length, b = (it.badCodes||[]).length, need = (it.traces||[]).length;
+        vDone = need>0 && v+b>=need;
+        h += '<td class="num">'+v+'</td><td class="num"'+(b?' style="color:var(--danger)"':'')+'>'+b+'</td>';
+        h += '<td>'+SR.esc(it.unqReason||'—')+'</td>';
+        h += '<td class="num" style="color:'+(vDone?'var(--success)':v>0?'var(--warning)':'var(--text-tertiary)')+';font-weight:500">'+v+'/'+need+'</td>';
       } else if(bill.receiveStatus==="done"){
-        h += '<td class="num">'+SR.esc(it.inQty)+'</td><td class="num">'+SR.esc(it.unqQty)+'</td><td>'+SR.esc(it.unqReason)+'</td>';
+        var vd = Number(it.inQty||0), bd = Number(it.unqQty||0), nd = (it.traces||[]).length || Number(it.qty||0);
+        h += '<td class="num">'+SR.esc(it.inQty)+'</td><td class="num">'+SR.esc(it.unqQty)+'</td><td>'+SR.esc(it.unqReason||'—')+'</td>';
+        h += '<td class="num">'+(vd+bd)+'/'+nd+'</td>';
       }
       if(hasTraceCol){
         if(isOut){
           var n = (it.traces||[]).length;
           h += '<td class="col-acts"><a class="link-btn" data-act="trace" data-idx="'+i+'">录入追溯码</a><span style="font-size:12px;color:var(--text-tertiary);margin-left:6px">'+n+'/'+SR.esc(it.qty)+'</span></td>';
         } else if(isIn){
-          h += '<td class="col-acts"><a class="link-btn" data-act="bad" data-idx="'+i+'">剔除追溯码</a></td>';
+          h += '<td class="col-acts"><a class="link-btn" data-act="verify" data-idx="'+i+'">'+(vDone?'查看核对':'扫码核对')+'</a></td>';
         } else {
           h += '<td class="col-acts"><a class="link-btn" data-act="view" data-idx="'+i+'">追溯码明细</a></td>';
         }
@@ -380,7 +365,7 @@
     var sh = '共 <b>'+(bill.items||[]).length+'</b> 条明细 · 退库数量合计 <b>'+s.qty+'</b> · 进货价合计金额 <b>'+SR.num2(s.purchase)+'</b> · 零售价合计金额 <b>'+SR.num2(s.retail)+'</b>';
     if(isIn || bill.receiveStatus==="done"){
       var iq=0, uq=0;
-      bill.items.forEach(function(it){ iq+=Number(it.inQty||0); uq+=Number(it.unqQty||0); });
+      bill.items.forEach(function(it){ syncItemQty(it); iq+=Number(it.inQty||0); uq+=Number(it.unqQty||0); });
       sh += ' · 入库数量合计 <b>'+iq+'</b> · 不合格数量合计 <b>'+uq+'</b>';
     }
     $("#sumLine").innerHTML = sh;
@@ -391,30 +376,11 @@
         var i = parseInt(a.getAttribute("data-idx"),10);
         var act = a.getAttribute("data-act");
         if(act==="trace") openTrace(i);
-        else if(act==="bad") openBad(i);
+        else if(act==="verify") openVerify(i);
         else openView(i);
       });
     });
   }
-
-  /* 入库态行内编辑（事件委托） */
-  $("#itemsBody").addEventListener("change", function(e){
-    var t = e.target, f = t.getAttribute("data-f");
-    if(!f || !isIn) return;
-    var i = parseInt(t.getAttribute("data-idx"),10), it = bill.items[i];
-    if(f==="unqReason"){ it.unqReason = t.value; return; }
-    var v = t.value==="" ? 0 : Math.max(0, parseInt(t.value,10)||0);
-    if(f==="unqQty"){
-      if(v > Number(it.qty||0)){ v = Number(it.qty||0); t.value = v; toast("不合格数量不能超过退库数量"); }
-      it.unqQty = v;
-      /* 按前 N 个追溯码重新标记不合格 */
-      it.badCodes = (it.traces||[]).slice(0, v);
-      it.inQty = Number(it.qty||0) - v;
-      renderItems();
-      return;
-    }
-    if(f==="inQty"){ it.inQty = v; }
-  });
 
   /* ===== 审批记录 ===== */
   function renderRecords(){
@@ -523,23 +489,33 @@
 
   /* ===== 入库 ===== */
   function onIn(){
-    var errs = [];
+    var errs = [], anyScan = false;
     bill.items.forEach(function(it, i){
       var n = "第"+(i+1)+"行";
-      var iq = Number(it.inQty||0), uq = Number(it.unqQty||0);
-      if(iq + uq !== Number(it.qty||0)) errs.push(n+"入库数量+不合格数量须等于退库数量");
-      if(uq > 0 && !it.unqReason) errs.push(n+"不合格原因");
+      var v = (it.verified||[]).length, b = (it.badCodes||[]).length;
+      if(v + b > 0) anyScan = true;
+      if(b > 0 && !it.unqReason) errs.push(n+"不合格原因");
     });
+    if(!anyScan){ toast("请先扫码核对追溯码后再入库"); return; }
     if(errs.length){ toast("请完善：" + errs.slice(0,2).join("、") + (errs.length>2?" 等":"")); return; }
-    confirmDlg("确认入库", "确认入库后系统将自动生成入库单，接收方按合格数量增加库存，是否继续？", "确认入库", false, function(){
+    confirmDlg("确认入库", "确认入库后系统将自动生成入库单，接收方按合格数量增加库存，少发、多发差异将随核对结果回传出库方，是否继续？", "确认入库", false, function(){
       var now = SR.fmtNow();
       bill.inCode = SR.newCode(list, "RK", "inCode");
       bill.inTime = now;
       bill.receiveStatus = "done";
-      var uq = 0;
-      bill.items.forEach(function(it){ uq += Number(it.unqQty||0); });
+      var uq = 0, lack = 0, extra = 0;
+      bill.items.forEach(function(it){
+        syncItemQty(it);
+        uq += Number(it.unqQty||0);
+        var v = (it.verified||[]).length, b = (it.badCodes||[]).length, need = (it.traces||[]).length;
+        if(need > v + b) lack += need - v - b;
+        extra += (it.extraCodes||[]).length + (it.unknownExtras||[]).length;
+      });
       bill.records.push({ node:"入库", person:user.name, org:SR.orgName(bill.toOrgId), time:now, result:"已入库",
-        opinion: "入库单号："+bill.inCode + (uq>0 ? "；不合格 "+uq+"（线下处理）" : "") });
+        opinion: "入库单号："+bill.inCode
+          + (uq>0 ? "；不合格 "+uq+"（线下处理）" : "")
+          + (lack>0 ? "；少发 "+lack+"（差异已回传）" : "")
+          + (extra>0 ? "；非本单码 "+extra+"（已登记差异）" : "") });
       SR.save(list);
       toast("已入库，入库单号：" + bill.inCode);
       isIn = false; hasTraceCol = true;
@@ -609,84 +585,224 @@
     closeTrace(); renderItems(); toast("追溯码已保存");
   });
 
-  /* ===== 剔除追溯码弹窗（入库，勾选/扫码剔除不合格） ===== */
-  var badIdx = -1, badDraft = [];
-  function renderBad(){
-    var it = bill.items[badIdx];
-    var traces = it.traces || [];
-    $("#badTip").textContent = "本批次出库追溯码共 "+traces.length+" 条 · 已选不合格 "+badDraft.length+" 条";
-    $("#badEmpty").style.display = traces.length ? "none" : "block";
-    $("#badBody").innerHTML = traces.map(function(t, i){
-      var bad = badDraft.indexOf(t)>=0;
-      return '<tr data-bi="'+i+'"><td><input type="checkbox" data-bc="'+i+'"'+(bad?' checked':'')+'></td>'
-        +'<td>'+SR.esc(t)+(bad?'<span class="bad-tag">（不合格）</span>':'')+'</td></tr>';
-    }).join("");
-    $$('#badBody input[type="checkbox"]').forEach(function(cb){
-      cb.addEventListener("change", function(){
-        var t = bill.items[badIdx].traces[parseInt(cb.getAttribute("data-bc"),10)];
-        var p = badDraft.indexOf(t);
-        if(cb.checked && p<0) badDraft.push(t);
-        if(!cb.checked && p>=0) badDraft.splice(p,1);
-        renderBad();
+  /* ===== 扫码核对弹窗（签收入库，与调拨入库同款交互） ===== */
+  var vfIdx = -1, vfMode = "verify";
+  function vState(it, t){
+    if((it.badCodes||[]).indexOf(t)>=0) return "bad";
+    if((it.verified||[]).indexOf(t)>=0) return "ok";
+    return "pending";
+  }
+  function vChip(t, st){
+    var cls = "tr-code-chip" + (st==="ok" ? " is-ok" : st==="bad" ? " is-bad" : st==="extra" ? " is-extra" : "");
+    return '<span class="'+cls+'" data-code="'+SR.esc(t)+'" data-st="'+st+'" title="'+SR.esc(t)+'">'+SR.esc(t)+'</span>';
+  }
+  function vAddExtra(it, code){
+    it.extraCodes = it.extraCodes||[];
+    it.unknownExtras = it.unknownExtras||[];
+    if(code.indexOf("TRC"+it.batch)===0){
+      if(it.extraCodes.indexOf(code)>=0){ toast("该追溯码已在非本单码列表中"); return; }
+      it.extraCodes.push(code);
+      toast("已登记为非本单码（本批次）");
+    } else {
+      if(it.unknownExtras.indexOf(code)>=0){ toast("该追溯码已在非本单码列表中"); return; }
+      it.unknownExtras.push(code);
+      toast("已登记为非本单码（未识别批次）");
+    }
+  }
+  function vVerify(it, code){
+    if((it.traces||[]).indexOf(code)<0){ vAddExtra(it, code); return; }
+    var st = vState(it, code);
+    if(st==="bad"){
+      it.badCodes.splice(it.badCodes.indexOf(code),1);
+      it.verified.push(code);
+      toast("已恢复合格并核对");
+    } else if(st==="ok"){
+      toast("该追溯码已核对");
+    } else {
+      it.verified.push(code);
+    }
+  }
+  function vBad(it, code){
+    if((it.traces||[]).indexOf(code)<0){ vAddExtra(it, code); return; }
+    var st = vState(it, code);
+    if(st==="bad"){ toast("该追溯码已标记为不合格"); return; }
+    if(st==="ok") it.verified.splice(it.verified.indexOf(code),1);
+    it.badCodes.push(code);
+    if(!it.unqReason) it.unqReason = SR.REASONS[0];
+  }
+  function vUndo(it, code){
+    var at = (it.badCodes||[]).indexOf(code);
+    if(at>=0){ it.badCodes.splice(at,1); return; }
+    at = (it.verified||[]).indexOf(code);
+    if(at>=0){ it.verified.splice(at,1); return; }
+    at = (it.extraCodes||[]).indexOf(code);
+    if(at>=0){ it.extraCodes.splice(at,1); return; }
+    at = (it.unknownExtras||[]).indexOf(code);
+    if(at>=0){ it.unknownExtras.splice(at,1); return; }
+    toast("未找到该追溯码的核对记录");
+  }
+  function renderVerify(){
+    var it = bill.items[vfIdx];
+    if(!it) return;
+    it.verified = it.verified||[]; it.badCodes = it.badCodes||[];
+    it.extraCodes = it.extraCodes||[]; it.unknownExtras = it.unknownExtras||[];
+    var need = (it.traces||[]).length;
+    var extraN = it.extraCodes.length + it.unknownExtras.length;
+    var modeBtn = function(m,label){ return '<span class="trv-mode'+(vfMode===m?' is-active':'')+'" data-mode="'+m+'">'+label+'</span>'; };
+
+    var chips = (it.traces||[]).map(function(t){ return vChip(t, vState(it,t)); }).join("");
+    chips += it.extraCodes.map(function(t){ return vChip(t,"extra"); }).join("");
+    if(!chips) chips = '<span class="sr-trace-empty">该批次暂无追溯码</span>';
+    var group =
+      '<div class="tr-code-group"><div class="tr-code-head"><b>批次 '+SR.esc(it.batch)+
+      ' <span class="tr-code-exp">· 效期 '+SR.esc(it.expiry||'—')+'</span></b>'+
+      '<span class="count">已核 '+it.verified.length+'/'+need+' · 不合格 '+it.badCodes.length+
+      (it.extraCodes.length ? ' · 非本单码 '+it.extraCodes.length : '')+'</span></div>'+
+      '<div class="tr-code-chips">'+chips+'</div></div>';
+    if(it.unknownExtras.length){
+      group += '<div class="tr-code-group"><div class="tr-code-head"><b>未识别批次</b>'+
+        '<span class="count">非本单码 '+it.unknownExtras.length+'</span></div>'+
+        '<div class="tr-code-chips">'+it.unknownExtras.map(function(t){ return vChip(t,"extra"); }).join('')+'</div></div>';
+    }
+
+    $("#verifyBody").innerHTML =
+      '<div class="trv-stats">'
+        +'<div class="trv-stat"><span class="label">应到码数</span><b>'+need+'</b></div>'
+        +'<div class="trv-stat is-ok"><span class="label">已核码数</span><b>'+it.verified.length+'</b></div>'
+        +'<div class="trv-stat is-bad"><span class="label">不合格</span><b>'+it.badCodes.length+'</b></div>'
+        +'<div class="trv-stat is-extra"><span class="label">非本单码</span><b>'+extraN+'</b></div>'
+      +'</div>'
+      +'<div class="tr-scan-input">'
+        +'<div class="trv-modes">'+modeBtn("verify","扫码核对")+modeBtn("bad","标记不合格")+modeBtn("undo","撤销扫码")+'</div>'
+        +'<input class="input" id="verifyInput" placeholder="'+(vfMode==="undo"?'扫描需撤销的追溯码后回车':'扫描或输入追溯码后回车')+'" autocomplete="off">'
+        +'<button class="btn" id="verifyAdd">录入</button>'
+      +'</div>'
+      +'<div class="trv-reason"><span class="label">不合格原因</span><select class="select" id="verifyReason">'
+        +'<option value="">请选择</option>'
+        +SR.REASONS.map(function(r){ return '<option'+(r===it.unqReason?' selected':'')+'>'+r+'</option>'; }).join("")
+      +'</select></div>'
+      +'<div class="trv-legend">'
+        +'<span><i style="background:#D9D9D9;"></i>未扫码</span>'
+        +'<span><i style="background:#52C41A;"></i>核对无误</span>'
+        +'<span><i style="background:#FF4D4F;"></i>不合格</span>'
+        +'<span><i style="background:#FA8C16;"></i>非本单码</span>'
+      +'</div>'
+      + group;
+
+    var input = $("#verifyInput");
+    function submit(){
+      var code = input.value.trim().toUpperCase();
+      if(!code) return;
+      if(vfMode==="undo") vUndo(it, code);
+      else if(vfMode==="bad") vBad(it, code);
+      else vVerify(it, code);
+      input.value = "";
+      syncItemQty(it);
+      renderVerify();
+      renderItems();
+      setTimeout(function(){ var el=$("#verifyInput"); if(el) el.focus(); },0);
+    }
+    input.addEventListener("keydown", function(e){ if(e.key==="Enter"){ e.preventDefault(); submit(); } });
+    $("#verifyAdd").addEventListener("click", submit);
+    $$("#verifyBody .trv-mode").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        vfMode = btn.getAttribute("data-mode");
+        renderVerify();
+        setTimeout(function(){ var el=$("#verifyInput"); if(el) el.focus(); },0);
       });
     });
+    $("#verifyReason").addEventListener("change", function(){ it.unqReason = this.value; renderItems(); });
+    $("#verifyBody").onclick = function(e){
+      var chip = e.target.closest("[data-code]");
+      if(!chip) return;
+      var code = chip.getAttribute("data-code");
+      var st = chip.getAttribute("data-st");
+      if(vfMode==="bad"){
+        /* 标记不合格模式：点标签直接标记/取消不合格 */
+        if(st==="bad"){ it.badCodes.splice(it.badCodes.indexOf(code),1); }
+        else if(st==="pending"){ it.badCodes.push(code); if(!it.unqReason) it.unqReason = SR.REASONS[0]; }
+        else if(st==="ok"){ it.verified.splice(it.verified.indexOf(code),1); it.badCodes.push(code); if(!it.unqReason) it.unqReason = SR.REASONS[0]; }
+      } else if(vfMode==="undo"){
+        /* 撤销扫码模式：点标签撤销当前状态 */
+        if(st==="bad"){ it.badCodes.splice(it.badCodes.indexOf(code),1); }
+        else if(st==="ok"){ it.verified.splice(it.verified.indexOf(code),1); }
+        else if(st==="extra"){
+          var p2 = it.extraCodes.indexOf(code);
+          if(p2>=0) it.extraCodes.splice(p2,1);
+          else { var q2 = it.unknownExtras.indexOf(code); if(q2>=0) it.unknownExtras.splice(q2,1); }
+        }
+      } else {
+        /* 扫码核对模式：待核对→核对；已核对→撤销；不合格→恢复合格并核对 */
+        vVerify(it, code);
+        syncItemQty(it);
+        renderVerify();
+        renderItems();
+        return;
+      }
+      syncItemQty(it);
+      renderVerify();
+      renderItems();
+    };
+    setTimeout(function(){ input.focus(); }, 50);
   }
-  /* 扫码/手工录入剔除：仅允许本批次出库清单内的追溯码，且不重复 */
-  function badScanAppend(code){
-    var it = bill.items[badIdx];
-    code = (code||"").trim();
-    if(!code) return;
-    if((it.traces||[]).indexOf(code)<0){ toast("追溯码不在本批次出库清单内"); return; }
-    if(badDraft.indexOf(code)>=0){ toast("该追溯码已剔除"); return; }
-    badDraft.push(code); renderBad(); toast("已剔除追溯码 "+code);
+  function openVerify(i){
+    vfIdx = i; vfMode = "verify";
+    var it = bill.items[i];
+    it.verified = it.verified||[]; it.badCodes = it.badCodes||[];
+    it.extraCodes = it.extraCodes||[]; it.unknownExtras = it.unknownExtras||[];
+    $("#verifyTitle").textContent = "扫码核对 — " + it.name + " " + it.spec;
+    renderVerify();
+    document.body.classList.add("drawer-open");
   }
-  function openBad(i){
-    badIdx = i;
-    badDraft = (bill.items[i].badCodes||[]).slice();
-    $("#badTitle").textContent = "剔除追溯码 — " + bill.items[i].name + " " + bill.items[i].spec;
-    $("#badInput").value = "";
-    renderBad();
-    $("#badMask").classList.add("show");
-    setTimeout(function(){ $("#badInput").focus(); }, 50);
-  }
-  function closeBad(){ $("#badMask").classList.remove("show"); badIdx=-1; badDraft=[]; }
-  $("#badClose").addEventListener("click", closeBad);
-  $("#badCancel").addEventListener("click", closeBad);
-  $("#badInput").addEventListener("keydown", function(e){
-    if(e.key!=="Enter") return;
-    badScanAppend(this.value); this.value = "";
-  });
-  $("#badScan").addEventListener("click", function(){
-    if(badIdx<0) return;
-    var it = bill.items[badIdx];
-    var next = (it.traces||[]).filter(function(t){ return badDraft.indexOf(t)<0; })[0];
-    if(!next){ toast("本批次追溯码已全部剔除"); return; }
-    badScanAppend(next);
-  });
-  $("#badOk").addEventListener("click", function(){
-    if(badIdx>=0){
-      var it = bill.items[badIdx];
-      it.badCodes = badDraft.slice();
-      it.unqQty = badDraft.length;
-      it.inQty = Number(it.qty||0) - it.unqQty;
-      if(!it.unqQty) it.unqReason = "";
-    }
-    closeBad(); renderItems(); toast("已更新不合格追溯码");
+  function closeVerify(){ document.body.classList.remove("drawer-open"); vfIdx=-1; vfMode="verify"; }
+  $("#verifyMask").addEventListener("click", function(e){ if(e.target === this) closeVerify(); });
+  $("#verifyClose").addEventListener("click", closeVerify);
+  $("#verifyCancel").addEventListener("click", closeVerify);
+  $("#verifyOk").addEventListener("click", function(){
+    closeVerify(); renderItems();
+    toast("核对结果已确认；少发、多发差异将随入库结果回传出库方");
   });
 
-  /* ===== 追溯码明细弹窗（只读） ===== */
+  /* ===== 追溯码明细抽屉（只读，与调拨详情同款四色展示） ===== */
   function openView(i){
     var it = bill.items[i];
+    it.verified = it.verified||[]; it.badCodes = it.badCodes||[];
+    it.extraCodes = it.extraCodes||[]; it.unknownExtras = it.unknownExtras||[];
     $("#viewTitle").textContent = "追溯码明细 — " + it.name + " " + it.spec;
     var ts = it.traces || [];
-    $("#viewEmpty").style.display = ts.length ? "none" : "block";
-    $("#viewBody").innerHTML = ts.map(function(t){
-      var bad = (it.badCodes||[]).indexOf(t)>=0;
-      return "<tr><td>"+SR.esc(t)+"</td><td>"+SR.esc(it.name)+"</td><td>"+SR.esc(it.spec)+"</td><td>"+(bad?'<span class="bad-tag">不合格</span>':"合格")+"</td></tr>";
-    }).join("");
-    $("#viewMask").classList.add("show");
+    var okN = it.verified.length, badN = it.badCodes.length;
+    var extraN = it.extraCodes.length + it.unknownExtras.length;
+    function chip(c, st){
+      var cls = "tr-code-chip" + (st==="ok"?" is-ok":st==="bad"?" is-bad":st==="extra"?" is-extra":"");
+      return '<span class="'+cls+'">'+SR.esc(c)+"</span>";
+    }
+    var chips = ts.map(function(t){
+      var st = it.badCodes.indexOf(t)>=0 ? "bad" : it.verified.indexOf(t)>=0 ? "ok" : "pending";
+      return chip(t, st);
+    }).join("") + it.extraCodes.map(function(c){ return chip(c,"extra"); }).join("");
+    if(!chips) chips = '<span class="tr-code-empty">该药品暂未录入追溯码</span>';
+    var stat = "已核 " + okN + "/" + ts.length + (badN ? " · 不合格 " + badN : "") + (extraN ? " · 非本单码 " + extraN : "");
+    $("#viewBody").innerHTML =
+      '<div class="trv-stats">' +
+        '<div class="trv-stat"><span class="label">出库码数</span><b>'+ts.length+'</b></div>' +
+        '<div class="trv-stat is-ok"><span class="label">已核码数</span><b>'+okN+'</b></div>' +
+        '<div class="trv-stat is-bad"><span class="label">不合格</span><b>'+badN+'</b></div>' +
+        '<div class="trv-stat is-extra"><span class="label">非本单码</span><b>'+extraN+'</b></div>' +
+      '</div>' +
+      (badN > 0 ? '<div class="trv-badline">不合格原因：<b>'+SR.esc(it.unqReason||"未填写")+'</b></div>' : "") +
+      '<div class="trv-legend">' +
+        '<span><i style="background:#D9D9D9;"></i>未扫码</span>' +
+        '<span><i style="background:#52C41A;"></i>核对无误</span>' +
+        '<span><i style="background:#FF4D4F;"></i>不合格</span>' +
+        '<span><i style="background:#FA8C16;"></i>非本单码</span>' +
+      '</div>' +
+      '<div class="tr-code-group">' +
+        '<div class="tr-code-head"><b>批次 '+SR.esc(it.batch)+'</b><span class="count">'+stat+'</span></div>' +
+        '<div class="tr-code-chips">'+chips+'</div>' +
+      '</div>';
+    document.body.classList.add("view-open");
   }
-  function closeView(){ $("#viewMask").classList.remove("show"); }
+  function closeView(){ document.body.classList.remove("view-open"); }
   $("#viewClose").addEventListener("click", closeView);
   $("#viewOk").addEventListener("click", closeView);
 

@@ -365,6 +365,7 @@
       ['批次号','w-batch'],['<span class="req">*</span>入库量','w-qty'],
       ['进货价','w-price'],['零售价','w-price'],['有效期','w-date'],
       ['合格数量','w-qty'],['<span class="req">*</span>不合格数量','w-qty'],['<span class="req">*</span>不合格原因','w-reason'],
+      ['追溯码进度','w-qty'],
       ['进货价金额合计','w-amt'],['零售价金额合计','w-amt']
     ];
     if(detailMode()) cols.push(['<span class="req">*</span>发票号','w-inv']);
@@ -396,6 +397,10 @@
       h += '<td class="w-qty"><input class="cell-input" type="number" min="0" data-f="unq" data-idx="'+i+'" value="'+SI.raw(it.unq)+'"></td>';
       var reasonOpts = '<option value="">请选择</option>' + SI.REASONS.map(function(r){return '<option'+(r===it.reason?' selected':'')+'>'+r+'</option>';}).join("");
       h += '<td class="w-reason"><select class="cell-select" data-f="reason" data-idx="'+i+'"'+(Number(it.unq)>0?'':' disabled')+'>'+reasonOpts+'</select></td>';
+      var needTrace = it.qty!=="" ? SI.qualified(it) : 0;
+      var haveTrace = (it.traces||[]).length;
+      var traceOk = needTrace > 0 && haveTrace === needTrace;
+      h += '<td class="w-qty num" data-c="traceProg" style="color:'+(traceOk?'var(--success)':haveTrace>0?'var(--warning)':'var(--text-tertiary)')+';font-weight:'+(traceOk?'500':'400')+'">'+haveTrace+'/'+needTrace+'</td>';
       h += '<td class="w-amt num" data-c="pamt">'+SI.num2(SI.purchaseAmt(it))+'</td>';
       h += '<td class="w-amt num" data-c="ramt">'+SI.num2(SI.retailAmt(it))+'</td>';
       if(detailMode()) h += '<td class="w-inv"><input class="cell-input" data-f="invoiceNo" data-idx="'+i+'" value="'+SI.esc(it.invoiceNo)+'" placeholder="发票号"></td>';
@@ -412,6 +417,15 @@
     if(!tr) return;
     var q = tr.querySelector('[data-c="qualified"]');
     if(q) q.textContent = it.qty!=="" ? SI.qualified(it) : "";
+    var tp = tr.querySelector('[data-c="traceProg"]');
+    if(tp){
+      var needTrace = it.qty!=="" ? SI.qualified(it) : 0;
+      var haveTrace = (it.traces||[]).length;
+      var traceOk = needTrace > 0 && haveTrace === needTrace;
+      tp.textContent = haveTrace+"/"+needTrace;
+      tp.style.color = traceOk ? "var(--success)" : haveTrace>0 ? "var(--warning)" : "var(--text-tertiary)";
+      tp.style.fontWeight = traceOk ? "500" : "400";
+    }
     var pa = tr.querySelector('[data-c="pamt"]'); if(pa) pa.textContent = SI.num2(SI.purchaseAmt(it));
     var ra = tr.querySelector('[data-c="ramt"]'); if(ra) ra.textContent = SI.num2(SI.retailAmt(it));
     /* 不合格原因启用/禁用 */
@@ -651,6 +665,8 @@
         if(it.unq==="" || !/^\d+$/.test(String(it.unq))) errs.push(n+"不合格数量");
         else if(Number(it.unq) > Number(it.qty||0)) errs.push(n+"不合格数量不能超过入库量");
         if(Number(it.unq)>0 && !it.reason) errs.push(n+"不合格原因");
+        var needTrace = SI.qualified(it);
+        if((it.traces||[]).length !== needTrace) errs.push(n+"追溯码数量（已录 "+(it.traces||[]).length+" / 应录 "+needTrace+"）");
         if(detailMode() && !it.invoiceNo) errs.push(n+"发票号");
       }
     });

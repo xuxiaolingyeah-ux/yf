@@ -95,7 +95,6 @@
                         <th style="width:105px;">药品编码</th>
                         <th style="width:80px;" class="num">申请数量</th>
                         <th style="width:90px;" class="num">调拨数量</th>
-                        <th style="width:70px;" class="num">差额</th>
                         <th style="width:115px;" class="num">进货价金额合计</th>
                         <th style="width:115px;" class="num">零售价金额合计</th>
                         <th style="width:125px;">追溯码</th>
@@ -168,6 +167,7 @@
   function gi(g) { return bill.batches.indexOf(g); }
   function isOpen(g) { return expanded[g.key] !== undefined ? expanded[g.key] : g.rows.length > 0; }
   function diffOf(g) { return g.applyQty - TR.allocated(g); }
+  void diffOf;
   function progressHtml(g) {
     var need = TR.allocated(g), got = TR.scanned(g);
     var cls = need === 0 ? "" : (got === need ? "is-ok" : "is-bad");
@@ -222,7 +222,6 @@
           "<td>" + esc(g.drugCode) + "</td>" +
           '<td class="num">' + g.applyQty + "</td>" +
           '<td class="num">' + TR.allocated(g) + "</td>" +
-          '<td class="num">' + diffOf(g) + "</td>" +
           '<td class="num">' + m.purchase + "</td>" +
           '<td class="num">' + m.retail + "</td>" +
           "<td>" + progressHtml(g) + "</td>" +
@@ -231,7 +230,7 @@
         "</tr>";
 
       if (open) {
-        html += '<tr class="tr-child-wrap"><td colspan="9"><table class="tr-child-table"><thead><tr>' +
+        html += '<tr class="tr-child-wrap"><td colspan="8"><table class="tr-child-table"><thead><tr>' +
           '<th style="width:112px;">批次号</th>' +
           '<th style="width:210px;">生产企业</th>' +
           '<th style="width:105px;">有效期</th>' +
@@ -239,12 +238,10 @@
           '<th style="width:80px;" class="num">零售价</th>' +
           '<th style="width:90px;" class="num">当前库存</th>' +
           '<th style="width:100px;" class="num">出库数量</th>' +
-          '<th style="width:110px;" class="num">进货价金额合计</th>' +
-          '<th style="width:110px;" class="num">零售价金额合计</th>' +
           '<th style="width:70px;" class="tr-act-cell">操作</th>' +
         "</tr></thead><tbody>";
         if (!rows.length) {
-          html += '<tr class="tr-child-empty"><td colspan="10">请点击「添加批次」选择出库批次</td></tr>';
+          html += '<tr class="tr-child-empty"><td colspan="8">请点击「添加批次」选择出库批次</td></tr>';
         } else {
           html += rows.map(function (r, ri) {
             var q = Number(r.outQty) || 0;
@@ -257,8 +254,6 @@
               '<td class="num">' + r.stock + "</td>" +
               '<td class="num"><input class="input tr-qty" type="text" inputmode="numeric" value="' + r.outQty +
                 '" data-g="' + idx + '" data-r="' + ri + '"></td>' +
-              '<td class="num">' + TR.money(q * (Number(r.purchase) || 0)) + "</td>" +
-              '<td class="num">' + TR.money(q * (Number(r.retail) || 0)) + "</td>" +
               '<td class="tr-act-cell"><button class="link-btn is-danger" data-rm="' + idx + '" data-ri="' + ri + '">删除</button></td>' +
             "</tr>";
           }).join("");

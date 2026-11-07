@@ -69,10 +69,6 @@
                 <span class="text-value" id="sOrg">—</span>
               </div>
               <div class="sc-info-item">
-                <span class="form-label">药房</span>
-                <span class="text-value" id="sPharmacy">—</span>
-              </div>
-              <div class="sc-info-item">
                 <span class="form-label">库位</span>
                 <span class="text-value" id="sLoc">—</span>
               </div>
@@ -224,7 +220,6 @@
     $("statusLabel").textContent = "审核状态：" + SC.AUDIT[bill.auditStatus];
     $("sName").value = bill.name;
     $("sOrg").textContent = bill.orgName;
-    $("sPharmacy").textContent = bill.pharmacy;
     $("sLoc").textContent = bill.location;
     $("sKind").textContent = bill.kind;
     $("sTime").textContent = bill.checkTime;

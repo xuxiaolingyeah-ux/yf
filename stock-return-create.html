@@ -146,16 +146,13 @@
           <div class="sr-sec">
             <div class="sr-sec-head"><div class="sr-sec-title">退库信息</div></div>
             <div class="sr-form">
-              <div class="fi"><span class="lbl"><span class="req">*</span>退库机构：</span><div class="ctrl"><select class="select" id="fFromOrg"></select></div></div>
-              <div class="fi"><span class="lbl"><span class="req">*</span>退库药房：</span><div class="ctrl"><select class="select" id="fFromPharmacy"></select></div></div>
+              <div class="fi"><span class="lbl"><span class="req">*</span>退库机构：</span><div class="ctrl"><input class="input is-readonly" id="fFromOrg" readonly></div></div>
               <div class="fi"><span class="lbl"><span class="req">*</span>退库库位：</span><div class="ctrl"><select class="select" id="fFromLocation"></select></div></div>
               <div class="fi"><span class="lbl"><span class="req">*</span>接收机构：</span><div class="ctrl"><select class="select" id="fToOrg"></select></div></div>
-
-              <div class="fi"><span class="lbl"><span class="req">*</span>接收药房：</span><div class="ctrl"><select class="select" id="fToPharmacy"></select></div></div>
               <div class="fi"><span class="lbl"><span class="req">*</span>接收库位：</span><div class="ctrl"><select class="select" id="fToLocation"></select></div></div>
+
               <div class="fi"><span class="lbl">出库单号：</span><div class="ctrl"><input class="input is-readonly" id="fOutCode" readonly placeholder="出库后自动生成"></div></div>
               <div class="fi"><span class="lbl">入库单号：</span><div class="ctrl"><input class="input is-readonly" id="fInCode" readonly placeholder="入库后自动生成"></div></div>
-
               <div class="fi"><span class="lbl">提交人：</span><div class="ctrl"><input class="input is-readonly" id="fCreator" readonly></div></div>
               <div class="fi"><span class="lbl">提交时间：</span><div class="ctrl"><input class="input is-readonly" id="fTime" readonly placeholder="提交后回填"></div></div>
             </div>
@@ -256,7 +253,6 @@
     <div class="sr-ib-filter">
       <div class="fi"><span class="lbl">入库单号</span><input class="input" id="ibQCode" placeholder="请输入" autocomplete="off"></div>
       <div class="fi"><span class="lbl">出库机构</span><select class="select" id="ibQOrg"></select></div>
-      <div class="fi"><span class="lbl">出库药房</span><select class="select" id="ibQPharmacy"></select></div>
       <div class="fi"><span class="lbl">出库库位</span><select class="select" id="ibQLocation"></select></div>
       <div class="sr-ib-acts">
         <button class="btn btn-sm" id="ibReset">重置</button>
@@ -270,7 +266,7 @@
           <tr>
             <th style="width:40px"></th>
             <th>入库单号</th><th>入库时间</th><th>入库方式</th>
-            <th>出库机构</th><th>出库药房</th><th>出库库位</th>
+            <th>出库机构</th><th>出库库位</th>
           </tr>
         </thead>
         <tbody id="ibBody"></tbody>
@@ -335,37 +331,25 @@
 
   /* ===== 页面状态 ===== */
   var ST = {
-    fromOrgId: user.orgId, fromPharmacyId: "", fromLocation: "",
-    toOrgId: "", toPharmacyId: "", toLocation: "",
+    fromOrgId: user.orgId, fromLocation: "",
+    toOrgId: "", toLocation: "",
     items: []
   };
 
   /* ===== 初始化下拉 ===== */
-  $("#fFromOrg").innerHTML = SR.ORGS.map(function(o){return '<option value="'+o.id+'">'+SR.esc(o.name)+'</option>';}).join("");
+  /* 退库机构：只读，显示当前登录机构名称 */
+  $("#fFromOrg").value = (SR.orgOf(ST.fromOrgId) || {}).name || user.orgName || "";
   $("#fToOrg").innerHTML = '<option value="">请选择接收机构</option>' + SR.ORGS.map(function(o){return '<option value="'+o.id+'">'+SR.esc(o.name)+'</option>';}).join("");
-  function fillFromPharmacies(){
-    var o = SR.orgOf(ST.fromOrgId);
-    $("#fFromPharmacy").innerHTML = '<option value="">请选择药房</option>' + (o?o.pharmacies.map(function(p){return '<option value="'+p.id+'">'+SR.esc(p.name)+'</option>';}).join(""):"");
-  }
   function fillFromLocations(){
-    var p = SR.pharmacyOf(ST.fromOrgId, ST.fromPharmacyId);
-    $("#fFromLocation").innerHTML = '<option value="">请选择库位</option>' + (p?p.locations.map(function(l){return '<option>'+SR.esc(l)+'</option>';}).join(""):"");
-  }
-  function fillToPharmacies(){
-    var o = SR.orgOf(ST.toOrgId);
-    $("#fToPharmacy").innerHTML = '<option value="">请选择药房</option>' + (o?o.pharmacies.map(function(p){return '<option value="'+p.id+'">'+SR.esc(p.name)+'</option>';}).join(""):"");
+    $("#fFromLocation").innerHTML = '<option value="">请选择库位</option>' + SR.allLocationsOf(ST.fromOrgId).map(function(l){return '<option value="'+SR.esc(l)+'">'+SR.esc(l)+'</option>';}).join("");
   }
   function fillToLocations(){
-    var p = SR.pharmacyOf(ST.toOrgId, ST.toPharmacyId);
-    $("#fToLocation").innerHTML = '<option value="">请选择库位</option>' + (p?p.locations.map(function(l){return '<option>'+SR.esc(l)+'</option>';}).join(""):"");
+    $("#fToLocation").innerHTML = '<option value="">请选择库位</option>' + SR.allLocationsOf(ST.toOrgId).map(function(l){return '<option value="'+SR.esc(l)+'">'+SR.esc(l)+'</option>';}).join("");
   }
-  fillFromPharmacies(); fillFromLocations(); fillToPharmacies(); fillToLocations();
+  fillFromLocations(); fillToLocations();
 
-  $("#fFromOrg").addEventListener("change",function(){ ST.fromOrgId=this.value; ST.fromPharmacyId=""; ST.fromLocation=""; fillFromPharmacies(); fillFromLocations(); });
-  $("#fFromPharmacy").addEventListener("change",function(){ ST.fromPharmacyId=this.value; ST.fromLocation=""; fillFromLocations(); });
   $("#fFromLocation").addEventListener("change",function(){ ST.fromLocation=this.value; });
-  $("#fToOrg").addEventListener("change",function(){ ST.toOrgId=this.value; ST.toPharmacyId=""; ST.toLocation=""; fillToPharmacies(); fillToLocations(); });
-  $("#fToPharmacy").addEventListener("change",function(){ ST.toPharmacyId=this.value; ST.toLocation=""; fillToLocations(); });
+  $("#fToOrg").addEventListener("change",function(){ ST.toOrgId=this.value; ST.toLocation=""; fillToLocations(); });
   $("#fToLocation").addEventListener("change",function(){ ST.toLocation=this.value; });
 
   /* ===== 药品明细表 ===== */
@@ -505,14 +489,13 @@
     toast("已添加 "+sel.length+" 条药品明细");
   });
 
-  /* ===== 关联原入库单抽屉（4 项查询，点「查询」生效；单选联动明细） ===== */
+  /* ===== 关联原入库单抽屉（按单号/出库机构/出库库位查询，点「查询」生效；单选联动明细） ===== */
   var ibSel = "";   /* 选中的入库单号 */
-  var ibQ = { code:"", org:"", pharmacy:"", location:"" };   /* 已生效的查询条件 */
+  var ibQ = { code:"", org:"", location:"" };   /* 已生效的查询条件 */
   function ibRows(){
     return SR.INBOUNDS.filter(function(b){
       if(ibQ.code && b.code.toLowerCase().indexOf(ibQ.code)<0) return false;
       if(ibQ.org && b.fromOrg!==ibQ.org) return false;
-      if(ibQ.pharmacy && (b.fromPharmacy||"")!==ibQ.pharmacy) return false;
       if(ibQ.location && (b.fromLocation||"")!==ibQ.location) return false;
       return true;
     });
@@ -527,7 +510,7 @@
     return arr;
   }
   function fillIbFilterOptions(){
-    [["#ibQOrg","fromOrg"],["#ibQPharmacy","fromPharmacy"],["#ibQLocation","fromLocation"]].forEach(function(p){
+    [["#ibQOrg","fromOrg"],["#ibQLocation","fromLocation"]].forEach(function(p){
       $(p[0]).innerHTML = '<option value="">全部</option>' + ibOpts(p[1]).map(function(v){
         return '<option value="'+SR.esc(v)+'">'+SR.esc(v)+'</option>';
       }).join("");
@@ -541,7 +524,7 @@
       return '<tr data-code="'+SR.esc(b.code)+'"'+(sel?' class="is-sel"':'')+'>'
         +'<td><input type="radio" name="ibPick"'+(sel?' checked':'')+'></td>'
         +'<td>'+SR.esc(b.code)+'</td><td>'+SR.esc(b.time)+'</td><td>'+SR.esc(b.inType)+'</td>'
-        +'<td>'+SR.esc(b.fromOrg)+'</td><td>'+SR.esc(b.fromPharmacy)+'</td><td>'+SR.esc(b.fromLocation)+'</td></tr>';
+        +'<td>'+SR.esc(b.fromOrg)+'</td><td>'+SR.esc(b.fromLocation)+'</td></tr>';
     }).join("");
     $$('#ibBody tr').forEach(function(tr){
       tr.addEventListener("click", function(){
@@ -564,14 +547,13 @@
   function readIbQuery(){
     ibQ.code = $("#ibQCode").value.trim().toLowerCase();
     ibQ.org = $("#ibQOrg").value;
-    ibQ.pharmacy = $("#ibQPharmacy").value;
     ibQ.location = $("#ibQLocation").value;
   }
   function openIb(){
     ibSel = "";
     fillIbFilterOptions();
-    $("#ibQCode").value=""; $("#ibQOrg").value=""; $("#ibQPharmacy").value=""; $("#ibQLocation").value="";
-    ibQ = { code:"", org:"", pharmacy:"", location:"" };
+    $("#ibQCode").value=""; $("#ibQOrg").value=""; $("#ibQLocation").value="";
+    ibQ = { code:"", org:"", location:"" };
     renderIbList(); renderIbItems();
     $("#ibMask").classList.add("show");
   }
@@ -581,7 +563,7 @@
   $("#ibCancel").addEventListener("click", closeIb);
   $("#ibSearch").addEventListener("click", function(){ readIbQuery(); renderIbList(); });
   $("#ibReset").addEventListener("click", function(){
-    $("#ibQCode").value=""; $("#ibQOrg").value=""; $("#ibQPharmacy").value=""; $("#ibQLocation").value="";
+    $("#ibQCode").value=""; $("#ibQOrg").value=""; $("#ibQLocation").value="";
     readIbQuery(); renderIbList();
   });
   $$(".sr-ib-filter .input").forEach(function(inp){
@@ -631,20 +613,18 @@
     $("#headCode").textContent = "退库单号：" + editBill.code;
     $("#headStatus").style.display = "";
     $("#headStatus").textContent = "审核状态：" + SR.AUDIT_STATUS[editBill.auditStatus];
-    ST.fromOrgId = editBill.fromOrgId; ST.fromPharmacyId = editBill.fromPharmacyId; ST.fromLocation = editBill.fromLocation;
-    ST.toOrgId = editBill.toOrgId; ST.toPharmacyId = editBill.toPharmacyId; ST.toLocation = editBill.toLocation;
+    ST.fromOrgId = editBill.fromOrgId; ST.fromLocation = editBill.fromLocation || "";
+    ST.toOrgId = editBill.toOrgId; ST.toLocation = editBill.toLocation || "";
     ST.items = (editBill.items||[]).map(function(it){ return Object.assign(SR.blankItem(), it); });
-    $("#fFromOrg").value = ST.fromOrgId; fillFromPharmacies();
-    $("#fFromPharmacy").value = ST.fromPharmacyId; fillFromLocations();
+    $("#fFromOrg").value = (SR.orgOf(ST.fromOrgId) || {}).name || ""; fillFromLocations();
     $("#fFromLocation").value = ST.fromLocation;
-    $("#fToOrg").value = ST.toOrgId; fillToPharmacies();
-    $("#fToPharmacy").value = ST.toPharmacyId; fillToLocations();
+    $("#fToOrg").value = ST.toOrgId; fillToLocations();
     $("#fToLocation").value = ST.toLocation;
     $("#fCreator").value = editBill.creatorName;
     $("#fTime").value = editBill.submitTime || "";
     $("#fTime").placeholder = "提交后回填";
   } else {
-    $("#fFromOrg").value = ST.fromOrgId; fillFromPharmacies(); fillFromLocations();
+    $("#fFromOrg").value = (SR.orgOf(ST.fromOrgId) || {}).name || user.orgName || ""; fillFromLocations();
     $("#fCreator").value = user.name;
   }
   renderItems();
@@ -655,10 +635,8 @@
   function validate(){
     var errs = [];
     markInvalid($("#fFromOrg"), !ST.fromOrgId);             if(!ST.fromOrgId) errs.push("退库机构");
-    markInvalid($("#fFromPharmacy"), !ST.fromPharmacyId);   if(!ST.fromPharmacyId) errs.push("退库药房");
     markInvalid($("#fFromLocation"), !ST.fromLocation);     if(!ST.fromLocation) errs.push("退库库位");
     markInvalid($("#fToOrg"), !ST.toOrgId);                 if(!ST.toOrgId) errs.push("接收机构");
-    markInvalid($("#fToPharmacy"), !ST.toPharmacyId);       if(!ST.toPharmacyId) errs.push("接收药房");
     markInvalid($("#fToLocation"), !ST.toLocation);         if(!ST.toLocation) errs.push("接收库位");
     if(!ST.items.length) errs.push("药品明细（至少 1 条）");
     ST.items.forEach(function(it, i){
@@ -678,8 +656,8 @@
       creatorId: user.id, creatorName: user.name,
       receiveStatus: "", records: []
     };
-    b.fromOrgId = ST.fromOrgId; b.fromPharmacyId = ST.fromPharmacyId; b.fromLocation = ST.fromLocation;
-    b.toOrgId = ST.toOrgId; b.toPharmacyId = ST.toPharmacyId; b.toLocation = ST.toLocation;
+    b.fromOrgId = ST.fromOrgId; b.fromLocation = ST.fromLocation;
+    b.toOrgId = ST.toOrgId; b.toLocation = ST.toLocation;
     b.items = ST.items;
     if(submit){
       b.auditStatus = "upper"; b.submitTime = now;

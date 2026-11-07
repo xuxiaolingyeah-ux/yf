@@ -65,14 +65,8 @@
                     <input class="input is-readonly" id="fOrg" readonly>
                   </div>
                   <div class="form-item">
-                    <span class="form-label"><span class="req">*</span>申请药房</span>
-                    <select class="select" id="fPharmacy">
-                      <option value="">请选择</option>
-                    </select>
-                  </div>
-                  <div class="form-item">
                     <span class="form-label"><span class="req">*</span>申请库位</span>
-                    <select class="select" id="fLocation" disabled>
+                    <select class="select" id="fLocation">
                       <option value="">请选择</option>
                     </select>
                   </div>
@@ -161,32 +155,21 @@
       createType: user.role === "village" ? "village" : "member",
       creatorId: user.id, creator: user.name, creatorOrg: user.org,
       applyOrg: applyOrg, applyOrgName: TR.ORGS[applyOrg],
-      applyPharmacy: "", applyPharmacyName: "", applyLocation: "", applyLocationName: "",
+      applyLocation: "", applyLocationName: "",
       shortageDesc: "", createdAt: SEL.fmtNow(), submitTime: SEL.fmtNow(),
       auditStatus: "draft", transferStatus: "", outOrg: "", outOrgName: "",
-      outPharmacy: "", outPharmacyName: "", outLocation: "", outLocationName: "",
+      outLocation: "", outLocationName: "",
       outCode: "", inCode: "", nextStep: "", items: [], batches: [], records: []
     };
   }
 
-  function renderPharmacies() {
-    var sel = $("fPharmacy");
-    var list = TR.pharmaciesOf(applyOrg);
-    sel.innerHTML = '<option value="">请选择</option>' + list.map(function (p) {
-      return '<option value="' + p.id + '">' + esc(p.name) + "</option>";
-    }).join("");
-    if (bill.applyPharmacy) sel.value = bill.applyPharmacy;
-    renderLocations();
-  }
   function renderLocations() {
-    var ph = $("fPharmacy").value;
     var sel = $("fLocation");
-    var list = ph ? TR.locationsOf(ph) : [];
-    sel.disabled = !ph;
+    var list = TR.locationsOfOrg(applyOrg);
     sel.innerHTML = '<option value="">请选择</option>' + list.map(function (l) {
       return '<option value="' + l.id + '">' + esc(l.name) + "</option>";
     }).join("");
-    if (bill.applyLocation && ph === bill.applyPharmacy) sel.value = bill.applyLocation;
+    if (bill.applyLocation) sel.value = bill.applyLocation;
   }
 
   function renderItems() {
@@ -314,9 +297,7 @@
 
   function validate() {
     var bad = [];
-    $("fPharmacy").classList.remove("is-invalid");
     $("fLocation").classList.remove("is-invalid");
-    if (!$("fPharmacy").value) { $("fPharmacy").classList.add("is-invalid"); bad.push("申请药房"); }
     if (!$("fLocation").value) { $("fLocation").classList.add("is-invalid"); bad.push("申请库位"); }
 
     var qtyBad = false;
@@ -331,12 +312,8 @@
   }
 
   function collect() {
-    bill.applyPharmacy = $("fPharmacy").value;
-    var ph = TR.pharmaciesOf(applyOrg).filter(function (p) { return p.id === bill.applyPharmacy; })[0];
-    bill.applyPharmacyName = ph ? ph.name : "";
     bill.applyLocation = $("fLocation").value;
-    var loc = TR.locationsOf(bill.applyPharmacy).filter(function (l) { return l.id === bill.applyLocation; })[0];
-    bill.applyLocationName = loc ? loc.name : "";
+    bill.applyLocationName = TR.locationNameOfOrg(applyOrg, bill.applyLocation);
     bill.shortageDesc = $("fDesc").value.trim();
     [].slice.call($("itemBody").querySelectorAll(".tr-qty")).forEach(function (inp) {
       var it = bill.items[parseInt(inp.getAttribute("data-si"), 10)];
@@ -371,12 +348,6 @@
   /* ---------------- 事件 ---------------- */
   $("btnBack").addEventListener("click", function () { location.href = "transfer.html"; });
   $("tabClose").addEventListener("click", function () { location.href = "transfer.html"; });
-  $("fPharmacy").addEventListener("change", function () {
-    this.classList.remove("is-invalid");
-    bill.applyPharmacy = this.value;
-    bill.applyLocation = "";
-    renderLocations();
-  });
   $("fLocation").addEventListener("change", function () { this.classList.remove("is-invalid"); });
   $("btnAddItem").addEventListener("click", openPicker);
   $("itemBody").addEventListener("click", function (e) {
@@ -404,7 +375,7 @@
     });
   });
 
-  renderPharmacies();
+  renderLocations();
   renderItems();
   syncInfo();
   SEL.renderHeaderUser(user);

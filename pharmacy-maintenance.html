@@ -56,10 +56,6 @@
       <div class="sel-card">
         <div class="filter-bar mf-filter" id="filterBar">
           <div class="mf-fi">
-            <span class="lbl">机构：</span>
-            <select class="select" id="fltOrg"></select>
-          </div>
-          <div class="mf-fi">
             <span class="lbl">库位名称：</span>
             <input class="input" id="fltName" placeholder="请输入库位名称" autocomplete="off">
           </div>
@@ -80,12 +76,12 @@
         <div class="mf-table-wrap" style="padding:0 16px;">
           <table class="data-table ph-table">
             <colgroup>
-              <col style="width:56px"><col style="width:180px"><col style="width:110px"><col style="width:180px">
+              <col style="width:56px"><col style="width:180px"><col style="width:180px">
               <col style="width:200px"><col style="width:140px"><col style="width:150px">
             </colgroup>
             <thead>
               <tr>
-                <th>序号</th><th>所属机构</th><th>库位编码</th>
+                <th>序号</th><th>库位编码</th>
                 <th>库位名称</th><th>药品分类</th><th>状态</th><th>操作</th>
               </tr>
             </thead>
@@ -228,7 +224,7 @@
 
   /* ================= 状态 ================= */
   var ST = {
-    filters: { org: "", kw: "", status: "all" },
+    filters: { kw: "", status: "all" },
     page: 1,
     size: 15,
     modal: null
@@ -237,7 +233,8 @@
   function filtered() {
     var f = ST.filters;
     return DATA.filter(function (p) {
-      if (f.org && p.org !== f.org) return false;
+      /* 只显示当前登录机构的库位 */
+      if (p.org !== CURRENT_ORG && !p.org) return false;
       if (f.kw) {
         var kw = f.kw.toLowerCase();
         var hay = [p.name, p.code, p.contact].join("|").toLowerCase();
@@ -275,12 +272,11 @@
     var body = $("listBody");
 
     if (!pageRows.length) {
-      body.innerHTML = '<tr><td colspan="7" class="table-empty">暂无数据</td></tr>';
+      body.innerHTML = '<tr><td colspan="6" class="table-empty">暂无数据</td></tr>';
     } else {
       body.innerHTML = pageRows.map(function (p, i) {
         return "<tr>"
           + "<td>" + (start + i + 1) + "</td>"
-          + '<td title="' + esc(p.org) + '">' + (p.org ? esc(p.org) : "—") + "</td>"
           + '<td class="ph-code">' + (p.code ? esc(p.code) : "—") + "</td>"
           + '<td title="' + esc(p.name) + '">' + (p.name ? esc(p.name) : "—") + "</td>"
           + "<td>" + catsCell(p.cats || []) + "</td>"
@@ -381,19 +377,9 @@
     var isCreate = mode === "create";
     var L = addrLists(d);
 
-    var orgField = "";
-    if (isCreate) {
-      /* 新增：所属机构只读显示当前机构 */
-      orgField =
-        '<div class="eg-field"><span class="eg-label"><span class="req">*</span>所属机构</span>'
-        + '<input class="input" value="' + esc(d.org || CURRENT_ORG) + '" readonly style="background:#f5f5f5;color:#888"></div>';
-    } else {
-      /* 编辑/查看：下拉选择，查看时 disabled */
-      orgField =
-        '<div class="eg-field"><span class="eg-label"><span class="req">*</span>所属机构</span>'
-        + '<select class="select" data-k="org"' + (isView ? " disabled" : "") + '>'
-        + plainOptions(ORGS, d.org, "请选择所属机构") + "</select></div>";
-    }
+    var orgField =
+      '<div class="eg-field"><span class="eg-label"><span class="req">*</span>所属机构</span>'
+      + '<input class="input" value="' + esc(d.org || CURRENT_ORG) + '" readonly style="background:#f5f5f5;color:#888"></div>';
 
     var catsField =
       '<div class="eg-field"><span class="eg-label"><span class="req">*</span>药品分类</span>'
@@ -569,7 +555,6 @@
     var d = ST.modal.draft;
     var miss = [];
     if (!String(d.name || "").trim()) { miss.push("库位名称"); markInvalid("name"); }
-    if (!d.org) { miss.push("所属机构"); markInvalid("org"); }
     if (!d.cats || !d.cats.length) { miss.push("药品分类"); markCatsInvalid(); }
     return miss;
   }
@@ -584,6 +569,8 @@
 
   function saveModal() {
     var d = ST.modal.draft;
+    /* 强制所属机构为当前登录机构 */
+    d.org = CURRENT_ORG;
     var miss = validate();
     if (miss.length) { toast("请完善：" + miss.join("、")); return; }
 
@@ -643,7 +630,6 @@
 
   /* ================= 查询 / 重置 ================= */
   function applyFilters() {
-    ST.filters.org = $("fltOrg").value;
     ST.filters.kw = $("fltName").value.trim();
     var rd = document.querySelector('input[name="fltStatus"]:checked');
     ST.filters.status = rd ? rd.value : "all";
@@ -651,10 +637,9 @@
     renderList();
   }
   function resetFilters() {
-    $("fltOrg").value = "";
     $("fltName").value = "";
     document.querySelector('input[name="fltStatus"][value="all"]').checked = true;
-    ST.filters = { org: "", kw: "", status: "all" };
+    ST.filters = { kw: "", status: "all" };
     ST.page = 1;
     renderList();
   }
@@ -842,10 +827,6 @@
   }
 
   /* ================= 初始化 ================= */
-  $("fltOrg").innerHTML = '<option value="">全部机构</option>' + ORGS.map(function (o) {
-    return '<option value="' + esc(o) + '">' + esc(o) + "</option>";
-  }).join("");
-
   loadData();
   bindEvents();
   renderList();

@@ -17,6 +17,17 @@
     ]
   };
 
+  /* 库位全量：统一取机构下所有库位的并集 */
+  function locationsOf(orgId) {
+    var seen = {}, out = [];
+    (PHARMACIES[orgId] || []).forEach(function (p) {
+      p.locations.forEach(function (l) {
+        if (!seen[l]) { seen[l] = 1; out.push(l); }
+      });
+    });
+    return out;
+  }
+
   /* ---------------- 需要录入拆零数量的规格（白名单） ----------------
      业务上大部分药品按整包装（盒/袋/支）盘点即可，只有少数零散发药的
      口服固体制剂需要额外录入拆零散数。此处按「药品名称|规格」声明，
@@ -356,7 +367,7 @@
 
   window.SC = {
     AUDIT: AUDIT,
-    ORGS: ORGS, PHARMACIES: PHARMACIES,
+    ORGS: ORGS, PHARMACIES: PHARMACIES, locationsOf: locationsOf,
     load: load, save: save, byId: byId, persist: persist, fillItems: fillItems,
     user: user, logout: logout, newCode: newCode,
     money: money,

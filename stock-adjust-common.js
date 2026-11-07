@@ -77,10 +77,6 @@
     if (u) sessionStorage.setItem("SA_USER", JSON.stringify(u));
   }
   function orgOf(id) { return ORGS.filter(function (o) { return o.id === id; })[0] || null; }
-  function pharmacyOf(orgId, pid) {
-    var o = orgOf(orgId); if (!o) return null;
-    return o.pharmacies.filter(function (p) { return p.id === pid; })[0] || null;
-  }
 
   /* ---------- 批次查找 ---------- */
   function findBatchesByDrug(code) {
@@ -249,7 +245,7 @@
     USERS: USERS, ORGS: ORGS, REASONS: REASONS, BATCHES: BATCHES,
     STATUS: STATUS, UPLOAD: UPLOAD, METHODS: METHODS,
     qs: qs, esc: esc, fmtNow: fmtNow, num2: num2,
-    currentUser: currentUser, setUser: setUser, orgOf: orgOf, pharmacyOf: pharmacyOf,
+    currentUser: currentUser, setUser: setUser, orgOf: orgOf,
     findBatchesByDrug: findBatchesByDrug, findBatchByRow: findBatchByRow, rowKey: rowKey,
     blankItem: blankItem, itemFromBatch: itemFromBatch,
     load: load, save: save, billOf: billOf, newCode: newCode, makeInoutCode: makeInoutCode,

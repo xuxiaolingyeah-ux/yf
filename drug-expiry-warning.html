@@ -49,6 +49,7 @@ button,input,select{font-family:inherit;}
   padding:0 20px;border-bottom:1px solid var(--line-light);background:#fff;
 }
 .page-title{font-size:16px;font-weight:600;color:var(--text-1);}
+.head-ctx{display:flex;align-items:center;gap:16px;margin-left:24px;}
 .head-btns{margin-left:auto;display:flex;align-items:center;gap:8px;}
 
 /* ---------- 按钮 ---------- */
@@ -240,6 +241,31 @@ th.sticky-days,td.sticky-days{box-shadow:-1px 0 0 var(--table-line);}
   font-size:12px;color:var(--text-2);
 }
 .settings-view .empty{position:absolute;}
+.back-icon{
+  width:32px;height:32px;flex:0 0 32px;border:1px solid var(--border);border-radius:4px;background:#fff;
+  display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-2);
+  margin-right:12px;transition:all .15s;padding:0;
+}
+.back-icon:hover{border-color:var(--brand);color:var(--brand);background:var(--brand-bg);}
+.settings-table input[type="checkbox"]{width:14px;height:14px;cursor:pointer;vertical-align:middle;}
+/* 批量设置效期弹窗 */
+.modal-mask{
+  position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;
+  align-items:center;justify-content:center;z-index:900;
+}
+.modal-mask.show{display:flex;}
+.modal{width:380px;background:#fff;border-radius:8px;box-shadow:0 8px 30px rgba(0,0,0,.18);overflow:hidden;}
+.modal-head{
+  height:48px;display:flex;align-items:center;padding:0 16px;
+  border-bottom:1px solid var(--line-light);font-size:14px;font-weight:600;color:var(--text-1);
+}
+.modal-body{padding:20px 16px;font-size:13px;color:var(--text-2);}
+.modal-body .tip{margin-bottom:12px;line-height:1.6;}
+.modal-body .tip b{color:var(--brand);}
+.modal-foot{
+  padding:12px 16px;border-top:1px solid var(--line-light);
+  display:flex;justify-content:flex-end;gap:8px;
+}
 
 /* toast */
 .toast{
@@ -272,8 +298,16 @@ th.sticky-days,td.sticky-days{box-shadow:-1px 0 0 var(--table-line);}
 
   <main class="content">
     <!-- 标题行 -->
-    <div class="page-head">
+    <div class="page-head" id="mainHead">
       <div class="page-title">药品效期预警</div>
+      <div class="head-ctx">
+        <div class="fitem"><label>库位：</label>
+          <div class="select-ctl select-wider">
+            <select id="locationSelect"></select>
+            <span class="arrow"></span>
+          </div>
+        </div>
+      </div>
       <div class="head-btns" id="headBtns">
         <button class="btn btn-ghost-blue" id="btnSetting">效期提示设置</button>
       </div>
@@ -284,24 +318,6 @@ th.sticky-days,td.sticky-days{box-shadow:-1px 0 0 var(--table-line);}
       <!-- 筛选区 -->
       <div class="filter">
         <div class="filter-main" id="filterMain">
-          <div class="fitem"><label>机构：</label>
-            <div class="select-ctl">
-              <select disabled><option>山东大学齐鲁医院</option></select>
-              <span class="arrow"></span>
-            </div>
-          </div>
-          <div class="fitem"><label>药房：</label>
-            <div class="select-ctl">
-              <select id="pharmacySelect"></select>
-              <span class="arrow"></span>
-            </div>
-          </div>
-          <div class="fitem"><label>库位：</label>
-            <div class="select-ctl select-wider">
-              <select id="locationSelect"></select>
-              <span class="arrow"></span>
-            </div>
-          </div>
           <div class="fitem"><label>药品：</label>
             <input class="ctl" id="kw" placeholder="名称 / 编码 / 拼音码" autocomplete="off">
           </div>
@@ -393,12 +409,23 @@ th.sticky-days,td.sticky-days{box-shadow:-1px 0 0 var(--table-line);}
     <!-- 效期提示设置子视图 -->
     <div class="settings-view" id="settingsView">
       <div class="page-head" style="border-top:1px solid var(--line-light);">
+        <button class="back-icon" id="btnBack" title="返回上一页" aria-label="返回上一页">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10.5 3L5.5 8l5 5"/></svg>
+        </button>
         <div class="page-title">效期提示设置</div>
-        <div class="head-btns"><button class="btn" id="btnBack">返回</button></div>
+        <div class="head-btns"><button class="btn btn-primary" id="btnBatch">设置效期</button></div>
       </div>
       <div class="settings-filter">
         <div class="fitem"><label>药品名称：</label>
           <input class="ctl" id="setKw" placeholder="请输入药品名称 / 编码 / 拼音码" autocomplete="off" style="width:240px;">
+        </div>
+        <div class="fitem"><label>药品种类：</label>
+          <div class="select-ctl">
+            <select id="setCat">
+              <option value="all">全部</option>
+            </select>
+            <span class="arrow"></span>
+          </div>
         </div>
         <div class="fitem"><label>库存量：</label>
           <div class="select-ctl">
@@ -418,13 +445,14 @@ th.sticky-days,td.sticky-days{box-shadow:-1px 0 0 var(--table-line);}
       <div class="settings-table">
         <table>
           <colgroup>
-            <col style="width:64px"><col style="width:160px"><col style="width:24%"><col style="width:20%">
-            <col style="width:24%"><col style="width:180px"><col style="width:110px">
+            <col style="width:44px"><col style="width:64px"><col style="width:160px"><col style="width:22%"><col style="width:18%">
+            <col style="width:22%"><col style="width:180px"><col style="width:100px"><col style="width:110px">
           </colgroup>
           <thead>
             <tr>
+              <th><input type="checkbox" id="setCheckAll" title="全选本页"></th>
               <th>序号</th><th>药品编码</th><th>药品名称</th><th>药品规格</th>
-              <th>生产企业</th><th>效期提示天数（天）</th><th>库存量</th>
+              <th>生产企业</th><th>效期提示天数（天）</th><th>库存量</th><th>药品种类</th>
             </tr>
           </thead>
           <tbody id="setTbody"></tbody>
@@ -453,6 +481,23 @@ th.sticky-days,td.sticky-days{box-shadow:-1px 0 0 var(--table-line);}
   </main>
 </div>
 
+<!-- 批量设置效期弹窗 -->
+<div class="modal-mask" id="batchMask">
+  <div class="modal">
+    <div class="modal-head">批量设置效期提示天数</div>
+    <div class="modal-body">
+      <div class="tip">已勾选 <b id="batchCount">0</b> 个药品，将统一设置效期提示天数：</div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <input class="inline-num" id="batchDays" type="number" min="1" max="365" placeholder="请输入天数（1-365）" style="width:190px;"> 天
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" id="batchCancel">取消</button>
+      <button class="btn btn-primary" id="batchOk">确定</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -461,43 +506,27 @@ th.sticky-days,td.sticky-days{box-shadow:-1px 0 0 var(--table-line);}
   var RADIO_LABEL = { expired:'已过期', normal:'未过期', soon:'即将过期' };
 
   /* ============================================================
-   *  机构 / 药房 / 库位 数据（三级独立下拉）
+   *  机构 / 库位 数据（库位为全部库位的并集，去重）
    * ============================================================ */
   var ORG = '山东大学齐鲁医院';
-  var PHARMACIES = [
-    { id:'out', name:'门诊药房', locations:[
-      { id:'out-west',  name:'门诊西药房' },
-      { id:'out-east',  name:'门诊中药房' }
-    ]},
-    { id:'in', name:'住院药房', locations:[
-      { id:'in-west',  name:'住院西药房' },
-      { id:'in-east',  name:'住院中药房' }
-    ]},
-    { id:'emerg', name:'急诊药房', locations:[
-      { id:'emerg-west', name:'急诊西药房' },
-      { id:'emerg-east', name:'急诊中药房' }
-    ]},
-    { id:'central', name:'中心药房', locations:[
-      { id:'center-store',  name:'中心药库' },
-      { id:'center-tcm',    name:'中药饮片库' },
-      { id:'center-ic',     name:'静脉用药调配中心（PIVAS）' }
-    ]}
+  var LOCATIONS = [
+    { id:'out-west',      name:'门诊西药房' },
+    { id:'out-east',      name:'门诊中药房' },
+    { id:'in-west',       name:'住院西药房' },
+    { id:'in-east',       name:'住院中药房' },
+    { id:'emerg-west',    name:'急诊西药房' },
+    { id:'emerg-east',    name:'急诊中药房' },
+    { id:'center-store',  name:'中心药库' },
+    { id:'center-tcm',    name:'中药饮片库' },
+    { id:'center-ic',     name:'静脉用药调配中心（PIVAS）' }
   ];
 
-  function fillPharmacies(){
-    var sel = $('pharmacySelect');
-    sel.innerHTML = PHARMACIES.map(function(p){
-      return '<option value="'+p.id+'">'+p.name+'</option>';
-    }).join('');
-    sel.value = PHARMACIES[0].id;
-    fillLocations(sel.value);
-  }
-  function fillLocations(pharmacyId){
-    var p = PHARMACIES.find(function(x){return x.id===pharmacyId}) || PHARMACIES[0];
+  function fillLocations(){
     var sel = $('locationSelect');
-    sel.innerHTML = p.locations.map(function(l){
+    sel.innerHTML = LOCATIONS.map(function(l){
       return '<option value="'+l.id+'">'+l.name+'</option>';
     }).join('');
+    sel.value = LOCATIONS[0].id;
   }
 
   /* ============================================================
@@ -541,9 +570,19 @@ th.sticky-days,td.sticky-days{box-shadow:-1px 0 0 var(--table-line);}
   }
   var DRUG_PY = DRUGS.map(function(d){ return pyCode(d[0]); });
 
-  var LOC_IDS = PHARMACIES.reduce(function(arr,p){
-    p.locations.forEach(function(l){ arr.push(l.id); }); return arr;
-  }, []);
+  /* 药品种类 */
+  var CATEGORIES = ['心血管类','抗感染类','解热镇痛类','降糖类','输液类','消化系统类','维生素类','精神药品类','麻醉药品类'];
+  var DRUG_CAT = {
+    '复方利血平片':'心血管类','阿莫西林胶囊':'抗感染类','头孢克肟分散片':'抗感染类',
+    '布洛芬缓释胶囊':'解热镇痛类','注射用头孢曲松钠':'抗感染类','氯化钠注射液':'输液类',
+    '葡萄糖注射液':'输液类','二甲双胍缓释片':'降糖类','阿托伐他汀钙片':'心血管类',
+    '硝苯地平控释片':'心血管类','蒙脱石散':'消化系统类','维生素C片':'维生素类',
+    '三唑仑':'精神药品类','艾司唑仑':'精神药品类','司可巴比妥':'精神药品类',
+    '氯胺酮':'麻醉药品类','咖啡因':'精神药品类','奥沙西泮':'精神药品类',
+    '注射用头孢呋辛钠':'抗感染类','甲钴胺片':'维生素类'
+  };
+
+  var LOC_IDS = LOCATIONS.map(function(l){ return l.id; });
 
   var rows = [];
   (function build(){
@@ -604,6 +643,7 @@ th.sticky-days,td.sticky-days{box-shadow:-1px 0 0 var(--table-line);}
       days: days,
       stock: stock,
       py: DRUG_PY[i],
+      cat: DRUG_CAT[d[0]] || '其他',
       _key: key
     };
   });
@@ -613,8 +653,7 @@ th.sticky-days,td.sticky-days{box-shadow:-1px 0 0 var(--table-line);}
    *  状态与筛选
    * ============================================================ */
   var state = {
-    pharmacy: PHARMACIES[0].id,
-    location: PHARMACIES[0].locations[0].id,
+    location: LOCATIONS[0].id,
     kw: '',
     status: 'all',
     from: '',
@@ -623,7 +662,8 @@ th.sticky-days,td.sticky-days{box-shadow:-1px 0 0 var(--table-line);}
     page: 1,
     list: []
   };
-  var setState = { kw:'', stock:'all', size:16, page:1 };
+  var setState = { kw:'', stock:'all', cat:'all', size:16, page:1 };
+  var selected = {};  // 已勾选药品（key -> 1，跨页保留）
 
   var STATUS_CLASS = { expired:'dot-red', normal:'dot-green', soon:'dot-amber' };
 
@@ -722,12 +762,23 @@ th.sticky-days,td.sticky-days{box-shadow:-1px 0 0 var(--table-line);}
     return settingsList.filter(function(s){
       if(setState.stock === 'gt0' && s.stock <= 0) return false;
       if(setState.stock === 'eq0' && s.stock > 0) return false;
+      if(setState.cat !== 'all' && s.cat !== setState.cat) return false;
       if(kw){
         var hay = (s.name + ' ' + s.code + ' ' + s.py).toLowerCase();
         if(hay.indexOf(kw) === -1) return false;
       }
       return true;
     });
+  }
+  function syncCheckAll(){
+    var list = filteredSet();
+    var start = (setState.page - 1) * setState.size;
+    var slice = list.slice(start, start + setState.size);
+    var all = slice.length > 0 && slice.every(function(s){ return selected[s._key]; });
+    var some = slice.some(function(s){ return selected[s._key]; });
+    var cb = $('setCheckAll');
+    cb.checked = all;
+    cb.indeterminate = !all && some;
   }
   function renderSet(){
     var list = filteredSet();
@@ -740,6 +791,7 @@ th.sticky-days,td.sticky-days{box-shadow:-1px 0 0 var(--table-line);}
     $('setTbody').innerHTML = slice.map(function(s){
       var warnCls = s.days > 90 ? '' : ' is-warn';
       return '<tr>'
+        + '<td><input type="checkbox" class="row-chk" data-key="'+s._key+'"'+(selected[s._key]?' checked':'')+'></td>'
         + '<td>' + s.idx + '</td>'
         + '<td>' + s.code + '</td>'
         + '<td class="left" title="'+s.name+'">' + s.name + '</td>'
@@ -747,9 +799,11 @@ th.sticky-days,td.sticky-days{box-shadow:-1px 0 0 var(--table-line);}
         + '<td class="left" title="'+s.manufacturer+'">' + s.manufacturer + '</td>'
         + '<td><input class="inline-num'+warnCls+'" data-key="'+s._key+'" type="number" min="1" max="365" value="'+s.days+'"> 天</td>'
         + '<td>' + s.stock + '</td>'
+        + '<td>' + s.cat + '</td>'
         + '</tr>';
     }).join('');
     $('setEmpty').hidden = slice.length > 0;
+    syncCheckAll();
 
     $('setTotal').textContent = '共 ' + total + ' 条';
     pagerNums(totalPage, setState.page, 'setNums', function(n){ setState.page = n; renderSet(); });
@@ -771,11 +825,6 @@ th.sticky-days,td.sticky-days{box-shadow:-1px 0 0 var(--table-line);}
   /* ============================================================
    *  事件绑定 —— 列表
    * ============================================================ */
-  $('pharmacySelect').addEventListener('change', function(){
-    state.pharmacy = this.value;
-    fillLocations(this.value);
-    state.location = $('locationSelect').value;
-  });
   $('locationSelect').addEventListener('change', function(){
     state.location = this.value;
   });
@@ -794,10 +843,9 @@ th.sticky-days,td.sticky-days{box-shadow:-1px 0 0 var(--table-line);}
     $('dateFrom').value = '';
     $('dateTo').value = '';
     $('statusSelect').value = 'all';
-    $('pharmacySelect').value = PHARMACIES[0].id;
-    fillLocations(PHARMACIES[0].id);
+    $('locationSelect').value = LOCATIONS[0].id;
     state.kw = ''; state.status = 'all'; state.from = ''; state.to = '';
-    state.pharmacy = PHARMACIES[0].id; state.location = PHARMACIES[0].locations[0].id;
+    state.location = LOCATIONS[0].id;
     state.page = 1;
     render();
     toast('已重置');
@@ -819,6 +867,7 @@ th.sticky-days,td.sticky-days{box-shadow:-1px 0 0 var(--table-line);}
    *  效期提示设置 —— 视图切换 + 筛选 + inline 编辑
    * ============================================================ */
   function showSettings(){
+    $('mainHead').style.display = 'none';
     $('listView').style.display = 'none';
     $('settingsView').classList.add('show');
     // 先给每条 settings 加一个稳定的 idx（按原始数组序）
@@ -827,6 +876,7 @@ th.sticky-days,td.sticky-days{box-shadow:-1px 0 0 var(--table-line);}
   }
   function backToList(){
     $('settingsView').classList.remove('show');
+    $('mainHead').style.display = 'flex';
     $('listView').style.display = 'flex';
     render();
   }
@@ -836,13 +886,14 @@ th.sticky-days,td.sticky-days{box-shadow:-1px 0 0 var(--table-line);}
   $('setQuery').addEventListener('click', function(){
     setState.kw = $('setKw').value;
     setState.stock = $('setStock').value;
+    setState.cat = $('setCat').value;
     setState.page = 1;
     renderSet();
     toast('已查询');
   });
   $('setReset').addEventListener('click', function(){
-    $('setKw').value = ''; $('setStock').value = 'gt0';
-    setState.kw = ''; setState.stock = 'gt0'; setState.page = 1;
+    $('setKw').value = ''; $('setStock').value = 'gt0'; $('setCat').value = 'all';
+    setState.kw = ''; setState.stock = 'gt0'; setState.cat = 'all'; setState.page = 1;
     renderSet();
   });
   $('setKw').addEventListener('keydown', function(e){ if(e.key === 'Enter') $('setQuery').click(); });
@@ -875,10 +926,68 @@ th.sticky-days,td.sticky-days{box-shadow:-1px 0 0 var(--table-line);}
     });
   });
 
+  // 行复选框勾选（事件委托，跨页保留）
+  $('setTbody').addEventListener('change', function(e){
+    var t = e.target.closest('input.row-chk');
+    if(!t) return;
+    var key = t.getAttribute('data-key');
+    if(t.checked){ selected[key] = 1; } else { delete selected[key]; }
+    syncCheckAll();
+  });
+
+  // 表头全选/取消本页
+  $('setCheckAll').addEventListener('change', function(){
+    var list = filteredSet();
+    var start = (setState.page - 1) * setState.size;
+    var slice = list.slice(start, start + setState.size);
+    slice.forEach(function(s){
+      if(this.checked){ selected[s._key] = 1; } else { delete selected[s._key]; }
+    }, this);
+    renderSet();
+  });
+
+  // 批量设置效期
+  $('btnBatch').addEventListener('click', function(){
+    var n = Object.keys(selected).length;
+    if(!n){ toast('请先勾选需要设置的药品'); return; }
+    $('batchCount').textContent = n;
+    $('batchDays').value = '';
+    $('batchMask').classList.add('show');
+    setTimeout(function(){ $('batchDays').focus(); }, 0);
+  });
+  $('batchCancel').addEventListener('click', function(){
+    $('batchMask').classList.remove('show');
+  });
+  $('batchMask').addEventListener('click', function(e){
+    if(e.target === this) this.classList.remove('show');
+  });
+  $('batchOk').addEventListener('click', function(){
+    var v = parseInt($('batchDays').value, 10);
+    if(!(v >= 1 && v <= 365)){ toast('请输入 1-365 之间的天数'); return; }
+    var keys = Object.keys(selected), n = keys.length;
+    keys.forEach(function(k){
+      if(settings[k]) settings[k].days = v;
+      rows.forEach(function(r){ if(r.name === (settings[k] || {}).name) r.days = v; });
+    });
+    selected = {};
+    $('batchMask').classList.remove('show');
+    renderSet();
+    toast('已批量设置 ' + n + ' 个药品的效期提示天数：' + v + ' 天');
+  });
+  $('batchDays').addEventListener('keydown', function(e){
+    if(e.key === 'Enter') $('batchOk').click();
+  });
+
   /* ============================================================
    *  初始化
    * ============================================================ */
-  fillPharmacies();
+  fillLocations();
+  (function fillCategories(){
+    var sel = $('setCat');
+    sel.innerHTML = '<option value="all">全部</option>' + CATEGORIES.map(function(c){
+      return '<option value="'+c+'">'+c+'</option>';
+    }).join('');
+  })();
   render();
 })();
 </script>

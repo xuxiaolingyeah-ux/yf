@@ -8,8 +8,26 @@
 /* ===== 处方管理 · 处方发药（门诊处方发药 · 中药房） ===== */
 .disp-wrap {
   flex: 1; min-height: 0;
-  display: flex; gap: 12px; padding: 12px;
+  display: flex; flex-direction: column; gap: 0;
   background: var(--bg-page);
+}
+
+/* ===== 顶部页面标题行 ===== */
+.disp-page-head {
+  flex: none; height: 52px;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 20px;
+  background: #fff;
+  border-bottom: 1px solid var(--border);
+}
+.disp-page-title { font-size: 15px; font-weight: 500; color: var(--text-primary); }
+.disp-page-hlbl { font-size: 13px; color: var(--text-tertiary); }
+.disp-page-sel { width: 180px; }
+
+/* ===== 主体容器（左侧列表 + 右侧详情） ===== */
+.disp-body {
+  flex: 1; min-height: 0;
+  display: flex; gap: 12px; padding: 12px;
 }
 
 /* 顶部系统栏：药房切换 */
@@ -532,15 +550,28 @@
 
     <div class="disp-wrap">
 
+      <!-- ========== 顶部标题行：标题 + 库位 + 发药按钮 ========== -->
+      <div class="disp-page-head">
+        <div style="display:flex;align-items:center;gap:14px;">
+          <span class="disp-page-title" id="sideTitle">门诊处方发药（中药房）</span>
+          <span class="disp-page-hlbl">库位：</span>
+          <select class="select disp-page-sel" id="dispLocation">
+            <option>中药房-1号架</option>
+            <option>中药房-2号架</option>
+            <option>中药房-3号架</option>
+            <option>西药房-1号架</option>
+            <option>西药房-2号架</option>
+          </select>
+        </div>
+        <div>
+          <button class="dbtn dbtn-primary" id="btnDispense" title="">发药(<span class="k">S</span>)</button>
+        </div>
+      </div>
+
+      <!-- ========== 主体：左列表 + 右详情 ========== -->
+      <div class="disp-body">
       <!-- ========== 左侧：门诊处方发药列表 ========== -->
       <aside class="disp-side">
-        <div class="disp-side-head">
-          <span class="disp-side-title" id="sideTitle">门诊处方发药（中药房）</span>
-          <button class="disp-x" id="btnSideClose" title="关闭">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 6l12 12M18 6L6 18"></path></svg>
-          </button>
-        </div>
-
         <div class="disp-tabs" id="dispTabs">
           <button class="disp-tab active" data-tab="paid">已收费</button>
           <button class="disp-tab" data-tab="unpaid">未收费</button>
@@ -608,10 +639,6 @@
 
       <!-- ========== 右侧：处方详情 ========== -->
       <section class="disp-main">
-        <div class="disp-toolbar">
-          <button class="dbtn dbtn-primary" id="btnDispense" title="">发药(<span class="k">S</span>)</button>
-        </div>
-
         <div class="disp-dhead">
           <span class="disp-dtitle">处方详情</span>
           <span class="disp-type" id="dispType">中成药处方</span>
@@ -661,7 +688,8 @@
           </table>
         </div>
       </section>
-    </div>
+      </div><!-- /.disp-body -->
+    </div><!-- /.disp-wrap -->
   </main>
 </div>
 

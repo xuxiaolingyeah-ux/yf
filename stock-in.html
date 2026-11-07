@@ -152,7 +152,6 @@
             <div class="si-fi"><span class="lbl">入库单号：</span><div class="ctrl"><input class="input" id="fCode" placeholder="请输入入库单号" autocomplete="off"></div></div>
             <div class="si-fi"><span class="lbl">入库时间：</span><div class="ctrl"><div class="si-drange"><input type="date" id="fT1"><span>~</span><input type="date" id="fT2"></div></div></div>
             <div class="si-fi"><span class="lbl">入库机构：</span><div class="ctrl"><select class="select" id="fOrg"></select></div></div>
-            <div class="si-fi"><span class="lbl">入库药房：</span><div class="ctrl"><select class="select" id="fPharmacy"></select></div></div>
             <div class="si-fi"><span class="lbl">入库库位：</span><div class="ctrl"><select class="select" id="fLocation"></select></div></div>
             <div class="si-fi"><span class="lbl">入库方式：</span><div class="ctrl"><select class="select" id="fMethod"><option value="">全部</option></select></div></div>
             <div class="si-fi"><span class="lbl">审核状态：</span><div class="ctrl"><select class="select" id="fStatus"><option value="">全部</option><option value="draft">草稿</option><option value="pending">待审核</option><option value="approved">审核通过</option><option value="rejected">已驳回</option></select></div></div>
@@ -174,7 +173,6 @@
               <tr>
                 <th class="col-code" style="width:130px">入库单号</th>
                 <th style="width:150px">入库机构</th>
-                <th style="width:110px">入库药房</th>
                 <th style="width:100px">入库库位</th>
                 <th style="width:130px">发票号</th>
                 <th style="width:150px">入库时间</th>
@@ -264,30 +262,26 @@
     h += SI.ORGS.map(function(o){return '<option value="'+o.id+'">'+SI.esc(o.name)+'</option>';}).join("");
     sel.innerHTML = h;
   }
-  function fillPharmacies(orgId){
-    var o = SI.orgOf(orgId);
-    var h = '<option value="">全部</option>' + (o ? o.pharmacies.map(function(p){return '<option value="'+p.id+'">'+SI.esc(p.name)+'</option>';}).join("") : '');
-    $("#fPharmacy").innerHTML = h;
-    fillLocations(orgId, "");
-  }
-  function fillLocations(orgId, pid){
-    var p = pid ? SI.pharmacyOf(orgId, pid) : null;
-    var locs = p ? p.locations : [];
-    if(!pid && orgId){ var o=SI.orgOf(orgId); locs=[]; o.pharmacies.forEach(function(x){ locs=locs.concat(x.locations); }); }
+  /* 库位下拉：不依赖药房，取所有库位的并集（指定机构时仅取该机构） */
+  function fillLocations(orgId){
+    var locs = [];
+    (orgId ? [SI.orgOf(orgId)] : SI.ORGS).forEach(function(o){
+      if(o) o.pharmacies.forEach(function(x){ locs = locs.concat(x.locations); });
+    });
+    locs = locs.filter(function(l,i){ return locs.indexOf(l) === i; });
     $("#fLocation").innerHTML = '<option value="">全部</option>' + locs.map(function(l){return '<option value="'+SI.esc(l)+'">'+SI.esc(l)+'</option>';}).join("");
   }
   fillOrgs($("#fOrg"), false);
   $("#fOrg").value = user.orgId;              /* 默认当前机构 */
-  fillPharmacies(user.orgId);
+  fillLocations(user.orgId);
   $("#fMethod").innerHTML = '<option value="">全部</option>' + SI.METHODS.map(function(m){return '<option>'+m+'</option>';}).join("");
   $("#fSupplier").innerHTML = '<option value="">全部</option>' + SI.SUPPLIERS.map(function(s){return '<option>'+s+'</option>';}).join("");
-  $("#fOrg").addEventListener("change",function(){ fillPharmacies(this.value); });
-  $("#fPharmacy").addEventListener("change",function(){ fillLocations($("#fOrg").value, this.value); });
+  $("#fOrg").addEventListener("change",function(){ fillLocations(this.value); $("#fLocation").value=""; });
 
   /* ===== 查询 / 重置 ===== */
   function applyFilter(){
     var code = $("#fCode").value.trim(), t1 = $("#fT1").value, t2 = $("#fT2").value;
-    var org = $("#fOrg").value, ph = $("#fPharmacy").value, loc = $("#fLocation").value;
+    var org = $("#fOrg").value, loc = $("#fLocation").value;
     var m = $("#fMethod").value, st = $("#fStatus").value, up = $("#fUpload").value;
     var sup = $("#fSupplier").value, inv = $("#fInvoice").value.trim();
     ST.filtered = list.filter(function(b){
@@ -296,7 +290,6 @@
       if(t1 && d < t1) return false;
       if(t2 && d > t2) return false;
       if(org && b.orgId!==org) return false;
-      if(ph && b.pharmacyId!==ph) return false;
       if(loc && b.location!==loc) return false;
       if(m && b.method!==m) return false;
       if(st && b.status!==st) return false;
@@ -315,7 +308,7 @@
   $("#btnSearch").addEventListener("click", applyFilter);
   $("#btnReset").addEventListener("click", function(){
     $("#fCode").value=""; $("#fT1").value=""; $("#fT2").value="";
-    $("#fOrg").value = user.orgId; fillPharmacies(user.orgId);
+    $("#fOrg").value = user.orgId; fillLocations(user.orgId); $("#fLocation").value="";
     $("#fMethod").value=""; $("#fStatus").value=""; $("#fUpload").value="";
     $("#fSupplier").value=""; $("#fInvoice").value="";
     applyFilter();
@@ -329,7 +322,6 @@
 
   /* ===== 表格渲染 ===== */
   function orgName(b){ var o=SI.orgOf(b.orgId); return o?o.name:"—"; }
-  function phName(b){ var p=SI.pharmacyOf(b.orgId,b.pharmacyId); return p?p.name:"—"; }
   function invoiceOf(b){
     if(b.invoiceMode==="detail"){ return "按明细"; }
     return b.invoiceNo || "—";
@@ -347,7 +339,6 @@
       return '<tr>'
         +'<td class="col-code">'+SI.esc(b.code)+'</td>'
         +'<td>'+SI.esc(orgName(b))+'</td>'
-        +'<td>'+SI.esc(phName(b))+'</td>'
         +'<td>'+SI.esc(b.location)+'</td>'
         +'<td>'+SI.esc(invoiceOf(b))+'</td>'
         +'<td>'+SI.esc((b.submitTime||"").slice(0,19))+'</td>'

@@ -48,8 +48,6 @@
       <div class="page-head">
         <div class="page-title">药品期初管理</div>
         <div class="init-ctx">
-          <span class="ctx-lbl">药房：</span>
-          <select class="select" id="selPharmacy"></select>
           <span class="ctx-lbl">库位：</span>
           <select class="select" id="selLocation"></select>
         </div>
@@ -387,11 +385,10 @@
     if (s.vendor && VENDORS.indexOf(s.vendor) < 0) VENDORS.push(s.vendor);
   });
 
-  /* ================= 期初数据（按 药房-库位 分别存放） ================= */
+  /* ================= 期初数据（按 库位 分别存放） ================= */
   var STORE_KEY = "STOCK_INIT_V3";
-  var PHARMACIES = ["中心药房", "门诊药房", "住院药房"];
   var LOCATIONS = ["主库位", "二级库位", "冷藏库位"];
-  var CTX = { pharmacy: PHARMACIES[0], location: LOCATIONS[0] };
+  var CTX = { location: LOCATIONS[0] };
   var DATA = [];
 
   var SEED = [
@@ -425,7 +422,7 @@
     return SEED.map(function (s) { return seedRow(s); });
   }
 
-  function ctxKey() { return CTX.pharmacy + "|" + CTX.location; }
+  function ctxKey() { return CTX.location; }
 
   function readStore() {
     try {
@@ -479,6 +476,7 @@
   /* ================= 列表渲染 ================= */
   function renderList() {
     var rows = filtered();
+    console.log('[renderList] filtered rows=', rows.length, 'DATA.length=', DATA.length);
     var pages = Math.max(1, Math.ceil(rows.length / ST.size));
     if (ST.page > pages) ST.page = pages;
 
@@ -971,10 +969,13 @@
       text: "此操作将清空全部期初数据, 是否继续?",
       danger: true,
       onOk: function () {
+        console.log('[初始化] 开始, 当前 DATA.length=', DATA.length);
         DATA = [];
+        console.log('[初始化] 清空后 DATA.length=', DATA.length);
         saveData();
         ST.page = 1;
         renderList();
+        console.log('[初始化] renderList 完成');
         toast("初始化完成");
       }
     });
@@ -1069,7 +1070,7 @@
     else this.value = ST.page;
   });
 
-  /* ================= 药房 / 库位上下文 ================= */
+  /* ================= 库位上下文 ================= */
   function fillSelect(el, list, value) {
     el.innerHTML = list.map(function (v) {
       return '<option value="' + esc(v) + '"' + (v === value ? " selected" : "") + ">" + esc(v) + "</option>";
@@ -1080,23 +1081,17 @@
     loadData();
     ST.page = 1;
     renderList();
-    toast("已切换至 " + CTX.pharmacy + " · " + CTX.location);
+    toast("已切换至 " + CTX.location);
   }
 
   var savedCtx = null;
   try { savedCtx = JSON.parse(sessionStorage.getItem(TPL_CTX_KEY) || "null"); } catch (e) { /* ignore */ }
-  if (savedCtx && PHARMACIES.indexOf(savedCtx.pharmacy) >= 0 && LOCATIONS.indexOf(savedCtx.location) >= 0) {
-    CTX.pharmacy = savedCtx.pharmacy;
+  if (savedCtx && LOCATIONS.indexOf(savedCtx.location) >= 0) {
     CTX.location = savedCtx.location;
   }
   try { sessionStorage.removeItem(TPL_CTX_KEY); } catch (e) { /* ignore */ }
-  fillSelect($("selPharmacy"), PHARMACIES, CTX.pharmacy);
   fillSelect($("selLocation"), LOCATIONS, CTX.location);
 
-  $("selPharmacy").addEventListener("change", function () {
-    CTX.pharmacy = this.value;
-    switchContext();
-  });
   $("selLocation").addEventListener("change", function () {
     CTX.location = this.value;
     switchContext();

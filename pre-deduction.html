@@ -237,7 +237,19 @@
       <div class="pd-card">
         <!-- 标题行 -->
         <div class="pd-head">
-          <div class="page-title">预减管理</div>
+          <div style="display:flex;align-items:center;gap:12px;">
+            <div class="page-title">预减管理</div>
+            <div class="pd-head-loc" style="display:flex;align-items:center;gap:6px;">
+              <span style="font-size:13px;color:var(--text-tertiary);white-space:nowrap;">库位：</span>
+              <div class="pd-multi-select" id="multiLocation" style="width:200px;">
+                <div class="pd-multi-trigger" id="multiLocTrigger">
+                  <span class="pd-multi-text" id="multiLocText">全部库位</span>
+                  <svg class="pd-multi-caret" viewBox="0 0 10 6" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M1 1l4 4 4-4"/></svg>
+                </div>
+                <div class="pd-multi-menu" id="multiLocMenu"></div>
+              </div>
+            </div>
+          </div>
           <div class="pd-acts">
             <button class="btn btn-danger-text" id="btnBatchDelete" disabled>删除</button>
           </div>
@@ -246,30 +258,6 @@
         <!-- 筛选栏 -->
         <div class="pd-filter collapsed" id="filterBar">
           <div class="pd-fields">
-            <div class="pd-fi">
-              <span class="lbl">机构：</span>
-              <div class="ctrl">
-                <select class="select" id="fOrg">
-                  <option value="">全部机构</option>
-                  <option value="org-c">中心药房</option>
-                  <option value="org-a1">XX 社区卫生服务中心</option>
-                  <option value="org-a2">YY 人民医院</option>
-                  <option value="org-a3">ZZ 中西医结合医院</option>
-                </select>
-              </div>
-            </div>
-            <div class="pd-fi">
-              <span class="lbl">库位：</span>
-              <div class="ctrl">
-                <div class="pd-multi-select" id="multiLocation">
-                  <div class="pd-multi-trigger" id="multiLocTrigger">
-                    <span class="pd-multi-text" id="multiLocText">全部库位</span>
-                    <svg class="pd-multi-caret" viewBox="0 0 10 6" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M1 1l4 4 4-4"/></svg>
-                  </div>
-                  <div class="pd-multi-menu" id="multiLocMenu"></div>
-                </div>
-              </div>
-            </div>
             <div class="pd-fi">
               <span class="lbl">预减时间：</span>
               <div class="ctrl">
@@ -584,7 +572,6 @@
 
   /* ===== 筛选 ===== */
   function doFilter(){
-    var orgId = $("#fOrg").value;
     var locIds = Array.from(locSelected);
     var tStart = $("#fTimeStart").value;
     var tEnd = $("#fTimeEnd").value;
@@ -597,7 +584,6 @@
     var vendor = $("#fVendor").value.trim().toLowerCase();
 
     ST.filtered = DEDUCTIONS.filter(function(r){
-      if(orgId && r.orgId !== orgId) return false;
       if(locIds.length > 0 && locIds.indexOf(r.locId) < 0) return false;
       if(tStart){ var rd = r.preTime.substring(0,10); if(rd < tStart) return false; }
       if(tEnd){   var rd2 = r.preTime.substring(0,10); if(rd2 > tEnd) return false; }
@@ -615,7 +601,6 @@
   }
 
   function resetFilter(){
-    $("#fOrg").value = "";
     locSelected.clear();
     $$("#multiLocMenu input[type=checkbox]").forEach(function(cb){cb.checked = false;});
     updateLocText();

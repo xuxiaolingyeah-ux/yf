@@ -147,14 +147,6 @@
         <div class="sa-head-title">药品高低储预警</div>
         <div class="sa-head-filters">
           <div class="sa-fi">
-            <span class="lbl">机构：</span>
-            <select class="select" id="fOrg"></select>
-          </div>
-          <div class="sa-fi">
-            <span class="lbl">药房：</span>
-            <select class="select" id="fPharmacy"></select>
-          </div>
-          <div class="sa-fi">
             <span class="lbl">库位：</span>
             <select class="select" id="fLocation"></select>
           </div>
@@ -394,7 +386,7 @@
   }
 
   // =====================================================================
-  // 机构 / 药房 / 库位 联动
+  // 机构 / 库位（库位取所有库位并集，去重）
   // =====================================================================
   function fillSelect(sel, items){
     var html = "";
@@ -405,26 +397,21 @@
   }
 
   function initOrgOptions(){
-    // 机构下拉（默认当前登录机构）
-    var html = "";
-    MOCK.orgs.forEach(function(o){
-      html += '<option value="' + esc(o.id) + '">' + esc(o.name) + "</option>";
-    });
-    $("fOrg").innerHTML = html;
-    $("fOrg").value = CURRENT_ORG;
-    fillPharmacyOptions();
-  }
-
-  function fillPharmacyOptions(){
-    var orgId = $("fOrg").value;
-    var list = (MOCK.pharmacies && MOCK.pharmacies[orgId]) || [];
-    fillSelect($("fPharmacy"), list);
+    // 机构已隐藏，仅初始化库位
     fillLocationOptions();
   }
 
   function fillLocationOptions(){
-    var phId = $("fPharmacy").value;
-    var list = (phId && MOCK.locations && MOCK.locations[phId]) || [];
+    var seen = {};
+    var list = [];
+    var map = MOCK.locations || {};
+    Object.keys(map).forEach(function(phId){
+      (map[phId] || []).forEach(function(l){
+        if (seen[l.id]) return;
+        seen[l.id] = true;
+        list.push(l);
+      });
+    });
     fillSelect($("fLocation"), list);
   }
 
@@ -460,8 +447,6 @@
   }
 
   function resetFilter(){
-    $("fOrg").value = CURRENT_ORG;
-    fillPharmacyOptions();
     $("fKind").value = "";
     $("fStatus").value = "";
     $("fName").value = "";
@@ -572,12 +557,6 @@
   // =====================================================================
   // 筛选事件（点「查询」才生效，回车等同）
   // =====================================================================
-  $("fOrg").onchange = function(){
-    fillPharmacyOptions();
-  };
-  $("fPharmacy").onchange = function(){
-    fillLocationOptions();
-  };
   $("btnSearch").onclick = doFilter;
   $("btnReset").onclick = resetFilter;
   $("fName").addEventListener("keydown", function(e){

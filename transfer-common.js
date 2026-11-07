@@ -223,8 +223,22 @@
 
   function orgName(key) { return ORGS[key] || "—"; }
 
-  function pharmaciesOf(key) { return (MOCK.pharmacies && MOCK.pharmacies[key]) || []; }
-  function locationsOf(pharmacyId) { return (MOCK.locations && MOCK.locations[pharmacyId]) || []; }
+  /* 库位全量：取机构下所有库位的并集（不再做上级级联） */
+  function locationsOfOrg(key) {
+    var seen = {}, out = [];
+    ((MOCK.pharmacies && MOCK.pharmacies[key]) || []).forEach(function (p) {
+      ((MOCK.locations && MOCK.locations[p.id]) || []).forEach(function (l) {
+        if (!seen[l.id]) { seen[l.id] = 1; out.push(l); }
+      });
+    });
+    return out;
+  }
+
+  function locationNameOfOrg(key, locId) {
+    var out = "";
+    locationsOfOrg(key).forEach(function (l) { if (l.id === locId) out = l.name; });
+    return out;
+  }
 
   /* ---------------- 权限（角色 × 状态 × 操作） ---------------- */
   function isCreator(b, u) { return b.creatorId === u.id; }
@@ -394,7 +408,6 @@
     function renderInfo() {
       $("infoGrid").innerHTML =
         item("申请机构", bill.applyOrgName) +
-        item("申请药房", bill.applyPharmacyName) +
         item("申请库位", bill.applyLocationName) +
         item("提交人", bill.creator) +
         item("提交时间", bill.submitTime) +
@@ -569,7 +582,7 @@
     AUDIT: AUDIT, TRANSFER: TRANSFER, ORGS: ORGS, BAD_REASONS: BAD_REASONS,
     load: load, save: save, byId: byId, persist: persist,
     user: user, orgKey: orgKey, orgName: orgName,
-    pharmaciesOf: pharmaciesOf, locationsOf: locationsOf,
+    locationsOfOrg: locationsOfOrg, locationNameOfOrg: locationNameOfOrg,
     isCreator: isCreator, isMemberAuditor: isMemberAuditor, isCenterAuditor: isCenterAuditor,
     canEdit: canEdit, canWithdraw: canWithdraw, canOutbound: canOutbound, canInbound: canInbound,
     related: related, actionsFor: actionsFor,

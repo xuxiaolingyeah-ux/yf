@@ -91,18 +91,20 @@
 .hm-tip {
   position: absolute; left: 50%; bottom: calc(100% + 6px);
   transform: translateX(-50%);
-  width: 260px;
-  padding: 8px 10px;
+  width: 300px;
+  padding: 9px 11px;
   background: var(--bg-white);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: var(--shadow-1);
-  font-size: 12px; line-height: 1.6; color: var(--text-secondary);
+  font-size: 12px; line-height: 1.7; color: var(--text-secondary);
   opacity: 0; visibility: hidden; pointer-events: none;
   transition: opacity .15s; z-index: 30;
 }
+.hm-tip b { display: block; font-weight: 500; color: var(--text-primary); margin-bottom: 2px; }
 .hm-iwrap:hover .hm-tip, .hm-iwrap:focus-within .hm-tip { opacity: 1; visibility: visible; }
 .hm-iwrap.side-right .hm-tip { left: auto; right: -6px; transform: none; }
+.hm-kpi .hm-iwrap .hm-tip { bottom: auto; top: calc(100% + 6px); }
 
 /* 周期切换 + 自定义区间 */
 .hm-tools { display: flex; align-items: center; gap: 8px; margin-left: auto; flex-wrap: wrap; }
@@ -334,21 +336,6 @@
 .hm-pg-btn:disabled { color: var(--text-placeholder); cursor: not-allowed; }
 .hm-pg-num { font-size: 12px; color: var(--text-secondary); font-family: var(--font-mono); }
 
-/* 口径抽屉 */
-.hm-dr-name { font-size: 14px; font-weight: 500; color: var(--text-primary); margin-bottom: 12px; }
-.hm-dr-row { display: flex; gap: 10px; padding: 9px 0; border-bottom: 1px dashed var(--border-light); font-size: 13px; line-height: 1.7; }
-.hm-dr-label { width: 68px; flex: none; font-size: 12px; color: var(--text-tertiary); }
-.hm-dr-val { flex: 1; color: var(--text-primary); }
-.hm-dr-formula {
-  margin: 12px 0 0;
-  padding: 10px 12px;
-  background: var(--bg-page);
-  border-radius: var(--radius);
-  font-family: var(--font-mono);
-  font-size: 12px; line-height: 1.8; color: var(--text-secondary);
-  word-break: break-all;
-}
-
 /* toast */
 .hm-toast {
   position: fixed; left: 50%; bottom: 40px;
@@ -437,10 +424,10 @@
               <div class="hm-kpi" data-href="drug-catalog.html">
                 <div class="hm-kpi-label">药品品种数
                   <span class="hm-iwrap">
-                    <span class="hm-ico" role="button" tabindex="0" data-metric="variety" aria-label="查看药品品种数口径">
+                    <span class="hm-ico" tabindex="0" data-metric="variety" aria-label="药品品种数口径说明">
                       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="8" cy="8" r="6.4"></circle><path d="M8 7.2v4.2" stroke-linecap="round"></path><circle cx="8" cy="4.6" r=".8" fill="currentColor" stroke="none"></circle></svg>
                     </span>
-                    <span class="hm-tip">已启用的药品品种数，按通用名 + 剂型统计，不含停用品种。</span>
+                    <span class="hm-tip"><b>药品品种数</b>已启用状态的药品品种数，按通用名 + 剂型统计；同一品种的多个规格合并为 1 个品种，不含停用品种。目录变更后更新，非实时轮询。</span>
                   </span>
                 </div>
                 <div class="hm-kpi-val">1,286<span class="unit">种</span></div>
@@ -449,10 +436,10 @@
               <div class="hm-kpi" data-href="stock-query.html">
                 <div class="hm-kpi-label">库存零售总金额
                   <span class="hm-iwrap">
-                    <span class="hm-ico" role="button" tabindex="0" data-metric="stockValue" aria-label="查看库存零售总金额口径">
+                    <span class="hm-ico" tabindex="0" data-metric="stockValue" aria-label="库存零售总金额口径说明">
                       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="8" cy="8" r="6.4"></circle><path d="M8 7.2v4.2" stroke-linecap="round"></path><circle cx="8" cy="4.6" r=".8" fill="currentColor" stroke="none"></circle></svg>
                     </span>
-                    <span class="hm-tip">在库可用库存 × 当前零售价，不含在途、锁定与冻结批次。</span>
+                    <span class="hm-tip"><b>库存零售总金额</b>Σ（在库可用库存 × 当前零售价），仅统计中心药房在库批次，不含在途、锁定与冻结批次；零售价随调价单生效后重算。实时，60 秒轮询。</span>
                   </span>
                 </div>
                 <div class="hm-kpi-val">¥342.9<span class="unit">万</span></div>
@@ -461,10 +448,10 @@
               <div class="hm-kpi" data-href="stock-alert.html">
                 <div class="hm-kpi-label">缺货品规数
                   <span class="hm-iwrap">
-                    <span class="hm-ico" role="button" tabindex="0" data-metric="shortage" aria-label="查看缺货品规数口径">
+                    <span class="hm-ico" tabindex="0" data-metric="shortage" aria-label="缺货品规数口径说明">
                       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="8" cy="8" r="6.4"></circle><path d="M8 7.2v4.2" stroke-linecap="round"></path><circle cx="8" cy="4.6" r=".8" fill="currentColor" stroke="none"></circle></svg>
                     </span>
-                    <span class="hm-tip">可用库存 = 现有库存 − 锁定 − 占用（待发药），等于 0 的品规数；计入低储预警。</span>
+                    <span class="hm-tip"><b>缺货品规数</b>可用库存 = 现有库存 − 锁定量 − 占用量（待发药），可用库存等于 0 的品规数；缺货品规同时计入低储预警，两个数字口径存在包含关系。实时，60 秒轮询。</span>
                   </span>
                 </div>
                 <div class="hm-kpi-val">12<span class="unit">个</span></div>
@@ -473,10 +460,10 @@
               <div class="hm-kpi" data-href="drug-catalog.html">
                 <div class="hm-kpi-label">基药重合度
                   <span class="hm-iwrap side-right">
-                    <span class="hm-ico" role="button" tabindex="0" data-metric="essentialRatio" aria-label="查看基药重合度口径">
+                    <span class="hm-ico" tabindex="0" data-metric="essentialRatio" aria-label="基药重合度口径说明">
                       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="8" cy="8" r="6.4"></circle><path d="M8 7.2v4.2" stroke-linecap="round"></path><circle cx="8" cy="4.6" r=".8" fill="currentColor" stroke="none"></circle></svg>
                     </span>
-                    <span class="hm-tip">已配备的国家基本药物品种数（状态为启动）/ 当前目录版本基药品种数 × 100%。</span>
+                    <span class="hm-tip"><b>基药重合度</b>已配备的国家基本药物品种数（状态为启动）/ 当前目录版本基药品种数 × 100%。示例：984 / 1,255 = 78.4%；目录版本变更后需整体重算，仅目录变更时更新。</span>
                   </span>
                 </div>
                 <div class="hm-kpi-val">78.4<span class="unit">%</span><span class="hm-kpi-note">已配 984 / 目录 1,255</span></div>
@@ -509,10 +496,10 @@
                 <div class="hm-rate-head">
                   <div class="hm-rate-name">基药使用率
                     <span class="hm-iwrap">
-                      <span class="hm-ico" role="button" tabindex="0" data-metric="basicRate" aria-label="查看基药使用率口径">
+                      <span class="hm-ico" tabindex="0" data-metric="basicRate" aria-label="基药使用率口径说明">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="8" cy="8" r="6.4"></circle><path d="M8 7.2v4.2" stroke-linecap="round"></path><circle cx="8" cy="4.6" r=".8" fill="currentColor" stroke="none"></circle></svg>
                       </span>
-                      <span class="hm-tip">基本药物零售金额 ÷ 全部药品零售金额 × 100%；括号内为与上期使用率之差。</span>
+                      <span class="hm-tip"><b>基药使用率</b>基本药物零售金额 ÷ 全部药品零售金额 × 100%，按所选统计周期汇总。示例：本月基药 24.6 万 / 全部 39.4 万 = 62.5%；环比为两个使用率的差值，不是相对增长率。每小时汇总一次。</span>
                     </span>
                   </div>
                 </div>
@@ -524,10 +511,10 @@
                 <div class="hm-rate-head">
                   <div class="hm-rate-name">抗菌药物使用率
                     <span class="hm-iwrap">
-                      <span class="hm-ico" role="button" tabindex="0" data-metric="antiRate" aria-label="查看抗菌药物使用率口径">
+                      <span class="hm-ico" tabindex="0" data-metric="antiRate" aria-label="抗菌药物使用率口径说明">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="8" cy="8" r="6.4"></circle><path d="M8 7.2v4.2" stroke-linecap="round"></path><circle cx="8" cy="4.6" r=".8" fill="currentColor" stroke="none"></circle></svg>
                       </span>
-                      <span class="hm-tip">抗菌药物零售金额 ÷ 全部药品零售金额 × 100%；不是抗菌药物使用强度（DDD）。</span>
+                      <span class="hm-tip"><b>抗菌药物使用率</b>抗菌药物零售金额 ÷ 全部药品零售金额 × 100%，按所选统计周期汇总；该指标是金额占比，不等于抗菌药物使用强度（DDD 口径），评审时请勿混用。每小时汇总一次。</span>
                     </span>
                   </div>
                 </div>
@@ -597,17 +584,6 @@
       </div>
     </div>
   </main>
-</div>
-
-<div class="drawer-mask" id="hmMask"></div>
-<div class="drawer" id="hmDrawer" aria-hidden="true">
-  <div class="drawer-head">
-    <div class="drawer-title">指标口径说明</div>
-    <button class="drawer-close" id="hmDrawerClose" aria-label="关闭">
-      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 5l14 14M19 5L5 19"></path></svg>
-    </button>
-  </div>
-  <div class="drawer-body" id="hmDrawerBody"></div>
 </div>
 
 <div class="hm-toast" id="hmToast"></div>
@@ -748,62 +724,6 @@
       { name: "甘露醇注射液 20% 250ml", qty: "300 瓶", meta: "可用 60 瓶 · 日均 88 瓶 · 消耗平稳" }
     ]
   ];
-
-  var METRICS = {
-    variety: {
-      name: "药品品种数",
-      rows: [
-        ["计算口径", "已启用状态的药品品种数，按通用名 + 剂型统计；同一品种的多个规格合并为 1 个品种。"],
-        ["数据来源", "药品目录管理（中心药房目录）"],
-        ["更新频率", "目录变更后更新，非实时轮询"]
-      ]
-    },
-    stockValue: {
-      name: "库存零售总金额",
-      rows: [
-        ["计算口径", "Σ（在库可用库存 × 当前零售价），仅统计中心药房在库批次。"],
-        ["数据来源", "库存查询 / 批次管理"],
-        ["更新频率", "实时，60 秒轮询"],
-        ["补充说明", "不含在途、锁定、冻结批次；零售价随调价单生效后重算。"]
-      ]
-    },
-    shortage: {
-      name: "缺货品规数",
-      rows: [
-        ["计算口径", "可用库存 = 现有库存 − 锁定量 − 占用量（待发药），可用库存等于 0 的品规数。"],
-        ["数据来源", "库存查询 + 处方占用"],
-        ["更新频率", "实时，60 秒轮询"],
-        ["补充说明", "缺货品规同时计入低储预警，两个数字口径存在包含关系。"]
-      ]
-    },
-    essentialRatio: {
-      name: "基药重合度",
-      rows: [
-        ["计算口径", "已配备的国家基本药物品种数（状态为启动）/ 当前目录版本基药品种数 × 100%。"],
-        ["数据来源", "药品目录管理 + 国家基本药物目录（2018 版）"],
-        ["更新频率", "仅目录变更时更新"],
-        ["补充说明", "示例：984 / 1,255 = 78.4%；目录版本变更后需整体重算。"]
-      ]
-    },
-    basicRate: {
-      name: "基药使用率",
-      rows: [
-        ["计算口径", "基本药物零售金额 ÷ 全部药品零售金额 × 100%，按所选统计周期汇总。"],
-        ["数据来源", "出库/发药明细（按零售价折算）"],
-        ["更新频率", "每小时汇总一次"],
-        ["补充说明", "示例：本月基药 24.6 万 / 全部 39.4 万 = 62.5%；环比为两个百分比相减，不是相对增长率。"]
-      ]
-    },
-    antiRate: {
-      name: "抗菌药物使用率",
-      rows: [
-        ["计算口径", "抗菌药物零售金额 ÷ 全部药品零售金额 × 100%，按所选统计周期汇总。"],
-        ["数据来源", "出库/发药明细（按零售价折算）"],
-        ["更新频率", "每小时汇总一次"],
-        ["补充说明", "该指标是金额占比，不等于抗菌药物使用强度（DDD 口径），评审时请勿混用。"]
-      ]
-    }
-  };
 
   /* ---------- 趋势图 ---------- */
   function calcPoints(series) {
@@ -983,37 +903,9 @@
     $("hmPgNext").disabled = ST.aiPage === AI_PAGES.length;
   }
 
-  /* ---------- 抽屉 ---------- */
-  function openDrawer(key) {
-    var m = METRICS[key];
-    if (!m) return;
-    $("hmDrawerBody").innerHTML =
-      '<div class="hm-dr-name">' + m.name + "</div>" +
-      m.rows.map(function (r) {
-        return '<div class="hm-dr-row"><span class="hm-dr-label">' + r[0] + '</span><span class="hm-dr-val">' + r[1] + "</span></div>";
-      }).join("") +
-      '<div class="hm-dr-formula">环比展示的是两个使用率的差值（如 62.5% − 60.4% = +2.1%），不是相对增长率。</div>';
-    $("hmDrawer").setAttribute("aria-hidden", "false");
-    document.body.classList.add("drawer-open");
-  }
-
-  function closeDrawer() {
-    $("hmDrawer").setAttribute("aria-hidden", "true");
-    document.body.classList.remove("drawer-open");
-  }
-
   /* ---------- 事件 ---------- */
   $("hmMask").addEventListener("click", closeDrawer);
   $("hmDrawerClose").addEventListener("click", closeDrawer);
-  document.addEventListener("keydown", function (e) {
-    if (e.key === "Escape") closeDrawer();
-    var ico = e.target.closest && e.target.closest(".hm-ico");
-    if (ico && (e.key === "Enter" || e.key === " ")) {
-      e.preventDefault();
-      openDrawer(ico.getAttribute("data-metric"));
-    }
-  });
-
   Array.prototype.forEach.call($("hmPeriod").children, function (el) {
     el.addEventListener("click", function () {
       var p = el.getAttribute("data-period");
@@ -1070,8 +962,6 @@
   });
 
   document.addEventListener("click", function (e) {
-    var ico = e.target.closest(".hm-ico");
-    if (ico) { openDrawer(ico.getAttribute("data-metric")); return; }
     var kpi = e.target.closest(".hm-kpi");
     if (kpi && kpi.getAttribute("data-href")) { location.href = kpi.getAttribute("data-href"); return; }
     var task = e.target.closest(".hm-task");

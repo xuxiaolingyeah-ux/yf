@@ -189,6 +189,15 @@
 .rx-mselect-pop label:hover { background: var(--primary-lighter); }
 .rx-mselect-pop input { accent-color: var(--primary); margin: 0; }
 
+/* 药房范围（录入区头部，仅「医嘱信息」页签显示）：限定期望可开的药房，药品只能从中选择 */
+.rx-pharm-scope { display: inline-flex; align-items: center; gap: 6px; }
+.rx-pharm-scope.is-hidden { display: none; }
+.rx-pharm-scope .rx-mselect-btn {
+  height: 28px; min-width: 124px; padding: 0 8px; font-size: 12px;
+}
+.rx-pharm-scope .rx-mselect-pop { top: 30px; min-width: 160px; }
+.rx-pharm-scope .rx-mselect-pop label { height: 28px; font-size: 12px; }
+
 /* 药品选择弹窗（锚定在医嘱编码输入框上方） */
 .rx-dpanel {
   display: none; position: absolute; left: 16px; right: 16px; z-index: 30;
@@ -391,16 +400,10 @@
             <div class="page-tab active" data-tab="order">医嘱信息</div>
             <div class="page-tab" data-tab="fee">费用信息</div>
           </div>
-          
-          <button class="rx-ed-close" id="rxEdClose" title="收起录入区">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 6l12 12M18 6L6 18"></path></svg>
-          </button>
-        </div>
 
-        <!-- 医嘱信息 -->
-        <div class="rx-ed-body" id="paneOrder">
-          <div class="rx-erow">
-            <span class="rx-lbl">药房：</span>
+          <!-- 药房范围：跟随「医嘱信息」页签显示，限定医嘱编码可选的药品来源 -->
+          <div class="rx-pharm-scope" id="rxPharmScope">
+            <span class="rx-lbl">药房</span>
             <div class="rx-mselect" id="rxPharmSel">
               <button type="button" class="rx-mselect-btn" id="rxPharmBtn">
                 <span id="rxPharmText">西药房</span>
@@ -412,7 +415,14 @@
               </div>
             </div>
           </div>
+          
+          <button class="rx-ed-close" id="rxEdClose" title="收起录入区">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+          </button>
+        </div>
 
+        <!-- 医嘱信息 -->
+        <div class="rx-ed-body" id="paneOrder">
           <div class="rx-erow">
             <span class="rx-lbl">医嘱编码：</span>
             <input class="input rx-druginput" id="rxDrugInput" placeholder="输入药品名称 / 拼音 / 编码" autocomplete="off">
@@ -497,10 +507,7 @@
         <!-- 药品选择弹窗 -->
         <div class="rx-dpanel" id="rxPanel" style="bottom: 197.5px; max-height: 300.5px;">
           <div class="rx-dpanel-head">
-            <div class="rx-dp-tab active" data-tab="all">全部</div>
-            <div class="rx-dp-tab" data-tab="drug">药品</div>
-            <div class="rx-dp-tab" data-tab="treat">医疗</div>
-            <div class="rx-dp-tab" data-tab="psych">精神</div>
+            <div class="rx-dp-tab active" data-tab="drug">药品</div>
             <span class="rx-dp-count" id="rxDpCount">共 10 条</span>
           </div>
           <div class="rx-dpanel-body">
@@ -627,7 +634,7 @@
     editingId: null,
     edOpen: true,
     tab: "order",
-    panelTab: "all",
+    panelTab: "drug",
     draft: blankDraft()
   };
 
@@ -927,20 +934,31 @@
   }
 
   /* ---------------- 药品选择弹窗 ---------------- */
+  function drugPharm(d){ return (d && (d.pharm || d.location)) || "西药房"; }
+  function scopePharms(){
+    var ps = ST.draft.pharmacies;
+    return (ps && ps.length) ? ps : ["西药房"];
+  }
+  function inPharmScope(drug){
+    return scopePharms().indexOf(drugPharm(drug)) >= 0;
+  }
   function matchDrug(d, q){
     if (!q) return true;
     q = q.toLowerCase();
     return (d.name + d.py + d.specCode + d.insCode + d.insName + d.spec).toLowerCase().indexOf(q) >= 0;
   }
+  // 医嘱编码只检索药品，且限定在所选药房的药品范围内
   function panelList(q){
-    if (ST.panelTab === "treat" || ST.panelTab === "psych") return [];
-    return MOCK.rxDrugs.filter(function(d){ return matchDrug(d, q); });
+    return MOCK.rxDrugs.filter(function(d){
+      return inPharmScope(d) && matchDrug(d, q);
+    });
   }
   function renderPanel(q){
     var list = panelList(q);
     $("rxDpCount").textContent = "共 " + list.length + " 条";
     if (!list.length){
-      $("rxDpBody").innerHTML = '<tr><td colspan="15" class="rx-dp-none">暂无数据</td></tr>';
+      $("rxDpBody").innerHTML = '<tr><td colspan="15" class="rx-dp-none">'
+        + (scopePharms().join("、")) + '下未检索到药品，请调整查询条件或切换药房</td></tr>';
       return;
     }
     $("rxDpBody").innerHTML = list.map(function(d){
@@ -986,7 +1004,8 @@
     ST.draft.drugKey = key;
     ST.draft.doseUnit = drug.doseUnit;
     ST.draft.totalUnit = drug.pkgUnit;
-    ST.draft.pharmacy = drug.kind === "中药饮片" ? "中药房" : ST.draft.pharmacy;
+    // 发药药房跟随药品所属药房
+    ST.draft.pharmacy = drugPharm(drug);
     ST.draft.totalManual = false;
     ST.draft.total = String(calcDraftTotal());
     closePanel();
@@ -1040,6 +1059,9 @@
     });
     $("paneOrder").classList.toggle("is-hidden", tab !== "order");
     $("paneFee").classList.toggle("is-hidden", tab !== "fee");
+    // 药房范围只作用于医嘱信息（药品选择），切到费用信息时不展示
+    $("rxPharmScope").classList.toggle("is-hidden", tab !== "order");
+    $("rxPharmPop").classList.remove("show");
     closePanel();
   }
 
@@ -1089,7 +1111,7 @@
       if (t) setTab(t.getAttribute("data-tab"));
     });
 
-    // 药房下拉多选
+    // 药房下拉多选：限定医嘱编码可选的药品范围
     $("rxPharmBtn").onclick = function(e){
       e.stopPropagation();
       $("rxPharmPop").classList.toggle("show");
@@ -1097,8 +1119,23 @@
     $("rxPharmPop").addEventListener("change", function(){
       var vals = Array.prototype.filter.call(this.querySelectorAll("input"), function(i){ return i.checked; })
         .map(function(i){ return i.value; });
+      if (!vals.length){
+        // 至少保留一个药房，否则无药品可选
+        var last = ST.draft.pharmacies[ST.draft.pharmacies.length - 1] || "西药房";
+        Array.prototype.forEach.call(this.querySelectorAll("input"), function(i){ i.checked = i.value === last; });
+        toast("请至少选择一个药房");
+        return;
+      }
       ST.draft.pharmacies = vals;
-      $("rxPharmText").textContent = vals.length ? vals.join("、") : "请选择药房";
+      $("rxPharmText").textContent = vals.join("、");
+      // 已选药品不在新范围内则清空，避免跨药房开方
+      var drug = drugOf(ST.draft.drugKey);
+      if (drug && !inPharmScope(drug)){
+        ST.draft.drugKey = "";
+        syncEditor();
+        toast("已选药品不属于所选药房，请重新选择");
+      }
+      if ($("rxPanel").classList.contains("show")) renderPanel($("rxDrugInput").value.trim());
     });
 
     // 外配 / 皮试 / 长处方

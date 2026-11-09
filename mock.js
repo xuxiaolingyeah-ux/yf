@@ -1328,6 +1328,8 @@ MOCK.rxDrugs.forEach(function (d) {
   d.split = e.split || "否";
   d.model = "—";
   d.location = d.kind === "中成药" ? "中药房" : "西药房";
+  /* 药品所属药房：仅所选药房的药品可在医嘱中被检索、选择 */
+  d.pharm = d.location;
   d.attr = "普通";
   d.antibiotic = e.anti || "非抗生素";
   d.selfPay = e.selfPay === undefined ? 0 : e.selfPay;

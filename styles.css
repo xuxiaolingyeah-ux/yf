@@ -3992,9 +3992,24 @@ body.black-open .drawer.is-black { transform: translateX(0); }
   max-height: 300px; overflow: auto; margin-bottom: 16px;
   border: 1px solid var(--border); border-radius: 6px;
 }
-.mf-bk-code { width: 76px; color: var(--text-secondary); }
-.mf-bk-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mf-bk-meta { width: 110px; color: var(--text-secondary); }
+/* 企业选择列表：一行一家企业（复选框 + 编码 + 名称 + 类型右对齐） */
+.mf-bk-item {
+  display: flex; align-items: center; gap: 14px;
+  height: 46px; padding: 0 16px;
+  font-size: 13px; color: var(--text-primary);
+  cursor: pointer; user-select: none;
+  border-bottom: 1px solid var(--border-light);
+}
+.mf-bk-item:last-child { border-bottom: none; }
+.mf-bk-item:hover { background: var(--table-hover); }
+.mf-bk-item.is-checked { background: var(--primary-lighter); }
+.mf-bk-item input[type="checkbox"] {
+  flex: none; width: 15px; height: 15px; margin: 0;
+  accent-color: var(--primary); cursor: pointer;
+}
+.mf-bk-code { flex: none; width: 80px; font-family: var(--font-mono); font-size: 12px; color: var(--text-secondary); }
+.mf-bk-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mf-bk-meta { flex: none; width: 96px; text-align: right; font-size: 12px; color: var(--text-secondary); }
 .mf-bk-empty { padding: 24px 0; text-align: center; font-size: 12px; color: var(--text-tertiary); }
 .mf-bk-tip {
   display: flex; gap: 8px; align-items: flex-start;

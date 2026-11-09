@@ -528,10 +528,6 @@
         <input class="input" id="mCarrier" placeholder="请输入承运商" autocomplete="off">
       </div>
       <div class="dl-ff">
-        <span class="dl-flbl">快递单号：</span>
-        <input class="input" id="mExpressNo" placeholder="请输入快递单号（选填）" autocomplete="off">
-      </div>
-      <div class="dl-ff">
         <span class="dl-flbl"><i class="req">*</i>收件人：</span>
         <input class="input" id="mReceiver" placeholder="请输入收件人" autocomplete="off">
       </div>
@@ -598,6 +594,36 @@
     <div class="modal-foot">
       <button class="btn" id="confirmCancel">取消</button>
       <button class="btn btn-primary" id="confirmOk">确定</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== 弹窗：送药 ========== -->
+<div class="modal-mask" id="sendMask">
+  <div class="modal" style="width:420px">
+    <div class="modal-head">
+      <div class="modal-title">送药</div>
+      <button class="drawer-close" id="sendClose" title="关闭">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="dl-ff">
+        <span class="dl-flbl">配送单数量：</span>
+        <span id="sendCount" style="font-size:13px;color:var(--text-primary)">1</span>
+      </div>
+      <div class="dl-ff">
+        <span class="dl-flbl">承运商：</span>
+        <span id="sendCarrier" style="font-size:13px;color:var(--text-primary)">-</span>
+      </div>
+      <div class="dl-ff">
+        <span class="dl-flbl">快递单号：</span>
+        <input class="input" id="sendExpressNo" placeholder="请输入快递单号（选填）" autocomplete="off">
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" id="sendCancel">取消</button>
+      <button class="btn btn-primary" id="sendOk">确认送药</button>
     </div>
   </div>
 </div>
@@ -861,7 +887,7 @@
         if (btn.disabled) return;
         if (act === "view") openViewDrawer(sn);
         if (act === "revoke") revokeOne(sn);
-        if (act === "send") sendOne(sn);
+        if (act === "send") openSendModal([sn]);
       });
     });
     syncDeliverUI();
@@ -889,13 +915,40 @@
     renderDeliver();
   });
 
-  /* 送药：未配送 -> 已配送 */
-  function sendOne(sn) {
-    if (sendState(sn) === "已配送") { toast("该配送单已配送"); return; }
-    SEND[sn] = "已配送";
-    SENDTIME[sn] = nowStr();
+  /* 送药：弹窗展示承运商 + 可选快递单号，确认后 -> 已配送 */
+  var sendSns = [];
+  function openSendModal(sns) {
+    sendSns = sns.filter(function (sn) { return sendState(sn) !== "已配送"; });
+    if (!sendSns.length) { toast("所选配送单均已配送"); return; }
+    var carriers = [];
+    sendSns.forEach(function (sn) {
+      var d = deliveries().filter(function (x) { return x.sn === sn; })[0];
+      if (d && carriers.indexOf(d.express) < 0) carriers.push(d.express);
+    });
+    $("#sendCount").textContent = sendSns.length;
+    $("#sendCarrier").textContent = carriers.join("、") || "-";
+    $("#sendExpressNo").value = "";
+    openModal("sendMask");
+    $("#sendExpressNo").focus();
+  }
+
+  function submitSend() {
+    var no = $("#sendExpressNo").value.trim();
+    sendSns.forEach(function (sn) {
+      SEND[sn] = "已配送";
+      SENDTIME[sn] = nowStr();
+      if (no) {
+        RX.forEach(function (r) { if (r.sn === sn) r.expressNo = no; });
+      }
+    });
+    var n = sendSns.length;
+    var refreshView = viewSn && sendSns.indexOf(viewSn) >= 0;
+    closeModal("sendMask");
+    sendSns = [];
+    renderList();
     renderDeliver();
-    toast("已送药，配送状态更新为已配送");
+    if (refreshView) openViewDrawer(viewSn);
+    toast(n > 1 ? "已送药 " + n + " 单，配送状态更新为已配送" : "送药成功，配送状态更新为已配送");
   }
 
   /* 撤销登记：回到未登记 */
@@ -1010,7 +1063,7 @@
           '</div>';
       }).join("");
 
-      $("#mCarrier").value = ""; $("#mExpressNo").value = ""; $("#mReceiver").value = ""; $("#mPhone").value = "";
+      $("#mCarrier").value = ""; $("#mReceiver").value = ""; $("#mPhone").value = "";
       $("#mProv").value = ""; $("#mCity").innerHTML = '<option value="">市</option>';
       $("#mDist").innerHTML = '<option value="">区/县</option>'; $("#mAddrDetail").value = "";
       openDrawer("regDrawer", "regDrawerMask");
@@ -1032,7 +1085,6 @@
 
   function submitReg() {
     var carrier = $("#mCarrier").value.trim();
-    var expressNo = $("#mExpressNo").value.trim();
     var receiver = $("#mReceiver").value.trim();
     var phone = $("#mPhone").value.trim();
     var prov = $("#mProv").value, city = $("#mCity").value, dist = $("#mDist").value;
@@ -1053,7 +1105,6 @@
       r.phone = phone;
       r.addr = addr;
       r.express = carrier;
-      r.expressNo = expressNo;
       r.sn = sn;
       r._regTime = t;
       delete sel[r.rx];
@@ -1105,23 +1156,23 @@
   $("#viewRevoke").addEventListener("click", function () { if (viewSn) revokeOne(viewSn); });
   $("#viewSend").addEventListener("click", function () {
     if (!viewSn) return;
-    sendOne(viewSn);
-    openViewDrawer(viewSn);
+    openSendModal([viewSn]);
   });
 
   $("#confirmClose").addEventListener("click", function () { closeModal("confirmMask"); });
   $("#confirmCancel").addEventListener("click", function () { closeModal("confirmMask"); });
 
+  /* 送药弹窗 */
+  $("#sendClose").addEventListener("click", function () { closeModal("sendMask"); });
+  $("#sendCancel").addEventListener("click", function () { closeModal("sendMask"); });
+  $("#sendOk").addEventListener("click", submitSend);
+  $("#sendExpressNo").addEventListener("keydown", function (e) { if (e.key === "Enter") submitSend(); });
+
   /* 标题栏批量操作：按勾选的配送单 */
   $("#btnSend").addEventListener("click", function () {
     var sns = checkedSns();
     if (!sns.length) { toast("请先勾选配送单"); return; }
-    var n = 0;
-    sns.forEach(function (sn) {
-      if (sendState(sn) !== "已配送") { SEND[sn] = "已配送"; SENDTIME[sn] = nowStr(); n++; }
-    });
-    renderDeliver();
-    toast(n ? "已批量送药 " + n + " 单" : "所选配送单均已配送");
+    openSendModal(sns);
   });
   $("#btnRevoke").addEventListener("click", function () {
     var sns = checkedSns();

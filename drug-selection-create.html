@@ -98,6 +98,7 @@
                     <tr>
                       <th class="col-idx">序号</th>
                       <th><span class="req">*</span>药品名称</th>
+                      <th style="width:110px;"><span class="req">*</span>药品分类</th>
                       <th style="width:200px;"><span class="req">*</span>药品规格</th>
                       <th style="width:240px;"><span class="req">*</span>生产企业</th>
                       <th style="width:200px;"><span class="req">*</span>批准文号</th>
@@ -107,7 +108,7 @@
                   <tbody id="itemBody"></tbody>
                   <tfoot>
                     <tr class="item-add-row">
-                      <td colspan="6">
+                      <td colspan="7">
                         <button class="link-btn" id="btnAddItem">新增药品明细</button>
                       </td>
                     </tr>
@@ -175,7 +176,14 @@
 
   /* ---------------- 渲染 ---------------- */
   function itemComplete(it) {
-    return it.name.trim() && it.spec.trim() && it.vendor.trim() && it.approval.trim();
+    return it.name.trim() && it.cat && it.spec.trim() && it.vendor.trim() && it.approval.trim();
+  }
+
+  function catOptions(v) {
+    return '<option value="">请选择</option>' +
+      ["化学药品", "中成药"].map(function (c) {
+        return '<option value="' + c + '"' + (v === c ? " selected" : "") + ">" + c + "</option>";
+      }).join("");
   }
 
   function renderItems() {
@@ -185,13 +193,14 @@
           return "<tr>" +
             '<td class="col-idx">' + (i + 1) + "</td>" +
             '<td><input class="input" data-ii="' + i + '" data-ik="name" value="' + esc(it.name) + '" placeholder="如：布洛芬缓释胶囊"></td>' +
+            '<td><select class="select" data-ii="' + i + '" data-ik="cat">' + catOptions(it.cat) + "</select></td>" +
             '<td><input class="input" data-ii="' + i + '" data-ik="spec" value="' + esc(it.spec) + '" placeholder="如：0.3g*20粒/盒"></td>' +
             '<td><input class="input" data-ii="' + i + '" data-ik="vendor" value="' + esc(it.vendor) + '" placeholder="一家企业"></td>' +
             '<td><input class="input" data-ii="' + i + '" data-ik="approval" value="' + esc(it.approval) + '" placeholder="如：国药准字H10900089"></td>' +
             '<td><button class="link-btn is-danger" data-del="' + i + '">删除</button></td>' +
           "</tr>";
         }).join("")
-      : '<tr><td colspan="6" style="color:var(--text-placeholder);">暂无药品明细，请点击下方「新增药品明细」</td></tr>';
+      : '<tr><td colspan="7" style="color:var(--text-placeholder);">暂无药品明细，请点击下方「新增药品明细」</td></tr>';
   }
 
   $("fTitle").value = app.title;
@@ -208,7 +217,7 @@
 
   /* ---------------- 事件 ---------------- */
   $("btnAddItem").addEventListener("click", function () {
-    app.items.push({ name: "", spec: "", vendor: "", approval: "" });
+    app.items.push({ cat: "", name: "", spec: "", vendor: "", approval: "" });
     renderItems();
     var rows = document.querySelectorAll("#itemBody tr");
     var last = rows[rows.length - 1];
@@ -218,7 +227,7 @@
     }
   });
 
-  $("itemBody").addEventListener("input", function (e) {
+  function onItemEdit(e) {
     var el = e.target.closest("[data-ii]");
     if (!el) return;
     var i = parseInt(el.getAttribute("data-ii"), 10);
@@ -227,9 +236,11 @@
     el.classList.remove("is-invalid");
     if (app.items[i] && itemComplete(app.items[i])) {
       var row = el.closest("tr");
-      row.querySelectorAll("input").forEach(function (x) { x.classList.remove("is-invalid"); });
+      row.querySelectorAll("input,select").forEach(function (x) { x.classList.remove("is-invalid"); });
     }
-  });
+  }
+  $("itemBody").addEventListener("input", onItemEdit);
+  $("itemBody").addEventListener("change", onItemEdit);
 
   $("fTitle").addEventListener("input", function () {
     if (this.value.trim()) this.classList.remove("is-invalid");
@@ -270,7 +281,7 @@
       if (!itemComplete(it)) missing.push("第 " + (i + 1) + " 行明细未填写完整");
     });
     $("fTitle").classList.toggle("is-invalid", !app.title);
-    document.querySelectorAll("#itemBody input").forEach(function (el) {
+    document.querySelectorAll("#itemBody input, #itemBody select").forEach(function (el) {
       var i = parseInt(el.getAttribute("data-ii"), 10);
       el.classList.toggle("is-invalid", !itemComplete(app.items[i] || {}));
     });

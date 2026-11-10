@@ -51,9 +51,6 @@
         </div>
 
         <div class="sel-card">
-          <!-- 范围页签 -->
-          <div class="page-tabs" id="scopeTabs"></div>
-
           <!-- 筛选 -->
           <div class="filter-bar">
             <div class="filter-item">
@@ -92,6 +89,7 @@
                     <span class="sort-ico"><span class="s-up">▲</span><span class="s-down">▼</span></span>
                   </th>
                   <th style="width:130px;">当前状态</th>
+                  <th style="width:110px;">药品遴选得分</th>
                   <th class="col-acts">操作</th>
                 </tr>
               </thead>
@@ -119,6 +117,20 @@
 </div>
 
 <div class="modal-mask" id="modalMask"></div>
+
+<!-- 专家打分抽屉 -->
+<div class="drawer-mask" id="scoreMask"></div>
+<aside class="drawer is-edit" id="scoreDrawer">
+  <div class="drawer-head">
+    <span class="drawer-title" id="scTitle">专家打分</span>
+    <button class="drawer-close" id="scClose" title="关闭">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+    </button>
+  </div>
+  <div class="drawer-body" id="scBody"></div>
+  <div class="drawer-foot" id="scFoot"></div>
+</aside>
+
 <div class="toast" id="toast">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
   <span id="toastText"></span>
@@ -134,7 +146,6 @@
   if (!user) return;
 
   var state = {
-    scope: "mine",       // mine / todo / done
     status: "",
     keyword: "",
     dateFrom: "",
@@ -144,44 +155,16 @@
     size: 10
   };
 
-  /* ---------------- 范围页签 ---------------- */
-  function scopesOf(role) {
-    if (user.role === "village") return [{ k: "mine", t: "我的申请" }];
-    if (user.role === "member") return [
-      { k: "mine", t: "我的申请" },
-      { k: "todo", t: "待我审核" },
-      { k: "done", t: "我已审核" }
-    ];
-    return [
-      { k: "todo", t: "待我审核" },
-      { k: "done", t: "我已审核" }
-    ];
-  }
-
-  function renderScopeTabs() {
-    var tabs = scopesOf(user.role);
-    if (!tabs.some(function (t) { return t.k === state.scope; })) state.scope = tabs[0].k;
-    $("scopeTabs").innerHTML = tabs.map(function (t) {
-      return '<span class="page-tab' + (t.k === state.scope ? " active" : "") + '" data-scope="' + t.k + '">' +
-        t.t + "</span>";
-    }).join("");
-  }
-
-  function scopeMatch(a, scope) {
-    if (scope === "mine") return SEL.isApplicant(a, user);
-    if (scope === "todo") return SEL.canApprove(a, user);
-    if (scope === "done") {
-      return a.records.some(function (r) {
-        return r.person === user.name && (r.result === "同意" || r.result === "拒绝");
-      });
-    }
+  /* 数据可见范围：村室发起人只看本机构发起的申请；成员机构 / 中心药房 / 专家看全部 */
+  function canSee(a) {
+    if (user.role === "village") return SEL.isApplicant(a, user);
     return true;
   }
 
   /* ---------------- 列表 ---------------- */
   function filtered() {
     return SEL.loadData().filter(function (a) {
-      if (!scopeMatch(a, state.scope)) return false;
+      if (!canSee(a)) return false;
       if (state.status && a.status !== state.status) return false;
       if (state.keyword && a.title.toLowerCase().indexOf(state.keyword.toLowerCase()) < 0) return false;
       var day = a.createdAt.slice(0, 10);
@@ -213,6 +196,8 @@
       if (SEL.canApprove(a, user)) {
         acts.push('<button class="link-btn" data-act="approve" data-id="' + a.id + '">审核</button>');
       }
+    } else if (a.status === "approved" && user.role === "expert") {
+      acts.push('<button class="link-btn" data-act="score" data-id="' + a.id + '">专家打分</button>');
     }
     return acts.join("");
   }
@@ -233,6 +218,7 @@
         "<td>" + esc(a.applicant) + "</td>" +
         "<td>" + esc(a.createdAt) + "</td>" +
         '<td><span class="status-text">' + esc(SEL.STATUS[a.status]) + "</span></td>" +
+        '<td class="sel-score-cell">' + scoreCellHtml(a) + "</td>" +
         '<td class="col-acts">' + actionHtml(a) + "</td>" +
       "</tr>";
     }).join("");
@@ -255,8 +241,171 @@
     }
   }
 
+  /* 得分列：有打分显示「查看得分」，否则显示 — */
+  function scoreCellHtml(a) {
+    if (!SEL.hasScores(a)) return "—";
+    return '<button class="link-btn" data-act="scoreView" data-id="' + a.id + '">查看得分</button>';
+  }
+
   function renderAll() {
-    renderScopeTabs();
+    renderTable();
+  }
+
+  /* ---------------- 得分矩阵弹窗 ---------------- */
+  function openScoreMatrix(app) {
+    var experts = SEL.experts();
+    var head = '<tr><th style="min-width:200px;">药品名称</th><th style="width:90px;">分类</th>' +
+      experts.map(function (e) {
+        return '<th style="width:90px;">' + esc(e.name) + "</th>";
+      }).join("") +
+      '<th style="width:90px;">平均分</th></tr>';
+
+    var rows = app.items.map(function (it, i) {
+      var cells = experts.map(function (e) {
+        var rec = app.scores && app.scores[i] && app.scores[i][e.id];
+        return "<td>" + (rec ? '<span class="sc-score-num">' + rec.total + "</span>" : '<span class="sc-score-none">未打分</span>') + "</td>";
+      }).join("");
+      var avg = SEL.itemAvg(app, i);
+      return "<tr>" +
+        '<td><div class="cell-ellipsis" title="' + esc(it.name) + '">' + (i + 1) + ". " + esc(it.name) + "</div></td>" +
+        '<td><span class="sc-cat ' + (it.cat === "中成药" ? "is-tcm" : "") + '">' + esc(it.cat || "化学药品") + "</span></td>" +
+        cells +
+        '<td><b class="sc-score-avg">' + (avg === null ? "—" : avg) + "</b></td>" +
+      "</tr>";
+    }).join("");
+
+    SEL.openModal(
+      '<div class="modal-head">' +
+        '<span class="modal-title">药品遴选得分 · ' + esc(app.title) + "</span>" +
+        '<button class="drawer-close" data-close="1">' +
+          '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>' +
+        "</button>" +
+      "</div>" +
+      '<div class="modal-body" style="padding-top:8px;">' +
+        '<div class="sc-matrix-info">申请机构：' + esc(app.org) + "　申请人：" + esc(app.applicant) +
+          "　申请时间：" + esc(app.createdAt) + "　打分依据：" + esc(SEL.rulesOf(app.items[0] && app.items[0].cat).ref) + "</div>" +
+        '<div class="table-wrap sc-matrix-wrap"><table class="data-table sc-matrix">' +
+          "<thead>" + head + "</thead><tbody>" + rows + "</tbody>" +
+        "</table></div>" +
+        '<div class="sc-matrix-note">平均分 = 该药品已提交打分专家的算术平均值；专家打分依据药品分类对应附件3（化学药品）或附件4（中成药）。</div>' +
+      "</div>"
+    );
+  }
+
+  /* ---------------- 专家打分抽屉 ---------------- */
+  var scState = { appId: null, itemIdx: 0, picks: {} };
+
+  function openScoreDrawer(app, idx) {
+    scState.appId = app.id;
+    scState.itemIdx = idx || 0;
+    var existed = app.scores && app.scores[scState.itemIdx] && app.scores[scState.itemIdx][user.id];
+    scState.picks = existed ? JSON.parse(JSON.stringify(existed.picks || {})) : {};
+    renderDrawer();
+    document.body.classList.add("drawer-open");
+  }
+
+  function closeScoreDrawer() {
+    document.body.classList.remove("drawer-open");
+  }
+
+  function curApp() { return SEL.byId(SEL.loadData(), scState.appId); }
+
+  function renderDrawer() {
+    var app = curApp();
+    if (!app) { closeScoreDrawer(); return; }
+    var it = app.items[scState.itemIdx];
+    var rules = SEL.rulesOf(it.cat);
+
+    $("scTitle").textContent = "专家打分 · " + (app.title || "");
+
+    /* 药品切换 */
+    var tabs = app.items.map(function (x, i) {
+      return '<span class="sc-drug-tab' + (i === scState.itemIdx ? " active" : "") + '" data-sc-idx="' + i + '">' +
+        (i + 1) + ". " + esc(x.name) +
+        '<i class="sc-cat' + (x.cat === "中成药" ? " is-tcm" : "") + '">' + esc(x.cat || "化学药品") + "</i></span>";
+    }).join("");
+
+    /* 指标勾选 */
+    var html = '<div class="sc-drawer-info">' +
+      '<div>申请人：<b>' + esc(app.applicant) + "</b>　申请机构：" + esc(app.org) + "　申请时间：" + esc(app.createdAt) + "</div>" +
+      '<div class="sc-drawer-ref">打分依据：' + esc(rules.ref) + "</div></div>" +
+      '<div class="sc-drug-tabs">' + tabs + "</div>";
+
+    rules.groups.forEach(function (g) {
+      html += '<div class="drawer-section"><div class="drawer-section-title">' +
+        g.no + ". " + esc(g.name) + '<span class="sc-gmax">（' + g.max + " 分）</span></div>";
+      g.subs.forEach(function (sub) {
+        var pick = scState.picks[sub.no];
+        html += '<div class="sc-sub"><div class="sc-sub-name">' + esc(sub.no) + " " + esc(sub.name) +
+          '<span class="sc-sub-max">（' + sub.max + " 分" + (sub.kind === "multi" ? "，可多选" : "") + "）</span></div>" +
+          '<div class="sc-opts">';
+        sub.opts.forEach(function (o, oi) {
+          var checked = sub.kind === "multi"
+            ? Array.isArray(pick) && pick.indexOf(o.v) >= 0
+            : pick === o.v;
+          var input = sub.kind === "multi"
+            ? '<input type="checkbox" data-sc-sub="' + sub.no + '" data-sc-v="' + o.v + '"' + (checked ? " checked" : "") + ">"
+            : '<input type="radio" name="sc-r-' + sub.no + '" data-sc-sub="' + sub.no + '" data-sc-v="' + o.v + '"' + (checked ? " checked" : "") + ">";
+          html += '<label class="sc-opt">' + input + '<span class="sc-opt-v">' + o.v + " 分</span>" +
+            '<span class="sc-opt-t">' + esc(o.t) + "</span></label>";
+        });
+        html += "</div></div>";
+      });
+      html += "</div>";
+    });
+
+    $("scBody").innerHTML = html;
+
+    var total = SEL.calcTotal(rules, scState.picks);
+    $("scFoot").innerHTML =
+      '<div class="sc-foot-total">当前总分：<b id="scTotal">' + total + "</b><span> / 100</span></div>" +
+      '<div class="sc-foot-btns">' +
+        '<button class="btn" id="scCancel">取消</button>' +
+        '<button class="btn btn-primary" id="scSave">保存打分</button>' +
+      "</div>";
+
+    $("scCancel").addEventListener("click", closeScoreDrawer);
+    $("scSave").addEventListener("click", saveScore);
+  }
+
+  function onPickChange(e) {
+    var el = e.target.closest("[data-sc-sub]");
+    if (!el) return;
+    var subNo = el.getAttribute("data-sc-sub");
+    var val = parseFloat(el.getAttribute("data-sc-v"));
+    var isMulti = el.type === "checkbox";
+    if (isMulti) {
+      var arr = Array.isArray(scState.picks[subNo]) ? scState.picks[subNo].slice() : [];
+      if (el.checked) {
+        if (arr.indexOf(val) < 0) arr.push(val);
+      } else {
+        arr = arr.filter(function (v) { return v !== val; });
+      }
+      if (arr.length) scState.picks[subNo] = arr;
+      else delete scState.picks[subNo];
+    } else {
+      scState.picks[subNo] = val;
+    }
+    var app = curApp();
+    var rules = SEL.rulesOf(app.items[scState.itemIdx].cat);
+    $("scTotal").textContent = SEL.calcTotal(rules, scState.picks);
+  }
+
+  function saveScore() {
+    var list = SEL.loadData();
+    var app = SEL.byId(list, scState.appId);
+    if (!app) return;
+    var rules = SEL.rulesOf(app.items[scState.itemIdx].cat);
+    app.scores = app.scores || {};
+    app.scores[scState.itemIdx] = app.scores[scState.itemIdx] || {};
+    app.scores[scState.itemIdx][user.id] = {
+      picks: scState.picks,
+      total: SEL.calcTotal(rules, scState.picks),
+      time: SEL.fmtNow()
+    };
+    SEL.saveData(list);
+    SEL.toast("已保存打分，总分 " + app.scores[scState.itemIdx][user.id].total + " 分");
+    closeScoreDrawer();
     renderTable();
   }
 
@@ -315,14 +464,6 @@
   }
 
   /* ---------------- 事件 ---------------- */
-  $("scopeTabs").addEventListener("click", function (e) {
-    var t = e.target.closest("[data-scope]");
-    if (!t) return;
-    state.scope = t.getAttribute("data-scope");
-    state.page = 1;
-    renderAll();
-  });
-
   $("fStatus").addEventListener("change", doQuery);
 
   $("fKeyword").addEventListener("keydown", function (e) {
@@ -369,7 +510,29 @@
     else if (act === "submit") doSubmit(id);
     else if (act === "revoke") doRevoke(id);
     else if (act === "del") doDelete(id);
+    else if (act === "scoreView") {
+      var app = SEL.byId(SEL.loadData(), id);
+      if (app) openScoreMatrix(app);
+    } else if (act === "score") {
+      var a2 = SEL.byId(SEL.loadData(), id);
+      if (a2) openScoreDrawer(a2, 0);
+    }
   });
+
+  /* 打分抽屉：勾选 / 药品切换 / 遮罩关闭 */
+  $("scBody").addEventListener("change", onPickChange);
+  $("scBody").addEventListener("click", function (e) {
+    var tab = e.target.closest("[data-sc-idx]");
+    if (tab) {
+      scState.itemIdx = parseInt(tab.getAttribute("data-sc-idx"), 10);
+      var app = curApp();
+      var existed = app.scores && app.scores[scState.itemIdx] && app.scores[scState.itemIdx][user.id];
+      scState.picks = existed ? JSON.parse(JSON.stringify(existed.picks || {})) : {};
+      renderDrawer();
+    }
+  });
+  $("scClose").addEventListener("click", closeScoreDrawer);
+  $("scoreMask").addEventListener("click", closeScoreDrawer);
 
   $("tabClose").addEventListener("click", function () { location.href = "drug-catalog.html"; });
   $("headerUser").addEventListener("click", function () {

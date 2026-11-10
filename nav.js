@@ -24,7 +24,7 @@
     { name: "药品管理", icon: "drug", items: [
       { name: "药品目录管理", href: "drug-catalog.html", files: ["drug-catalog.html", "drug-create.html"], roles: ["center"] },
       { name: "机构药品目录", href: "org-drug-catalog.html", files: ["org-drug-catalog.html", "org-drug-select.html"], roles: C3 },
-      { name: "药品目录遴选", href: "drug-selection.html", files: ["drug-selection.html", "drug-selection-create.html", "drug-selection-detail.html"], roles: C3 }
+      { name: "药品目录遴选", href: "drug-selection.html", files: ["drug-selection.html", "drug-selection-create.html", "drug-selection-detail.html"], roles: ["center", "member", "village", "expert"] }
     ] },
     { name: "库存管理", icon: "stock", items: [
       { name: "药品期初管理", href: "init-stock.html", files: ["init-stock.html"], roles: C3 },
@@ -151,7 +151,9 @@
     { id: "u2", account: "liqiang", name: "李强", org: "城东社区卫生服务中心", role: "member", roleName: "成员机构（可发起、可审核）" },
     { id: "u3", account: "zhaomin", name: "赵敏", org: "区域中心药房", role: "center", roleName: "中心药房审核人" },
     { id: "u4", account: "chenjing", name: "陈静", org: "区域中心药房", role: "pharmacist", roleName: "中心药房·发起人" },
-    { id: "u5", account: "sunlei", name: "孙磊", org: "信息中心 · HIS 对接", role: "his", roleName: "HIS 对接人员" }
+    { id: "u5", account: "sunlei", name: "孙磊", org: "信息中心 · HIS 对接", role: "his", roleName: "HIS 对接人员" },
+    { id: "u6", account: "zhouwen", name: "周雯", org: "县域医共体药学专家库", role: "expert", roleName: "药学专家" },
+    { id: "u7", account: "fengtao", name: "冯涛", org: "县域医共体药学专家库", role: "expert", roleName: "临床专家" }
   ];
 
   function demoUsers() {

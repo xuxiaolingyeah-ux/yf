@@ -104,6 +104,7 @@
                     <tr>
                       <th class="col-idx">序号</th>
                       <th>药品名称</th>
+                      <th style="width:100px;">药品分类</th>
                       <th style="width:200px;">药品规格</th>
                       <th style="width:240px;">生产企业</th>
                       <th style="width:200px;">批准文号</th>
@@ -183,6 +184,7 @@
       return "<tr>" +
         '<td class="col-idx">' + (i + 1) + "</td>" +
         '<td><div class="cell-ellipsis" title="' + esc(it.name) + '">' + esc(it.name) + "</div></td>" +
+        '<td><span class="sc-cat ' + (it.cat === "中成药" ? "is-tcm" : "") + '">' + esc(it.cat || "化学药品") + "</span></td>" +
         "<td>" + esc(it.spec) + "</td>" +
         '<td><div class="cell-ellipsis" title="' + esc(it.vendor) + '">' + esc(it.vendor) + "</div></td>" +
         "<td>" + esc(it.approval) + "</td>" +

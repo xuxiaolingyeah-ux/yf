@@ -4219,3 +4219,53 @@ body.black-open .drawer.is-black { transform: translateX(0); }
   cursor: pointer;
 }
 .sys-pop-foot button:hover { color: var(--primary); border-color: var(--primary); }
+
+/* ==================== 药品目录遴选：专家打分 ==================== */
+.sc-cat {
+  display: inline-block; padding: 1px 8px; border-radius: 10px;
+  font-size: 12px; font-style: normal; white-space: nowrap;
+  background: var(--primary-lighter); color: var(--primary);
+}
+.sc-cat.is-tcm { background: var(--success-bg); color: var(--success); }
+
+.sc-drawer-info { font-size: 12px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 12px; }
+.sc-drawer-info b { color: var(--text-primary); font-weight: 500; }
+.sc-drawer-ref { color: var(--text-tertiary); }
+
+.sc-drug-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.sc-drug-tab {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px; border: 1px solid var(--border); border-radius: 6px;
+  font-size: 13px; cursor: pointer; color: var(--text-secondary);
+}
+.sc-drug-tab:hover { border-color: var(--primary); color: var(--primary); }
+.sc-drug-tab.active { border-color: var(--primary); color: var(--primary); background: var(--primary-lighter); }
+.sc-drug-tab .sc-cat { font-size: 11px; padding: 0 6px; }
+
+.sc-gmax { font-weight: 400; color: var(--text-tertiary); font-size: 12px; margin-left: 4px; }
+.sc-sub { margin-bottom: 14px; }
+.sc-sub-name { font-size: 13px; font-weight: 500; margin-bottom: 6px; }
+.sc-sub-max { font-weight: 400; font-size: 12px; color: var(--text-tertiary); }
+.sc-opts { display: flex; flex-direction: column; gap: 4px; }
+.sc-opt {
+  display: flex; align-items: flex-start; gap: 8px;
+  padding: 7px 10px; border: 1px solid var(--border-light); border-radius: 6px;
+  font-size: 13px; cursor: pointer; line-height: 1.5;
+}
+.sc-opt:hover { border-color: var(--primary); }
+.sc-opt input { margin-top: 3px; accent-color: var(--primary); flex: none; }
+.sc-opt-v { color: var(--primary); font-weight: 500; white-space: nowrap; min-width: 52px; }
+.sc-opt-t { color: var(--text-secondary); }
+
+.sc-foot-total { margin-right: auto; font-size: 13px; color: var(--text-secondary); }
+.sc-foot-total b { font-size: 20px; color: var(--primary); font-weight: 600; }
+.sc-foot-total span { color: var(--text-tertiary); }
+
+.sc-matrix-info { font-size: 12px; color: var(--text-secondary); margin-bottom: 12px; line-height: 1.8; }
+.sc-matrix-wrap { max-height: 420px; overflow: auto; border: 1px solid var(--border); border-radius: 6px; }
+.sc-matrix th, .sc-matrix td { text-align: center; }
+.sc-matrix td:first-child, .sc-matrix th:first-child { text-align: left; }
+.sc-score-num { color: var(--primary); font-weight: 500; }
+.sc-score-none { color: var(--text-placeholder); font-size: 12px; }
+.sc-score-avg { color: var(--primary); }
+.sc-matrix-note { margin-top: 10px; font-size: 12px; color: var(--text-tertiary); }

@@ -113,6 +113,52 @@
 
   function isApplicant(app, user) { return app.applicantId === user.id; }
 
+  /* ---------------- 专家打分 ---------------- */
+  function experts() {
+    return (MOCK.users || []).filter(function (u) { return u.role === "expert"; });
+  }
+
+  function expertName(id) {
+    var e = experts().filter(function (u) { return u.id === id; })[0];
+    return e ? e.name : id;
+  }
+
+  /* 该申请是否有任何专家打分 */
+  function hasScores(app) {
+    return !!app.scores && Object.keys(app.scores).some(function (k) {
+      return app.scores[k] && Object.keys(app.scores[k]).length;
+    });
+  }
+
+  /* 某药品明细的平均分（已提交打分的专家均值），无打分返回 null */
+  function itemAvg(app, idx) {
+    if (!app.scores || !app.scores[idx]) return null;
+    var vals = Object.keys(app.scores[idx])
+      .map(function (eid) { return app.scores[idx][eid] && app.scores[idx][eid].total; })
+      .filter(function (v) { return typeof v === "number"; });
+    if (!vals.length) return null;
+    var sum = vals.reduce(function (a, b) { return a + b; }, 0);
+    return Math.round(sum / vals.length * 100) / 100;
+  }
+
+  /* 按分类取规则集 */
+  function rulesOf(cat) {
+    return cat === "中成药" ? MOCK.scoreRules.tcm : MOCK.scoreRules.chem;
+  }
+
+  /* 由勾选项计算总分 */
+  function calcTotal(rules, picks) {
+    var total = 0;
+    rules.groups.forEach(function (g) {
+      g.subs.forEach(function (sub) {
+        var v = picks[sub.no];
+        if (v === undefined) return;
+        total += Array.isArray(v) ? v.reduce(function (a, b) { return a + b; }, 0) : v;
+      });
+    });
+    return Math.round(total * 100) / 100;
+  }
+
   /*
    * 审批记录行 = 已发生记录 + 未到节点行
    * 未到节点：status 为 member/center → 对应节点「待审核」，其后节点「待审核」；
@@ -216,6 +262,8 @@
     fmtNow: fmtNow, newId: newId, qs: qs,
     flowNodes: flowNodes, nextStatus: nextStatus,
     canApprove: canApprove, isApplicant: isApplicant, recordRows: recordRows,
+    experts: experts, expertName: expertName, hasScores: hasScores, itemAvg: itemAvg,
+    rulesOf: rulesOf, calcTotal: calcTotal,
     toast: toast, openModal: openModal, closeModal: closeModal, confirmDialog: confirmDialog,
     renderHeaderUser: renderHeaderUser, bindNav: bindNav
   };

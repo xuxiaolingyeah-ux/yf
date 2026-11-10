@@ -3712,3 +3712,118 @@ MOCK.shortages = [
     ]
   }
 ];
+
+/* ==========================================================================
+   横向调拨（成员机构 ⇄ 成员机构，中心药房仅审核）
+   追加：第二家成员机构（member-2 城西社区卫生服务中心）的药房 / 库位 / 演示账号，
+   以及横向调拨种子单据。单号前缀 HB，与纵向 DB 区分。
+   ========================================================================== */
+
+MOCK.pharmacies["member-2"] = [{ id: "ph-m2-1", name: "城西社区·门诊药房" }];
+MOCK.locations["ph-m2-1"] = [
+  { id: "loc-m2-1-A", name: "门诊区-A1" },
+  { id: "loc-m2-1-B", name: "门诊区-B2" }
+];
+
+/* 成员机构 B 方演示账号（城西社区卫生服务中心，可发起横向调拨、执行出库） */
+MOCK.users.push({
+  id: "u6", account: "zhouting", name: "周婷",
+  org: "城西社区卫生服务中心", role: "member",
+  roleName: "成员机构（可发起、可审核）"
+});
+
+/* 横向调拨种子数据：createType = "horizontal"，outOrg 在创建时即确定为供应成员机构 */
+[].push.apply(MOCK.transfers, [
+  {
+    id: "h1", code: "HB20261105001",
+    createType: "horizontal",
+    creatorId: "u2", creator: "李强", creatorOrg: "城东社区卫生服务中心",
+    applyOrg: "member-1", applyOrgName: "城东社区卫生服务中心",
+    applyPharmacy: "ph-m1-1", applyPharmacyName: "城东社区·门诊药房",
+    applyLocation: "loc-m1-1-A", applyLocationName: "门诊区-A1",
+    shortageDesc: "门诊阿莫西林消耗加快，向城西社区申请横向调剂。",
+    createdAt: "2026-11-05 09:40", submitTime: "2026-11-05 09:40",
+    auditStatus: "center", transferStatus: "",
+    outOrg: "member-2", outOrgName: "城西社区卫生服务中心",
+    outPharmacy: "", outPharmacyName: "", outLocation: "", outLocationName: "",
+    outCode: "", inCode: "", nextStep: "",
+    items: [
+      { drugId: "d1", si: 0, drugCode: "1210500301", drugName: "阿莫西林胶囊", specCode: "1010400101", spec: "0.25g * 24粒/盒", applyQty: 20 },
+      { drugId: "d2", si: 0, drugCode: "1210500302", drugName: "阿莫西林颗粒", specCode: "1010400201", spec: "0.125g * 20袋/盒", applyQty: 30 }
+    ], batches: [], records: [
+      { node: "提交", person: "李强", org: "城东社区卫生服务中心", result: "已提交", opinion: "—", time: "2026-11-05 09:40" }
+    ]
+  },
+  {
+    id: "h2", code: "HB20261104002",
+    createType: "horizontal",
+    creatorId: "u6", creator: "周婷", creatorOrg: "城西社区卫生服务中心",
+    applyOrg: "member-2", applyOrgName: "城西社区卫生服务中心",
+    applyPharmacy: "ph-m2-1", applyPharmacyName: "城西社区·门诊药房",
+    applyLocation: "loc-m2-1-A", applyLocationName: "门诊区-A1",
+    shortageDesc: "头孢呋辛酯片采购在途，先向城东社区临时调剂。",
+    createdAt: "2026-11-04 15:20", submitTime: "2026-11-04 15:20",
+    auditStatus: "approved", transferStatus: "out",
+    outOrg: "member-1", outOrgName: "城东社区卫生服务中心",
+    outPharmacy: "", outPharmacyName: "", outLocation: "", outLocationName: "",
+    outCode: "", inCode: "", nextStep: "direct-outbound",
+    items: [
+      { drugId: "d5", si: 0, drugCode: "1210500305", drugName: "头孢呋辛酯片", specCode: "1010400501", spec: "0.25g * 12片/盒", applyQty: 12 }
+    ], batches: [], records: [
+      { node: "提交", person: "周婷", org: "城西社区卫生服务中心", result: "已提交", opinion: "—", time: "2026-11-04 15:20" },
+      { node: "中心药房审核", person: "赵敏", org: "区域中心药房", result: "同意", opinion: "—", time: "2026-11-05 10:05" }
+    ]
+  },
+  {
+    id: "h3", code: "HB20261103003",
+    createType: "horizontal",
+    creatorId: "u2", creator: "李强", creatorOrg: "城东社区卫生服务中心",
+    applyOrg: "member-1", applyOrgName: "城东社区卫生服务中心",
+    applyPharmacy: "ph-m1-1", applyPharmacyName: "城东社区·门诊药房",
+    applyLocation: "loc-m1-1-B", applyLocationName: "门诊区-B2",
+    shortageDesc: "连花清瘟胶囊申请横向调剂 60 盒。",
+    createdAt: "2026-11-03 11:10", submitTime: "2026-11-03 11:10",
+    auditStatus: "rejected", transferStatus: "",
+    outOrg: "member-2", outOrgName: "城西社区卫生服务中心",
+    outPharmacy: "", outPharmacyName: "", outLocation: "", outLocationName: "",
+    outCode: "", inCode: "", nextStep: "",
+    items: [
+      { drugId: "d7", si: 0, drugCode: "1210500307", drugName: "连花清瘟胶囊", specCode: "1010400701", spec: "0.35g * 24粒/盒", applyQty: 60 }
+    ], batches: [], records: [
+      { node: "提交", person: "李强", org: "城东社区卫生服务中心", result: "已提交", opinion: "—", time: "2026-11-03 11:10" },
+      { node: "中心药房审核", person: "赵敏", org: "区域中心药房", result: "拒绝", opinion: "出库机构该规格库存不足，请与城西社区线下协调后另行申请。", time: "2026-11-04 09:30" }
+    ]
+  },
+  {
+    id: "h4", code: "HB20261030004",
+    createType: "horizontal",
+    creatorId: "u2", creator: "李强", creatorOrg: "城东社区卫生服务中心",
+    applyOrg: "member-1", applyOrgName: "城东社区卫生服务中心",
+    applyPharmacy: "ph-m1-1", applyPharmacyName: "城东社区·门诊药房",
+    applyLocation: "loc-m1-1-A", applyLocationName: "门诊区-A1",
+    shortageDesc: "",
+    createdAt: "2026-10-30 14:00", submitTime: "2026-10-30 14:00",
+    auditStatus: "approved", transferStatus: "done",
+    outOrg: "member-2", outOrgName: "城西社区卫生服务中心",
+    outPharmacy: "ph-m2-1", outPharmacyName: "城西社区·门诊药房",
+    outLocation: "loc-m2-1-A", outLocationName: "门诊区-A1",
+    outCode: "CK20261031002", inCode: "RK20261101003",
+    outTime: "2026-10-31 16:20", inTime: "2026-11-01 09:50",
+    nextStep: "",
+    items: [
+      { drugId: "d6", si: 0, drugCode: "1210500306", drugName: "布洛芬缓释胶囊", specCode: "1010400601", spec: "0.3g * 20粒/盒", applyQty: 10 }
+    ],
+    batches: [
+      { key: "d6_0", drugId: "d6", si: 0, drugCode: "1210500306", drugName: "布洛芬缓释胶囊", specCode: "1010400601", spec: "0.3g * 20粒/盒", applyQty: 10,
+        rows: [
+          { batchNo: "P260502", vendor: "哈药集团制药总厂", stock: 150, purchase: 6.95, retail: 12.80, expDate: "2028-05-07", outQty: 10 }
+        ]
+      }
+    ], records: [
+      { node: "提交", person: "李强", org: "城东社区卫生服务中心", result: "已提交", opinion: "—", time: "2026-10-30 14:00" },
+      { node: "中心药房审核", person: "赵敏", org: "区域中心药房", result: "同意", opinion: "—", time: "2026-10-30 17:40" },
+      { node: "出库", person: "周婷", org: "城西社区卫生服务中心", result: "出库完成", opinion: "出库单号 CK20261031002", time: "2026-10-31 16:20" },
+      { node: "入库", person: "李强", org: "城东社区卫生服务中心", result: "入库完成", opinion: "—", time: "2026-11-01 09:50" }
+    ]
+  }
+]);

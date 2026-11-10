@@ -144,13 +144,14 @@
   function renderInfo() {
     $("infoGrid").innerHTML =
       infoItem("申请机构", bill.applyOrgName) +
+      (bill.createType === "horizontal" ? infoItem("出库机构", bill.outOrgName) : "") +
       infoItem("申请库位", bill.applyLocationName) +
       infoItem("提交人", bill.creator) +
       infoItem("提交时间", bill.submitTime) +
       infoItem("审核状态", TR.AUDIT[bill.auditStatus]) +
       infoItem("出库单号", bill.outCode) +
       infoItem("入库单号", bill.inCode) +
-      '<div class="form-item span-2of4"><span class="form-label">缺药说明</span>' +
+      '<div class="form-item span-2of4"><span class="form-label">' + (bill.createType === "horizontal" ? "调拨说明" : "缺药说明") + "</span>" +
         '<span class="text-value">' + esc(bill.shortageDesc || "—") + "</span></div>";
 
     if (bill.outCode || bill.transferStatus === "in" || bill.transferStatus === "done") {
@@ -204,7 +205,8 @@
       $("itemsTitle").textContent = "申请明细";
       head.innerHTML = "<tr>" +
         '<th style="width:230px;">药品名称</th><th style="width:140px;">药品编码</th>' +
-        '<th style="width:200px;">规格</th><th style="width:110px;" class="num">机构库存</th>' +
+        '<th style="width:200px;">规格</th><th style="width:110px;" class="num">' +
+        (bill.createType === "horizontal" ? "出库机构库存" : "机构库存") + "</th>" +
         '<th style="width:110px;" class="num">申请数量</th></tr>';
       body.innerHTML = bill.items.map(function (it) {
         return "<tr><td>" + esc(it.drugName) + "</td><td>" + esc(it.drugCode) + "</td>" +

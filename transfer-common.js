@@ -18,11 +18,18 @@
 
   var TRANSFER = { out: "待调拨", in: "待签收", done: "已完成" };
 
+  /* 调拨类型：vertical 纵向（下级→上级链路）；horizontal 横向（成员机构→成员机构，中心仅审核） */
+  var TYPE = { vertical: "纵向调拨", horizontal: "横向调拨" };
+
   var ORGS = {
     "village-1": "青河村卫生室",
     "member-1": "城东社区卫生服务中心",
+    "member-2": "城西社区卫生服务中心",
     "org-c": "区域中心药房"
   };
+
+  /* 成员机构列表：横向调拨的出库机构只能从中选择（排除发起方自身） */
+  var MEMBER_ORGS = ["member-1", "member-2"];
 
   var BAD_REASONS = ["包装不合格", "外观质量不合格", "内在质量不合格"];
 
@@ -71,6 +78,8 @@
       b.applyOrg = b.applyOrg || (b.createType === "village" ? "village-1" : "member-1");
       b.applyOrgName = b.applyOrgName || ORGS[b.applyOrg] || b.creatorOrg || "";
       if (b.outOrg) b.outOrgName = b.outOrgName || ORGS[b.outOrg] || "";
+      /* 横向调拨在创建时即确定出库机构；旧数据按 createType 兜底 */
+      if (b.createType === undefined) b.createType = (b.applyOrg === "village-1" || b.creatorOrg === "青河村卫生室") ? "village" : "member";
       b.submitTime = b.submitTime || (b.auditStatus === "draft" ? "" : b.createdAt);
       b.deleted = !!b.deleted;
 
@@ -80,7 +89,9 @@
           var d = drugOf(it.drugId);
           it.specCode = d && d.specs[it.si] ? d.specs[it.si].code : "";
         }
-        if (it.stock === undefined) it.stock = orgStock(b.applyOrg, it.drugId, it.si);
+        /* 横向调拨明细中的库存是出库机构库存，其余是申请机构库存 */
+        var stockOrg = b.createType === "horizontal" ? (b.outOrg || b.applyOrg) : b.applyOrg;
+        if (it.stock === undefined) it.stock = orgStock(stockOrg, it.drugId, it.si);
       });
 
       b.batches = b.batches || [];
@@ -216,10 +227,22 @@
   function orgKey(u) {
     if (!u) return "";
     if (u.role === "village") return "village-1";
-    if (u.role === "member") return "member-1";
+    if (u.role === "member") {
+      /* 登录会话仅携带机构名，按名称区分两家成员机构（城东/城西） */
+      if (u.orgKey) return u.orgKey;
+      if (u.org && u.org.indexOf("城西") >= 0) return "member-2";
+      return "member-1";
+    }
     if (u.role === "center" || u.role === "pharmacist") return "org-c";
     return "";
   }
+
+  /* 横向调拨可选出库机构：全部成员机构，排除发起方自身（村室/中心药房不参与） */
+  function memberOrgs(excludeKey) {
+    return MEMBER_ORGS.filter(function (k) { return k !== excludeKey; });
+  }
+
+  function isHorizontal(b) { return b.createType === "horizontal"; }
 
   function orgName(key) { return ORGS[key] || "—"; }
 
@@ -303,6 +326,8 @@
   }
 
   function submitBill(b) {
+    /* 纵向：村室发 → 成员机构审核，成员机构发 → 中心审核；
+       横向：成员机构互调，无成员机构审核节点，直接进中心药房审核 */
     b.auditStatus = b.createType === "village" ? "member" : "center";
     b.transferStatus = "";
     b.submitTime = SEL.fmtNow();
@@ -337,6 +362,8 @@
   }
 
   function newCode(list) { return seqCode(list, "DB"); }
+  /* 横向调拨单号：HB 前缀，与纵向 DB 区分 */
+  function newHCode(list) { return seqCode(list, "HB"); }
   function newOutCode(list) { return seqCode(list, "CK", "outCode"); }
   function newInCode(list) { return seqCode(list, "RK", "inCode"); }
 
@@ -400,6 +427,7 @@
     if (!bill) { location.href = "transfer.html"; return; }
 
     var isMember = kind === "member";
+    var isH = isHorizontal(bill);
     var allowed = isMember ? isMemberAuditor(bill, u) : isCenterAuditor(bill, u);
     if (!allowed) { location.href = "transfer-detail.html?id=" + bill.id; return; }
 
@@ -408,11 +436,12 @@
     function renderInfo() {
       $("infoGrid").innerHTML =
         item("申请机构", bill.applyOrgName) +
-        item("申请库位", bill.applyLocationName) +
+        (isH ? item("出库机构", bill.outOrgName) : item("申请库位", bill.applyLocationName)) +
+        (isH ? item("申请库位", bill.applyLocationName) : "") +
         item("提交人", bill.creator) +
         item("提交时间", bill.submitTime) +
         item("审核状态", AUDIT[bill.auditStatus]) +
-        '<div class="form-item span-2of4">' + label("缺药说明") +
+        '<div class="form-item span-2of4">' + label(isH ? "调拨说明" : "缺药说明") +
           '<span class="text-value">' + esc(bill.shortageDesc || "—") + "</span></div>";
     }
     function item(l, v) {
@@ -501,20 +530,29 @@
 
       var node = isMember ? "成员机构审核" : "中心药房审核";
       if (passed) {
-        var next = isMember
-          ? ($("pageFoot").querySelector('input[name="nextStep"]:checked') || {}).value
-          : "center";
-        if (isMember && next === "center") {
-          bill.auditStatus = "center";
-          bill.nextStep = "center-review";
-          addRecord(bill, node, u.name, u.org, "同意", opinion);
-        } else {
+        if (isH) {
+          /* 横向调拨：中心审核是唯一审核节点，出库机构在创建时已确定，
+             通过后由出库机构（成员机构）执行出库 */
           bill.auditStatus = "approved";
           bill.transferStatus = "out";
-          bill.outOrg = orgKey(u);
-          bill.outOrgName = ORGS[bill.outOrg];
           bill.nextStep = "direct-outbound";
-          addRecord(bill, node, u.name, u.org, isMember ? "同意（直接出库）" : "同意", opinion);
+          addRecord(bill, node, u.name, u.org, "同意", opinion);
+        } else {
+          var next = isMember
+            ? ($("pageFoot").querySelector('input[name="nextStep"]:checked') || {}).value
+            : "center";
+          if (isMember && next === "center") {
+            bill.auditStatus = "center";
+            bill.nextStep = "center-review";
+            addRecord(bill, node, u.name, u.org, "同意", opinion);
+          } else {
+            bill.auditStatus = "approved";
+            bill.transferStatus = "out";
+            bill.outOrg = orgKey(u);
+            bill.outOrgName = ORGS[bill.outOrg];
+            bill.nextStep = "direct-outbound";
+            addRecord(bill, node, u.name, u.org, isMember ? "同意（直接出库）" : "同意", opinion);
+          }
         }
       } else {
         bill.auditStatus = "rejected";
@@ -580,14 +618,16 @@
 
   window.TR = {
     AUDIT: AUDIT, TRANSFER: TRANSFER, ORGS: ORGS, BAD_REASONS: BAD_REASONS,
+    TYPE: TYPE, MEMBER_ORGS: MEMBER_ORGS,
     load: load, save: save, byId: byId, persist: persist,
     user: user, orgKey: orgKey, orgName: orgName,
+    memberOrgs: memberOrgs, isHorizontal: isHorizontal,
     locationsOfOrg: locationsOfOrg, locationNameOfOrg: locationNameOfOrg,
     isCreator: isCreator, isMemberAuditor: isMemberAuditor, isCenterAuditor: isCenterAuditor,
     canEdit: canEdit, canWithdraw: canWithdraw, canOutbound: canOutbound, canInbound: canInbound,
     related: related, actionsFor: actionsFor,
     addRecord: addRecord, submitBill: submitBill, withdrawBill: withdrawBill,
-    newCode: newCode, newOutCode: newOutCode, newInCode: newInCode,
+    newCode: newCode, newHCode: newHCode, newOutCode: newOutCode, newInCode: newInCode,
     money: money, intVal: intVal,
     allocated: allocated, scanned: scanned, outSums: outSums, inSums: inSums,
     drugOf: drugOf, specList: specList, specByKey: specByKey,

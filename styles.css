@@ -4286,3 +4286,37 @@ body.black-open .drawer.is-black { transform: translateX(0); }
 
 .sc-avg-line { font-size: 12px; color: var(--text-secondary); margin: -4px 0 14px; }
 .sc-avg-line b { color: var(--primary); font-weight: 600; font-size: 15px; margin-right: 2px; }
+
+/* ==========================================================================
+   横向调拨：新增入口「新增调拨」下拉选择（纵向 / 横向）
+   ========================================================================== */
+.tr-create-wrap { position: relative; display: inline-block; }
+.tr-create-wrap .dd-caret { margin-left: 4px; vertical-align: -1px; }
+.tr-create-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 132px;
+  padding: 6px;
+  background: var(--bg-primary, #FFFFFF);
+  border: 1px solid var(--border-tertiary, rgba(0,0,0,.12));
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.12);
+  display: none;
+  z-index: 30;
+}
+.tr-create-menu.show { display: block; }
+.tr-create-item {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 13px;
+  text-align: left;
+  color: var(--text-primary, #26262A);
+  background: none;
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background .15s;
+}
+.tr-create-item:hover { background: var(--bg-secondary, #F1EFE8); }

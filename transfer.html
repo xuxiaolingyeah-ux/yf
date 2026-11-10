@@ -48,7 +48,15 @@
         <div class="page-head">
           <h1 class="page-title">调拨管理</h1>
           <div class="page-acts">
-            <button class="btn btn-primary" id="btnCreate">新增调拨</button>
+            <div class="tr-create-wrap" id="createWrap">
+              <button class="btn btn-primary" id="btnCreate">新增调拨
+                <svg class="dd-caret" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+              </button>
+              <div class="tr-create-menu" id="createMenu">
+                <button class="tr-create-item" data-type="vertical">纵向调拨</button>
+                <button class="tr-create-item" data-type="horizontal">横向调拨</button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -278,9 +286,31 @@
   if (user.role === "center" || user.role === "pharmacist") {
     $("btnCreate").style.display = "none";
   }
-  $("btnCreate").addEventListener("click", function () {
-    location.href = "transfer-create.html";
+  /* ---------------- 新增入口：按钮下拉选择调拨类型 ----------------
+     村室：只能纵向，点击直接进入；
+     成员机构：点「新增调拨」展开下拉（纵向 / 横向）；
+     中心药房：不发起（按钮已隐藏）。 */
+  var createMenu = $("createMenu");
+
+  function closeMenu() { createMenu.classList.remove("show"); }
+
+  $("btnCreate").addEventListener("click", function (e) {
+    e.stopPropagation();
+    if (user.role === "village") { location.href = "transfer-create.html"; return; }
+    createMenu.classList.toggle("show");
   });
+
+  createMenu.addEventListener("click", function (e) {
+    e.stopPropagation();
+    var item = e.target.closest("[data-type]");
+    if (!item) return;
+    closeMenu();
+    location.href = item.getAttribute("data-type") === "horizontal"
+      ? "transfer-h-create.html"
+      : "transfer-create.html";
+  });
+
+  document.addEventListener("click", closeMenu);
 
   function doQuery() {
     state.code = $("fCode").value.trim();
@@ -313,7 +343,10 @@
     var id = btn.getAttribute("data-id");
     var act = btn.getAttribute("data-act");
     if (act === "view") location.href = "transfer-detail.html?id=" + id;
-    else if (act === "edit") location.href = "transfer-create.html?id=" + id;
+    else if (act === "edit") {
+      var eb = TR.byId(TR.load(), id);
+      location.href = (eb && eb.createType === "horizontal" ? "transfer-h-create.html" : "transfer-create.html") + "?id=" + id;
+    }
     else if (act === "submit") doSubmit(id);
     else if (act === "withdraw") doWithdraw(id);
     else if (act === "delete") doDelete(id);

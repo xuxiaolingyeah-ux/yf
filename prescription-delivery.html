@@ -268,7 +268,7 @@
           <div class="dl-head-left">
             <span class="page-title">门诊处方送药</span>
             <button class="dl-help" title="勾选未登记的处方后点击「配送登记」，录入收件人、电话与地址生成配送单">?</button>
-            <span class="dl-loc-lbl">库位：</span>
+            <span class="dl-loc-lbl">药房：</span>
             <select class="select dl-loc" id="dlLoc">
               <option value="中药房">中药房</option>
               <option value="西药房">西药房</option>
@@ -1234,7 +1234,7 @@
     }
   });
 
-  $("#dlLoc").addEventListener("change", function () { toast("已切换库位：" + this.value); });
+  $("#dlLoc").addEventListener("change", function () { toast("已切换药房：" + this.value); });
 
   initRegion();
   renderList();

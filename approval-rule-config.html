@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>审批规则配置 · 中心药房</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body class="af-layout">
+
+<!-- ========== 顶部导航 ========== -->
+<header class="app-header">
+  <div class="header-left">
+    <div class="header-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3.2" y="9.4" width="17.6" height="5.2" rx="2.6" transform="rotate(-45 12 12)"/>
+        <path d="M8.4 15.6L15.6 8.4"/>
+      </svg>
+    </div>
+    <div class="header-title">区域药房协同管理系统</div>
+  </div>
+  <div class="header-right">
+    <div class="header-user">
+      <div class="header-avatar">张</div>
+      <span class="header-user-name">张明远</span>
+    </div>
+  </div>
+</header>
+
+<div class="app-body">
+  <!-- ========== 左侧导航 ========== -->
+  <aside class="app-side" id="appSide"></aside>
+
+  <!-- ========== 主区域 ========== -->
+  <main class="app-main">
+    <div class="tabbar">
+      <div class="tab" onclick="location.href='home.html'">首页</div>
+      <div class="tab" onclick="location.href='approval-flow-config.html'">审批流程配置</div>
+      <div class="tab active">
+        审批规则配置
+        <button class="tab-close" title="关闭" onclick="location.href='approval-flow-config.html'">
+          <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+            <path d="M5 5l14 14M19 5L5 19"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="page">
+      <div class="page-head">
+        <div style="display:flex; align-items:center; gap:10px; min-width:0;">
+          <button class="btn btn-sm" id="btnBack" title="返回审批流程配置">
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+            返回
+          </button>
+          <h1 class="page-title">审批规则配置</h1>
+        </div>
+        <div class="page-acts">
+          <button class="btn btn-primary" id="btnAddRule">新增审批规则</button>
+        </div>
+      </div>
+
+      <div class="af-body">
+        <table class="data-table af-table">
+          <colgroup>
+            <col style="width:34%">
+            <col>
+            <col style="width:140px">
+            <col style="width:112px">
+          </colgroup>
+          <thead>
+            <tr>
+              <th>审批规则</th>
+              <th>已绑定业务</th>
+              <th>更新时间</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="ruleBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ========== 抽屉：审批规则编辑 ========== -->
+<div class="drawer-mask" id="ruleMask"></div>
+<div class="drawer af-drawer" id="ruleDrawer">
+  <div class="drawer-head">
+    <div class="drawer-title" id="ruleDrawerTitle">编辑审批规则</div>
+    <button class="drawer-close" id="ruleDrawerClose" title="关闭">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <path d="M5 5l14 14M19 5L5 19"/>
+      </svg>
+    </button>
+  </div>
+  <div class="drawer-body">
+    <div class="form-item">
+      <label class="form-label"><span class="req">*</span>规则名称</label>
+      <input class="input" id="ruleName" maxlength="20" placeholder="请输入规则名称" autocomplete="off">
+    </div>
+
+    <div class="af-nodes-head">
+      <span class="af-nodes-title">审批节点</span>
+      <button class="btn btn-sm" id="btnAddNode">添加节点</button>
+    </div>
+    <div class="af-nodes" id="nodeList"></div>
+
+    <div class="af-err" id="ruleErr"></div>
+  </div>
+  <div class="drawer-foot">
+    <button class="btn" id="ruleCancel">取消</button>
+    <button class="btn btn-primary" id="ruleSave">保存</button>
+  </div>
+</div>
+
+<!-- ========== Toast ========== -->
+<div class="toast" id="toast">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M20 6L9 17l-5-5"/>
+  </svg>
+  <span id="toastText"></span>
+</div>
+
+<script src="identity.js"></script>
+<script src="approval-common.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  function $(id) { return document.getElementById(id); }
+  function esc(s) {
+    return String(s === null || s === undefined ? "" : s)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+
+  var ST = { draft: null, mode: "", ruleId: "" };
+
+  var toastTimer = null;
+  function toast(msg) {
+    $("toastText").textContent = msg;
+    $("toast").classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { $("toast").classList.remove("show"); }, 2400);
+  }
+
+  /* ---------------- 规则列表 ---------------- */
+  function renderRows() {
+    var list = APPROVAL.rules();
+    if (!list.length) {
+      $("ruleBody").innerHTML = '<tr><td colspan="4" class="table-empty">暂无审批规则</td></tr>';
+      return;
+    }
+    $("ruleBody").innerHTML = list.map(function (r) {
+      var bound = APPROVAL.bizBoundTo(r.id);
+      var boundText = bound.length
+        ? bound.map(function (b) { return b.name; }).join("、")
+        : '<span class="af-unbound">未绑定</span>';
+      return "<tr>"
+        + "<td>"
+        + '<div class="af-rule-name">' + esc(r.name) + "</div>"
+        + '<div class="af-chain">' + esc(APPROVAL.chainText(r)) + "</div>"
+        + "</td>"
+        + '<td class="cell-ellipsis" title="' + esc(bound.map(function (b) { return b.name; }).join("、")) + '">' + boundText + "</td>"
+        + "<td>" + esc(r.updated) + "</td>"
+        + '<td class="col-acts">'
+        + '<button class="link-btn" data-act="edit" data-id="' + r.id + '">编辑</button>'
+        + '<button class="link-btn is-danger" data-act="del" data-id="' + r.id + '">删除</button>'
+        + "</td>"
+        + "</tr>";
+    }).join("");
+  }
+
+  /* ---------------- 节点编辑器 ---------------- */
+  function slotOptions(ruleId, cur) {
+    var list = APPROVAL.slotCandidates(ruleId);
+    return ['<option value="">请选择机构</option>'].concat(list.map(function (s) {
+      return '<option value="' + s.key + '"' + (s.key === cur ? " selected" : "") + ">" + s.name + "</option>";
+    })).join("");
+  }
+
+  function orgTypeOptions(cur) {
+    return APPROVAL.ORG_TYPES.map(function (t) {
+      return '<option value="' + t.key + '"' + (t.key === cur ? " selected" : "") + ">" + t.name + "</option>";
+    }).join("");
+  }
+
+  function roleOptions(cur) {
+    return ['<option value="">请选择角色</option>'].concat(APPROVAL.ROLES.map(function (r) {
+      return '<option value="' + r + '"' + (r === cur ? " selected" : "") + ">" + r + "</option>";
+    })).join("");
+  }
+
+  function fixedOptions(cur) {
+    return ['<option value="">请选择机构</option>'].concat(APPROVAL.ORGS.map(function (o) {
+      return '<option value="' + esc(o) + '"' + (o === cur ? " selected" : "") + ">" + esc(o) + "</option>";
+    })).join("");
+  }
+
+  function nodeCard(node, i, total) {
+    var sub = "";
+    if (node.orgType === "slot") {
+      sub = '<div class="af-field af-col-sub">'
+        + '<label>选择机构</label>'
+        + '<select class="select" data-f="slot">' + slotOptions(ST.ruleId, node.slot) + "</select>"
+        + "</div>";
+    } else if (node.orgType === "fixed") {
+      sub = '<div class="af-field af-col-sub">'
+        + '<label>选择机构</label>'
+        + '<select class="select" data-f="orgName">' + fixedOptions(node.orgName) + "</select>"
+        + "</div>";
+    }
+
+    return '<div class="af-node" data-idx="' + i + '">'
+      + '<div class="af-node-head">'
+      + '<span class="af-node-no">节点 ' + (i + 1) + "</span>"
+      + '<div class="af-node-acts">'
+      + '<button class="link-btn' + (i === 0 ? " is-disabled" : "") + '" data-act="up"' + (i === 0 ? " disabled" : "") + ">上移</button>"
+      + '<button class="link-btn' + (i === total - 1 ? " is-disabled" : "") + '" data-act="down"' + (i === total - 1 ? " disabled" : "") + ">下移</button>"
+      + '<button class="link-btn is-danger" data-act="del">删除</button>'
+      + "</div></div>"
+      + '<div class="af-field">'
+      + "<label>节点名称</label>"
+      + '<input class="input" data-f="name" maxlength="12" placeholder="如：上级机构审核" value="' + esc(node.name) + '">'
+      + "</div>"
+      + '<div class="af-row">'
+      + '<div class="af-field af-col-main">'
+      + "<label>审核机构</label>"
+      + '<select class="select" data-f="orgType">' + orgTypeOptions(node.orgType) + "</select>"
+      + "</div>"
+      + sub
+      + "</div>"
+      + '<div class="af-field">'
+      + "<label>审核角色</label>"
+      + '<select class="select" data-f="role">' + roleOptions(node.role) + "</select>"
+      + "</div>"
+      + '<div class="af-transfer">'
+      + "<label>允许转办</label>"
+      + '<label class="switch"><input type="checkbox" data-f="transfer"' + (node.transfer ? " checked" : "") + '><span class="track"></span></label>'
+      + '<span class="af-transfer-tip">开启后审核时可「同意并转办」</span>'
+      + "</div>"
+      + "</div>";
+  }
+
+  function renderNodes() {
+    var nodes = ST.draft.nodes;
+    if (!nodes.length) {
+      $("nodeList").innerHTML = '<div class="af-empty-node">至少需要 1 个审批节点</div>';
+      return;
+    }
+    $("nodeList").innerHTML = nodes.map(function (n, i) {
+      return nodeCard(n, i, nodes.length);
+    }).join("");
+  }
+
+  /* ---------------- 抽屉开关 ---------------- */
+  function openDrawer(ruleId) {
+    var rule = ruleId ? APPROVAL.ruleById(ruleId) : null;
+    ST.mode = rule ? "edit" : "create";
+    ST.ruleId = rule ? rule.id : "";
+    ST.draft = rule
+      ? JSON.parse(JSON.stringify(rule))
+      : { id: APPROVAL.uid("r"), name: "", updated: "", nodes: [APPROVAL.newNode()] };
+
+    $("ruleDrawerTitle").textContent = rule ? "编辑审批规则" : "新增审批规则";
+    $("ruleName").value = ST.draft.name;
+    $("ruleErr").textContent = "";
+    renderNodes();
+    document.body.classList.add("drawer-open");
+  }
+
+  function closeDrawer() {
+    document.body.classList.remove("drawer-open");
+    ST.draft = null;
+    ST.mode = "";
+    ST.ruleId = "";
+  }
+
+  /* ---------------- 校验与保存 ---------------- */
+  function validate() {
+    var name = $("ruleName").value.trim();
+    if (!name) return "请填写规则名称";
+    var nodes = ST.draft.nodes;
+    if (!nodes.length) return "请至少保留 1 个审批节点";
+
+    for (var i = 0; i < nodes.length; i++) {
+      var n = nodes[i], at = "节点 " + (i + 1) + "：";
+      if (!n.name.trim()) return at + "请填写节点名称";
+      if (n.orgType === "slot" && !n.slot) return at + "请选择审核机构（申请单内机构需指定具体机构）";
+      if (n.orgType === "fixed" && !n.orgName) return at + "请选择指定的审核机构";
+      if (!n.role) return at + "请选择审核角色";
+    }
+
+    /* 已绑定的规则：改完必须仍能适配所有绑定业务 */
+    if (ST.mode === "edit") {
+      var probe = { id: ST.draft.id, nodes: nodes };
+      var bound = APPROVAL.bizBoundTo(ST.draft.id);
+      for (var j = 0; j < bound.length; j++) {
+        var msg = APPROVAL.checkBind(bound[j].key, probe);
+        if (msg) return "「" + bound[j].name + "」不支持修改后的节点：" + msg.replace(/^该规则包含/, "包含");
+      }
+    }
+    return "";
+  }
+
+  function saveRule() {
+    var err = validate();
+    if (err) { $("ruleErr").textContent = err; return; }
+
+    var name = $("ruleName").value.trim();
+    ST.draft.name = name;
+    ST.draft.nodes.forEach(function (n) { n.name = n.name.trim(); });
+    ST.draft.updated = APPROVAL.stamp();
+
+    var list = APPROVAL.rules();
+    if (ST.mode === "edit") {
+      for (var i = 0; i < list.length; i++) {
+        if (list[i].id === ST.draft.id) { list[i] = ST.draft; break; }
+      }
+    } else {
+      list.push(ST.draft);
+    }
+    APPROVAL.save();
+    closeDrawer();
+    renderRows();
+    toast("保存成功");
+  }
+
+  /* ---------------- 事件 ---------------- */
+  $("btnBack").addEventListener("click", function () { location.href = "approval-flow-config.html"; });
+  $("btnAddRule").addEventListener("click", function () { openDrawer(""); });
+  $("ruleDrawerClose").addEventListener("click", closeDrawer);
+  $("ruleCancel").addEventListener("click", closeDrawer);
+  $("ruleMask").addEventListener("click", closeDrawer);
+  $("ruleSave").addEventListener("click", saveRule);
+
+  $("btnAddNode").addEventListener("click", function () {
+    if (!ST.draft) return;
+    ST.draft.nodes.push(APPROVAL.newNode());
+    renderNodes();
+  });
+
+  $("ruleName").addEventListener("input", function () { $("ruleErr").textContent = ""; });
+
+  $("nodeList").addEventListener("input", function (e) {
+    var f = e.target.getAttribute("data-f");
+    if (!f || f === "transfer") return;
+    var card = e.target.closest(".af-node");
+    if (!card) return;
+    ST.draft.nodes[+card.getAttribute("data-idx")][f] = e.target.value;
+  });
+
+  $("nodeList").addEventListener("change", function (e) {
+    var f = e.target.getAttribute("data-f");
+    if (!f) return;
+    var card = e.target.closest(".af-node");
+    if (!card) return;
+    var node = ST.draft.nodes[+card.getAttribute("data-idx")];
+
+    if (f === "transfer") { node.transfer = e.target.checked; return; }
+
+    node[f] = e.target.value;
+    if (f === "orgType") {
+      if (node.orgType !== "slot") node.slot = "";
+      if (node.orgType !== "fixed") node.orgName = "";
+      renderNodes();
+    }
+    $("ruleErr").textContent = "";
+  });
+
+  $("nodeList").addEventListener("click", function (e) {
+    var btn = e.target.closest("button[data-act]");
+    if (!btn || !ST.draft) return;
+    var card = e.target.closest(".af-node");
+    if (!card) return;
+    var idx = +card.getAttribute("data-idx");
+    var act = btn.getAttribute("data-act");
+    var nodes = ST.draft.nodes;
+
+    if (act === "up" && idx > 0) {
+      var t = nodes[idx - 1]; nodes[idx - 1] = nodes[idx]; nodes[idx] = t;
+    } else if (act === "down" && idx < nodes.length - 1) {
+      var d = nodes[idx + 1]; nodes[idx + 1] = nodes[idx]; nodes[idx] = d;
+    } else if (act === "del") {
+      if (nodes.length <= 1) { toast("至少保留 1 个审批节点"); return; }
+      nodes.splice(idx, 1);
+    } else { return; }
+    renderNodes();
+  });
+
+  $("ruleBody").addEventListener("click", function (e) {
+    var btn = e.target.closest("button[data-act]");
+    if (!btn) return;
+    var id = btn.getAttribute("data-id");
+    var rule = APPROVAL.ruleById(id);
+    if (!rule) return;
+
+    if (btn.getAttribute("data-act") === "edit") { openDrawer(id); return; }
+
+    var bound = APPROVAL.bizBoundTo(id);
+    if (bound.length) {
+      toast("「" + rule.name + "」已被 " + bound.length + " 个业务流程绑定，请先在审批流程配置中改绑后再删除");
+      return;
+    }
+    var list = APPROVAL.rules();
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].id === id) { list.splice(i, 1); break; }
+    }
+    APPROVAL.save();
+    renderRows();
+    toast("已删除规则：" + rule.name);
+  });
+
+  renderRows();
+})();
+</script>
+  <script src="nav.js"></script>
+</body>
+</html>

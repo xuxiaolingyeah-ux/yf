@@ -4320,3 +4320,62 @@ body.black-open .drawer.is-black { transform: translateX(0); }
   transition: background .15s;
 }
 .tr-create-item:hover { background: var(--bg-secondary, #F1EFE8); }
+
+/* ---------- 19. 审批流程配置（af-） ---------- */
+.af-body { flex: 1; min-height: 0; overflow: auto; }
+.af-table { table-layout: fixed; }
+.af-table td { vertical-align: middle; }
+.af-rule-name { color: var(--text-primary); }
+.af-chain { font-size: 12px; color: var(--text-tertiary); margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.af-unbound { color: var(--warning); }
+
+/* 编辑弹窗：只读字段 */
+.af-modal .input[readonly] { background: var(--bg-disabled); color: var(--text-secondary); cursor: default; }
+.af-err { font-size: 12px; color: var(--danger); margin-top: 6px; line-height: 1.6; }
+.af-err:empty { display: none; }
+
+/* 规则抽屉 */
+.af-drawer { width: 560px; }
+.af-nodes-head { display: flex; align-items: center; justify-content: space-between; margin: 6px 0 10px; }
+.af-nodes-title { font-size: 14px; font-weight: 500; color: var(--text-primary); }
+.af-nodes { display: flex; flex-direction: column; gap: 10px; }
+
+/* 节点卡片 */
+.af-node { border: 1px solid var(--border-light); border-radius: var(--radius); background: #FAFBFD; padding: 12px; }
+.af-node-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.af-node-no { font-size: 13px; font-weight: 500; color: var(--text-primary); }
+.af-node-acts { display: flex; align-items: center; gap: 12px; }
+.af-node-acts .link-btn { font-size: 12px; }
+.af-node-acts .link-btn[disabled] { color: var(--text-placeholder); cursor: default; text-decoration: none; }
+
+.af-field { min-width: 0; }
+.af-field > label { display: block; font-size: 12px; color: var(--text-secondary); margin-bottom: 5px; }
+.af-field + .af-field { margin-top: 10px; }
+.af-row { display: flex; gap: 8px; margin-top: 10px; }
+.af-row .af-field + .af-field { margin-top: 0; }
+.af-col-main { flex: 1.45; }
+.af-col-sub { flex: 1; }
+
+.af-transfer { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+.af-transfer > label:first-child { font-size: 12px; color: var(--text-secondary); }
+.af-transfer-tip { font-size: 12px; color: var(--text-tertiary); }
+.af-empty-node { padding: 26px 0; text-align: center; color: var(--text-placeholder); font-size: 13px; border: 1px dashed var(--border-light); border-radius: var(--radius); }
+
+/* ---------- 20. 审批配置页：布局水槽（gutter） ---------- */
+/* 侧栏与主区之间、页签栏与内容之间留出灰色水槽，内容区收成白色卡片 */
+body.af-layout .app-main { background: var(--bg-page); }
+body.af-layout .app-side { border-right: none; margin-right: 12px; }
+body.af-layout .tabbar { padding: 0 16px; }
+body.af-layout .page {
+  margin: 8px 12px 12px 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-white);
+  overflow: hidden;
+}
+/* 表格与卡片边框、页头分割线之间留出间距 */
+body.af-layout .af-body { padding: 12px 20px 20px; }
+
+/* ---------- 21. 审核区：同意并转办 ---------- */
+.tr-audit-ctrl > .tr-forward-sel { flex: none; width: 240px; }
+.tr-forward-tip { font-size: 12px; color: var(--text-tertiary); }

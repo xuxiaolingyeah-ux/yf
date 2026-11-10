@@ -31,6 +31,9 @@
   /* 成员机构列表：横向调拨的出库机构只能从中选择（排除发起方自身） */
   var MEMBER_ORGS = ["member-1", "member-2"];
 
+  /* 机构层级：上级机构（用于"同意并转办"的转办机构候选） */
+  var UPPER = { "village-1": "member-1", "member-1": "org-c", "member-2": "org-c", "org-c": "" };
+
   var BAD_REASONS = ["包装不合格", "外观质量不合格", "内在质量不合格"];
 
   /* ---------------- 基础数据 ---------------- */
@@ -479,26 +482,43 @@
         : '<tr><td colspan="6" class="pa-empty">暂无审批记录</td></tr>';
     }
 
+    /* 转办机构候选：沿机构树向上取上级机构（村室 → 成员机构 → 区域中心药房） */
+    function forwardOrgs() {
+      var cur = orgKey(u);
+      var up = UPPER[cur] || "";
+      var list = [];
+      if (up && up !== cur) list.push(up);
+      if (!list.length && cur !== "org-c") list.push("org-c");
+      return list;
+    }
+
     function renderFoot() {
       $("detailCard").classList.add("has-foot");
       $("pageFoot").innerHTML =
         '<div class="tr-audit-row">' +
-          '<span class="tr-audit-label"><span class="req">*</span>审核意见</span>' +
+          '<span class="tr-audit-label"><span class="req">*</span>审核结果</span>' +
           '<div class="tr-audit-ctrl">' +
             '<label class="radio"><input type="radio" name="decision" value="pass" checked><span>同意</span></label>' +
             '<label class="radio"><input type="radio" name="decision" value="reject"><span>拒绝</span></label>' +
+            (isMember
+              ? '<label class="radio"><input type="radio" name="decision" value="forward"><span>同意并转办</span></label>'
+              : "") +
           "</div>" +
         "</div>" +
-        (isMember ? '<div class="tr-audit-row" id="rowNext">' +
-          '<span class="tr-audit-label"><span class="req">*</span>下一步骤</span>' +
+        (isMember ? '<div class="tr-audit-row" id="rowForward" style="display:none;">' +
+          '<span class="tr-audit-label"><span class="req">*</span>转办机构</span>' +
           '<div class="tr-audit-ctrl">' +
-            '<label class="radio"><input type="radio" name="nextStep" value="direct" checked><span>直接出库（本机构出库）</span></label>' +
-            '<label class="radio"><input type="radio" name="nextStep" value="center"><span>转中心药房审核</span></label>' +
+            '<select class="select tr-forward-sel" id="fForwardOrg">' +
+              forwardOrgs().map(function (k) {
+                return '<option value="' + k + '">' + ORGS[k] + "</option>";
+              }).join("") +
+            "</select>" +
+            '<span class="tr-forward-tip">转办后由该机构审核，同意即办结</span>' +
           "</div>" +
         "</div>" : "") +
         '<div class="tr-audit-row is-textarea">' +
           '<span class="tr-audit-label"><span class="req">*</span>审核意见说明</span>' +
-          '<textarea class="textarea" id="fOpinion" maxlength="200" placeholder="拒绝时必填，同意时选填"></textarea>' +
+          '<textarea class="textarea" id="fOpinion" maxlength="200" placeholder="拒绝或转办时必填，同意时选填"></textarea>' +
         "</div>" +
         '<div class="tr-audit-row tr-audit-btns">' +
           '<button class="btn" data-cancel="1">取消</button>' +
@@ -509,8 +529,8 @@
       [].slice.call($("pageFoot").querySelectorAll('input[name="decision"]')).forEach(function (r) {
         r.addEventListener("change", function () {
           $("fOpinion").classList.remove("is-invalid");
-          var next = $("rowNext");
-          if (next) next.style.display = this.value === "pass" ? "flex" : "none";
+          var row = $("rowForward");
+          if (row) row.style.display = this.value === "forward" ? "flex" : "none";
         });
       });
       $("btnAuditSubmit").addEventListener("click", decide);
@@ -519,49 +539,63 @@
 
     function decide() {
       var choice = $("pageFoot").querySelector('input[name="decision"]:checked');
-      var passed = choice ? choice.value === "pass" : true;
+      var decision = choice ? choice.value : "pass";
       var opinionEl = $("fOpinion");
       var opinion = opinionEl.value.trim();
-      if (!passed && !opinion) {
+      if (decision === "reject" && !opinion) {
         opinionEl.classList.add("is-invalid");
         SEL.toast("拒绝时必须填写审核意见说明");
         return;
       }
 
       var node = isMember ? "成员机构审核" : "中心药房审核";
-      if (passed) {
-        if (isH) {
-          /* 横向调拨：中心审核是唯一审核节点，出库机构在创建时已确定，
-             通过后由出库机构（成员机构）执行出库 */
-          bill.auditStatus = "approved";
-          bill.transferStatus = "out";
-          bill.nextStep = "direct-outbound";
-          addRecord(bill, node, u.name, u.org, "同意", opinion);
-        } else {
-          var next = isMember
-            ? ($("pageFoot").querySelector('input[name="nextStep"]:checked') || {}).value
-            : "center";
-          if (isMember && next === "center") {
-            bill.auditStatus = "center";
-            bill.nextStep = "center-review";
-            addRecord(bill, node, u.name, u.org, "同意", opinion);
-          } else {
-            bill.auditStatus = "approved";
-            bill.transferStatus = "out";
-            bill.outOrg = orgKey(u);
-            bill.outOrgName = ORGS[bill.outOrg];
-            bill.nextStep = "direct-outbound";
-            addRecord(bill, node, u.name, u.org, isMember ? "同意（直接出库）" : "同意", opinion);
-          }
-        }
-      } else {
+      if (decision === "reject") {
         bill.auditStatus = "rejected";
         bill.nextStep = "";
+        bill.forwardOrg = "";
+        bill.forwardOrgName = "";
         addRecord(bill, node, u.name, u.org, "拒绝", opinion);
+      } else if (decision === "forward") {
+        /* 同意并转办：转给指定机构承接下一级审核（不计入本机构的办结） */
+        var target = ($("fForwardOrg") || {}).value || "";
+        bill.auditStatus = "center";
+        bill.nextStep = "center-review";
+        bill.forwardOrg = target;
+        bill.forwardOrgName = ORGS[target] || "";
+        addRecord(
+          bill, node, u.name, u.org, "同意并转办",
+          "转办至" + (ORGS[target] || "—") + (opinion ? "；" + opinion : "")
+        );
+      } else if (isH) {
+        /* 横向调拨：中心审核是唯一审核节点，出库机构在创建时已确定，
+           通过后由出库机构（成员机构）执行出库 */
+        bill.auditStatus = "approved";
+        bill.transferStatus = "out";
+        bill.nextStep = "direct-outbound";
+        addRecord(bill, node, u.name, u.org, "同意", opinion);
+      } else if (isMember) {
+        /* 成员机构审核通过：同意即办结，由本机构直接出库 */
+        bill.auditStatus = "approved";
+        bill.transferStatus = "out";
+        bill.outOrg = orgKey(u);
+        bill.outOrgName = ORGS[bill.outOrg];
+        bill.nextStep = "direct-outbound";
+        addRecord(bill, node, u.name, u.org, "同意（直接出库）", opinion);
+      } else {
+        bill.auditStatus = "approved";
+        bill.transferStatus = "out";
+        bill.outOrg = orgKey(u);
+        bill.outOrgName = ORGS[bill.outOrg];
+        bill.nextStep = "direct-outbound";
+        addRecord(bill, node, u.name, u.org, "同意", opinion);
       }
       persist(bill);
-      SEL.toast(passed ? "审核已通过" : "已拒绝，调拨单退回发起人");
-      setTimeout(goBack, 500);
+      SEL.toast(
+        decision === "reject" ? "已拒绝，调拨单退回发起人"
+          : decision === "forward" ? "已通过并转办至" + (bill.forwardOrgName || "指定机构")
+          : "审核已通过"
+      );
+      setTimeout(goBack, 600);
     }
 
     function goBack() { location.href = "transfer.html"; }

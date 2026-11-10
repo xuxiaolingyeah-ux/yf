@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>审批流程配置 · 中心药房</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body class="af-layout">
+
+<!-- ========== 顶部导航 ========== -->
+<header class="app-header">
+  <div class="header-left">
+    <div class="header-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3.2" y="9.4" width="17.6" height="5.2" rx="2.6" transform="rotate(-45 12 12)"/>
+        <path d="M8.4 15.6L15.6 8.4"/>
+      </svg>
+    </div>
+    <div class="header-title">区域药房协同管理系统</div>
+  </div>
+  <div class="header-right">
+    <div class="header-user">
+      <div class="header-avatar">张</div>
+      <span class="header-user-name">张明远</span>
+    </div>
+  </div>
+</header>
+
+<div class="app-body">
+  <!-- ========== 左侧导航 ========== -->
+  <aside class="app-side" id="appSide"></aside>
+
+  <!-- ========== 主区域 ========== -->
+  <main class="app-main">
+    <div class="tabbar">
+      <div class="tab" onclick="location.href='home.html'">首页</div>
+      <div class="tab active">
+        审批流程配置
+        <button class="tab-close" title="关闭" onclick="location.href='home.html'">
+          <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+            <path d="M5 5l14 14M19 5L5 19"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="page">
+      <div class="page-head">
+        <h1 class="page-title">审批流程配置</h1>
+        <div class="page-acts">
+          <button class="btn" id="btnRulePage">
+            审批规则配置
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 5l7 7-7 7"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="af-body">
+        <table class="data-table af-table">
+          <colgroup>
+            <col style="width:32%">
+            <col>
+            <col style="width:96px">
+          </colgroup>
+          <thead>
+            <tr>
+              <th>业务流程</th>
+              <th>绑定审批流程</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="bizBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ========== 弹窗：编辑审批流程配置 ========== -->
+<div class="modal-mask" id="editMask">
+  <div class="modal af-modal">
+    <div class="modal-head">
+      <span class="modal-title">编辑审批流程配置</span>
+      <button class="drawer-close" id="editClose" title="关闭">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <path d="M5 5l14 14M19 5L5 19"/>
+        </svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="form-item">
+        <label class="form-label">业务流程</label>
+        <input class="input" id="editBizName" readonly>
+      </div>
+      <div class="form-item">
+        <label class="form-label">绑定审批流程</label>
+        <select class="select" id="editRule"></select>
+        <div class="af-err" id="editErr"></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" id="editCancel">取消</button>
+      <button class="btn btn-primary" id="editSave">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== Toast ========== -->
+<div class="toast" id="toast">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M20 6L9 17l-5-5"/>
+  </svg>
+  <span id="toastText"></span>
+</div>
+
+<script src="identity.js"></script>
+<script src="approval-common.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  function $(id) { return document.getElementById(id); }
+
+  var ST = { bizKey: "" };
+
+  var toastTimer = null;
+  function toast(msg) {
+    $("toastText").textContent = msg;
+    $("toast").classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { $("toast").classList.remove("show"); }, 2200);
+  }
+
+  /* ---------------- 列表 ---------------- */
+  function renderRows() {
+    var rows = APPROVAL.BIZ.map(function (biz) {
+      var rule = APPROVAL.ruleById(APPROVAL.bindOf(biz.key));
+      var bindCell = rule
+        ? '<span class="af-rule-name">' + rule.name + "</span>"
+        : '<span class="af-unbound">未配置</span>';
+      return "<tr>"
+        + "<td>" + biz.name + "</td>"
+        + '<td title="' + (rule ? APPROVAL.chainText(rule) : "") + '">' + bindCell + "</td>"
+        + '<td class="col-acts"><button class="link-btn" data-biz="' + biz.key + '">编辑</button></td>'
+        + "</tr>";
+    }).join("");
+    $("bizBody").innerHTML = rows;
+  }
+
+  /* ---------------- 编辑弹窗 ---------------- */
+  function openEdit(bizKey) {
+    var biz = APPROVAL.bizByKey(bizKey);
+    if (!biz) return;
+    ST.bizKey = bizKey;
+
+    $("editBizName").value = biz.name;
+
+    var cur = APPROVAL.bindOf(bizKey);
+    var opts = ['<option value="">请选择审批流程</option>'].concat(
+      APPROVAL.rules().map(function (r) {
+        return '<option value="' + r.id + '"' + (r.id === cur ? " selected" : "") + ">" + r.name + "</option>";
+      })
+    );
+    $("editRule").innerHTML = opts.join("");
+    $("editErr").textContent = "";
+    $("editMask").classList.add("show");
+  }
+
+  function closeEdit() {
+    $("editMask").classList.remove("show");
+    ST.bizKey = "";
+  }
+
+  function saveEdit() {
+    var ruleId = $("editRule").value;
+    if (!ruleId) {
+      $("editErr").textContent = "请选择审批流程";
+      return;
+    }
+    var rule = APPROVAL.ruleById(ruleId);
+    var msg = APPROVAL.checkBind(ST.bizKey, rule);
+    if (msg) {
+      $("editErr").textContent = msg;
+      return;
+    }
+    var bizName = APPROVAL.bizByKey(ST.bizKey).name;
+    APPROVAL.setBind(ST.bizKey, ruleId);
+    closeEdit();
+    renderRows();
+    toast("已绑定：" + bizName + " → " + rule.name);
+  }
+
+  /* ---------------- 事件 ---------------- */
+  $("bizBody").addEventListener("click", function (e) {
+    var btn = e.target.closest("button[data-biz]");
+    if (!btn) return;
+    openEdit(btn.getAttribute("data-biz"));
+  });
+
+  $("editClose").addEventListener("click", closeEdit);
+  $("editCancel").addEventListener("click", closeEdit);
+  $("editSave").addEventListener("click", saveEdit);
+  $("editMask").addEventListener("click", function (e) {
+    if (e.target === $("editMask")) closeEdit();
+  });
+  $("editRule").addEventListener("change", function () { $("editErr").textContent = ""; });
+
+  $("btnRulePage").addEventListener("click", function () {
+    location.href = "approval-rule-config.html";
+  });
+
+  renderRows();
+})();
+</script>
+  <script src="nav.js"></script>
+</body>
+</html>

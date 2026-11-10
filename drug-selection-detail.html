@@ -168,12 +168,8 @@
   var app = SEL.byId(list, SEL.qs("id"));
   if (!app) { location.href = "drug-selection.html"; return; }
 
-  /*
-   * mode = view（只读）/ approve（审核）/ score（专家打分）/ scores（查看得分）
-   * score / scores 进入后自动打开对应抽屉
-   */
-  var mode = SEL.qs("mode");
-  if (["approve", "score", "scores"].indexOf(mode) < 0) mode = "view";
+  /* view = 查看（只读）；approve = 审核（底部出现审批区） */
+  var mode = SEL.qs("mode") === "approve" ? "approve" : "view";
 
   /* 该药品明细是否已有专家提交打分 */
   function itemHasScore(idx) {
@@ -300,15 +296,6 @@
     "</div>";
   }
 
-  /* 药品切换页签 */
-  function drugTabsHtml(activeIdx) {
-    return '<div class="sc-drug-tabs">' + app.items.map(function (x, i) {
-      return '<span class="sc-drug-tab' + (i === activeIdx ? " active" : "") + '" data-sc-idx="' + i + '">' +
-        (i + 1) + ". " + esc(x.name) +
-        '<i class="sc-cat' + (x.cat === "中成药" ? " is-tcm" : "") + '">' + esc(x.cat || "化学药品") + "</i></span>";
-    }).join("") + "</div>";
-  }
-
   /* 指标树：editable=false 时只读（禁用控件 + 勾选项高亮） */
   function rulesHtml(rules, picks, editable) {
     var html = "";
@@ -356,7 +343,7 @@
     var it = app.items[scState.itemIdx];
     var rules = SEL.rulesOf(it.cat);
     $("scTitle").textContent = "专家打分";
-    $("scBody").innerHTML = itemInfoHtml(it) + drugTabsHtml(scState.itemIdx) + rulesHtml(rules, scState.picks, true);
+    $("scBody").innerHTML = itemInfoHtml(it) + rulesHtml(rules, scState.picks, true);
     $("scFoot").innerHTML =
       '<div class="sc-foot-total">当前总分：<b id="scTotal">' + SEL.calcTotal(rules, scState.picks) + "</b><span> / 100</span></div>" +
       '<div class="sc-foot-btns">' +
@@ -436,7 +423,6 @@
       : "";
 
     $("scBody").innerHTML = itemInfoHtml(it) +
-      drugTabsHtml(vwState.itemIdx) +
       expertTabs +
       '<div class="sc-avg-line">平均分：<b>' + (avg === null ? "—" : avg) + "</b>（" + es.length + " 位专家已打分）</div>" +
       (rec ? rulesHtml(rules, rec.picks || {}, false) : '<div class="sc-score-none">该专家暂未打分</div>');
@@ -448,26 +434,9 @@
     $("scCancel").addEventListener("click", closeScoreDrawer);
   }
 
-  /* 打分抽屉事件：勾选 / 药品切换 / 专家切换 */
+  /* 打分抽屉事件：勾选 / 专家切换 */
   $("scBody").addEventListener("change", onPickChange);
   $("scBody").addEventListener("click", function (e) {
-    var tab = e.target.closest("[data-sc-idx]");
-    if (tab && scMode) {
-      var idx = parseInt(tab.getAttribute("data-sc-idx"), 10);
-      if (scMode === "score") {
-        scState.itemIdx = idx;
-        var existed = app.scores && app.scores[idx] && app.scores[idx][user.id];
-        scState.picks = existed ? JSON.parse(JSON.stringify(existed.picks || {})) : {};
-        renderScoreDrawer();
-      } else {
-        vwState.itemIdx = idx;
-        var recs = app.scores && app.scores[idx] || {};
-        var first = SEL.experts().filter(function (x) { return recs[x.id]; })[0];
-        vwState.expertId = first ? first.id : null;
-        renderScoresDrawer();
-      }
-      return;
-    }
     var et = e.target.closest("[data-vw-expert]");
     if (et) {
       vwState.expertId = et.getAttribute("data-vw-expert");
@@ -566,10 +535,6 @@
   SEL.renderHeaderUser(user);
   SEL.bindNav();
   renderAll();
-
-  /* 从列表跳转进入时自动打开对应抽屉 */
-  if (mode === "score" && canScore()) openScoreDrawer(0);
-  else if (mode === "scores" && SEL.hasScores(app)) openScoresDrawer(0);
 })();
 </script>
   <script src="nav.js"></script>

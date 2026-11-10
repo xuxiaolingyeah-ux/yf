@@ -118,6 +118,18 @@
 
 <div class="modal-mask" id="modalMask"></div>
 
+<!-- 药品遴选得分矩阵抽屉 -->
+<div class="drawer-mask" id="scoreMask"></div>
+<aside class="drawer is-edit" id="scoreDrawer">
+  <div class="drawer-head">
+    <span class="drawer-title" id="scTitle">药品遴选得分</span>
+    <button class="drawer-close" id="scClose" title="关闭">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+    </button>
+  </div>
+  <div class="drawer-body" id="scBody"></div>
+</aside>
+
 <div class="toast" id="toast">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
   <span id="toastText"></span>
@@ -339,9 +351,44 @@
     else if (act === "submit") doSubmit(id);
     else if (act === "revoke") doRevoke(id);
     else if (act === "del") doDelete(id);
-    else if (act === "scoreView") location.href = "drug-selection-detail.html?id=" + id + "&mode=scores";
-    else if (act === "score") location.href = "drug-selection-detail.html?id=" + id + "&mode=score";
+    else if (act === "scoreView") {
+      var app = SEL.byId(SEL.loadData(), id);
+      if (app) openScoreMatrix(app);
+    } else if (act === "score") location.href = "drug-selection-detail.html?id=" + id;
   });
+
+  /* ---------------- 得分矩阵抽屉：行=药品，列=专家，行尾=该药品平均分 ---------------- */
+  function openScoreMatrix(app) {
+    var experts = SEL.experts();
+    var head = '<tr><th style="min-width:200px;">药品名称</th><th style="width:90px;">分类</th>' +
+      experts.map(function (e) {
+        return '<th style="width:90px;">' + esc(e.name) + "</th>";
+      }).join("") +
+      '<th style="width:90px;">平均分</th></tr>';
+
+    var rows = app.items.map(function (it, i) {
+      var cells = experts.map(function (e) {
+        var rec = app.scores && app.scores[i] && app.scores[i][e.id];
+        return "<td>" + (rec ? '<span class="sc-score-num">' + rec.total + "</span>" : '<span class="sc-score-none">未打分</span>') + "</td>";
+      }).join("");
+      var avg = SEL.itemAvg(app, i);
+      return "<tr>" +
+        '<td><div class="cell-ellipsis" title="' + esc(it.name) + '">' + (i + 1) + ". " + esc(it.name) + "</div></td>" +
+        '<td><span class="sc-cat ' + (it.cat === "中成药" ? "is-tcm" : "") + '">' + esc(it.cat || "化学药品") + "</span></td>" +
+        cells +
+        '<td><b class="sc-score-avg">' + (avg === null ? "—" : avg) + "</b></td>" +
+      "</tr>";
+    }).join("");
+
+    $("scBody").innerHTML =
+      '<div class="table-wrap sc-matrix-wrap"><table class="data-table sc-matrix">' +
+        "<thead>" + head + "</thead><tbody>" + rows + "</tbody>" +
+      "</table></div>";
+    document.body.classList.add("drawer-open");
+  }
+
+  $("scClose").addEventListener("click", function () { document.body.classList.remove("drawer-open"); });
+  $("scoreMask").addEventListener("click", function () { document.body.classList.remove("drawer-open"); });
 
   $("tabClose").addEventListener("click", function () { location.href = "drug-catalog.html"; });
   $("headerUser").addEventListener("click", function () {

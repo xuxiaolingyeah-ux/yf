@@ -251,7 +251,7 @@
             </div>
           </div>
           <div class="pd-acts">
-            <button class="btn btn-danger-text" id="btnBatchDelete" disabled>删除</button>
+            <button class="btn btn-danger-text" id="btnBatchDelete" disabled>解除预减</button>
           </div>
         </div>
 
@@ -273,7 +273,7 @@
               <div class="ctrl"><input class="input" id="fPrescNo" placeholder="请输入处方单号" autocomplete="off"></div>
             </div>
             <div class="pd-fi">
-              <span class="lbl">病人：</span>
+              <span class="lbl">患者：</span>
               <div class="ctrl"><input class="input" id="fPatient" placeholder="姓名/医疗卡号" autocomplete="off"></div>
             </div>
             <div class="pd-fi">
@@ -324,10 +324,10 @@
                 <th class="col-check" style="width:48px"><input type="checkbox" id="checkAll" title="全选本页"></th>
                 <th style="width:150px">预减时间</th>
                 <th style="width:140px">处方单号</th>
+                <th style="width:100px">患者姓名</th>
+                <th style="width:130px">患者医疗卡号</th>
                 <th style="width:100px">开单医生</th>
                 <th style="width:100px">开单科室</th>
-                <th style="width:100px">病人姓名</th>
-                <th style="width:130px">病人医疗卡号</th>
                 <th style="width:160px">药品名称</th>
                 <th style="width:110px">药品编码</th>
                 <th style="width:140px">药品规格</th>
@@ -373,17 +373,17 @@
 <div class="modal-mask pd-del-modal" id="delMask">
   <div class="modal">
     <div class="modal-head">
-      <div class="modal-title">删除确认</div>
+      <div class="modal-title">解除预减确认</div>
       <button class="drawer-close" id="delClose" title="关闭">
         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
       </button>
     </div>
     <div class="modal-body">
-      <div class="modal-text" id="delText">确定要删除选中的 <b id="delCount">0</b> 条预减明细吗？删除后无法恢复。</div>
+      <div class="modal-text" id="delText">确定要解除选中的 <b id="delCount">0</b> 条预减明细吗？解除后记录不保留，无法恢复。</div>
     </div>
     <div class="modal-foot">
       <button class="btn" id="delCancel">取消</button>
-      <button class="btn btn-danger-text btn-primary" id="delConfirm" style="background:var(--danger);border-color:var(--danger);color:#fff">删除</button>
+      <button class="btn btn-danger-text btn-primary" id="delConfirm" style="background:var(--danger);border-color:var(--danger);color:#fff">解除预减</button>
     </div>
   </div>
 </div>
@@ -517,10 +517,10 @@
           '<td class="col-check"><input type="checkbox" class="row-check" data-id="'+r.id+'"'+(checked?" checked":"")+'></td>'+
           '<td>'+esc(r.preTime)+'</td>'+
           '<td>'+esc(r.prescNo)+'</td>'+
-          '<td>'+esc(r.doctor)+'</td>'+
-          '<td>'+esc(r.dept)+'</td>'+
           '<td>'+esc(r.patientName)+'</td>'+
           '<td>'+esc(r.patientCard)+'</td>'+
+          '<td>'+esc(r.doctor)+'</td>'+
+          '<td>'+esc(r.dept)+'</td>'+
           '<td class="name-cell" title="'+esc(r.drugName)+'">'+esc(r.drugName)+'</td>'+
           '<td>'+esc(r.drugCode)+'</td>'+
           '<td class="name-cell" title="'+esc(r.drugSpec)+'">'+esc(r.drugSpec)+'</td>'+
@@ -533,7 +533,7 @@
           '<td>'+esc(r.expDate)+'</td>'+
           '<td class="num">'+r.minFactor+'</td>'+
           '<td>'+esc(r.split)+'</td>'+
-          '<td class="col-acts"><button class="link-btn" data-act="del" data-id="'+r.id+'" style="color:var(--danger)">删除</button></td>'+
+          '<td class="col-acts"><button class="link-btn" data-act="del" data-id="'+r.id+'" style="color:var(--danger)">解除预减</button></td>'+
         '</tr>';
       }).join("");
     }
@@ -617,7 +617,7 @@
     renderTable();
   }
 
-  /* ===== 删除确认弹窗 ===== */
+  /* ===== 解除预减确认弹窗 ===== */
   function openDelConfirm(ids, count){
     $("#delCount").textContent = count;
     $("#delMask").classList.add("show");
@@ -639,7 +639,7 @@
     // 从选中集合中移除
     ids.forEach(function(id){ ST.listSel.delete(id); });
     closeDelConfirm();
-    toast("成功删除 " + ids.length + " 条预减明细");
+    toast("已解除 " + ids.length + " 条预减明细");
     doFilter();
   }
 
@@ -674,13 +674,13 @@
       updateBatchDeleteBtn();
     });
 
-    // 批量删除按钮
+    // 批量解除预减按钮
     $("#btnBatchDelete").addEventListener("click", function(){
       if(ST.listSel.size === 0) return;
       openDelConfirm(Array.from(ST.listSel), ST.listSel.size);
     });
 
-    // 单行删除
+    // 单行解除预减
     $("#listBody").addEventListener("click", function(e){
       var btn = e.target.closest(".link-btn[data-act=del]");
       if(!btn) return;

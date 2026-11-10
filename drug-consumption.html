@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>药品消耗明细 · 处方管理</title>
+<title>药品发药明细 · 处方管理</title>
 <link rel="stylesheet" href="styles.css">
 <style>
-/* ===== 处方管理 · 药品消耗明细 ===== */
+/* ===== 处方管理 · 药品发药明细 ===== */
 
 /* 灰底水槽 + 白卡浮起 */
 .page.dc-page { background: var(--bg-page); padding: 12px; gap: 0; }
@@ -90,7 +90,7 @@
   transform: rotate(45deg) translate(-1px, -1px);
 }
 
-/* 药品消耗表格容器 */
+/* 药品发药明细表格容器 */
 .dc-table-wrap {
   flex: 1; min-height: 0; overflow: auto;
   background: var(--bg-white);
@@ -181,7 +181,7 @@
     <div class="tabbar">
       <div class="tab" onclick="location.href='drug-catalog.html'">首页</div>
       <div class="tab active">
-        药品消耗明细
+        药品发药明细
         <button class="tab-close" title="关闭" onclick="location.href='drug-catalog.html'">
           <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 5l14 14M19 5L5 19"/></svg>
         </button>
@@ -192,7 +192,7 @@
       <div class="dc-card">
         <!-- 标题行 -->
         <div class="page-head">
-          <h1 class="page-title">药品消耗明细</h1>
+          <h1 class="page-title">药品发药明细</h1>
         <div class="page-acts">
           <button class="btn btn-default btn-export" onclick="DC.exportData()">导出</button>
         </div>
@@ -211,7 +211,7 @@
         </div>
 
         <div class="filter-item">
-          <span class="filter-label">库位：</span>
+          <span class="filter-label">药房：</span>
           <div class="multi-select" id="ms-loc">
             <div class="ms-trigger" onclick="DC.toggleMs('ms-loc', event)">
               <span class="ms-placeholder">全部</span>
@@ -227,7 +227,7 @@
         </div>
 
         <div class="filter-item">
-          <span class="filter-label">消耗时间：</span>
+          <span class="filter-label">发药时间：</span>
           <input class="input" type="date" id="f-date-start">
           <span class="filter-date-sep">至</span>
           <input class="input" type="date" id="f-date-end">
@@ -271,16 +271,16 @@
         <table class="dc-table" id="dc-table">
           <thead>
             <tr>
-              <th style="min-width:90px">库位</th>
-              <th style="min-width:80px">病人姓名</th>
-              <th style="min-width:48px">性别</th>
-              <th style="min-width:48px">年龄</th>
-              <th style="min-width:156px">消耗时间</th>
-              <th style="min-width:72px">发药人</th>
-              <th style="min-width:100px">开单科室</th>
+              <th style="min-width:90px">药房</th>
               <th style="min-width:160px">药品名称</th>
               <th style="min-width:120px">药品编码</th>
               <th style="min-width:130px">药品规格</th>
+              <th style="min-width:80px">患者姓名</th>
+              <th style="min-width:48px">性别</th>
+              <th style="min-width:48px">年龄</th>
+              <th style="min-width:156px">发药时间</th>
+              <th style="min-width:72px">发药人</th>
+              <th style="min-width:100px">开单科室</th>
               <th style="min-width:88px">最小换算系数</th>
               <th style="min-width:130px">制剂规格</th>
               <th style="min-width:100px">发药时进货价</th>
@@ -309,7 +309,7 @@
 
 <script>
 /* ============================================================
-   药品消耗明细 · 原型脚本
+   药品发药明细 · 原型脚本
    ============================================================ */
 (function () {
   var DC = {};
@@ -564,6 +564,8 @@
     return map[kind] || 'k-west';
   }
 
+  var LOC_NAMES = { 'loc-c1-A':'西药库', 'loc-c1-B':'中药库', 'loc-c2-A':'藏药库', 'loc-a1-1-A':'门诊西药库', 'loc-a1-1-B':'门诊中药库' };
+
   function renderTable() {
     var tbody = $('dc-tbody');
     var start = (ST.page - 1) * ST.pageSize;
@@ -574,21 +576,19 @@
       return;
     }
 
-    var LOC_NAMES = { 'loc-c1-A':'西药库', 'loc-c1-B':'中药库', 'loc-c2-A':'藏药库', 'loc-a1-1-A':'门诊西药库', 'loc-a1-1-B':'门诊中药库' };
-
     var html = '';
     pageRows.forEach(function (r) {
       html += '<tr>'
         + '<td>' + esc(LOC_NAMES[r.loc] || r.loc) + '</td>'
+        + '<td title="' + esc(r.drugName) + '">' + esc(r.drugName) + '</td>'
+        + '<td>' + esc(r.drugCode) + '</td>'
+        + '<td>' + esc(r.spec) + '</td>'
         + '<td>' + esc(r.patient) + '</td>'
         + '<td>' + (r.sex === 'm' ? '男' : '女') + '</td>'
         + '<td>' + esc(r.age) + '</td>'
         + '<td>' + fmtDT(r.dispenseAt) + '</td>'
         + '<td>' + esc(r.dispenser) + '</td>'
         + '<td>' + esc(r.dept) + '</td>'
-        + '<td title="' + esc(r.drugName) + '">' + esc(r.drugName) + '</td>'
-        + '<td>' + esc(r.drugCode) + '</td>'
-        + '<td>' + esc(r.spec) + '</td>'
         + '<td class="col-num">' + esc(r.unitCoeff) + '</td>'
         + '<td>' + esc(r.prepSpec) + '</td>'
         + '<td class="col-num">' + money(r.purchasePrice) + '</td>'
@@ -644,12 +644,13 @@
       showToast('没有可导出的数据');
       return;
     }
-    var headers = ['病人姓名','性别','年龄','消耗时间','发药人','开单科室','药品名称','药品编码','药品规格','最小换算系数','制剂规格','发药时进货价','发药时零售价','发药数量','零售金额','批次号','生产企业','批准文号','药品种类'];
+    var headers = ['药房','药品名称','药品编码','药品规格','患者姓名','性别','年龄','发药时间','发药人','开单科室','最小换算系数','制剂规格','发药时进货价','发药时零售价','发药数量','零售金额','批次号','生产企业','批准文号','药品种类'];
     var lines = [headers.join(',')];
     ST.filtered.forEach(function (r) {
       var row = [
-        r.patient, r.sex === 'm' ? '男' : '女', r.age, fmtDT(r.dispenseAt),
-        r.dispenser, r.dept, r.drugName, r.drugCode, r.spec, r.unitCoeff,
+        LOC_NAMES[r.loc] || r.loc, r.drugName, r.drugCode, r.spec, r.patient,
+        r.sex === 'm' ? '男' : '女', r.age, fmtDT(r.dispenseAt),
+        r.dispenser, r.dept, r.unitCoeff,
         r.prepSpec, r.purchasePrice, r.retailPrice, r.qty, r.amount,
         r.batch, r.vendor, r.approval, r.kind
       ];
@@ -663,7 +664,7 @@
     var url = URL.createObjectURL(blob);
     var a = document.createElement('a');
     a.href = url;
-    a.download = '药品消耗明细_' + fmtDate(new Date()) + '.csv';
+    a.download = '药品发药明细_' + fmtDate(new Date()) + '.csv';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

@@ -68,7 +68,8 @@
     { name: "统计查询", icon: "stat", items: [
       { name: "库存查询", href: "stock-query.html", files: ["stock-query.html"], roles: ["center"] },
       { name: "处方查询", href: "prescription-query.html", files: ["prescription-query.html"], roles: ["center", "his"], hideFor: ["zhaomin", "chenjing"] },
-      { name: "药品发药明细", href: "drug-consumption.html", files: ["drug-consumption.html"], roles: ["center", "his"] }
+      { name: "药品发药明细", href: "drug-consumption.html", files: ["drug-consumption.html"], roles: ["center", "his"] },
+      { name: "药品构成查询", href: "drug-composition-query.html", files: ["drug-composition-query.html"], roles: ["center"] }
     ], roles: ["center", "his"] },
     { name: "系统维护", icon: "sys", items: [
       { name: "库位维护", href: "pharmacy-maintenance.html", files: ["pharmacy-maintenance.html"], roles: C3 },

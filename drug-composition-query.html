@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>药品构成查询 · 中心药房</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+/* ===== 药品构成查询 局部样式 ===== */
+.dc-page { background: var(--bg-page); }
+.dc-card {
+  flex: 1; min-height: 0;
+  display: flex; flex-direction: column;
+  background: var(--bg-white);
+  margin: 12px;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 1px 2px rgba(0,0,0,.04);
+  overflow: hidden;
+}
+.dc-filter {
+  display: flex; align-items: center; flex-wrap: wrap;
+  gap: 10px 18px;
+  padding: 16px 16px 14px;
+  border-bottom: 1px solid var(--border);
+}
+.dc-fi { display: flex; align-items: center; gap: 8px; }
+.dc-fi > .lbl { font-size: 12px; color: var(--text-tertiary); white-space: nowrap; }
+.dc-fi .select { width: 160px; }
+/* 库存量大于0 复选框 */
+.dc-check { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; user-select: none; }
+.dc-check input[type="checkbox"] { width: 14px; height: 14px; accent-color: var(--primary); cursor: pointer; }
+.dc-check span { font-size: 12px; color: var(--text-secondary); white-space: nowrap; }
+.dc-filter-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+
+/* 表格 */
+.dc-table-wrap { flex: 1; overflow: auto; min-height: 0; padding: 12px 12px 16px; }
+.dc-table {
+  width: 100%; border-collapse: separate; border-spacing: 0;
+  font-size: 13px; table-layout: fixed;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.dc-table thead th {
+  position: sticky; top: 0; z-index: 3;
+  background: var(--table-head);
+  height: 40px;
+  padding: 0 12px;
+  text-align: left; font-weight: 500; color: var(--text-secondary);
+  white-space: nowrap;
+  border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+}
+/* 分组表头行 */
+.dc-table thead tr.dc-head-group th {
+  height: 36px; top: 0; z-index: 4;
+  text-align: center; font-weight: 500; color: var(--text-primary);
+  background: var(--table-head);
+}
+.dc-table thead tr.dc-head-cols th { top: 36px; }
+.dc-table tbody td {
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  color: var(--text-primary); vertical-align: middle;
+  white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis;
+}
+.dc-table tbody tr:nth-child(even) { background: var(--table-even); }
+.dc-table tbody tr:hover td { background: var(--table-hover); }
+.dc-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.dc-table tbody tr:last-child td { border-bottom: none; }
+.dc-table td:last-child, .dc-table th:last-child { border-right: none; }
+
+/* 合计行（医院制剂总数） */
+.dc-table tr.dc-total td {
+  font-weight: 600; color: var(--primary-dark);
+  border-top: 1px solid var(--border);
+}
+/* 基药分组起始行 */
+.dc-table tr.dc-base-start td { border-top: 1px solid var(--border); }
+
+/* 空表 */
+.dc-empty { padding: 64px 0; text-align: center; color: var(--text-placeholder); font-size: 13px; }
+</style>
+</head>
+<body class="dc-page">
+
+<!-- ========== 顶部导航 ========== -->
+<header class="app-header">
+  <div class="header-left">
+    <div class="header-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z"/></svg>
+    </div>
+    <div class="header-title">区域药房协同管理系统</div>
+  </div>
+  <div class="header-right">
+    <div class="header-user">
+      <div class="header-avatar">赵</div>
+      <div class="header-user-name">赵敏 · 中心药房</div>
+    </div>
+  </div>
+</header>
+
+<!-- ========== 主体 ========== -->
+<div class="app-body">
+
+  <!-- 左侧导航 -->
+  <aside class="app-side" id="appSide"></aside>
+
+  <!-- 主区 -->
+  <main class="app-main">
+    <div class="tabbar">
+      <div class="tab" onclick="location.href='drug-catalog.html'">首页</div>
+      <div class="tab active">
+        药品构成查询
+        <button class="tab-close" title="关闭" onclick="location.href='drug-catalog.html'">
+          <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 5l14 14M19 5L5 19"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="dc-card">
+
+      <!-- ========== 筛选区 ========== -->
+      <div class="dc-filter">
+        <div class="dc-fi">
+          <span class="lbl">机构：</span>
+          <select class="select" id="fOrg"></select>
+        </div>
+        <div class="dc-fi">
+          <span class="lbl">库位：</span>
+          <select class="select" id="fLocation"><option value="">全部</option></select>
+        </div>
+        <label class="dc-check dc-fi">
+          <input type="checkbox" id="fGt0">
+          <span>库存量大于0</span>
+        </label>
+
+        <div class="dc-filter-actions">
+          <button class="btn btn-sm" id="btnReset">重置</button>
+          <button class="btn btn-sm btn-primary" id="btnSearch">查询</button>
+        </div>
+      </div>
+
+      <!-- ========== 表格 ========== -->
+      <div class="dc-table-wrap">
+        <table class="dc-table" id="dcTable">
+          <thead id="dcThead">
+            <tr class="dc-head-group">
+              <th colspan="4">药品构成情况</th>
+            </tr>
+            <tr class="dc-head-cols">
+              <th style="width:220px">统计项目</th>
+              <th style="width:100px">单位</th>
+              <th style="width:140px">品种数</th>
+              <th style="width:140px">品规数</th>
+            </tr>
+          </thead>
+          <tbody id="dcTbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="mock.js"></script>
+<script>
+/* =============================================================================
+   药品构成查询 · 内联脚本
+   统计口径：按机构 / 库位 /（可选）库存量大于0 过滤库存批次，
+   再按统计项目归类，去重统计品种数（药品）与品规数（药品+规格）。
+   ============================================================================= */
+(function(){
+  // ---- 工具 ----
+  function $(id){ return document.getElementById(id); }
+  function esc(s){ if(s===null||s===undefined) return ''; return String(s).replace(/[&<>"']/g,function(c){ return { "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;" }[c]; }); }
+
+  // ---- 状态 ----
+  var ST = {
+    user: { id:"u3", role:"center", orgId:"org-c" }  // 默认赵敏·中心药房
+  };
+
+  // ---- 统计项目定义 ----
+  // match 为空表示当前演示数据中无该类目（统计为 0），保留行结构以便与业务口径一致
+  var STAT_ITEMS = [
+    { key:"total",        label:"医院药总数",   kind:null,        total:true },
+    { key:"west",         label:"西药",         kind:"西药" },
+    { key:"tibet",        label:"藏药",         kind:"__none__" },
+    { key:"ccm",          label:"中成药",       kind:"中成药" },
+    { key:"vaccine",      label:"疫苗",         kind:"疫苗" },
+    { key:"material",     label:"材料",         kind:"__none__" },
+    { key:"granule",      label:"配方颗粒",     kind:"配方颗粒" },
+    { key:"herb",         label:"中药饮片",     kind:"中药饮片" },
+    { key:"herbSmoke",    label:"中药熏服饮片", kind:"__none__" },
+    { key:"baseWest",     label:"基药西药",     kind:"西药",        base:true, baseStart:true },
+    { key:"baseTibet",    label:"基药藏药",     kind:"__none__",    base:true },
+    { key:"baseCcm",      label:"基药中成药",   kind:"中成药",      base:true },
+    { key:"baseVaccine",  label:"基药疫苗",     kind:"疫苗",        base:true },
+    { key:"baseMaterial", label:"基药材料",     kind:"__none__",    base:true },
+    { key:"baseGranule",  label:"基药配方颗粒", kind:"配方颗粒",    base:true },
+    { key:"baseHerb",     label:"基药中药饮片", kind:"中药饮片",    base:true },
+    { key:"baseHerbSmoke",label:"基药中药熏服饮片", kind:"__none__", base:true }
+  ];
+
+  // ---- 机构范围（中心药房人员可见全部） ----
+  function visibleOrgs(){
+    return MOCK.orgs.concat([
+      { id:"village-1", name:"青河村卫生室（村室）", current:false },
+      { id:"member-1",  name:"城东社区卫生服务中心（成员）", current:false }
+    ]);
+  }
+
+  function fillOrgs(){
+    var sel = $("fOrg");
+    sel.innerHTML = "";
+    visibleOrgs().forEach(function(o){
+      var opt = document.createElement("option");
+      opt.value = o.id; opt.textContent = o.name;
+      sel.appendChild(opt);
+    });
+    sel.value = "org-c";  // 默认中心药房
+    fillLocations();
+  }
+
+  // ---- 库位：所有库位的并集（去重） ----
+  function fillLocations(){
+    var sel = $("fLocation");
+    sel.innerHTML = '<option value="">全部</option>';
+    var seen = {};
+    var map = MOCK.locations || {};
+    Object.keys(map).forEach(function(phId){
+      (map[phId] || []).forEach(function(l){
+        if (seen[l.id]) return;
+        seen[l.id] = true;
+        var o = document.createElement("option");
+        o.value = l.id; o.textContent = l.name;
+        sel.appendChild(o);
+      });
+    });
+  }
+
+  // =====================================================================
+  // 数据统计
+  // =====================================================================
+
+  /** 取过滤后的批次行 */
+  function getFilteredBatches(){
+    var orgId = $("fOrg").value;
+    var locId = $("fLocation").value;
+    var gt0   = $("fGt0").checked;
+
+    return (MOCK.stockBatches || []).filter(function(b){
+      if (orgId && b.orgId !== orgId) return false;
+      if (locId && b.locationId !== locId) return false;
+      if (gt0 && !(b.stock > 0)) return false;
+      return true;
+    });
+  }
+
+  /** 按 统计项目 归类统计：品种数 = 去重药品数；品规数 = 去重 药品+规格 数 */
+  function computeStats(batches){
+    // 预解析每批次的药品/规格关联
+    var rows = [];
+    batches.forEach(function(b){
+      var ds = MOCK.findDrugSpec(b.drugId, b.si);
+      if (!ds) return;
+      rows.push({ b: b, d: ds.drug, s: ds.spec });
+    });
+
+    return STAT_ITEMS.map(function(item){
+      var drugSet = {}, specSet = {};
+      rows.forEach(function(r){
+        var hit = item.total
+          ? true
+          : (item.kind !== "__none__" && r.d.kind === item.kind &&
+             (!item.base || !!(r.d.marks && r.d.marks.essential)));
+        if (!hit) return;
+        drugSet[r.d.id] = true;
+        specSet[r.d.id + "_" + r.b.si] = true;
+      });
+      return {
+        item: item,
+        label: item.label,
+        unit: "个",
+        kinds: Object.keys(drugSet).length,
+        specs: Object.keys(specSet).length
+      };
+    });
+  }
+
+  // =====================================================================
+  // 渲染
+  // =====================================================================
+
+  function renderTable(stats){
+    var tbody = $("dcTbody");
+    if (!stats.length) {
+      tbody.innerHTML = '<tr><td colspan="4"><div class="dc-empty">暂无数据</div></td></tr>';
+      return;
+    }
+    tbody.innerHTML = stats.map(function(r){
+      var trCls = [];
+      if (r.item.total) trCls.push("dc-total");
+      if (r.item.baseStart) trCls.push("dc-base-start");
+      return '<tr' + (trCls.length ? ' class="' + trCls.join(" ") + '"' : '') + '>' +
+        '<td title="' + esc(r.label) + '">' + esc(r.label) + '</td>' +
+        '<td>' + esc(r.unit) + '</td>' +
+        '<td class="num">' + r.kinds + '</td>' +
+        '<td class="num">' + r.specs + '</td>' +
+        '</tr>';
+    }).join("");
+  }
+
+  // =====================================================================
+  // 事件绑定
+  // =====================================================================
+  function doQuery(){
+    var batches = getFilteredBatches();
+    renderTable(computeStats(batches));
+  }
+
+  function resetFilter(){
+    $("fOrg").value = "org-c";
+    $("fLocation").value = "";
+    $("fGt0").checked = false;
+    doQuery();
+  }
+
+  function bindEvents(){
+    $("fOrg").onchange = doQuery;
+    $("fLocation").onchange = doQuery;
+    $("fGt0").onchange = doQuery;
+    $("btnSearch").onclick = doQuery;
+    $("btnReset").onclick = resetFilter;
+    document.addEventListener("keydown", function(e){
+      if (e.key === "Enter" && e.target &&
+          (e.target.id === "fOrg" || e.target.id === "fLocation")) {
+        doQuery();
+      }
+    });
+  }
+
+  // =====================================================================
+  // Init
+  // =====================================================================
+  fillOrgs();
+  bindEvents();
+  doQuery();
+
+})();
+</script>
+  <script src="nav.js"></script>
+</body>
+</html>

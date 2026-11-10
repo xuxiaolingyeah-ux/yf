@@ -4379,3 +4379,37 @@ body.af-layout .af-body { padding: 12px 20px 20px; }
 /* ---------- 21. 审核区：同意并转办 ---------- */
 .tr-audit-ctrl > .tr-forward-sel { flex: none; width: 240px; }
 .tr-forward-tip { font-size: 12px; color: var(--text-tertiary); }
+
+/* ---------- 22. 机构维护（om-） ---------- */
+.om-body { display: flex; gap: 0; padding: 12px 20px 20px; min-height: 420px; }
+.om-tree-panel { flex: 1 1 50%; min-width: 0; border-right: 1px solid var(--border-light); padding-right: 16px; }
+.om-detail-panel { flex: 1 1 50%; min-width: 0; padding-left: 20px; }
+.om-panel-title { font-size: 14px; font-weight: 500; color: var(--text-primary); margin-bottom: 12px; }
+
+.om-node { display: flex; align-items: center; gap: 6px; height: 34px; border-radius: var(--radius); cursor: pointer; padding-right: 10px; }
+.om-node:hover { background: var(--bg-page); }
+.om-node.is-active { background: var(--primary-light); }
+.om-node.is-active .om-node-name { color: var(--primary-dark); font-weight: 500; }
+.om-caret { width: 14px; flex: none; text-align: center; color: var(--text-tertiary); font-size: 10px; }
+.om-node-name { font-size: 13px; color: var(--text-primary); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.om-mark { flex: none; border: 1px solid var(--border); background: transparent; color: var(--text-tertiary); font-size: 12px; line-height: 1; padding: 3px 10px; border-radius: 999px; cursor: pointer; }
+.om-mark:hover { border-color: var(--primary); color: var(--primary); }
+.om-mark.is-marked { background: var(--primary-light); border-color: var(--primary-light); color: var(--primary-dark); cursor: default; }
+
+/* 中心机构标签（树上仅展示） */
+.om-central-tag { flex: none; font-size: 12px; line-height: 1; padding: 4px 10px; border-radius: 999px; background: var(--primary-light); color: var(--primary-dark); }
+
+/* 设置中心机构弹窗 */
+.om-modal { width: 420px; }
+.om-central-search { margin-bottom: 8px; }
+.om-central-item.is-hidden { display: none; }
+.om-central-list { display: flex; flex-direction: column; }
+.om-central-item { display: flex; align-items: center; gap: 10px; height: 38px; border-radius: var(--radius); cursor: pointer; font-size: 13px; color: var(--text-primary); padding: 0 12px; }
+.om-central-item:hover { background: var(--bg-page); }
+.om-central-item input { margin: 0; }
+
+.om-role-group { margin-bottom: 18px; }
+.om-role-label { font-size: 12px; color: var(--text-secondary); margin-bottom: 8px; }
+.om-role-people { display: flex; flex-wrap: wrap; gap: 8px; }
+.om-person { display: inline-block; padding: 4px 14px; border: 1px solid var(--border-light); border-radius: var(--radius); font-size: 13px; color: var(--text-primary); background: var(--bg-white); }
+.om-empty { padding: 30px 0; text-align: center; color: var(--text-placeholder); font-size: 13px; }

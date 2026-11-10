@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>机构维护 · 中心药房</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body class="af-layout">
+
+<!-- ========== 顶部导航 ========== -->
+<header class="app-header">
+  <div class="header-left">
+    <div class="header-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3.2" y="9.4" width="17.6" height="5.2" rx="2.6" transform="rotate(-45 12 12)"/>
+        <path d="M8.4 15.6L15.6 8.4"/>
+      </svg>
+    </div>
+    <div class="header-title">区域药房协同管理系统</div>
+  </div>
+  <div class="header-right">
+    <div class="header-user">
+      <div class="header-avatar">张</div>
+      <span class="header-user-name">张明远</span>
+    </div>
+  </div>
+</header>
+
+<div class="app-body">
+  <!-- ========== 左侧导航 ========== -->
+  <aside class="app-side" id="appSide"></aside>
+
+  <!-- ========== 主区域 ========== -->
+  <main class="app-main">
+    <div class="tabbar">
+      <div class="tab" onclick="location.href='home.html'">首页</div>
+      <div class="tab active">
+        机构维护
+        <button class="tab-close" title="关闭" onclick="location.href='home.html'">
+          <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+            <path d="M5 5l14 14M19 5L5 19"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="page">
+      <div class="page-head">
+        <h1 class="page-title">机构维护</h1>
+        <div class="page-acts">
+          <button class="btn btn-primary" id="btnSetCentral">设置中心机构</button>
+        </div>
+      </div>
+
+      <div class="om-body">
+        <!-- 左：机构树 -->
+        <div class="om-tree-panel">
+          <div class="om-panel-title">机构树</div>
+          <div class="om-tree" id="omTree"></div>
+        </div>
+
+        <!-- 右：角色人员 -->
+        <div class="om-detail-panel">
+          <div class="om-panel-title" id="omDetailTitle"></div>
+          <div id="omDetail"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ========== 设置中心机构弹窗 ========== -->
+<div class="modal-mask" id="centralMask">
+  <div class="modal om-modal">
+    <div class="modal-head">
+      <h3 class="modal-title">设置中心机构</h3>
+      <button class="modal-close" id="centralClose" title="关闭">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+          <path d="M5 5l14 14M19 5L5 19"/>
+        </svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="om-central-search">
+        <input class="input" id="centralSearch" type="text" placeholder="搜索机构名称">
+      </div>
+      <div class="om-central-list" id="centralList"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" id="centralCancel">取消</button>
+      <button class="btn btn-primary" id="centralSave">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== Toast ========== -->
+<div class="toast" id="toast">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M20 6L9 17l-5-5"/>
+  </svg>
+  <span id="toastText"></span>
+</div>
+
+<script src="identity.js"></script>
+<script src="mock.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  function $(id) { return document.getElementById(id); }
+  function esc(s) {
+    return String(s === null || s === undefined ? "" : s)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+
+  var toastTimer = null;
+  function toast(msg) {
+    $("toastText").textContent = msg;
+    $("toast").classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { $("toast").classList.remove("show"); }, 2200);
+  }
+
+  /* ---------------- 数据：机构树（当前登录机构的下级机构，来自 IAM） ---------------- */
+  var ORG_TREE = [
+    { key: "org-c", name: "区域中心药房", children: [
+      { key: "member-1", name: "城东社区卫生服务中心", children: [
+        { key: "village-1", name: "青河村卫生室" }
+      ] },
+      { key: "member-2", name: "城西社区卫生服务中心" }
+    ] }
+  ];
+
+  /* 各机构角色人员（来自 IAM，原型为模拟数据） */
+  var ORG_ROLES = {
+    "org-c": [
+      { role: "审核人", people: ["赵敏"] },
+      { role: "发起人", people: ["陈静"] },
+      { role: "库管员", people: ["刘洋", "高峰"] }
+    ],
+    "member-1": [
+      { role: "审核人", people: ["李强", "王伟"] },
+      { role: "库管员", people: ["张三"] }
+    ],
+    "member-2": [
+      { role: "审核人", people: ["周婷"] },
+      { role: "库管员", people: ["吴刚"] }
+    ],
+    "village-1": [
+      { role: "发起人", people: ["王芳"] }
+    ]
+  };
+
+  var orgByKey = {};
+  (function index(nodes) {
+    nodes.forEach(function (n) { orgByKey[n.key] = n; if (n.children) index(n.children); });
+  })(ORG_TREE);
+
+  /* ---------------- 标记（中心药房管理机构） ---------------- */
+  var MARK_KEY = "ORG_MARK";
+  function loadMarks() {
+    try {
+      var raw = localStorage.getItem(MARK_KEY);
+      if (raw) return JSON.parse(raw);
+    } catch (e) { /* ignore */ }
+    return { "org-c": true };
+  }
+  function saveMarks(m) {
+    try { localStorage.setItem(MARK_KEY, JSON.stringify(m)); } catch (e) { /* ignore */ }
+  }
+  var marks = loadMarks();
+
+  var ST = { selected: "org-c", expanded: { "org-c": true, "member-1": true } };
+
+  /* ---------------- 机构树 ---------------- */
+  function renderTree() {
+    var html = "";
+    (function walk(nodes, level) {
+      nodes.forEach(function (n) {
+        var open = !!ST.expanded[n.key];
+        var hasKids = n.children && n.children.length;
+        html += '<div class="om-node' + (level === 0 ? " is-root" : "") + (ST.selected === n.key ? " is-active" : "")
+          + '" style="padding-left:' + (8 + level * 20) + 'px" data-key="' + n.key + '">'
+          + '<span class="om-caret">' + (hasKids ? (open ? "▾" : "▸") : "") + "</span>"
+          + '<span class="om-node-name">' + esc(n.name) + "</span>"
+          + (marks[n.key] ? '<span class="om-central-tag">中心药房</span>' : "")
+          + "</div>";
+        if (hasKids && open) walk(n.children, level + 1);
+      });
+    })(ORG_TREE, 0);
+    $("omTree").innerHTML = html;
+  }
+
+  /* ---------------- 角色人员 ---------------- */
+  function renderDetail() {
+    var org = orgByKey[ST.selected];
+    if (!org) return;
+    $("omDetailTitle").textContent = org.name;
+
+    var roles = ORG_ROLES[org.key] || [];
+    if (!roles.length) {
+      $("omDetail").innerHTML = '<div class="om-empty">该机构暂无角色人员</div>';
+      return;
+    }
+    $("omDetail").innerHTML = roles.map(function (g) {
+      return '<div class="om-role-group">'
+        + '<div class="om-role-label">' + esc(g.role) + "</div>"
+        + '<div class="om-role-people">'
+        + g.people.map(function (p) { return '<span class="om-person">' + esc(p) + "</span>"; }).join("")
+        + "</div></div>";
+    }).join("");
+  }
+
+  /* ---------------- 事件 ---------------- */
+  $("omTree").addEventListener("click", function (e) {
+    var node = e.target.closest(".om-node");
+    if (!node) return;
+    var key = node.getAttribute("data-key");
+    var org = orgByKey[key];
+    if (org.children && org.children.length && e.target.closest(".om-caret")) {
+      ST.expanded[key] = !ST.expanded[key];
+      renderTree();
+      return;
+    }
+    ST.selected = key;
+    renderTree();
+    renderDetail();
+  });
+
+  /* ---------------- 设置中心机构弹窗 ---------------- */
+  /* 平铺全部机构（含层级缩进，供多选） */
+  var ALL_ORGS = [];
+  (function flat(nodes, level) {
+    nodes.forEach(function (n) {
+      ALL_ORGS.push({ key: n.key, name: n.name, level: level });
+      if (n.children && n.children.length) flat(n.children, level + 1);
+    });
+  })(ORG_TREE, 0);
+
+  function renderCentralList() {
+    $("centralList").innerHTML = ALL_ORGS.map(function (o) {
+      return '<label class="om-central-item"'
+        + (o.level ? ' style="padding-left:' + (16 + o.level * 24) + 'px"' : "")
+        + '><input type="checkbox" value="' + o.key + '"' + (marks[o.key] ? " checked" : "") + ">"
+        + '<span>' + esc(o.name) + "</span></label>";
+    }).join("");
+  }
+  function openCentral() { renderCentralList(); $("centralSearch").value = ""; $("centralMask").classList.add("show"); }
+  function closeCentral() { $("centralMask").classList.remove("show"); }
+
+  /* 搜索：按机构名称过滤，命中项保留层级缩进 */
+  $("centralSearch").addEventListener("input", function () {
+    var kw = this.value.trim().toLowerCase();
+    [].slice.call($("centralList").querySelectorAll(".om-central-item")).forEach(function (item) {
+      var name = item.querySelector("span").textContent.toLowerCase();
+      item.classList.toggle("is-hidden", !!kw && name.indexOf(kw) === -1);
+    });
+  });
+
+  $("btnSetCentral").addEventListener("click", openCentral);
+  $("centralClose").addEventListener("click", closeCentral);
+  $("centralCancel").addEventListener("click", closeCentral);
+  $("centralSave").addEventListener("click", function () {
+    var picked = {};
+    [].slice.call($("centralList").querySelectorAll("input:checked")).forEach(function (c) {
+      picked[c.value] = true;
+    });
+    var added = [], removed = [];
+    Object.keys(picked).forEach(function (k) { if (!marks[k]) added.push(orgByKey[k].name); });
+    Object.keys(marks).forEach(function (k) { if (!picked[k]) removed.push(orgByKey[k].name); });
+    marks = picked;
+    saveMarks(marks);
+    renderTree();
+    closeCentral();
+    var parts = [];
+    if (added.length) parts.push("已设为中心机构：" + added.join("、"));
+    if (removed.length) parts.push("已取消：" + removed.join("、"));
+    toast(parts.length ? parts.join("；") : "设置已保存");
+  });
+  $("centralMask").addEventListener("click", function (e) {
+    if (e.target === this) closeCentral();
+  });
+
+  renderTree();
+  renderDetail();
+})();
+</script>
+  <script src="nav.js"></script>
+</body>
+</html>

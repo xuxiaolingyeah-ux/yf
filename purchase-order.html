@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>采购订单 · 区域药房协同管理系统</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ========== 顶部导航 ========== -->
+<header class="app-header">
+  <div class="header-left">
+    <div class="header-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3.2" y="9.4" width="17.6" height="5.2" rx="2.6" transform="rotate(-45 12 12)"/>
+        <path d="M8.4 15.6L15.6 8.4"/>
+      </svg>
+    </div>
+    <div class="header-title">区域药房协同管理系统</div>
+  </div>
+  <div class="header-right">
+    <div class="header-user" id="headerUser" title="点击退出登录">
+      <span class="header-avatar">药</span>
+      <span class="header-user-name">—</span>
+      <svg class="user-arrow" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+    </div>
+  </div>
+</header>
+
+<div class="app-body">
+  <!-- ========== 左侧导航 ========== -->
+  <aside class="app-side" id="appSide"></aside>
+  <!-- ========== 主区域 ========== -->
+  <main class="app-main">
+    <div class="tabbar">
+      <div class="tab">首页</div>
+      <div class="tab active">
+        采购订单
+        <button class="tab-close" id="tabClose" title="关闭">
+          <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="page sel-page">
+      <div class="sel-main">
+        <!-- 标题行：左侧页面标题，右侧操作按钮 -->
+        <div class="page-head">
+          <h1 class="page-title">采购订单</h1>
+          <div class="page-acts" style="margin-left:auto;">
+            <button class="btn" id="btnSync">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 4v5h-5"/></svg>
+              同步省平台订单
+            </button>
+          </div>
+        </div>
+
+        <div class="sel-card">
+          <!-- 筛选 -->
+          <div class="filter-bar">
+            <div class="filter-item">
+              <span class="filter-label">订单号</span>
+              <input class="input" id="fCode" placeholder="请输入省平台订单号" style="width:200px;">
+            </div>
+            <div class="filter-acts">
+              <button class="btn" id="btnReset">重置</button>
+              <button class="btn btn-primary" id="btnQuery">查询</button>
+            </div>
+          </div>
+
+          <!-- 列表 -->
+          <div class="pa-list-wrap">
+            <table class="data-table pur-table">
+              <thead>
+                <tr>
+                  <th style="width:180px;">省平台订单号</th>
+                  <th style="width:130px;">关联采购计划数</th>
+                  <th style="width:150px;">订单发起时间</th>
+                  <th style="width:110px;">订单状态</th>
+                  <th class="col-acts">操作</th>
+                </tr>
+              </thead>
+              <tbody id="tbody"></tbody>
+            </table>
+            <div class="table-empty" id="tableEmpty" style="display:none;">暂无数据</div>
+          </div>
+
+          <div class="pager">
+            <span id="pagerInfo"></span>
+            <div class="pager-ctrl">
+              <button class="pager-btn" id="pgPrev" title="上一页">
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+              </button>
+              <span class="pager-num" id="pgNum">1</span>
+              <button class="pager-btn" id="pgNext" title="下一页">
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="modal-mask" id="modalMask"></div>
+<div class="toast" id="toast">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+  <span id="toastText"></span>
+</div>
+
+<script src="mock.js"></script>
+<script src="selection-common.js"></script>
+<script src="purchase-mgmt-common.js"></script>
+<script>
+(function () {
+  var $ = SEL.$, esc = SEL.esc;
+
+  var user = PC.user();
+  if (!user) return;
+
+  /* 采购订单仅中心药房可见 */
+  if (user.role !== "center" && user.role !== "pharmacist") {
+    location.href = "purchase-plan.html"; return;
+  }
+
+  var state = { code: "", page: 1, size: 10 };
+
+  /* ---------------- 列表 ---------------- */
+  function filtered() {
+    var list = PC.load("order");
+    return list.filter(function (r) {
+      if (!PC.orderInScope(r, user)) return false;
+      if (state.code && r.code.toLowerCase().indexOf(state.code.toLowerCase()) < 0) return false;
+      return true;
+    }).sort(function (x, y) {
+      if (x.createdAt === y.createdAt) return 0;
+      return x.createdAt < y.createdAt ? 1 : -1;
+    });
+  }
+
+  function renderTable() {
+    var rows = filtered();
+    var total = rows.length;
+    var pages = Math.max(1, Math.ceil(total / state.size));
+    if (state.page > pages) state.page = pages;
+    var start = (state.page - 1) * state.size;
+    var slice = rows.slice(start, start + state.size);
+
+    $("tbody").innerHTML = slice.map(function (r) {
+      var n = (r.planIds || []).length;
+      return "<tr>" +
+        "<td>" + esc(r.code) + "</td>" +
+        '<td><button class="link-btn' + (n ? "" : " is-muted") + '" data-act="viewPlans" data-id="' + r.id + '">' +
+          n + "</button></td>" +
+        "<td>" + esc(r.createdAt) + "</td>" +
+        '<td><span class="status-text">' + esc(r.status) + "</span></td>" +
+        '<td class="col-acts"><button class="link-btn" data-act="linkPlans" data-id="' + r.id + '">关联采购计划</button></td>' +
+      "</tr>";
+    }).join("");
+
+    $("tableEmpty").style.display = total ? "none" : "block";
+    $("pagerInfo").textContent = "共 " + total + " 条";
+    $("pgNum").textContent = state.page + " / " + pages;
+    $("pgPrev").disabled = state.page <= 1;
+    $("pgNext").disabled = state.page >= pages;
+  }
+
+  /* ---------------- 查看关联采购计划详情 ---------------- */
+  function openViewPlans(orderId) {
+    var order = PC.byId(PC.load("order"), orderId);
+    if (!order) return;
+    var plans = PC.load("plan");
+    var linked = (order.planIds || []).map(function (id) { return PC.byId(plans, id); })
+      .filter(function (p) { return !!p; });
+
+    var rowsHtml = linked.length
+      ? linked.map(function (p) {
+          return "<tr>" +
+            "<td>" + esc(p.code) + "</td>" +
+            '<td class="num">' + esc(PC.fmtMoney(PC.planTotal(p.items))) + "</td>" +
+            "<td>" + esc(p.creator) + "</td>" +
+            "<td>" + esc(p.createdAt) + "</td>" +
+          "</tr>";
+        }).join("")
+      : '<tr><td colspan="4" class="pa-empty">暂未关联采购计划</td></tr>';
+
+    SEL.openModal(
+      '<div class="modal-head">' +
+        '<span class="modal-title">关联采购计划（' + esc(order.code) + "）</span>" +
+        '<button class="drawer-close" data-close="1">' +
+          '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>' +
+        "</button>" +
+      "</div>" +
+      '<div class="modal-body">' +
+        '<div class="pa-pick-wrap pur-pick-wrap">' +
+          '<table class="data-table"><thead><tr>' +
+            '<th style="width:150px;">计划单号</th>' +
+            '<th style="width:110px;" class="num">合计金额</th>' +
+            '<th style="width:100px;">提交人</th>' +
+            '<th style="width:145px;">提交时间</th>' +
+          '</tr></thead><tbody>' + rowsHtml + "</tbody></table>" +
+        "</div>" +
+      "</div>" +
+      '<div class="modal-foot"><button class="btn" data-close="1">关闭</button></div>'
+    );
+    document.querySelector("#modalMask .modal").classList.add("pa-modal");
+  }
+
+  /* ---------------- 关联采购计划：单个 / 批量添加或移除已审核通过的计划 ---------------- */
+  function openLinkPlans(orderId) {
+    var orders = PC.load("order");
+    var order = PC.byId(orders, orderId);
+    if (!order) return;
+
+    /* 可关联范围：审核通过的采购计划 */
+    var approved = PC.load("plan").filter(function (p) { return p.status === "approved"; });
+    if (!approved.length) {
+      SEL.confirmDialog({
+        title: "关联采购计划",
+        text: "暂无已审核通过的采购计划，请先完成采购计划的编制与审核。",
+        okText: "知道了"
+      });
+      return;
+    }
+
+    /* 初始关联状态（关联状态筛选项以此为准） */
+    var linkedMap = {};
+    (order.planIds || []).forEach(function (id) { linkedMap[id] = true; });
+
+    /* 待提交的关联集合：筛选/翻看过程中勾选状态不丢失 */
+    var pending = {};
+    Object.keys(linkedMap).forEach(function (id) { pending[id] = true; });
+
+    var f = { creator: "", dateFrom: "", dateTo: "", rel: "" };
+
+    SEL.openModal(
+      '<div class="modal-head">' +
+        '<span class="modal-title">关联采购计划（' + esc(order.code) + "）</span>" +
+        '<button class="drawer-close" data-close="1">' +
+          '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>' +
+        "</button>" +
+      "</div>" +
+      '<div class="modal-body">' +
+        '<div class="filter-bar" style="padding:10px 0;border-bottom:none;gap:8px 16px;">' +
+          '<div class="filter-item">' +
+            '<span class="filter-label">提交人</span>' +
+            '<input class="input" id="lpFCreator" placeholder="请输入提交人" style="width:120px;">' +
+          "</div>" +
+          '<div class="filter-item">' +
+            '<span class="filter-label">提交时间</span>' +
+            '<input class="input" type="date" id="lpFDateFrom" style="width:130px;">' +
+            '<span class="filter-sep">至</span>' +
+            '<input class="input" type="date" id="lpFDateTo" style="width:130px;">' +
+          "</div>" +
+          '<div class="filter-item">' +
+            '<span class="filter-label">关联状态</span>' +
+            '<select class="select" id="lpFRel" style="width:110px;">' +
+              '<option value="">全部</option>' +
+              '<option value="linked">已关联</option>' +
+              '<option value="unlinked">未关联</option>' +
+            "</select>" +
+          "</div>" +
+          '<div class="filter-acts">' +
+            '<button class="btn" id="lpFReset">重置</button>' +
+            '<button class="btn btn-primary" id="lpFQuery">查询</button>' +
+          "</div>" +
+        "</div>" +
+        '<div class="pa-pick-wrap pur-pick-wrap">' +
+          '<table class="data-table"><thead><tr>' +
+            '<th style="width:36px;"><input type="checkbox" id="lpAll" title="全选"></th>' +
+            '<th style="width:150px;">计划单号</th>' +
+            '<th style="width:110px;" class="num">合计金额</th>' +
+            '<th style="width:100px;">提交人</th>' +
+            '<th style="width:145px;">提交时间</th>' +
+          '</tr></thead><tbody id="lpBody"></tbody></table>' +
+        "</div>" +
+      "</div>" +
+      '<div class="modal-foot">' +
+        '<span class="pur-pick-count" style="margin-right:auto;font-size:12px;color:var(--text-tertiary);">已选 <b id="lpCount">0</b> 个计划</span>' +
+        '<button class="btn" data-close="1">取消</button>' +
+        '<button class="btn btn-primary" id="lpOk">确定</button>' +
+      "</div>"
+    );
+    document.querySelector("#modalMask .modal").classList.add("pa-modal");
+
+    function visiblePlans() {
+      return approved.filter(function (p) {
+        if (f.creator && p.creator.indexOf(f.creator) < 0) return false;
+        if (f.dateFrom || f.dateTo) {
+          var day = (p.createdAt || "").slice(0, 10);
+          if (f.dateFrom && day < f.dateFrom) return false;
+          if (f.dateTo && day > f.dateTo) return false;
+        }
+        if (f.rel === "linked" && !linkedMap[p.id]) return false;
+        if (f.rel === "unlinked" && linkedMap[p.id]) return false;
+        return true;
+      }).sort(function (x, y) {
+        if (x.createdAt === y.createdAt) return 0;
+        return x.createdAt < y.createdAt ? 1 : -1;
+      });
+    }
+
+    function renderRows() {
+      var rows = visiblePlans();
+      if (!rows.length) {
+        $("lpBody").innerHTML = '<tr><td colspan="5" class="pa-empty">暂无符合条件的采购计划</td></tr>';
+      } else {
+        $("lpBody").innerHTML = rows.map(function (p) {
+          return "<tr>" +
+            '<td><input type="checkbox" data-id="' + esc(p.id) + '"' + (pending[p.id] ? " checked" : "") + "></td>" +
+            "<td>" + esc(p.code) + "</td>" +
+            '<td class="num">' + esc(PC.fmtMoney(PC.planTotal(p.items))) + "</td>" +
+            "<td>" + esc(p.creator) + "</td>" +
+            "<td>" + esc(p.createdAt) + "</td>" +
+          "</tr>";
+        }).join("");
+      }
+      syncCount();
+    }
+
+    function syncCount() {
+      $("lpCount").textContent = Object.keys(pending).length;
+      var boxes = $("lpBody").querySelectorAll("input[data-id]");
+      var all = $("lpAll");
+      all.checked = boxes.length > 0 &&
+        [].every.call(boxes, function (c) { return c.checked; });
+    }
+
+    $("lpAll").addEventListener("change", function () {
+      var on = this.checked;
+      $("lpBody").querySelectorAll("input[data-id]").forEach(function (c) {
+        var id = c.getAttribute("data-id");
+        c.checked = on;
+        if (on) pending[id] = true; else delete pending[id];
+      });
+      syncCount();
+    });
+
+    $("lpBody").addEventListener("change", function (e) {
+      var c = e.target.closest("input[data-id]");
+      if (!c) return;
+      var id = c.getAttribute("data-id");
+      if (c.checked) pending[id] = true; else delete pending[id];
+      syncCount();
+    });
+
+    function doFilter() {
+      f.creator = $("lpFCreator").value.trim();
+      f.dateFrom = $("lpFDateFrom").value;
+      f.dateTo = $("lpFDateTo").value;
+      f.rel = $("lpFRel").value;
+      renderRows();
+    }
+    $("lpFQuery").addEventListener("click", doFilter);
+    $("lpFCreator").addEventListener("keydown", function (e) { if (e.key === "Enter") doFilter(); });
+    $("lpFReset").addEventListener("click", function () {
+      f = { creator: "", dateFrom: "", dateTo: "", rel: "" };
+      $("lpFCreator").value = ""; $("lpFDateFrom").value = ""; $("lpFDateTo").value = ""; $("lpFRel").value = "";
+      renderRows();
+    });
+
+    $("lpOk").addEventListener("click", function () {
+      var ids = Object.keys(pending);
+      var before = (order.planIds || []).length;
+      order.planIds = ids;
+      PC.persist("order", order);
+      /* 同步计划侧的关联订单（便于追溯） */
+      var plans = PC.load("plan");
+      plans.forEach(function (p) {
+        var was = (p.linkedOrderIds || []).indexOf(order.id) >= 0;
+        var now = ids.indexOf(p.id) >= 0;
+        if (now && !was) p.linkedOrderIds = (p.linkedOrderIds || []).concat([order.id]);
+        if (!now && was) p.linkedOrderIds = (p.linkedOrderIds || []).filter(function (x) { return x !== order.id; });
+      });
+      PC.save("plan", plans);
+      SEL.closeModal();
+      document.body.classList.remove("modal-open");
+      renderTable();
+      SEL.toast("已更新关联：" + before + " 个 → " + ids.length + " 个");
+    });
+
+    renderRows();
+  }
+
+  /* ---------------- 同步省平台订单（演示） ---------------- */
+  $("btnSync").addEventListener("click", function () {
+    SEL.toast("已从省药品招采平台同步订单（演示环境为模拟数据）");
+    renderTable();
+  });
+
+  /* ---------------- 事件 ---------------- */
+  function doQuery() {
+    state.code = $("fCode").value.trim();
+    state.page = 1;
+    renderTable();
+  }
+  $("btnQuery").addEventListener("click", doQuery);
+  $("fCode").addEventListener("keydown", function (e) { if (e.key === "Enter") doQuery(); });
+
+  $("btnReset").addEventListener("click", function () {
+    state.code = ""; state.page = 1;
+    $("fCode").value = "";
+    renderTable();
+  });
+
+  $("pgPrev").addEventListener("click", function () { state.page--; renderTable(); });
+  $("pgNext").addEventListener("click", function () { state.page++; renderTable(); });
+
+  $("tbody").addEventListener("click", function (e) {
+    var btn = e.target.closest("[data-act]");
+    if (!btn) return;
+    var id = btn.getAttribute("data-id");
+    var act = btn.getAttribute("data-act");
+    if (act === "viewPlans") openViewPlans(id);
+    else if (act === "linkPlans") openLinkPlans(id);
+  });
+
+  $("tabClose").addEventListener("click", function () { location.href = "home.html"; });
+  $("headerUser").addEventListener("click", function () {
+    SEL.confirmDialog({
+      title: "退出登录",
+      text: "确认退出当前账号「" + user.name + "」？",
+      okText: "退出",
+      onOk: function () { SEL.logout(); }
+    });
+  });
+
+  SEL.renderHeaderUser(user);
+  SEL.bindNav();
+  renderTable();
+})();
+</script>
+  <script src="nav.js"></script>
+</body>
+</html>

@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>发起采购计划 · 区域药房协同管理系统</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ========== 顶部导航 ========== -->
+<header class="app-header">
+  <div class="header-left">
+    <div class="header-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3.2" y="9.4" width="17.6" height="5.2" rx="2.6" transform="rotate(-45 12 12)"/>
+        <path d="M8.4 15.6L15.6 8.4"/>
+      </svg>
+    </div>
+    <div class="header-title">区域药房协同管理系统</div>
+  </div>
+  <div class="header-right">
+    <div class="header-user" id="headerUser">
+      <span class="header-avatar">药</span>
+      <span class="header-user-name">—</span>
+    </div>
+  </div>
+</header>
+
+<div class="app-body">
+  <!-- ========== 左侧导航 ========== -->
+  <aside class="app-side" id="appSide"></aside>
+  <!-- ========== 主区域 ========== -->
+  <main class="app-main">
+    <div class="tabbar">
+      <div class="tab">首页</div>
+      <div class="tab active">
+        发起采购计划
+        <button class="tab-close" id="tabClose" title="关闭">
+          <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="page sel-page">
+      <div class="sel-main">
+        <div class="page-head">
+          <div class="head-back">
+            <button class="back-btn" id="btnBack" title="返回采购计划列表">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+            </button>
+            <h1 class="page-title" id="pageTitle">发起采购计划</h1>
+          </div>
+        </div>
+
+        <div class="sel-card">
+          <div class="card-body">
+            <div class="form-wrap">
+
+              <!-- 基本信息 -->
+              <section class="block">
+                <div class="block-head"><h2 class="block-title">基本信息</h2></div>
+                <div class="form-grid-4">
+                  <div class="form-item">
+                    <label class="form-label">申请机构</label>
+                    <input class="input is-readonly" id="fOrg" readonly>
+                  </div>
+                  <div class="form-item">
+                    <label class="form-label"><span class="req">*</span>申请库位</label>
+                    <select class="select" id="fLoc"><option value="">请选择库位</option></select>
+                  </div>
+                  <div class="form-item">
+                    <label class="form-label">提交人</label>
+                    <input class="input is-readonly" id="fCreator" readonly>
+                  </div>
+                  <div class="form-item">
+                    <label class="form-label">提交时间</label>
+                    <input class="input is-readonly" id="fCreatedAt" readonly>
+                  </div>
+                  <div class="form-item span-3">
+                    <label class="form-label">申请说明</label>
+                    <textarea class="textarea" id="fDesc" placeholder="选填，可说明计划编制依据等（200 字以内）" maxlength="200" style="flex:1;min-width:0;min-height:56px;"></textarea>
+                  </div>
+                </div>
+              </section>
+
+              <!-- 药品明细 -->
+              <section class="block">
+                <div class="block-head">
+                  <h2 class="block-title">药品明细<span class="count" id="itemCount"></span></h2>
+                  <div class="block-acts">
+                    <button class="btn btn-sm" id="btnLinkNeed">关联采购需求</button>
+                    <button class="btn btn-primary btn-sm" id="btnAddItem">添加药品</button>
+                  </div>
+                </div>
+                <table class="data-table pur-table">
+                  <thead>
+                    <tr>
+                      <th style="width:170px;">药品名称</th>
+                      <th style="width:115px;">药品编码</th>
+                      <th style="width:150px;">药品规格</th>
+                      <th style="width:160px;">生产企业</th>
+                      <th style="width:70px;">基药</th>
+                      <th style="width:105px;" class="num"><span class="req">*</span>计划数量</th>
+                      <th style="width:100px;" class="num"><span class="req">*</span>单价（元）</th>
+                      <th style="width:100px;" class="num">总价</th>
+                      <th style="width:70px;" class="col-acts">操作</th>
+                    </tr>
+                  </thead>
+                  <tbody id="itemBody"></tbody>
+                </table>
+                <div class="plan-sum-row" style="display:flex;gap:28px;justify-content:flex-end;padding:12px 8px 0;font-size:13px;">
+                  <span>合计金额：<b id="sumTotal" style="font-size:15px;">¥0.00</b></span>
+                  <span>基药金额占比：<b id="sumRatio">0%</b></span>
+                </div>
+              </section>
+
+            </div>
+          </div>
+
+          <div class="page-foot">
+            <button class="btn" id="btnCancel">取消</button>
+            <button class="btn" id="btnSave">暂存</button>
+            <button class="btn btn-primary" id="btnSubmit">提交</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="modal-mask" id="modalMask"></div>
+<div class="toast" id="toast">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+  <span id="toastText"></span>
+</div>
+
+<script src="mock.js"></script>
+<script src="selection-common.js"></script>
+<script src="purchase-mgmt-common.js"></script>
+<script>
+(function () {
+  var $ = SEL.$, esc = SEL.esc;
+
+  var user = PC.user();
+  if (!user) return;
+  if (user.role !== "member" && user.role !== "center" && user.role !== "pharmacist") {
+    location.href = "purchase-need.html"; return;
+  }
+
+  var editId = SEL.qs("id");
+  var list = PC.load("plan");
+  var doc = editId ? PC.byId(list, editId) : null;
+
+  if (editId && !doc) { location.href = "purchase-plan.html"; return; }
+  if (doc && doc.status !== "draft" && doc.status !== "rejected") {
+    location.href = "purchase-plan-detail.html?id=" + editId;
+    return;
+  }
+  if (doc && !PC.isCreator(doc, user)) { location.href = "purchase-plan.html"; return; }
+
+  /* 新建草稿 */
+  if (!doc) {
+    doc = {
+      id: SEL.newId(),
+      code: PC.newCode("plan", list),
+      creatorRole: user.role,
+      creatorId: user.id,
+      creator: user.name,
+      creatorOrg: user.org,
+      loc: "",
+      desc: "",
+      createdAt: SEL.fmtNow(),
+      status: "draft",
+      linkedNeedIds: [],
+      items: [],
+      records: []
+    };
+  }
+
+  /* ---------------- 基本信息 ---------------- */
+  $("fOrg").value = doc.creatorOrg;
+  $("fCreator").value = doc.creator;
+  $("fCreatedAt").value = doc.createdAt;
+  $("fDesc").value = doc.desc || "";
+  PC.locsFor(doc.creatorOrg).forEach(function (l) {
+    var opt = document.createElement("option");
+    opt.value = l.name;
+    opt.textContent = l.name;
+    $("fLoc").appendChild(opt);
+  });
+  $("fLoc").value = doc.loc || "";
+
+  if (editId) {
+    $("pageTitle").textContent = "编辑采购计划";
+    document.title = "编辑采购计划 · 区域药房协同管理系统";
+  }
+
+  /* ---------------- 药品明细 ---------------- */
+  function itemTotal(it) {
+    var t = (Number(it.qty) || 0) * (Number(it.price) || 0);
+    return Math.round(t * 100) / 100;
+  }
+
+  function renderSums() {
+    $("sumTotal").textContent = PC.fmtMoney(PC.planTotal(doc.items));
+    $("sumRatio").textContent = PC.planEssentialRatio(doc.items);
+  }
+
+  function renderItems() {
+    $("itemCount").textContent = "（" + doc.items.length + "）";
+    if (!doc.items.length) {
+      $("itemBody").innerHTML = '<tr class="pa-empty-row"><td colspan="9">暂无药品明细，可「添加药品」或「关联采购需求」批量带入</td></tr>';
+      renderSums();
+      return;
+    }
+    $("itemBody").innerHTML = doc.items.map(function (it, i) {
+      return "<tr>" +
+        '<td><div class="cell-ellipsis" title="' + esc(it.drugName) + '">' + esc(it.drugName) + "</div></td>" +
+        "<td>" + esc(it.drugCode) + "</td>" +
+        "<td>" + esc(it.spec) + "</td>" +
+        '<td><div class="cell-ellipsis" title="' + esc(it.vendor) + '">' + esc(it.vendor) + "</div></td>" +
+        "<td>" + (it.essential ? "是" : "否") + "</td>" +
+        '<td class="num"><input class="input pur-qty" data-ii="' + i + '" data-f="qty" value="' + esc(it.qty) + '" placeholder="请输入"></td>' +
+        '<td class="num"><input class="input pur-qty" data-ii="' + i + '" data-f="price" value="' + esc(it.price) + '" placeholder="请输入"></td>' +
+        '<td class="num">' + (PC.isQty(it.qty) && PC.isPrice(it.price) ? esc(PC.fmtMoney(itemTotal(it))) : "—") + "</td>" +
+        '<td class="col-acts"><button class="link-btn is-danger" data-del="' + i + '">删除</button></td>' +
+      "</tr>";
+    }).join("");
+    renderSums();
+  }
+
+  $("itemBody").addEventListener("input", function (e) {
+    var el = e.target.closest("[data-ii]");
+    if (!el) return;
+    var i = parseInt(el.getAttribute("data-ii"), 10);
+    var f = el.getAttribute("data-f");
+    if (!doc.items[i]) return;
+    doc.items[i][f] = el.value.trim();
+    el.classList.remove("is-invalid");
+    var tr = el.closest("tr");
+    var totalTd = tr && tr.querySelectorAll("td.num")[2];
+    if (totalTd) {
+      totalTd.textContent = (PC.isQty(doc.items[i].qty) && PC.isPrice(doc.items[i].price))
+        ? PC.fmtMoney(itemTotal(doc.items[i])) : "—";
+    }
+    renderSums();
+  });
+
+  $("itemBody").addEventListener("click", function (e) {
+    var del = e.target.closest("[data-del]");
+    if (!del) return;
+    var i = parseInt(del.getAttribute("data-del"), 10);
+    var it = doc.items[i];
+    SEL.confirmDialog({
+      title: "删除药品明细",
+      text: "确认删除「" + it.drugName + " / " + it.spec + "」这条明细？",
+      okText: "删除",
+      onOk: function () {
+        doc.items.splice(i, 1);
+        renderItems();
+      }
+    });
+  });
+
+  /* ---------------- 添加药品（弹窗：单个 / 批量，筛选：药品种类 + 库存低于下限） ---------------- */
+  var specRows = PC.specRows();
+  var pk = { filtered: specRows.slice(), checked: {} };
+
+  function openPicker() {
+    pk.filtered = specRows.slice();
+    pk.checked = {};
+
+    var kindOpts = '<option value="">全部种类</option>' +
+      MOCK.drugKinds.map(function (k) {
+        return '<option value="' + esc(k) + '">' + esc(k) + "</option>";
+      }).join("");
+
+    SEL.openModal(
+      '<div class="modal-head">' +
+        '<span class="modal-title">选择药品</span>' +
+        '<button class="drawer-close" data-close="1">' +
+          '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>' +
+        "</button>" +
+      "</div>" +
+      '<div class="modal-body">' +
+        '<div class="pa-pick-filter">' +
+          '<span class="filter-label">药品名称</span>' +
+          '<input class="input" id="pkName" placeholder="请输入药品名称" style="width:170px;">' +
+          '<span class="filter-label" style="margin-left:12px;">药品种类</span>' +
+          '<select class="select" id="pkKind" style="width:130px;">' + kindOpts + "</select>" +
+          '<label class="radio" style="margin-left:16px;white-space:nowrap;">' +
+            '<input type="checkbox" id="pkLow"><span>库存低于下限</span>' +
+          "</label>" +
+          '<div class="pa-pick-acts">' +
+            '<button class="btn" id="pkReset">重置</button>' +
+            '<button class="btn btn-primary" id="pkQuery">查询</button>' +
+          "</div>" +
+        "</div>" +
+        '<div class="pa-pick-wrap pur-pick-wrap" style="margin-top:12px;">' +
+          '<table class="data-table"><thead><tr>' +
+            '<th style="width:36px;"><input type="checkbox" id="pkAll" title="全选"></th>' +
+            '<th style="width:110px;">药品编码</th>' +
+            '<th style="width:150px;">药品名称</th>' +
+            '<th style="width:145px;">药品规格</th>' +
+            '<th style="width:85px;">药品种类</th>' +
+            '<th>生产企业</th>' +
+            '<th style="width:80px;" class="num">库存数量</th>' +
+            '<th style="width:70px;" class="num">库存下限</th>' +
+          '</tr></thead><tbody id="pkBody"></tbody></table>' +
+        "</div>" +
+      "</div>" +
+      '<div class="modal-foot">' +
+        '<span class="pur-pick-count" style="margin-right:auto;font-size:12px;color:var(--text-tertiary);">已选 <b id="pkCount">0</b> 项</span>' +
+        '<button class="btn" data-close="1">取消</button>' +
+        '<button class="btn btn-primary" id="pkOk">确定</button>' +
+      "</div>"
+    );
+
+    document.querySelector("#modalMask .modal").classList.add("pa-modal");
+    renderPkBody();
+
+    $("pkQuery").addEventListener("click", doPkQuery);
+    $("pkName").addEventListener("keydown", function (e) { if (e.key === "Enter") doPkQuery(); });
+    $("pkReset").addEventListener("click", function () {
+      $("pkName").value = ""; $("pkKind").value = ""; $("pkLow").checked = false;
+      doPkQuery();
+    });
+    $("pkAll").addEventListener("change", function () {
+      var on = this.checked;
+      pk.checked = {};
+      if (on) {
+        pk.filtered.forEach(function (s) {
+          if (!isAdded(s.key)) pk.checked[s.key] = true;
+        });
+      }
+      renderPkBody();
+    });
+    $("pkBody").addEventListener("change", function (e) {
+      var c = e.target.closest("input[data-key]");
+      if (!c) return;
+      var k = c.getAttribute("data-key");
+      if (c.checked) pk.checked[k] = true;
+      else delete pk.checked[k];
+      syncPkCount();
+    });
+    $("pkOk").addEventListener("click", confirmPick);
+  }
+
+  function doPkQuery() {
+    var name = $("pkName").value.trim().toLowerCase();
+    var kind = $("pkKind").value;
+    var lowOnly = $("pkLow").checked;
+    pk.filtered = specRows.filter(function (s) {
+      if (name && s.drugName.toLowerCase().indexOf(name) < 0) return false;
+      if (kind && s.kind !== kind) return false;
+      if (lowOnly && !(Number(s.stock) < Number(s.lower))) return false;
+      return true;
+    });
+    renderPkBody();
+  }
+
+  function isAdded(key) {
+    return doc.items.some(function (it) { return it.key === key; });
+  }
+
+  function renderPkBody() {
+    var body = $("pkBody");
+    if (!pk.filtered.length) {
+      body.innerHTML = '<tr class="pa-pick-empty"><td colspan="8">未查询到匹配药品</td></tr>';
+      syncPkCount();
+      return;
+    }
+    body.innerHTML = pk.filtered.map(function (s) {
+      var added = isAdded(s.key);
+      var low = Number(s.stock) < Number(s.lower);
+      return "<tr" + (added ? ' class="is-disabled"' : "") + ">" +
+        '<td><input type="checkbox" data-key="' + esc(s.key) + '"' +
+          (added ? " disabled" : "") + (pk.checked[s.key] ? " checked" : "") + "></td>" +
+        "<td>" + esc(s.drugCode) + "</td>" +
+        "<td>" + esc(s.drugName) + "</td>" +
+        "<td>" + esc(s.spec) + "</td>" +
+        "<td>" + esc(s.kind) + "</td>" +
+        '<td><div class="cell-ellipsis" title="' + esc(s.vendor) + '">' + esc(s.vendor) +
+          (added ? '<span class="pa-added">已添加</span>' : "") + "</div></td>" +
+        '<td class="num" style="color:' + (low ? "var(--danger)" : "inherit") + ';">' + esc(s.stock) + " " + esc(s.unit || "") + "</td>" +
+        '<td class="num">' + esc(s.lower) + "</td>" +
+      "</tr>";
+    }).join("");
+    syncPkCount();
+  }
+
+  function syncPkCount() {
+    var n = Object.keys(pk.checked).length;
+    var c = $("pkCount");
+    if (c) c.textContent = n;
+    var all = $("pkAll");
+    if (all) {
+      var selectable = pk.filtered.filter(function (s) { return !isAdded(s.key); });
+      all.disabled = !selectable.length;
+      all.checked = selectable.length > 0 && selectable.every(function (s) { return pk.checked[s.key]; });
+    }
+  }
+
+  function confirmPick() {
+    var keys = Object.keys(pk.checked);
+    if (!keys.length) { SEL.toast("请至少选择 1 个药品"); return; }
+    var added = 0;
+    keys.forEach(function (k) {
+      if (isAdded(k)) return;
+      var s = null;
+      specRows.forEach(function (x) { if (x.key === k) s = x; });
+      if (!s) return;
+      doc.items.push({
+        key: s.key,
+        drugCode: s.drugCode,
+        drugName: s.drugName,
+        spec: s.spec,
+        vendor: s.vendor,
+        essential: s.essential,
+        qty: "",
+        price: ""
+      });
+      added++;
+    });
+    SEL.closeModal();
+    document.body.classList.remove("modal-open");
+    renderItems();
+    SEL.toast("已新增 " + added + " 条药品明细");
+  }
+
+  $("btnAddItem").addEventListener("click", openPicker);
+
+  /* ---------------- 关联采购需求（弹窗，可关联单个 / 多个已审批通过的需求） ---------------- */
+  function openLinkNeed() {
+    var needs = PC.load("need").filter(function (n) {
+      return n.status === "approved" && (n.items || []).length && PC.inScope(n, user);
+    });
+
+    var body;
+    if (!needs.length) {
+      body = '<div class="modal-body"><p class="modal-text">暂无可关联的采购需求（需为已审批通过状态）。</p></div>' +
+        '<div class="modal-foot"><button class="btn" data-close="1">关闭</button></div>';
+      SEL.openModal(
+        '<div class="modal-head"><span class="modal-title">关联采购需求</span>' +
+          '<button class="drawer-close" data-close="1">' +
+            '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>' +
+          "</button></div>" + body
+      );
+      return;
+    }
+
+    var preChecked = {};
+    (doc.linkedNeedIds || []).forEach(function (id) { preChecked[id] = true; });
+
+    SEL.openModal(
+      '<div class="modal-head">' +
+        '<span class="modal-title">关联采购需求</span>' +
+        '<button class="drawer-close" data-close="1">' +
+          '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>' +
+        "</button>" +
+      "</div>" +
+      '<div class="modal-body">' +
+        '<p class="modal-text" style="margin:0 0 10px;">可关联单个或多个已审批通过的采购需求；同一药品、同一规格、同一生产企业的计划数量将自动累加（累加后仍可手动修改）。</p>' +
+        '<div class="pa-pick-wrap pur-pick-wrap">' +
+          '<table class="data-table"><thead><tr>' +
+            '<th style="width:36px;"><input type="checkbox" id="lnAll" title="全选"></th>' +
+            '<th style="width:150px;">需求单号</th>' +
+            '<th style="width:100px;">提交人</th>' +
+            '<th style="width:145px;">提交时间</th>' +
+            '<th style="width:100px;" class="num">涉及药品笔数</th>' +
+          '</tr></thead><tbody id="lnBody">' +
+          needs.map(function (n) {
+            return "<tr>" +
+              '<td><input type="checkbox" data-id="' + esc(n.id) + '"' + (preChecked[n.id] ? " checked" : "") + "></td>" +
+              "<td>" + esc(n.code) + "</td>" +
+              "<td>" + esc(n.creator) + "</td>" +
+              "<td>" + esc(n.createdAt) + "</td>" +
+              '<td class="num">' + n.items.length + "</td>" +
+            "</tr>";
+          }).join("") +
+          "</tbody></table>" +
+        "</div>" +
+      "</div>" +
+      '<div class="modal-foot">' +
+        '<span class="pur-pick-count" style="margin-right:auto;font-size:12px;color:var(--text-tertiary);">已选 <b id="lnCount">' + Object.keys(preChecked).length + "</b> 个需求</span>" +
+        '<button class="btn" data-close="1">取消</button>' +
+        '<button class="btn btn-primary" id="lnOk">确定</button>' +
+      "</div>"
+    );
+
+    document.querySelector("#modalMask .modal").classList.add("pa-modal");
+
+    function syncCount() {
+      var n = $("lnBody").querySelectorAll("input[data-id]:checked").length;
+      $("lnCount").textContent = n;
+    }
+
+    $("lnAll").addEventListener("change", function () {
+      var on = this.checked;
+      $("lnBody").querySelectorAll("input[data-id]").forEach(function (c) { c.checked = on; });
+      syncCount();
+    });
+    $("lnBody").addEventListener("change", syncCount);
+
+    $("lnOk").addEventListener("click", function () {
+      var ids = [];
+      $("lnBody").querySelectorAll("input[data-id]:checked").forEach(function (c) {
+        ids.push(c.getAttribute("data-id"));
+      });
+      if (!ids.length) { SEL.toast("请至少关联 1 个采购需求"); return; }
+
+      /* 合并规则：同药品编码 + 同规格 + 同生产企业 → 计划数量累加；否则新增行 */
+      var all = PC.load("need");
+      var merged = 0, newRows = 0;
+      ids.forEach(function (id) {
+        var n = PC.byId(all, id);
+        if (!n) return;
+        n.items.forEach(function (it) {
+          var hit = null;
+          doc.items.forEach(function (p) {
+            if (p.drugCode === it.drugCode && p.spec === it.spec && p.vendor === it.vendor) hit = p;
+          });
+          if (hit) {
+            hit.qty = (PC.isQty(hit.qty) ? parseInt(hit.qty, 10) : 0) + (Number(it.qty) || 0);
+            hit.qty = String(hit.qty);
+            merged++;
+          } else {
+            doc.items.push({
+              key: it.key,
+              drugCode: it.drugCode,
+              drugName: it.drugName,
+              spec: it.spec,
+              vendor: it.vendor,
+              essential: !!it.essential,
+              qty: String(it.qty === "" || it.qty === null ? "" : it.qty),
+              price: ""
+            });
+            newRows++;
+          }
+        });
+      });
+
+      doc.linkedNeedIds = ids.slice();
+      SEL.closeModal();
+      document.body.classList.remove("modal-open");
+      renderItems();
+      SEL.toast("已关联 " + ids.length + " 个采购需求：新增 " + newRows + " 行，累加合并 " + merged + " 行");
+    });
+  }
+
+  $("btnLinkNeed").addEventListener("click", openLinkNeed);
+
+  /* ---------------- 保存 / 提交 ---------------- */
+  function collect() {
+    doc.loc = $("fLoc").value;
+    doc.desc = $("fDesc").value.trim();
+    $("itemBody").querySelectorAll("[data-ii]").forEach(function (el) {
+      var i = parseInt(el.getAttribute("data-ii"), 10);
+      var f = el.getAttribute("data-f");
+      if (doc.items[i]) doc.items[i][f] = el.value.trim();
+    });
+  }
+
+  function validate() {
+    var missing = [];
+    if (!$("fLoc").value) missing.push("申请库位");
+    if (!doc.items.length) missing.push("至少 1 条药品明细");
+    doc.items.forEach(function (it, i) {
+      var qEl = document.querySelector('[data-ii="' + i + '"][data-f="qty"]');
+      var pEl = document.querySelector('[data-ii="' + i + '"][data-f="price"]');
+      var okQ = PC.isQty(it.qty), okP = PC.isPrice(it.price);
+      if (qEl) qEl.classList.toggle("is-invalid", !okQ);
+      if (pEl) pEl.classList.toggle("is-invalid", !okP);
+      if (!okQ) missing.push("第 " + (i + 1) + " 行计划数量须为正整数");
+      if (!okP) missing.push("第 " + (i + 1) + " 行单价须为大于 0 的数值（最多两位小数）");
+    });
+    if (missing.length) {
+      SEL.toast("请完善：" + missing.slice(0, 3).join("、") + (missing.length > 3 ? " 等" : ""));
+      return false;
+    }
+    return true;
+  }
+
+  function goBack() { location.href = "purchase-plan.html"; }
+  $("btnBack").addEventListener("click", goBack);
+  $("tabClose").addEventListener("click", goBack);
+  $("btnCancel").addEventListener("click", goBack);
+
+  $("btnSave").addEventListener("click", function () {
+    collect();
+    if (!doc.items.length) { SEL.toast("请至少添加 1 条药品明细"); return; }
+    PC.persist("plan", doc);
+    SEL.toast("已暂存");
+    setTimeout(goBack, 400);
+  });
+
+  $("btnSubmit").addEventListener("click", function () {
+    collect();
+    if (!validate()) return;
+    doc.records.push({ node: "提交", org: doc.creatorOrg, person: doc.creator, result: "已提交", opinion: "—", time: SEL.fmtNow() });
+    var next = PC.nextStatus(doc);
+    if (next === "approved") {
+      doc.status = "approved";
+      doc.records.push({ node: "中心药房审核", org: doc.creatorOrg, person: doc.creator, result: "通过", opinion: "中心药房发起，提交后自动生效。", time: SEL.fmtNow() });
+      SEL.toast("已提交并自动生效");
+    } else {
+      doc.status = next;
+      SEL.toast("已提交审核");
+    }
+    PC.persist("plan", doc);
+    setTimeout(goBack, 400);
+  });
+
+  SEL.renderHeaderUser(user);
+  SEL.bindNav();
+  renderItems();
+})();
+</script>
+  <script src="nav.js"></script>
+</body>
+</html>

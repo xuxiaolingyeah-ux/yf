@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>采购需求详情 · 区域药房协同管理系统</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ========== 顶部导航 ========== -->
+<header class="app-header">
+  <div class="header-left">
+    <div class="header-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3.2" y="9.4" width="17.6" height="5.2" rx="2.6" transform="rotate(-45 12 12)"/>
+        <path d="M8.4 15.6L15.6 8.4"/>
+      </svg>
+    </div>
+    <div class="header-title">区域药房协同管理系统</div>
+  </div>
+  <div class="header-right">
+    <div class="header-user" id="headerUser">
+      <span class="header-avatar">药</span>
+      <span class="header-user-name">—</span>
+    </div>
+  </div>
+</header>
+
+<div class="app-body">
+  <!-- ========== 左侧导航 ========== -->
+  <aside class="app-side" id="appSide"></aside>
+  <!-- ========== 主区域 ========== -->
+  <main class="app-main">
+    <div class="tabbar">
+      <div class="tab">首页</div>
+      <div class="tab active">
+        采购需求详情
+        <button class="tab-close" id="tabClose" title="关闭">
+          <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="page sel-page">
+      <div class="sel-main">
+        <div class="page-head">
+          <div class="head-back">
+            <button class="back-btn" id="btnBack" title="返回采购需求列表">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+            </button>
+            <h1 class="page-title">采购需求详情</h1>
+            <span class="pa-code" id="headCode">需求单号：—</span>
+          </div>
+          <span class="status-text" id="headStatus"></span>
+        </div>
+
+        <div class="sel-card pur-detail" id="detailCard">
+          <!-- 快速定位：点击页签滚动到对应区块 -->
+          <div class="page-tabs" id="jumpTabs">
+            <span class="page-tab active" data-jump="top">需求详情</span>
+            <span class="page-tab" data-jump="records">审批记录</span>
+          </div>
+
+          <div class="card-body" id="detailBody" style="padding:16px;">
+            <div class="form-wrap">
+
+              <!-- 基本信息 -->
+              <section class="block" id="secInfo">
+                <div class="block-head"><h2 class="block-title">基本信息</h2></div>
+                <div class="form-grid-4">
+                  <div class="form-item">
+                    <span class="form-label">需求单号</span>
+                    <span class="text-value" id="vCode"></span>
+                  </div>
+                  <div class="form-item">
+                    <span class="form-label">申请机构</span>
+                    <span class="text-value" id="vOrg"></span>
+                  </div>
+                  <div class="form-item">
+                    <span class="form-label">申请库位</span>
+                    <span class="text-value" id="vLoc"></span>
+                  </div>
+                  <div class="form-item">
+                    <span class="form-label">提交时间</span>
+                    <span class="text-value" id="vCreatedAt"></span>
+                  </div>
+                  <div class="form-item">
+                    <span class="form-label">提交人</span>
+                    <span class="text-value" id="vCreator"></span>
+                  </div>
+                  <div class="form-item">
+                    <span class="form-label">申请说明</span>
+                    <span class="text-value" id="vDesc">—</span>
+                  </div>
+                </div>
+              </section>
+
+              <!-- 药品明细 -->
+              <section class="block" id="secItems">
+                <div class="block-head">
+                  <h2 class="block-title">药品明细<span class="count" id="itemCount"></span></h2>
+                </div>
+                <table class="data-table pur-table">
+                  <thead>
+                    <tr>
+                      <th style="width:180px;">药品名称</th>
+                      <th style="width:120px;">药品编码</th>
+                      <th style="width:160px;">药品规格</th>
+                      <th style="width:170px;">生产企业</th>
+                      <th style="width:100px;" class="num">需求数量</th>
+                      <th style="width:90px;" class="num">库存数量</th>
+                      <th style="width:85px;" class="num">库存上限</th>
+                      <th style="width:85px;" class="num">库存下限</th>
+                    </tr>
+                  </thead>
+                  <tbody id="itemBody"></tbody>
+                </table>
+              </section>
+
+              <!-- 审批记录 -->
+              <section class="block" id="secRecords">
+                <div class="block-head"><h2 class="block-title">审批记录</h2></div>
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th style="width:150px;">节点名称</th>
+                      <th style="width:170px;">审核机构</th>
+                      <th style="width:100px;">审核人</th>
+                      <th style="width:100px;">审核结果</th>
+                      <th>审核意见</th>
+                      <th style="width:150px;">审核时间</th>
+                    </tr>
+                  </thead>
+                  <tbody id="recordBody"></tbody>
+                </table>
+              </section>
+
+            </div>
+          </div>
+        </div>
+
+        <div class="page-foot" id="pageFoot"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="modal-mask" id="modalMask"></div>
+<div class="toast" id="toast">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+  <span id="toastText"></span>
+</div>
+
+<script src="mock.js"></script>
+<script src="selection-common.js"></script>
+<script src="purchase-mgmt-common.js"></script>
+<script>
+(function () {
+  var $ = SEL.$, esc = SEL.esc;
+
+  var user = PC.user();
+  if (!user) return;
+  if (user.role === "his") { location.href = "home.html"; return; }
+
+  var doc = PC.byId(PC.load("need"), SEL.qs("id"));
+  if (!doc) { location.href = "purchase-need.html"; return; }
+  /* 数据权限：不在可见机构范围内的单据不允许查看 */
+  if (!PC.inScope(doc, user)) { location.href = "purchase-need.html"; return; }
+
+  /* view = 查看（只读）；approve = 审核（底部出现审批区） */
+  var mode = SEL.qs("mode") === "approve" ? "approve" : "view";
+
+  function statusLabel() {
+    if (doc.status === "member") return "待审核（成员机构）";
+    if (doc.status === "center") return "待审核（中心药房）";
+    return PC.STATUS[doc.status];
+  }
+
+  function canApprove() {
+    return mode === "approve" && PC.canAudit(doc, user);
+  }
+
+  /* ---------------- 渲染 ---------------- */
+  function renderDetail() {
+    document.title = "采购需求详情 " + doc.code + " · 区域药房协同管理系统";
+    $("headCode").textContent = "需求单号：" + doc.code;
+    $("headStatus").textContent = "状态：" + statusLabel();
+
+    $("vCode").textContent = doc.code || "—";
+    $("vOrg").textContent = doc.creatorOrg || "—";
+    $("vLoc").textContent = doc.loc || "—";
+    $("vCreatedAt").textContent = doc.createdAt || "—";
+    $("vCreator").textContent = doc.creator || "—";
+    $("vDesc").textContent = doc.desc || "—";
+
+    $("itemCount").textContent = "（" + doc.items.length + "）";
+    if (!doc.items.length) {
+      $("itemBody").innerHTML = '<tr class="pa-empty-row"><td colspan="8">暂无药品明细</td></tr>';
+    } else {
+      $("itemBody").innerHTML = doc.items.map(function (it) {
+        var low = Number(it.stock) < Number(it.lower);
+        return "<tr>" +
+          '<td><div class="cell-ellipsis" title="' + esc(it.drugName) + '">' + esc(it.drugName) + "</div></td>" +
+          "<td>" + esc(it.drugCode) + "</td>" +
+          "<td>" + esc(it.spec) + "</td>" +
+          '<td><div class="cell-ellipsis" title="' + esc(it.vendor) + '">' + esc(it.vendor) + "</div></td>" +
+          '<td class="num">' + esc(it.qty === "" || it.qty === null ? "—" : it.qty) + "</td>" +
+          '<td class="num" style="color:' + (low ? "var(--danger)" : "inherit") + ';">' + esc(it.stock) + " " + esc(it.unit || "") + "</td>" +
+          '<td class="num">' + esc(it.upper) + "</td>" +
+          '<td class="num">' + esc(it.lower) + "</td>" +
+        "</tr>";
+      }).join("");
+    }
+  }
+
+  function renderRecords() {
+    var rows = PC.recordRows(doc);
+    $("recordBody").innerHTML = rows.length
+      ? rows.map(function (r) {
+          return "<tr>" +
+            "<td>" + esc(r.node) + "</td>" +
+            "<td>" + esc(r.org || "—") + "</td>" +
+            "<td>" + esc(r.person) + "</td>" +
+            "<td>" + esc(r.result) + "</td>" +
+            '<td><div class="cell-ellipsis" title="' + esc(r.opinion) + '">' + esc(r.opinion) + "</div></td>" +
+            "<td>" + esc(r.time) + "</td>" +
+          "</tr>";
+        }).join("")
+      : '<tr><td colspan="6" class="pa-empty">暂无审批记录</td></tr>';
+  }
+
+  function renderFoot() {
+    if (canApprove()) {
+      $("detailCard").classList.add("has-foot");
+      $("pageFoot").innerHTML =
+        '<div class="approve-row">' +
+          '<label class="radio"><input type="radio" name="decision" value="pass" checked><span>通过</span></label>' +
+          '<label class="radio"><input type="radio" name="decision" value="reject"><span>拒绝</span></label>' +
+        '</div>' +
+        '<div class="approve-row">' +
+          '<textarea class="textarea" id="fOpinion" placeholder="审核意见（拒绝时必填）" maxlength="200"></textarea>' +
+        '</div>' +
+        '<div class="approve-row approve-btns">' +
+          '<button class="btn" data-act="cancel">取消</button>' +
+          '<button class="btn btn-primary" data-act="submit">提交</button>' +
+        '</div>';
+      $("fOpinion").addEventListener("input", function () { this.classList.remove("is-invalid"); });
+      $("pageFoot").querySelectorAll('input[name="decision"]').forEach(function (radio) {
+        radio.addEventListener("change", function () { $("fOpinion").classList.remove("is-invalid"); });
+      });
+    } else {
+      $("detailCard").classList.remove("has-foot");
+      $("pageFoot").innerHTML = "";
+    }
+  }
+
+  function renderAll() {
+    renderDetail();
+    renderRecords();
+    renderFoot();
+  }
+
+  /* ---------------- 审核 ---------------- */
+  function decide() {
+    var choice = $("pageFoot").querySelector('input[name="decision"]:checked');
+    var passed = !choice || choice.value === "pass";
+    var opinionEl = $("fOpinion");
+    var opinion = opinionEl ? opinionEl.value.trim() : "";
+    if (!passed && !opinion) {
+      opinionEl.classList.add("is-invalid");
+      SEL.toast("拒绝时必须填写审核意见");
+      return;
+    }
+    var node = doc.status === "member" ? "成员机构审核" : "中心药房审核";
+    doc.records.push({
+      node: node,
+      org: user.org,
+      person: user.name,
+      result: passed ? "通过" : "拒绝",
+      opinion: opinion || "—",
+      time: SEL.fmtNow()
+    });
+    doc.status = passed ? PC.passStatus(doc) : "rejected";
+    PC.persist("need", doc);
+    SEL.toast(passed ? "审核已通过" : "已拒绝，采购需求已退回发起人");
+    renderAll();
+  }
+
+  /* ---------------- 快速定位：需求详情 / 审批记录 ---------------- */
+  var detailBody = $("detailBody");
+  var jumpTabs = $("jumpTabs");
+
+  function setActiveJump(name) {
+    [].slice.call(jumpTabs.children).forEach(function (t) {
+      t.classList.toggle("active", t.getAttribute("data-jump") === name);
+    });
+  }
+
+  function jumpTo(name) {
+    var top = 0;
+    if (name === "records") {
+      top = $("secRecords").getBoundingClientRect().top
+        - detailBody.getBoundingClientRect().top + detailBody.scrollTop;
+    }
+    detailBody.scrollTo({ top: top, behavior: "auto" });
+    setActiveJump(name);
+  }
+
+  jumpTabs.addEventListener("click", function (e) {
+    var tab = e.target.closest(".page-tab");
+    if (tab) jumpTo(tab.getAttribute("data-jump"));
+  });
+
+  detailBody.addEventListener("scroll", function () {
+    var offset = $("secRecords").getBoundingClientRect().top - detailBody.getBoundingClientRect().top;
+    var atBottom = detailBody.scrollTop > 0 &&
+      detailBody.scrollTop >= detailBody.scrollHeight - detailBody.clientHeight - 2;
+    setActiveJump(offset <= 24 || atBottom ? "records" : "top");
+  });
+
+  function goBack() { location.href = "purchase-need.html"; }
+  $("btnBack").addEventListener("click", goBack);
+  $("tabClose").addEventListener("click", goBack);
+
+  $("pageFoot").addEventListener("click", function (e) {
+    var btn = e.target.closest("[data-act]");
+    if (!btn) return;
+    var act = btn.getAttribute("data-act");
+    if (act === "cancel") goBack();
+    else if (act === "submit") decide();
+  });
+
+  SEL.renderHeaderUser(user);
+  SEL.bindNav();
+  renderAll();
+})();
+</script>
+  <script src="nav.js"></script>
+</body>
+</html>

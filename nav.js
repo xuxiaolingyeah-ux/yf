@@ -5,6 +5,7 @@
     home: '<path d="M3 11l9-8 9 8v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
     drug: '<path d="M4 4h6l2 3h8v13H4z"/>',
     stock: '<path d="M3 8l9-5 9 5-9 5-9-5z"/><path d="M3 8v8l9 5 9-5V8"/>',
+    cart: '<path d="M3 4h2l2.6 12.4a1 1 0 0 0 1 .8h9.8a1 1 0 0 0 1-.8L21 8H6"/><circle cx="9.5" cy="20" r="1.4"/><circle cx="17.5" cy="20" r="1.4"/>',
     price: '<path d="M20 12l-8 8-9-9V3h11l6 6z"/><circle cx="7.5" cy="7.5" r="1.2"/>',
     alert: '<path d="M12 3l9 16H3z"/><path d="M12 8v5"/><circle cx="12" cy="16" r="1"/>',
     rx: '<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4.5V3h6v1.5M9 10h6M9 14h6"/>',
@@ -25,6 +26,11 @@
       { name: "药品目录管理", href: "drug-catalog.html", files: ["drug-catalog.html", "drug-create.html"], roles: ["center"] },
       { name: "机构药品目录", href: "org-drug-catalog.html", files: ["org-drug-catalog.html", "org-drug-select.html"], roles: C3 },
       { name: "药品目录遴选", href: "drug-selection.html", files: ["drug-selection.html", "drug-selection-create.html", "drug-selection-detail.html"], roles: ["center", "member", "village", "expert"] }
+    ] },
+    { name: "采购管理", icon: "cart", items: [
+      { name: "采购需求", href: "purchase-need.html", files: ["purchase-need.html", "purchase-need-create.html", "purchase-need-detail.html"], roles: C3 },
+      { name: "采购计划", href: "purchase-plan.html", files: ["purchase-plan.html", "purchase-plan-create.html", "purchase-plan-detail.html"], roles: ["center", "member"] },
+      { name: "采购订单", href: "purchase-order.html", files: ["purchase-order.html"], roles: ["center"] }
     ] },
     { name: "库存管理", icon: "stock", items: [
       { name: "药品期初管理", href: "init-stock.html", files: ["init-stock.html"], roles: C3 },

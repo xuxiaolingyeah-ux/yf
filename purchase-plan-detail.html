@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<title>采购申请详情 · 区域药房协同管理系统</title>
+<title>采购计划详情 · 区域药房协同管理系统</title>
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -29,12 +29,12 @@
 <div class="app-body">
   <!-- ========== 左侧导航 ========== -->
   <aside class="app-side" id="appSide"></aside>
-<!-- ========== 主区域 ========== -->
+  <!-- ========== 主区域 ========== -->
   <main class="app-main">
     <div class="tabbar">
       <div class="tab">首页</div>
       <div class="tab active">
-        采购申请
+        采购计划详情
         <button class="tab-close" id="tabClose" title="关闭">
           <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
         </button>
@@ -45,11 +45,11 @@
       <div class="sel-main">
         <div class="page-head">
           <div class="head-back">
-            <button class="back-btn" id="btnBack" title="返回采购申请列表">
+            <button class="back-btn" id="btnBack" title="返回采购计划列表">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
             </button>
-            <h1 class="page-title">采购申请详情</h1>
-            <span class="pa-code" id="headCode">申请编号：—</span>
+            <h1 class="page-title">采购计划详情</h1>
+            <span class="pa-code" id="headCode">计划单号：—</span>
           </div>
           <span class="status-text" id="headStatus"></span>
         </div>
@@ -57,7 +57,7 @@
         <div class="sel-card pur-detail" id="detailCard">
           <!-- 快速定位：点击页签滚动到对应区块 -->
           <div class="page-tabs" id="jumpTabs">
-            <span class="page-tab active" data-jump="top">申请详情</span>
+            <span class="page-tab active" data-jump="top">计划详情</span>
             <span class="page-tab" data-jump="records">审批记录</span>
           </div>
 
@@ -69,21 +69,33 @@
                 <div class="block-head"><h2 class="block-title">基本信息</h2></div>
                 <div class="form-grid-4">
                   <div class="form-item">
-                    <span class="form-label">申请编号</span>
+                    <span class="form-label">计划单号</span>
                     <span class="text-value" id="vCode"></span>
                   </div>
                   <div class="form-item">
-                    <span class="form-label">创建人</span>
-                    <span class="text-value" id="vCreator"></span>
-                  </div>
-                  <div class="form-item">
-                    <span class="form-label">创建机构</span>
+                    <span class="form-label">申请机构</span>
                     <span class="text-value" id="vOrg"></span>
                   </div>
                   <div class="form-item">
-                    <span class="form-label">创建时间</span>
+                    <span class="form-label">申请库位</span>
+                    <span class="text-value" id="vLoc"></span>
+                  </div>
+                  <div class="form-item">
+                    <span class="form-label">提交时间</span>
                     <span class="text-value" id="vCreatedAt"></span>
                   </div>
+                  <div class="form-item">
+                    <span class="form-label">提交人</span>
+                    <span class="text-value" id="vCreator"></span>
+                  </div>
+                  <div class="form-item">
+                    <span class="form-label">申请说明</span>
+                    <span class="text-value" id="vDesc">—</span>
+                  </div>
+                </div>
+                <div class="form-item" id="vNeedWrap" style="margin-top:8px;display:none;">
+                  <span class="form-label">关联采购需求</span>
+                  <span class="text-value" id="vNeeds"></span>
                 </div>
               </section>
 
@@ -95,16 +107,22 @@
                 <table class="data-table pur-table">
                   <thead>
                     <tr>
-                      <th style="width:150px;">药品编码</th>
-                      <th style="width:190px;">药品名称</th>
-                      <th style="width:180px;">药品规格</th>
-                      <th style="width:140px;">包装规格</th>
-                      <th>生产企业</th>
-                      <th style="width:110px;" class="num">需求量</th>
+                      <th style="width:170px;">药品名称</th>
+                      <th style="width:115px;">药品编码</th>
+                      <th style="width:150px;">药品规格</th>
+                      <th style="width:160px;">生产企业</th>
+                      <th style="width:70px;">基药</th>
+                      <th style="width:100px;" class="num">计划数量</th>
+                      <th style="width:100px;" class="num">单价</th>
+                      <th style="width:100px;" class="num">总价</th>
                     </tr>
                   </thead>
                   <tbody id="itemBody"></tbody>
                 </table>
+                <div class="plan-sum-row" style="display:flex;gap:28px;justify-content:flex-end;padding:12px 8px 0;font-size:13px;">
+                  <span>合计金额：<b id="sumTotal" style="font-size:15px;">¥0.00</b></span>
+                  <span>基药金额占比：<b id="sumRatio">0%</b></span>
+                </div>
               </section>
 
               <!-- 审批记录 -->
@@ -114,10 +132,11 @@
                   <thead>
                     <tr>
                       <th style="width:150px;">节点名称</th>
-                      <th style="width:110px;">审批人</th>
-                      <th style="width:110px;">审批结果</th>
-                      <th>审批意见</th>
-                      <th style="width:160px;">审批时间</th>
+                      <th style="width:170px;">审核机构</th>
+                      <th style="width:100px;">审核人</th>
+                      <th style="width:100px;">审核结果</th>
+                      <th>审核意见</th>
+                      <th style="width:150px;">审核时间</th>
                     </tr>
                   </thead>
                   <tbody id="recordBody"></tbody>
@@ -142,66 +161,99 @@
 
 <script src="mock.js"></script>
 <script src="selection-common.js"></script>
-<script src="purchase-common.js"></script>
+<script src="purchase-mgmt-common.js"></script>
 <script>
 (function () {
   var $ = SEL.$, esc = SEL.esc;
 
-  var user = PUR.user();
+  var user = PC.user();
   if (!user) return;
-  if (!PUR.canAccess(user)) { location.href = "price-adjust.html"; return; }
+  if (user.role !== "member" && user.role !== "center" && user.role !== "pharmacist") {
+    location.href = "purchase-need.html"; return;
+  }
 
-  var req = PUR.byId(PUR.load(), SEL.qs("id"));
-  if (!req) { location.href = "purchase-request.html"; return; }
+  var doc = PC.byId(PC.load("plan"), SEL.qs("id"));
+  if (!doc) { location.href = "purchase-plan.html"; return; }
+  /* 数据权限：不在可见机构范围内的单据不允许查看 */
+  if (!PC.inScope(doc, user)) { location.href = "purchase-plan.html"; return; }
 
   /* view = 查看（只读）；approve = 审核（底部出现审批区） */
   var mode = SEL.qs("mode") === "approve" ? "approve" : "view";
 
+  function statusLabel() {
+    if (doc.status === "member") return "待审核（成员机构）";
+    if (doc.status === "center") return "待审核（中心药房）";
+    return PC.STATUS[doc.status];
+  }
+
   function canApprove() {
-    return mode === "approve" && req.status === "pending" && PUR.isAuditor(user);
+    return mode === "approve" && PC.canAudit(doc, user);
   }
 
   /* ---------------- 渲染 ---------------- */
   function renderDetail() {
-    document.title = "采购申请详情 " + req.code + " · 区域药房协同管理系统";
-    $("headCode").textContent = "申请编号：" + req.code;
-    $("headStatus").textContent = "状态：" + PUR.STATUS[req.status];
+    document.title = "采购计划详情 " + doc.code + " · 区域药房协同管理系统";
+    $("headCode").textContent = "计划单号：" + doc.code;
+    $("headStatus").textContent = "状态：" + statusLabel();
 
-    $("vCode").textContent = req.code || "—";
-    $("vCreator").textContent = req.creator || "—";
-    $("vOrg").textContent = req.creatorOrg || "—";
-    $("vCreatedAt").textContent = req.createdAt || "—";
+    $("vCode").textContent = doc.code || "—";
+    $("vOrg").textContent = doc.creatorOrg || "—";
+    $("vLoc").textContent = doc.loc || "—";
+    $("vCreatedAt").textContent = doc.createdAt || "—";
+    $("vCreator").textContent = doc.creator || "—";
+    $("vDesc").textContent = doc.desc || "—";
 
-    $("itemCount").textContent = "（" + req.items.length + "）";
-    if (!req.items.length) {
-      $("itemBody").innerHTML = '<tr class="pa-empty-row"><td colspan="6">暂无药品明细</td></tr>';
+    /* 关联采购需求展示 */
+    var needIds = doc.linkedNeedIds || [];
+    if (needIds.length) {
+      var needs = PC.load("need");
+      var labels = needIds.map(function (id) {
+        var n = PC.byId(needs, id);
+        return n ? n.code : id;
+      });
+      $("vNeedWrap").style.display = "";
+      $("vNeeds").textContent = labels.join("、");
     } else {
-      $("itemBody").innerHTML = req.items.map(function (it) {
+      $("vNeedWrap").style.display = "none";
+    }
+
+    $("itemCount").textContent = "（" + doc.items.length + "）";
+    if (!doc.items.length) {
+      $("itemBody").innerHTML = '<tr class="pa-empty-row"><td colspan="8">暂无药品明细</td></tr>';
+    } else {
+      $("itemBody").innerHTML = doc.items.map(function (it) {
+        var t = (Number(it.qty) || 0) * (Number(it.price) || 0);
+        t = Math.round(t * 100) / 100;
         return "<tr>" +
-          "<td>" + esc(it.drugCode) + "</td>" +
           '<td><div class="cell-ellipsis" title="' + esc(it.drugName) + '">' + esc(it.drugName) + "</div></td>" +
+          "<td>" + esc(it.drugCode) + "</td>" +
           "<td>" + esc(it.spec) + "</td>" +
-          "<td>" + esc(it.pkgSpec) + "</td>" +
           '<td><div class="cell-ellipsis" title="' + esc(it.vendor) + '">' + esc(it.vendor) + "</div></td>" +
-          '<td class="num">' + (it.qty === "" || it.qty === null ? "—" : esc(it.qty)) + "</td>" +
+          "<td>" + (it.essential ? "是" : "否") + "</td>" +
+          '<td class="num">' + esc(it.qty === "" || it.qty === null ? "—" : it.qty) + "</td>" +
+          '<td class="num">' + esc(it.price === "" || it.price === null ? "—" : it.price) + "</td>" +
+          '<td class="num">' + esc(PC.fmtMoney(t)) + "</td>" +
         "</tr>";
       }).join("");
     }
+    $("sumTotal").textContent = PC.fmtMoney(PC.planTotal(doc.items));
+    $("sumRatio").textContent = PC.planEssentialRatio(doc.items);
   }
 
   function renderRecords() {
-    var rows = PUR.recordRows(req);
+    var rows = PC.recordRows(doc);
     $("recordBody").innerHTML = rows.length
       ? rows.map(function (r) {
           return "<tr>" +
             "<td>" + esc(r.node) + "</td>" +
+            "<td>" + esc(r.org || "—") + "</td>" +
             "<td>" + esc(r.person) + "</td>" +
             "<td>" + esc(r.result) + "</td>" +
             '<td><div class="cell-ellipsis" title="' + esc(r.opinion) + '">' + esc(r.opinion) + "</div></td>" +
             "<td>" + esc(r.time) + "</td>" +
           "</tr>";
         }).join("")
-      : '<tr><td colspan="5" class="pa-empty">暂无审批记录</td></tr>';
+      : '<tr><td colspan="6" class="pa-empty">暂无审批记录</td></tr>';
   }
 
   function renderFoot() {
@@ -213,7 +265,7 @@
           '<label class="radio"><input type="radio" name="decision" value="reject"><span>拒绝</span></label>' +
         '</div>' +
         '<div class="approve-row">' +
-          '<textarea class="textarea" id="fOpinion" placeholder="审批意见（拒绝时必填）" maxlength="200"></textarea>' +
+          '<textarea class="textarea" id="fOpinion" placeholder="审核意见（拒绝时必填）" maxlength="200"></textarea>' +
         '</div>' +
         '<div class="approve-row approve-btns">' +
           '<button class="btn" data-act="cancel">取消</button>' +
@@ -243,23 +295,25 @@
     var opinion = opinionEl ? opinionEl.value.trim() : "";
     if (!passed && !opinion) {
       opinionEl.classList.add("is-invalid");
-      SEL.toast("拒绝时必须填写审批意见");
+      SEL.toast("拒绝时必须填写审核意见");
       return;
     }
-    req.records.push({
-      node: "成员机构审核",
+    var node = doc.status === "member" ? "成员机构审核" : "中心药房审核";
+    doc.records.push({
+      node: node,
+      org: user.org,
       person: user.name,
       result: passed ? "通过" : "拒绝",
       opinion: opinion || "—",
       time: SEL.fmtNow()
     });
-    req.status = passed ? "approved" : "rejected";
-    PUR.persist(req);
-    SEL.toast(passed ? "审核已通过" : "已拒绝，申请已退回发起人");
+    doc.status = passed ? PC.passStatus(doc) : "rejected";
+    PC.persist("plan", doc);
+    SEL.toast(passed ? "审核已通过" : "已拒绝，采购计划已退回发起人");
     renderAll();
   }
 
-  /* ---------------- 快速定位：申请详情 / 审批记录 ---------------- */
+  /* ---------------- 快速定位：计划详情 / 审批记录 ---------------- */
   var detailBody = $("detailBody");
   var jumpTabs = $("jumpTabs");
 
@@ -291,7 +345,7 @@
     setActiveJump(offset <= 24 || atBottom ? "records" : "top");
   });
 
-  function goBack() { location.href = "purchase-request.html"; }
+  function goBack() { location.href = "purchase-plan.html"; }
   $("btnBack").addEventListener("click", goBack);
   $("tabClose").addEventListener("click", goBack);
 

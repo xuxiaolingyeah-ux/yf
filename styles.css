@@ -4269,3 +4269,20 @@ body.black-open .drawer.is-black { transform: translateX(0); }
 .sc-score-none { color: var(--text-placeholder); font-size: 12px; }
 .sc-score-avg { color: var(--primary); }
 .sc-matrix-note { margin-top: 10px; font-size: 12px; color: var(--text-tertiary); }
+
+/* 打分抽屉：药品信息块 / 只读勾选高亮 / 平均分行 */
+.sc-item-info {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px 20px;
+  padding: 12px 14px; margin-bottom: 14px;
+  border: 1px solid var(--border-light); border-radius: 6px;
+  font-size: 13px; background: #fafafa;
+}
+.sc-item-info .k { color: var(--text-tertiary); }
+.sc-item-info .v { color: var(--text-primary); }
+.sc-item-info .sc-cat { margin-left: 4px; }
+
+.sc-opt.is-checked { border-color: var(--primary); background: var(--primary-lighter); }
+.sc-opt input:disabled { cursor: default; }
+
+.sc-avg-line { font-size: 12px; color: var(--text-secondary); margin: -4px 0 14px; }
+.sc-avg-line b { color: var(--primary); font-weight: 600; font-size: 15px; margin-right: 2px; }

@@ -101,14 +101,7 @@
                 </div>
                 <table class="data-table">
                   <thead>
-                    <tr>
-                      <th class="col-idx">序号</th>
-                      <th>药品名称</th>
-                      <th style="width:100px;">药品分类</th>
-                      <th style="width:200px;">药品规格</th>
-                      <th style="width:240px;">生产企业</th>
-                      <th style="width:200px;">批准文号</th>
-                    </tr>
+                    <tr id="itemHead"></tr>
                   </thead>
                   <tbody id="itemBody"></tbody>
                 </table>
@@ -143,6 +136,20 @@
 </div>
 
 <div class="modal-mask" id="modalMask"></div>
+
+<!-- 专家打分 / 药品遴选得分 抽屉 -->
+<div class="drawer-mask" id="scoreMask"></div>
+<aside class="drawer is-edit" id="scoreDrawer">
+  <div class="drawer-head">
+    <span class="drawer-title" id="scTitle"></span>
+    <button class="drawer-close" id="scClose" title="关闭">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+    </button>
+  </div>
+  <div class="drawer-body" id="scBody"></div>
+  <div class="drawer-foot" id="scFoot"></div>
+</aside>
+
 <div class="toast" id="toast">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
   <span id="toastText"></span>
@@ -161,8 +168,22 @@
   var app = SEL.byId(list, SEL.qs("id"));
   if (!app) { location.href = "drug-selection.html"; return; }
 
-  /* view = 查看（只读）；approve = 审核（底部出现审批区） */
-  var mode = SEL.qs("mode") === "approve" ? "approve" : "view";
+  /*
+   * mode = view（只读）/ approve（审核）/ score（专家打分）/ scores（查看得分）
+   * score / scores 进入后自动打开对应抽屉
+   */
+  var mode = SEL.qs("mode");
+  if (["approve", "score", "scores"].indexOf(mode) < 0) mode = "view";
+
+  /* 该药品明细是否已有专家提交打分 */
+  function itemHasScore(idx) {
+    return !!app.scores && !!app.scores[idx] && Object.keys(app.scores[idx]).length > 0;
+  }
+
+  /* 专家是否可打分 */
+  function canScore() {
+    return user.role === "expert" && app.status === "approved";
+  }
 
   function pendingNodeName() {
     return app.status === "member" ? "成员机构审核" : "中心药房审核";
@@ -180,7 +201,23 @@
     $("vDesc").textContent = app.desc || "—";
 
     $("itemCount").textContent = "（" + app.items.length + "）";
+
+    /* 操作列：专家可打分 或 存在打分数据时显示 */
+    var scoreCol = canScore();
+    var viewCol = app.items.some(function (_, i) { return itemHasScore(i); });
+    $("itemHead").innerHTML =
+      '<th class="col-idx">序号</th>' +
+      "<th>药品名称</th>" +
+      '<th style="width:100px;">药品分类</th>' +
+      '<th style="width:200px;">药品规格</th>' +
+      '<th style="width:240px;">生产企业</th>' +
+      '<th style="width:200px;">批准文号</th>' +
+      (scoreCol || viewCol ? '<th class="col-acts">操作</th>' : "");
+
     $("itemBody").innerHTML = app.items.map(function (it, i) {
+      var acts = [];
+      if (scoreCol) acts.push('<button class="link-btn" data-act="score" data-idx="' + i + '">专家打分</button>');
+      if (viewCol && itemHasScore(i)) acts.push('<button class="link-btn" data-act="scoreView" data-idx="' + i + '">查看得分</button>');
       return "<tr>" +
         '<td class="col-idx">' + (i + 1) + "</td>" +
         '<td><div class="cell-ellipsis" title="' + esc(it.name) + '">' + esc(it.name) + "</div></td>" +
@@ -188,6 +225,7 @@
         "<td>" + esc(it.spec) + "</td>" +
         '<td><div class="cell-ellipsis" title="' + esc(it.vendor) + '">' + esc(it.vendor) + "</div></td>" +
         "<td>" + esc(it.approval) + "</td>" +
+        (scoreCol || viewCol ? '<td class="col-acts">' + acts.join("") + "</td>" : "") +
       "</tr>";
     }).join("");
   }
@@ -240,6 +278,213 @@
     renderRecords();
     renderFoot();
   }
+
+  /* ---------------- 打分抽屉（score=专家打分可编辑 / scores=查看得分只读） ---------------- */
+  var scMode = null;                 // "score" | "scores"
+  var scState = { itemIdx: 0, picks: {} };
+  var vwState = { itemIdx: 0, expertId: null };
+
+  function closeScoreDrawer() {
+    scMode = null;
+    document.body.classList.remove("drawer-open");
+  }
+
+  /* 选中药品的信息块：名称（含分类）、规格、生产企业、批准文号 */
+  function itemInfoHtml(it) {
+    return '<div class="sc-item-info">' +
+      '<div><span class="k">药品名称：</span><span class="v">' + esc(it.name) +
+        ' <i class="sc-cat' + (it.cat === "中成药" ? " is-tcm" : "") + '">' + esc(it.cat || "化学药品") + "</i></span></div>" +
+      '<div><span class="k">药品规格：</span><span class="v">' + esc(it.spec) + "</span></div>" +
+      '<div><span class="k">生产企业：</span><span class="v">' + esc(it.vendor) + "</span></div>" +
+      '<div><span class="k">批准文号：</span><span class="v">' + esc(it.approval) + "</span></div>" +
+    "</div>";
+  }
+
+  /* 药品切换页签 */
+  function drugTabsHtml(activeIdx) {
+    return '<div class="sc-drug-tabs">' + app.items.map(function (x, i) {
+      return '<span class="sc-drug-tab' + (i === activeIdx ? " active" : "") + '" data-sc-idx="' + i + '">' +
+        (i + 1) + ". " + esc(x.name) +
+        '<i class="sc-cat' + (x.cat === "中成药" ? " is-tcm" : "") + '">' + esc(x.cat || "化学药品") + "</i></span>";
+    }).join("") + "</div>";
+  }
+
+  /* 指标树：editable=false 时只读（禁用控件 + 勾选项高亮） */
+  function rulesHtml(rules, picks, editable) {
+    var html = "";
+    rules.groups.forEach(function (g) {
+      html += '<div class="drawer-section"><div class="drawer-section-title">' +
+        g.no + ". " + esc(g.name) + '<span class="sc-gmax">（' + g.max + " 分）</span></div>";
+      g.subs.forEach(function (sub) {
+        var pick = picks[sub.no];
+        html += '<div class="sc-sub"><div class="sc-sub-name">' + esc(sub.no) + " " + esc(sub.name) +
+          '<span class="sc-sub-max">（' + sub.max + " 分" + (sub.kind === "multi" ? "，可多选" : "") + "）</span></div>" +
+          '<div class="sc-opts">';
+        sub.opts.forEach(function (o) {
+          var checked = sub.kind === "multi"
+            ? Array.isArray(pick) && pick.indexOf(o.v) >= 0
+            : pick === o.v;
+          var input;
+          if (!editable) {
+            input = '<input type="' + (sub.kind === "multi" ? "checkbox" : "radio") + '" disabled' + (checked ? " checked" : "") + ">";
+          } else if (sub.kind === "multi") {
+            input = '<input type="checkbox" data-sc-sub="' + sub.no + '" data-sc-v="' + o.v + '"' + (checked ? " checked" : "") + ">";
+          } else {
+            input = '<input type="radio" name="sc-r-' + sub.no + '" data-sc-sub="' + sub.no + '" data-sc-v="' + o.v + '"' + (checked ? " checked" : "") + ">";
+          }
+          html += '<label class="sc-opt' + (checked ? " is-checked" : "") + '">' + input +
+            '<span class="sc-opt-v">' + o.v + " 分</span>" +
+            '<span class="sc-opt-t">' + esc(o.t) + "</span></label>";
+        });
+        html += "</div></div>";
+      });
+      html += "</div>";
+    });
+    return html;
+  }
+
+  function openScoreDrawer(idx) {
+    scMode = "score";
+    scState.itemIdx = idx || 0;
+    var existed = app.scores && app.scores[scState.itemIdx] && app.scores[scState.itemIdx][user.id];
+    scState.picks = existed ? JSON.parse(JSON.stringify(existed.picks || {})) : {};
+    renderScoreDrawer();
+    document.body.classList.add("drawer-open");
+  }
+
+  function renderScoreDrawer() {
+    var it = app.items[scState.itemIdx];
+    var rules = SEL.rulesOf(it.cat);
+    $("scTitle").textContent = "专家打分";
+    $("scBody").innerHTML = itemInfoHtml(it) + drugTabsHtml(scState.itemIdx) + rulesHtml(rules, scState.picks, true);
+    $("scFoot").innerHTML =
+      '<div class="sc-foot-total">当前总分：<b id="scTotal">' + SEL.calcTotal(rules, scState.picks) + "</b><span> / 100</span></div>" +
+      '<div class="sc-foot-btns">' +
+        '<button class="btn" id="scCancel">取消</button>' +
+        '<button class="btn btn-primary" id="scSave">保存打分</button>' +
+      "</div>";
+    $("scCancel").addEventListener("click", closeScoreDrawer);
+    $("scSave").addEventListener("click", saveScore);
+  }
+
+  function onPickChange(e) {
+    var el = e.target.closest("[data-sc-sub]");
+    if (!el) return;
+    var subNo = el.getAttribute("data-sc-sub");
+    var val = parseFloat(el.getAttribute("data-sc-v"));
+    if (el.type === "checkbox") {
+      var arr = Array.isArray(scState.picks[subNo]) ? scState.picks[subNo].slice() : [];
+      if (el.checked) {
+        if (arr.indexOf(val) < 0) arr.push(val);
+      } else {
+        arr = arr.filter(function (v) { return v !== val; });
+      }
+      if (arr.length) scState.picks[subNo] = arr;
+      else delete scState.picks[subNo];
+      el.closest(".sc-opt").classList.toggle("is-checked", el.checked);
+    } else {
+      scState.picks[subNo] = val;
+      var name = el.name;
+      document.querySelectorAll('input[name="' + name + '"]').forEach(function (r) {
+        r.closest(".sc-opt").classList.toggle("is-checked", r.checked);
+      });
+    }
+    var rules = SEL.rulesOf(app.items[scState.itemIdx].cat);
+    $("scTotal").textContent = SEL.calcTotal(rules, scState.picks);
+  }
+
+  function saveScore() {
+    var rules = SEL.rulesOf(app.items[scState.itemIdx].cat);
+    app.scores = app.scores || {};
+    app.scores[scState.itemIdx] = app.scores[scState.itemIdx] || {};
+    app.scores[scState.itemIdx][user.id] = {
+      picks: scState.picks,
+      total: SEL.calcTotal(rules, scState.picks),
+      time: SEL.fmtNow()
+    };
+    persist();
+    SEL.toast("已保存打分，总分 " + app.scores[scState.itemIdx][user.id].total + " 分");
+    closeScoreDrawer();
+    renderAll();
+  }
+
+  function openScoresDrawer(idx) {
+    scMode = "scores";
+    vwState.itemIdx = idx || 0;
+    var recs = (app.scores && app.scores[vwState.itemIdx]) || {};
+    var first = SEL.experts().filter(function (e) { return recs[e.id]; })[0];
+    vwState.expertId = first ? first.id : null;
+    renderScoresDrawer();
+    document.body.classList.add("drawer-open");
+  }
+
+  function renderScoresDrawer() {
+    var it = app.items[vwState.itemIdx];
+    var rules = SEL.rulesOf(it.cat);
+    var recs = (app.scores && app.scores[vwState.itemIdx]) || {};
+    var es = SEL.experts().filter(function (e) { return recs[e.id]; });
+    var rec = vwState.expertId ? recs[vwState.expertId] : null;
+    var avg = SEL.itemAvg(app, vwState.itemIdx);
+
+    $("scTitle").textContent = "药品遴选得分";
+
+    var expertTabs = es.length
+      ? '<div class="sc-drug-tabs">' + es.map(function (e) {
+          return '<span class="sc-drug-tab' + (e.id === vwState.expertId ? " active" : "") + '" data-vw-expert="' + e.id + '">' +
+            esc(e.name) + '<i class="sc-cat">' + recs[e.id].total + ' 分</i></span>';
+        }).join("") + "</div>"
+      : "";
+
+    $("scBody").innerHTML = itemInfoHtml(it) +
+      drugTabsHtml(vwState.itemIdx) +
+      expertTabs +
+      '<div class="sc-avg-line">平均分：<b>' + (avg === null ? "—" : avg) + "</b>（" + es.length + " 位专家已打分）</div>" +
+      (rec ? rulesHtml(rules, rec.picks || {}, false) : '<div class="sc-score-none">该专家暂未打分</div>');
+
+    $("scFoot").innerHTML = rec
+      ? '<div class="sc-foot-total">' + esc(SEL.expertName(vwState.expertId)) + ' 总分：<b>' + rec.total + "</b><span> / 100</span></div>" +
+        '<div class="sc-foot-btns"><button class="btn" id="scCancel">关闭</button></div>'
+      : '<div class="sc-foot-btns"><button class="btn" id="scCancel">关闭</button></div>';
+    $("scCancel").addEventListener("click", closeScoreDrawer);
+  }
+
+  /* 打分抽屉事件：勾选 / 药品切换 / 专家切换 */
+  $("scBody").addEventListener("change", onPickChange);
+  $("scBody").addEventListener("click", function (e) {
+    var tab = e.target.closest("[data-sc-idx]");
+    if (tab && scMode) {
+      var idx = parseInt(tab.getAttribute("data-sc-idx"), 10);
+      if (scMode === "score") {
+        scState.itemIdx = idx;
+        var existed = app.scores && app.scores[idx] && app.scores[idx][user.id];
+        scState.picks = existed ? JSON.parse(JSON.stringify(existed.picks || {})) : {};
+        renderScoreDrawer();
+      } else {
+        vwState.itemIdx = idx;
+        var recs = app.scores && app.scores[idx] || {};
+        var first = SEL.experts().filter(function (x) { return recs[x.id]; })[0];
+        vwState.expertId = first ? first.id : null;
+        renderScoresDrawer();
+      }
+      return;
+    }
+    var et = e.target.closest("[data-vw-expert]");
+    if (et) {
+      vwState.expertId = et.getAttribute("data-vw-expert");
+      renderScoresDrawer();
+    }
+  });
+  $("scClose").addEventListener("click", closeScoreDrawer);
+  $("scoreMask").addEventListener("click", closeScoreDrawer);
+
+  /* 明细操作列 */
+  $("itemBody").addEventListener("click", function (e) {
+    var btn = e.target.closest("[data-act]");
+    if (!btn) return;
+    var idx = parseInt(btn.getAttribute("data-idx"), 10);
+    if (btn.getAttribute("data-act") === "score" && canScore()) openScoreDrawer(idx);
+    else if (btn.getAttribute("data-act") === "scoreView" && itemHasScore(idx)) openScoresDrawer(idx);
+  });
 
   /* ---------------- 审核 ---------------- */
   function persist() {
@@ -321,6 +566,10 @@
   SEL.renderHeaderUser(user);
   SEL.bindNav();
   renderAll();
+
+  /* 从列表跳转进入时自动打开对应抽屉 */
+  if (mode === "score" && canScore()) openScoreDrawer(0);
+  else if (mode === "scores" && SEL.hasScores(app)) openScoresDrawer(0);
 })();
 </script>
   <script src="nav.js"></script>

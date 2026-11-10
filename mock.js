@@ -3612,3 +3612,103 @@ MOCK.rxQuery = [
     "rxAmount": 78.2
   }
 ];
+
+/* ==========================================================================
+   基层缺药：缺药登记种子数据
+   status: draft 草稿 / pending 待受理 / accepted 已受理 / rejected 已拒绝 / resolved 已解决
+   category: catalog 药品目录缺失 / stock 库存不足
+   ========================================================================== */
+MOCK.shortages = [
+  {
+    id: "sy1", code: "QY20261107001",
+    category: "stock", urgency: "urgent",
+    drugId: "d1", si: 0, drugCode: "1210500301",
+    drugName: "阿莫西林胶囊", spec: "0.25g * 24粒/盒",
+    vendor: "华北制药股份有限公司", approval: "H13023917",
+    qty: 50, reason: "库存不足", reasonOther: "",
+    remark: "近期呼吸道感染就诊量大，阿莫西林胶囊库存告急，仅够 3 天用量。",
+    creatorId: "u1", creator: "王芳", creatorOrg: "青河村卫生室",
+    createdAt: "2026-11-07 09:20", submitTime: "2026-11-07 09:20",
+    status: "pending",
+    records: [
+      { node: "提交登记", person: "王芳", org: "青河村卫生室", result: "已提交", opinion: "—", time: "2026-11-07 09:20" }
+    ]
+  },
+  {
+    id: "sy2", code: "QY20261105002",
+    category: "catalog", urgency: "normal",
+    drugId: "", si: -1, drugCode: "",
+    drugName: "布洛芬混悬液", spec: "100ml:2g/瓶",
+    vendor: "上海强生制药有限公司", approval: "国药准字H19990114",
+    qty: 30, reason: "临床新增需求", reasonOther: "",
+    remark: "儿科退热用药需求增加，现行药品目录中无儿童适用剂型，申请增补。",
+    creatorId: "u2", creator: "李强", creatorOrg: "城东社区卫生服务中心",
+    createdAt: "2026-11-05 14:05", submitTime: "2026-11-05 14:05",
+    status: "accepted",
+    records: [
+      { node: "提交登记", person: "李强", org: "城东社区卫生服务中心", result: "已提交", opinion: "—", time: "2026-11-05 14:05" },
+      { node: "中心药房受理", person: "赵敏", org: "区域中心药房", result: "受理", opinion: "情况属实，纳入处理队列。", time: "2026-11-06 09:30" }
+    ]
+  },
+  {
+    id: "sy3", code: "QY20261103003",
+    category: "stock", urgency: "normal",
+    drugId: "d5", si: 0, drugCode: "1210500305",
+    drugName: "头孢呋辛酯片", spec: "0.25g * 12片/盒",
+    vendor: "广州白云山制药股份有限公司", approval: "H44021234",
+    qty: 20, reason: "季节性需求", reasonOther: "",
+    remark: "秋冬季呼吸科用药量上升，需补充库存。",
+    creatorId: "u1", creator: "王芳", creatorOrg: "青河村卫生室",
+    createdAt: "2026-11-02 10:12", submitTime: "2026-11-02 10:12",
+    status: "resolved", solveMethod: "center-transfer", solveDesc: "已安排中心药房调拨 20 盒，11 月 4 日到货签收。",
+    records: [
+      { node: "提交登记", person: "王芳", org: "青河村卫生室", result: "已提交", opinion: "—", time: "2026-11-02 10:12" },
+      { node: "中心药房受理", person: "赵敏", org: "区域中心药房", result: "受理", opinion: "—", time: "2026-11-03 09:00" },
+      { node: "解决登记", person: "赵敏", org: "区域中心药房", result: "已解决", opinion: "解决方式：中心调拨；已安排中心药房调拨 20 盒，11 月 4 日到货签收。", time: "2026-11-03 15:40" }
+    ]
+  },
+  {
+    id: "sy4", code: "QY20261101004",
+    category: "catalog", urgency: "urgent",
+    drugId: "", si: -1, drugCode: "",
+    drugName: "对乙酰氨基酚栓", spec: "0.15g * 10粒/盒",
+    vendor: "湖北东信药业有限公司", approval: "国药准字H42021488",
+    qty: 40, reason: "其他", reasonOther: "冬季儿童退热需求激增，现有剂型不适合婴幼儿使用",
+    remark: "",
+    creatorId: "u1", creator: "王芳", creatorOrg: "青河村卫生室",
+    createdAt: "2026-11-01 16:30", submitTime: "2026-11-01 16:30",
+    status: "rejected",
+    records: [
+      { node: "提交登记", person: "王芳", org: "青河村卫生室", result: "已提交", opinion: "—", time: "2026-11-01 16:30" },
+      { node: "中心药房受理", person: "赵敏", org: "区域中心药房", result: "拒绝", opinion: "该品种不在区域基础用药目录遴选范围内，请先走药品目录遴选流程。", time: "2026-11-02 10:15" }
+    ]
+  },
+  {
+    id: "sy5", code: "QY20261108005",
+    category: "stock", urgency: "normal",
+    drugId: "d6", si: 0, drugCode: "1210500306",
+    drugName: "布洛芬缓释胶囊", spec: "0.3g * 20粒/盒",
+    vendor: "中美天津史克制药有限公司", approval: "H10900089",
+    qty: 15, reason: "库存不足", reasonOther: "",
+    remark: "",
+    creatorId: "u2", creator: "李强", creatorOrg: "城东社区卫生服务中心",
+    createdAt: "2026-11-08 11:45", submitTime: "2026-11-08 11:45",
+    status: "draft",
+    records: []
+  },
+  {
+    id: "sy6", code: "QY20261106006",
+    category: "catalog", urgency: "normal",
+    drugId: "", si: -1, drugCode: "",
+    drugName: "氯雷他定糖浆", spec: "100ml:50mg/瓶",
+    vendor: "开封康诺药业有限公司", approval: "国药准字H20050280",
+    qty: 10, reason: "季节性需求", reasonOther: "",
+    remark: "秋季过敏性鼻炎患儿增多，目录内缺少儿童用抗组胺剂型。",
+    creatorId: "u2", creator: "李强", creatorOrg: "城东社区卫生服务中心",
+    createdAt: "2026-11-06 15:20", submitTime: "2026-11-06 15:20",
+    status: "pending",
+    records: [
+      { node: "提交登记", person: "李强", org: "城东社区卫生服务中心", result: "已提交", opinion: "—", time: "2026-11-06 15:20" }
+    ]
+  }
+];

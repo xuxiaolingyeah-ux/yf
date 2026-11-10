@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>缺药登记 · 区域药房协同管理系统</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+.sc-drug-item { position: relative; }
+.sc-drug-item .input { padding-right: 30px; }
+.sc-drug-pick {
+  position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+  width: 14px; height: 14px; color: var(--text-tertiary);
+  pointer-events: none;
+}
+.sc-drug-item .input.is-readonly { cursor: pointer; }
+</style>
+</head>
+<body>
+
+<!-- ========== 顶部导航 ========== -->
+<header class="app-header">
+  <div class="header-left">
+    <div class="header-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3.2" y="9.4" width="17.6" height="5.2" rx="2.6" transform="rotate(-45 12 12)"/>
+        <path d="M8.4 15.6L15.6 8.4"/>
+      </svg>
+    </div>
+    <div class="header-title">区域药房协同管理系统</div>
+  </div>
+  <div class="header-right">
+    <div class="header-user" id="headerUser" title="点击退出登录">
+      <span class="header-avatar">药</span>
+      <span class="header-user-name">—</span>
+      <svg class="user-arrow" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+    </div>
+  </div>
+</header>
+
+<div class="app-body">
+  <!-- ========== 左侧导航 ========== -->
+  <aside class="app-side" id="appSide"></aside>
+
+  <!-- ========== 主区域 ========== -->
+  <main class="app-main">
+    <div class="tabbar">
+      <div class="tab">首页</div>
+      <div class="tab" data-href="shortage.html">缺药登记</div>
+      <div class="tab active">
+        <span id="tabName">新增登记</span>
+        <button class="tab-close" id="tabClose" title="关闭">
+          <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="page sel-page">
+      <div class="sel-main">
+        <div class="page-head">
+          <div class="head-back">
+            <button class="back-btn" id="btnBack" title="返回缺药登记列表">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+            </button>
+            <h1 class="page-title" id="pageTitle">新增缺药登记</h1>
+            <span class="pa-code" id="headCode"></span>
+          </div>
+        </div>
+
+        <div class="sel-card">
+          <div class="card-body">
+            <div class="form-wrap">
+
+              <!-- 登记信息 -->
+              <section class="block">
+                <div class="block-head"><h2 class="block-title">登记信息</h2></div>
+                <div class="form-grid-4">
+                  <div class="form-item">
+                    <span class="form-label"><span class="req">*</span>缺药类别</span>
+                    <select class="select" id="fCategory">
+                      <option value="catalog" selected>药品目录缺失</option>
+                      <option value="stock">库存不足</option>
+                    </select>
+                  </div>
+                  <div class="form-item">
+                    <span class="form-label">紧急程度</span>
+                    <select class="select" id="fUrgency">
+                      <option value="normal" selected>一般</option>
+                      <option value="urgent">紧急</option>
+                    </select>
+                  </div>
+                  <div class="form-item">
+                    <span class="form-label"><span class="req">*</span>缺药原因</span>
+                    <select class="select" id="fReason">
+                      <option value="库存不足" selected>库存不足</option>
+                      <option value="临床新增需求">临床新增需求</option>
+                      <option value="季节性需求">季节性需求</option>
+                      <option value="其他">其他</option>
+                    </select>
+                  </div>
+                  <div class="form-item" id="rowReasonOther" style="display:none;">
+                    <span class="form-label"><span class="req">*</span>原因说明</span>
+                    <input class="input" id="fReasonOther" maxlength="60" placeholder="请录入具体原因">
+                  </div>
+                  <div class="form-item span-4">
+                    <span class="form-label">缺药说明</span>
+                    <input class="input" id="fRemark" maxlength="120" placeholder="选填，可补充缺药背景、影响范围等信息，便于中心药房评估">
+                  </div>
+                  <div class="form-item">
+                    <span class="form-label">提交人</span>
+                    <input class="input is-readonly" id="fCreator" readonly>
+                  </div>
+                  <div class="form-item">
+                    <span class="form-label">提交时间</span>
+                    <input class="input is-readonly" id="fSubmitTime" readonly>
+                  </div>
+                  <div class="form-item">
+                    <span class="form-label">提交机构</span>
+                    <input class="input is-readonly" id="fOrg" readonly>
+                  </div>
+                </div>
+              </section>
+
+              <!-- 药品信息 -->
+              <section class="block">
+                <div class="block-head">
+                  <h2 class="block-title">药品信息</h2>
+                  <span class="count" id="modeHint"></span>
+                </div>
+                <div class="form-grid-4">
+                  <div class="form-item sc-drug-item">
+                    <span class="form-label"><span class="req">*</span>药品名称</span>
+                    <input class="input" id="fDrugName" maxlength="60" placeholder="请输入药品名称">
+                    <svg class="sc-drug-pick" id="drugPickIcon" style="display:none;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M16.5 16.5L21 21"/></svg>
+                  </div>
+                  <div class="form-item">
+                    <span class="form-label"><span class="req">*</span>药品规格</span>
+                    <input class="input" id="fSpec" maxlength="60" placeholder="请输入规格">
+                  </div>
+                  <div class="form-item">
+                    <span class="form-label"><span class="req">*</span>生产企业</span>
+                    <input class="input" id="fVendor" maxlength="60" placeholder="请输入生产企业">
+                  </div>
+                  <div class="form-item">
+                    <span class="form-label"><span class="req">*</span>批准文号</span>
+                    <input class="input" id="fApproval" maxlength="40" placeholder="请输入批准文号">
+                  </div>
+                  <div class="form-item">
+                    <span class="form-label"><span class="req">*</span>缺药数量</span>
+                    <input class="input" id="fQty" type="text" inputmode="numeric" placeholder="请输入数量">
+                  </div>
+                </div>
+              </section>
+
+            </div>
+          </div>
+
+          <div class="page-foot">
+            <button class="btn" id="btnCancel">取消</button>
+            <button class="btn" id="btnSave">暂存</button>
+            <button class="btn btn-primary" id="btnSubmit">提交</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="modal-mask" id="modalMask"></div>
+<div class="toast" id="toast">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+  <span id="toastText"></span>
+</div>
+
+<script src="mock.js"></script>
+<script src="selection-common.js"></script>
+<script src="shortage-common.js"></script>
+<script>
+(function () {
+  var $ = SEL.$, esc = SEL.esc;
+  var user = SC.user();
+  if (!user) return;
+
+  /* 仅基层机构（成员机构 / 村卫生室）可登记 */
+  if (!SC.isGrassroots(user)) {
+    location.href = "shortage.html";
+    return;
+  }
+
+  var all = SC.load();
+  var bill = SEL.qs("id") ? SC.byId(all, SEL.qs("id")) : null;
+  var isEdit = !!bill;
+  if (isEdit && !SC.canEdit(bill, user)) { location.href = "shortage.html"; return; }
+
+  if (!bill) {
+    bill = {
+      id: "sy" + Date.now().toString(36),
+      code: SC.newCode(all),
+      category: "catalog", urgency: "normal",
+      drugId: "", si: -1, drugCode: "",
+      drugName: "", spec: "", vendor: "", approval: "",
+      qty: "", reason: "库存不足", reasonOther: "", remark: "",
+      creatorId: user.id, creator: user.name, creatorOrg: user.org,
+      createdAt: SEL.fmtNow(), submitTime: SEL.fmtNow(),
+      status: "draft", records: [], deleted: false
+    };
+  }
+
+  /* ---------------- 类别切换 ---------------- */
+  function syncCategory() {
+    var stock = $("fCategory").value === "stock";
+    ["fSpec", "fVendor", "fApproval"].forEach(function (id) {
+      $(id).readOnly = stock;
+      $(id).classList.toggle("is-readonly", stock);
+    });
+    $("fDrugName").readOnly = stock;
+    $("fDrugName").classList.toggle("is-readonly", stock);
+    $("drugPickIcon").style.display = stock ? "" : "none";
+    if (stock) {
+      var picked = $("fDrugName").value.trim();
+      $("fDrugName").setAttribute("title", picked ? picked + "（点击可重新选择）" : "点击选择药品");
+      $("fDrugName").setAttribute("placeholder", "点击选择药品");
+    } else {
+      $("fDrugName").removeAttribute("title");
+      $("fDrugName").setAttribute("placeholder", "请输入药品名称");
+    }
+    $("modeHint").textContent = stock ? "（库存不足：点击药品名称从当前药品目录选择，其余字段自动带出）"
+                                      : "（药品目录缺失：手工录入药品信息）";
+    if (!stock) {
+      /* 切回目录缺失：解除目录数据的锁定，允许手工调整 */
+      bill.drugId = ""; bill.si = -1; bill.drugCode = "";
+    }
+  }
+
+  /* ---------------- 校验 / 收集 ---------------- */
+  function validate() {
+    var bad = [];
+    ["fDrugName", "fSpec", "fVendor", "fApproval", "fQty", "fReasonOther"].forEach(function (id) {
+      $(id).classList.remove("is-invalid");
+    });
+    ["fDrugName", "fSpec", "fVendor", "fApproval"].forEach(function (id) {
+      if (!$(id).value.trim()) { $(id).classList.add("is-invalid"); bad.push($(id).previousElementSibling.textContent.replace("*", "")); }
+    });
+    if (!SC.intVal($("fQty").value) || SC.intVal($("fQty").value) < 1) {
+      $("fQty").classList.add("is-invalid");
+      bad.push("缺药数量（需为正整数）");
+    }
+    if ($("fReason").value === "其他" && !$("fReasonOther").value.trim()) {
+      $("fReasonOther").classList.add("is-invalid");
+      bad.push("原因说明");
+    }
+    if (bad.length) { SEL.toast("请完善：" + bad.join("、")); return false; }
+    return true;
+  }
+
+  function collect() {
+    bill.category = $("fCategory").value;
+    bill.urgency = $("fUrgency").value;
+    bill.drugName = $("fDrugName").value.trim();
+    bill.spec = $("fSpec").value.trim();
+    bill.vendor = $("fVendor").value.trim();
+    bill.approval = $("fApproval").value.trim();
+    bill.qty = SC.intVal($("fQty").value);
+    bill.reason = $("fReason").value;
+    bill.reasonOther = bill.reason === "其他" ? $("fReasonOther").value.trim() : "";
+    bill.remark = $("fRemark").value.trim();
+    bill.creatorOrg = user.org;
+  }
+
+  function restore() {
+    $("fCategory").value = bill.category || "catalog";
+    $("fUrgency").value = bill.urgency || "normal";
+    $("fDrugName").value = bill.drugName || "";
+    $("fSpec").value = bill.spec || "";
+    $("fVendor").value = bill.vendor || "";
+    $("fApproval").value = bill.approval || "";
+    $("fQty").value = bill.qty || "";
+    $("fReason").value = bill.reason || "库存不足";
+    $("fReasonOther").value = bill.reasonOther || "";
+    $("fRemark").value = bill.remark || "";
+    $("fCreator").value = bill.creator || user.name;
+    $("fSubmitTime").value = bill.createdAt || SEL.fmtNow();
+    $("fOrg").value = bill.creatorOrg || user.org;
+    $("pageTitle").textContent = isEdit ? "编辑缺药登记" : "新增缺药登记";
+    $("tabName").textContent = $("pageTitle").textContent;
+    $("headCode").textContent = "登记编号：" + bill.code;
+    document.title = $("pageTitle").textContent + " " + bill.code + " · 区域药房协同管理系统";
+    syncCategory();
+    syncReasonOther();
+  }
+
+  function syncReasonOther() {
+    $("rowReasonOther").style.display = $("fReason").value === "其他" ? "" : "none";
+  }
+
+  function saveDraft() {
+    collect();
+    bill.status = "draft";
+    SC.persist(bill);
+    SEL.toast("已暂存");
+    setTimeout(function () { location.href = "shortage.html"; }, 400);
+  }
+
+  function submit() {
+    if (!validate()) return;
+    collect();
+    SC.submitBill(bill);
+    SC.persist(bill);
+    SEL.toast("已提交，等待中心药房受理");
+    setTimeout(function () { location.href = "shortage.html"; }, 400);
+  }
+
+  /* ---------------- 选择药品弹窗 ---------------- */
+  var pickState = { kw: "", key: "" };
+
+  function openPicker() {
+    pickState.kw = "";
+    pickState.key = bill.drugId && bill.drugId !== "" && bill.si >= 0
+      ? bill.drugId + "_" + bill.si + "_0" : "";
+    var mask = $("modalMask");
+    mask.innerHTML =
+      '<div class="modal tr-drug-modal">' +
+        '<div class="modal-head">' +
+          '<span class="modal-title">选择药品</span>' +
+          '<button class="drawer-close" data-close="1"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg></button>' +
+        "</div>" +
+        '<div class="modal-body">' +
+          '<div class="tr-pick-toolbar">' +
+            '<input class="input" id="pickKw" placeholder="搜索药品名称 / 编码 / 规格 / 生产企业" style="width:300px;">' +
+            '<span class="tr-in-hint">单选，选中后自动填充名称、规格、生产企业、批准文号</span>' +
+          "</div>" +
+          '<div class="tr-pick-wrap"><table class="data-table"><thead><tr>' +
+            '<th style="width:40px;"></th>' +
+            '<th style="width:170px;">药品名称</th>' +
+            '<th style="width:150px;">规格</th>' +
+            '<th style="width:190px;">生产企业</th>' +
+            '<th style="width:110px;">批准文号</th>' +
+          "</tr></thead><tbody id=\"pickBody\"></tbody></table></div>" +
+        "</div>" +
+        '<div class="modal-foot">' +
+          '<button class="btn" data-close="1">取消</button>' +
+          '<button class="btn btn-primary" id="pickOk">确定选择</button>' +
+        "</div>" +
+      "</div>";
+    mask.classList.add("show");
+    renderPick();
+    $("pickKw").addEventListener("input", function () {
+      pickState.kw = this.value.trim().toLowerCase();
+      renderPick();
+    });
+    $("pickBody").addEventListener("change", function (e) {
+      var r = e.target.closest("input[data-key]");
+      if (r) pickState.key = r.getAttribute("data-key");
+    });
+    $("pickOk").addEventListener("click", applyPicked);
+  }
+
+  function renderPick() {
+    var rows = SC.pickList().filter(function (s) {
+      if (!pickState.kw) return true;
+      return (s.drugName + s.drugCode + s.spec + s.vendor).toLowerCase().indexOf(pickState.kw) >= 0;
+    });
+    $("pickBody").innerHTML = rows.length ? rows.map(function (s) {
+      var checked = s.key === pickState.key ? " checked" : "";
+      return "<tr>" +
+        '<td><input type="radio" name="pickRow" data-key="' + s.key + '"' + checked + "></td>" +
+        "<td>" + esc(s.drugName) + "</td>" +
+        "<td>" + esc(s.spec) + "</td>" +
+        '<td title="' + esc(s.vendor) + '">' + esc(s.vendor) + "</td>" +
+        "<td>" + esc(s.approval) + "</td>" +
+      "</tr>";
+    }).join("") : '<tr><td colspan="5" class="tr-empty-cell">没有匹配的药品</td></tr>';
+  }
+
+  function applyPicked() {
+    if (!pickState.key) { SEL.toast("请先选择一个药品"); return; }
+    var s = SC.pickByKey(pickState.key);
+    if (!s) { SEL.toast("药品数据异常，请重新选择"); return; }
+    bill.drugId = s.drugId; bill.si = s.si; bill.drugCode = s.drugCode;
+    $("fDrugName").value = s.drugName;
+    $("fDrugName").setAttribute("title", s.drugName + " " + s.spec + "（点击可重新选择）");
+    $("fSpec").value = s.spec;
+    $("fVendor").value = s.vendor;
+    $("fApproval").value = s.approval;
+    SEL.closeModal();
+    SEL.toast("已填充药品信息");
+  }
+
+  /* ---------------- 事件 ---------------- */
+  $("btnBack").addEventListener("click", function () { location.href = "shortage.html"; });
+  $("tabClose").addEventListener("click", function () { location.href = "shortage.html"; });
+  $("fCategory").addEventListener("change", function () {
+    this.classList.remove("is-invalid");
+    syncCategory();
+  });
+  $("fReason").addEventListener("change", syncReasonOther);
+  $("fDrugName").addEventListener("click", function () {
+    if ($("fCategory").value === "stock") openPicker();
+  });
+  $("btnCancel").addEventListener("click", function () { location.href = "shortage.html"; });
+  $("btnSave").addEventListener("click", saveDraft);
+  $("btnSubmit").addEventListener("click", submit);
+  $("headerUser").addEventListener("click", function () {
+    SEL.confirmDialog({
+      title: "退出登录",
+      text: "确认退出当前账号「" + user.name + "」？",
+      okText: "退出",
+      onOk: function () { SEL.logout(); }
+    });
+  });
+
+  restore();
+  SEL.renderHeaderUser(user);
+  SEL.bindNav();
+})();
+</script>
+  <script src="nav.js"></script>
+</body>
+</html>

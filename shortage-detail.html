@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>缺药登记详情 · 区域药房协同管理系统</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+.sc-st-pending { color: var(--warning); }
+.sc-st-accepted { color: var(--primary); }
+.sc-st-resolved { color: var(--success); }
+.sc-st-rejected { color: var(--danger); }
+.sc-st-draft { color: var(--text-tertiary); }
+.approve-row.is-textarea { align-items: flex-start; }
+.approve-row.is-textarea > .tr-audit-label { margin-top: 8px; }
+</style>
+</head>
+<body>
+
+<!-- ========== 顶部导航 ========== -->
+<header class="app-header">
+  <div class="header-left">
+    <div class="header-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3.2" y="9.4" width="17.6" height="5.2" rx="2.6" transform="rotate(-45 12 12)"/>
+        <path d="M8.4 15.6L15.6 8.4"/>
+      </svg>
+    </div>
+    <div class="header-title">区域药房协同管理系统</div>
+  </div>
+  <div class="header-right">
+    <div class="header-user" id="headerUser" title="点击退出登录">
+      <span class="header-avatar">药</span>
+      <span class="header-user-name">—</span>
+      <svg class="user-arrow" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+    </div>
+  </div>
+</header>
+
+<div class="app-body">
+  <!-- ========== 左侧导航 ========== -->
+  <aside class="app-side" id="appSide"></aside>
+
+  <!-- ========== 主区域 ========== -->
+  <main class="app-main">
+    <div class="tabbar">
+      <div class="tab">首页</div>
+      <div class="tab" data-href="shortage.html">缺药登记</div>
+      <div class="tab active">
+        <span id="tabName">登记详情</span>
+        <button class="tab-close" id="tabClose" title="关闭">
+          <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="page sel-page tr-detail">
+      <div class="sel-main">
+        <div class="page-head">
+          <div class="head-back">
+            <button class="back-btn" id="btnBack" title="返回缺药登记列表">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+            </button>
+            <h1 class="page-title" id="pageTitle">缺药登记详情</h1>
+            <span class="pa-code" id="headCode">登记编号：—</span>
+          </div>
+          <span class="status-text" id="headStatus"></span>
+        </div>
+
+        <div class="sel-card" id="detailCard">
+          <div class="page-tabs" id="jumpTabs">
+            <span class="page-tab active" data-jump="info">登记信息</span>
+            <span class="page-tab" data-jump="drug">药品信息</span>
+            <span class="page-tab" data-jump="records">处理记录</span>
+          </div>
+
+          <div class="card-body" id="detailBody" style="padding:16px;">
+            <div class="form-wrap">
+              <section class="block" id="secInfo">
+                <div class="block-head"><h2 class="block-title">登记信息</h2></div>
+                <div class="form-grid-4" id="infoGrid"></div>
+              </section>
+
+              <section class="block" id="secDrug">
+                <div class="block-head"><h2 class="block-title">药品信息</h2></div>
+                <div class="form-grid-4" id="drugGrid"></div>
+              </section>
+
+              <section class="block" id="secRecords">
+                <div class="block-head"><h2 class="block-title">处理记录</h2></div>
+                <div class="tr-stage-table">
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <th style="width:130px;">节点</th>
+                        <th style="width:100px;">操作人</th>
+                        <th style="width:180px;">所属机构</th>
+                        <th style="width:100px;">处理结果</th>
+                        <th>处理意见</th>
+                        <th style="width:150px;">时间</th>
+                      </tr>
+                    </thead>
+                    <tbody id="recordBody"></tbody>
+                  </table>
+                </div>
+              </section>
+            </div>
+          </div>
+        </div>
+
+        <!-- 操作区：固定底部，位于卡片之后 -->
+        <div class="page-foot" id="pageFoot"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="modal-mask" id="modalMask"></div>
+<div class="toast" id="toast">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+  <span id="toastText"></span>
+</div>
+
+<script src="mock.js"></script>
+<script src="selection-common.js"></script>
+<script src="shortage-common.js"></script>
+<script>
+(function () {
+  var $ = SEL.$, esc = SEL.esc;
+  var user = SC.user();
+  if (!user) return;
+
+  var bill = SC.byId(SC.load(), SEL.qs("id"));
+  if (!bill || bill.deleted) { location.href = "shortage.html"; return; }
+
+  function goBack() { location.href = "shortage.html"; }
+
+  /* ---------------- 信息区 ---------------- */
+  function item(l, v, cls) {
+    return '<div class="form-item' + (cls ? " " + cls : "") + '">' +
+      '<span class="form-label">' + esc(l) + "</span>" +
+      '<span class="text-value">' + esc(v || "—") + "</span></div>";
+  }
+
+  function renderInfo() {
+    var reason = bill.reason === "其他"
+      ? "其他（" + (bill.reasonOther || "—") + "）"
+      : bill.reason;
+
+    /* 登记信息：类别 / 紧急程度 / 原因 / 说明 + 提交信息（最后一行） */
+    $("infoGrid").innerHTML =
+      item("登记编号", bill.code) +
+      item("缺药类别", SC.CATEGORY[bill.category]) +
+      item("紧急程度", SC.URGENCY[bill.urgency]) +
+      item("状态", SC.STATUS[bill.status]) +
+      item("缺药原因", reason) +
+      item("缺药说明", bill.remark, "span-3") +
+      item("提交人", bill.creator) +
+      item("提交时间", bill.submitTime || bill.createdAt) +
+      item("提交机构", bill.creatorOrg, "span-2of4");
+
+    /* 药品信息 */
+    $("drugGrid").innerHTML =
+      item("药品名称", bill.drugName, "span-2of4") +
+      item("药品规格", bill.spec) +
+      item("缺药数量", bill.qty) +
+      item("生产企业", bill.vendor, "span-2of4") +
+      item("批准文号", bill.approval, "span-2of4");
+
+    $("headCode").textContent = "登记编号：" + bill.code;
+    $("headStatus").innerHTML = '<span class="sc-st-' + bill.status + '">' + esc(SC.STATUS[bill.status]) + "</span>";
+    $("headStatus").classList.add("status-text");
+    document.title = "缺药登记详情 " + bill.code + " · 区域药房协同管理系统";
+  }
+
+  function renderRecords() {
+    $("recordBody").innerHTML = bill.records.length
+      ? bill.records.map(function (r) {
+          return "<tr>" +
+            "<td>" + esc(r.node) + "</td>" +
+            "<td>" + esc(r.person) + "</td>" +
+            "<td>" + esc(r.org) + "</td>" +
+            "<td>" + esc(r.result) + "</td>" +
+            '<td><div class="cell-ellipsis" title="' + esc(r.opinion) + '">' + esc(r.opinion) + "</div></td>" +
+            "<td>" + esc(r.time) + "</td>" +
+          "</tr>";
+        }).join("")
+      : '<tr><td colspan="6" class="pa-empty">暂无处理记录（草稿未提交）</td></tr>';
+  }
+
+  /* ---------------- 底部操作区 ---------------- */
+  function footHtml() {
+    var u = user;
+    /* 中心药房 · 待受理 → 受理表单 */
+    if (SC.canAudit(bill, u)) {
+      return '<div class="approve-row">' +
+          '<span class="tr-audit-label"><span class="req">*</span>受理结果</span>' +
+          '<div class="approve-ctrl">' +
+            '<label class="radio"><input type="radio" name="decision" value="pass" checked><span>受理</span></label>' +
+            '<label class="radio"><input type="radio" name="decision" value="reject"><span>拒绝</span></label>' +
+          "</div>" +
+        "</div>" +
+        '<div class="approve-row is-textarea">' +
+          '<span class="tr-audit-label"><span class="req">*</span>受理意见</span>' +
+          '<textarea class="textarea" id="fOpinion" maxlength="200" placeholder="拒绝时必填，受理时选填"></textarea>' +
+        "</div>" +
+        '<div class="approve-row approve-btns">' +
+          '<button class="btn" data-cancel="1">取消</button>' +
+          '<button class="btn btn-primary" id="btnAuditSubmit">提交</button>' +
+        "</div>";
+    }
+    /* 中心药房 · 已受理 → 解决表单（与受理一致，页面下方直接填写） */
+    if (SC.canSolve(bill, u)) {
+      return '<div class="approve-row">' +
+          '<span class="tr-audit-label"><span class="req">*</span>解决方式</span>' +
+          '<div class="approve-ctrl">' +
+            '<label class="radio"><input type="radio" name="solveMethod" value="center-transfer" checked><span>中心调拨</span></label>' +
+            '<label class="radio"><input type="radio" name="solveMethod" value="org-transfer"><span>机构调拨</span></label>' +
+            '<label class="radio"><input type="radio" name="solveMethod" value="purchase"><span>临时采购</span></label>' +
+            '<label class="radio"><input type="radio" name="solveMethod" value="catalog-add"><span>目录增配</span></label>' +
+          "</div>" +
+        "</div>" +
+        '<div class="approve-row is-textarea">' +
+          '<span class="tr-audit-label">解决说明</span>' +
+          '<textarea class="textarea" id="fSolveDesc" maxlength="200" placeholder="选填，可说明处理安排、到货时间等信息"></textarea>' +
+        "</div>" +
+        '<div class="approve-row approve-btns">' +
+          '<button class="btn" data-cancel="1">返回列表</button>' +
+          '<button class="btn btn-primary" id="btnSolveSubmit">确认解决</button>' +
+        "</div>";
+    }
+    /* 提交人 · 待受理 → 撤回 */
+    if (SC.canWithdraw(bill, u)) {
+      return '<div class="approve-row approve-btns">' +
+          '<button class="btn" data-cancel="1">返回列表</button>' +
+          '<button class="btn" id="btnWithdraw">撤回</button>' +
+        "</div>";
+    }
+    return "";
+  }
+
+  function renderFoot() {
+    var html = footHtml();
+    if (!html) return;
+    $("detailCard").classList.add("has-foot");
+    $("pageFoot").innerHTML = html;
+
+    var cancel = $("pageFoot").querySelector("[data-cancel]");
+    if (cancel) cancel.addEventListener("click", goBack);
+
+    if (SC.canAudit(bill, user)) {
+      $("fOpinion").addEventListener("input", function () { this.classList.remove("is-invalid"); });
+      $("btnAuditSubmit").addEventListener("click", function () {
+        var choice = $("pageFoot").querySelector('input[name="decision"]:checked');
+        var passed = choice ? choice.value === "pass" : true;
+        var opinion = $("fOpinion").value.trim();
+        if (!passed && !opinion) {
+          $("fOpinion").classList.add("is-invalid");
+          SEL.toast("拒绝时必须填写受理意见说明");
+          return;
+        }
+        SEL.confirmDialog({
+          title: passed ? "确认受理" : "确认拒绝",
+          text: passed
+            ? "确认受理缺药登记「" + bill.code + "」？受理后进入解决环节。"
+            : "确认拒绝缺药登记「" + bill.code + "」？拒绝后提交人可编辑后重新提交。",
+          okText: passed ? "受理" : "拒绝",
+          onOk: function () {
+            SC.auditBill(bill, user, passed, opinion || "—");
+            SC.persist(bill);
+            SEL.toast(passed ? "已受理，进入解决环节" : "已拒绝，退回提交人");
+            setTimeout(goBack, 400);
+          }
+        });
+      });
+    }
+
+    if (SC.canSolve(bill, user)) {
+      $("btnSolveSubmit").addEventListener("click", function () {
+        var m = $("pageFoot").querySelector('input[name="solveMethod"]:checked');
+        var method = m ? m.value : "center-transfer";
+        var desc = $("fSolveDesc").value.trim();
+        SEL.confirmDialog({
+          title: "确认解决",
+          text: "解决方式：" + (SC.SOLUTIONS[method] || method) +
+            "，确认将缺药登记「" + bill.code + "」标记为已解决？",
+          okText: "确认解决",
+          onOk: function () {
+            SC.solveBill(bill, user, method, desc);
+            SC.persist(bill);
+            SEL.toast("已登记解决");
+            setTimeout(function () { location.reload(); }, 400);
+          }
+        });
+      });
+    }
+
+    if (SC.canWithdraw(bill, user)) {
+      $("btnWithdraw").addEventListener("click", function () {
+        SEL.confirmDialog({
+          title: "撤回",
+          text: "确认撤回缺药登记「" + bill.code + "」？撤回后回到草稿，可修改后重新提交。",
+          okText: "撤回",
+          onOk: function () {
+            SC.withdrawBill(bill);
+            SC.persist(bill);
+            SEL.toast("已撤回");
+            setTimeout(goBack, 400);
+          }
+        });
+      });
+    }
+  }
+
+  /* ---------------- 页签定位 ---------------- */
+  function bindJump() {
+    var body = $("detailBody");
+    var tabs = $("jumpTabs");
+    if (!body || !tabs) return;
+
+    var secs = [
+      { key: "info", el: $("secInfo") },
+      { key: "drug", el: $("secDrug") },
+      { key: "records", el: $("secRecords") }
+    ];
+
+    function setActive(name) {
+      [].slice.call(tabs.children).forEach(function (t) {
+        t.classList.toggle("active", t.getAttribute("data-jump") === name);
+      });
+    }
+    function jumpTo(name) {
+      var sec = secs.filter(function (s) { return s.key === name; })[0];
+      var top = 0;
+      if (sec) {
+        top = sec.el.getBoundingClientRect().top
+          - body.getBoundingClientRect().top + body.scrollTop;
+      }
+      body.scrollTo({ top: top, behavior: "auto" });
+      setActive(name);
+    }
+    tabs.addEventListener("click", function (e) {
+      var tab = e.target.closest(".page-tab");
+      if (tab) jumpTo(tab.getAttribute("data-jump"));
+    });
+    body.addEventListener("scroll", function () {
+      var top = body.getBoundingClientRect().top;
+      var atBottom = body.scrollTop > 0 &&
+        body.scrollTop >= body.scrollHeight - body.clientHeight - 2;
+      var current = "info";
+      secs.forEach(function (s) {
+        if (s.el.getBoundingClientRect().top - top <= 24) current = s.key;
+      });
+      setActive(atBottom ? "records" : current);
+    });
+  }
+
+  /* ---------------- 事件 ---------------- */
+  $("btnBack").addEventListener("click", goBack);
+  $("tabClose").addEventListener("click", goBack);
+  $("pageTitle").textContent = "缺药登记详情";
+  $("tabName").textContent = "缺药登记详情";
+  $("headerUser").addEventListener("click", function () {
+    SEL.confirmDialog({
+      title: "退出登录",
+      text: "确认退出当前账号「" + user.name + "」？",
+      okText: "退出",
+      onOk: function () { SEL.logout(); }
+    });
+  });
+
+  SEL.renderHeaderUser(user);
+  SEL.bindNav();
+  renderInfo();
+  renderRecords();
+  renderFoot();
+  bindJump();
+})();
+</script>
+  <script src="nav.js"></script>
+</body>
+</html>

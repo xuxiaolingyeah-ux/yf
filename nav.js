@@ -8,6 +8,7 @@
     cart: '<path d="M3 4h2l2.6 12.4a1 1 0 0 0 1 .8h9.8a1 1 0 0 0 1-.8L21 8H6"/><circle cx="9.5" cy="20" r="1.4"/><circle cx="17.5" cy="20" r="1.4"/>',
     price: '<path d="M20 12l-8 8-9-9V3h11l6 6z"/><circle cx="7.5" cy="7.5" r="1.2"/>',
     alert: '<path d="M12 3l9 16H3z"/><path d="M12 8v5"/><circle cx="12" cy="16" r="1"/>',
+    shortage: '<path d="M4 4h16v12H4z"/><path d="M8 20h8M12 16v4"/><path d="M9 10h6"/>',
     rx: '<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4.5V3h6v1.5M9 10h6M9 14h6"/>',
     stat: '<path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/>',
     sys: '<circle cx="12" cy="12" r="3.2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/>'
@@ -50,6 +51,9 @@
       { name: "药品高低储设置", href: "stock-level.html", files: ["stock-level.html"], roles: ["center"] },
       { name: "药品高低储预警", href: "stock-alert.html", files: ["stock-alert.html"], roles: ["center"] }
     ], roles: ["center"] },
+    { name: "基层缺药", icon: "shortage", items: [
+      { name: "缺药登记", href: "shortage.html", files: ["shortage.html", "shortage-create.html", "shortage-detail.html"], roles: C3 }
+    ], roles: C3 },
     { name: "门诊处方管理", icon: "rx", items: [
       { name: "中药饮片处方开具", href: "prescription-tcm.html", files: ["prescription-tcm.html"] },
       { name: "西药处方开具", href: "prescription-western.html", files: ["prescription-western.html"] },

@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>缺药登记 · 区域药房协同管理系统</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+/* 左侧首列（药品名称）与右侧（状态 + 操作）分别固定，中间列横向滚动 */
+.tr-list-table .col-drug {
+  position: sticky; left: 0; z-index: 1;
+  background: var(--bg-white);
+  box-shadow: 1px 0 0 var(--border);
+}
+.tr-list-table thead th.col-drug { background: var(--table-head); z-index: 3; }
+.tr-list-table tbody tr:nth-child(even) td.col-drug { background: var(--table-even); }
+.tr-list-table tbody tr:hover td.col-drug { background: var(--table-hover); }
+
+.tr-list-table .col-status {
+  position: sticky; right: 176px; z-index: 1;
+  background: var(--bg-white);
+  box-shadow: -1px 0 0 var(--border);
+}
+.tr-list-table thead th.col-status { background: var(--table-head); z-index: 3; }
+.tr-list-table tbody tr:nth-child(even) td.col-status { background: var(--table-even); }
+.tr-list-table tbody tr:hover td.col-status { background: var(--table-hover); }
+</style>
+</head>
+<body>
+
+<!-- ========== 顶部导航 ========== -->
+<header class="app-header">
+  <div class="header-left">
+    <div class="header-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3.2" y="9.4" width="17.6" height="5.2" rx="2.6" transform="rotate(-45 12 12)"/>
+        <path d="M8.4 15.6L15.6 8.4"/>
+      </svg>
+    </div>
+    <div class="header-title">区域药房协同管理系统</div>
+  </div>
+  <div class="header-right">
+    <div class="header-user" id="headerUser" title="点击退出登录">
+      <span class="header-avatar">药</span>
+      <span class="header-user-name">—</span>
+      <svg class="user-arrow" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+    </div>
+  </div>
+</header>
+
+<div class="app-body">
+  <!-- ========== 左侧导航 ========== -->
+  <aside class="app-side" id="appSide"></aside>
+
+  <!-- ========== 主区域 ========== -->
+  <main class="app-main">
+    <div class="tabbar">
+      <div class="tab">首页</div>
+      <div class="tab active">
+        缺药登记
+        <button class="tab-close" id="tabClose" title="关闭">
+          <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="page sel-page">
+      <div class="sel-main">
+        <!-- 标题行 -->
+        <div class="page-head">
+          <h1 class="page-title">缺药登记</h1>
+          <div class="page-acts">
+            <button class="btn btn-primary" id="btnCreate">新增登记</button>
+          </div>
+        </div>
+
+        <div class="sel-card">
+          <!-- 筛选 -->
+          <div class="filter-bar">
+            <div class="filter-item">
+              <span class="filter-label">缺药类别</span>
+              <select class="select" id="fCategory" style="width:140px;">
+                <option value="">全部</option>
+                <option value="catalog">药品目录缺失</option>
+                <option value="stock">库存不足</option>
+              </select>
+            </div>
+            <div class="filter-item">
+              <span class="filter-label">紧急程度</span>
+              <select class="select" id="fUrgency" style="width:100px;">
+                <option value="">全部</option>
+                <option value="normal">一般</option>
+                <option value="urgent">紧急</option>
+              </select>
+            </div>
+            <div class="filter-item">
+              <span class="filter-label">缺药原因</span>
+              <select class="select" id="fReason" style="width:130px;">
+                <option value="">全部</option>
+                <option>库存不足</option>
+                <option>临床新增需求</option>
+                <option>季节性需求</option>
+                <option>其他</option>
+              </select>
+            </div>
+            <div class="filter-item">
+              <span class="filter-label">状态</span>
+              <select class="select" id="fStatus" style="width:110px;">
+                <option value="">全部</option>
+                <option value="draft">草稿</option>
+                <option value="pending">待受理</option>
+                <option value="accepted">已受理</option>
+                <option value="rejected">已拒绝</option>
+                <option value="resolved">已解决</option>
+              </select>
+            </div>
+            <div class="filter-item">
+              <span class="filter-label">提交人</span>
+              <input class="input" id="fCreator" placeholder="请输入提交人" style="width:110px;">
+            </div>
+            <div class="filter-item">
+              <span class="filter-label">提交日期</span>
+              <input class="input" type="date" id="fFrom">
+              <span class="filter-sep">至</span>
+              <input class="input" type="date" id="fTo">
+            </div>
+            <div class="filter-acts">
+              <button class="btn" id="btnReset">重置</button>
+              <button class="btn btn-primary" id="btnQuery">查询</button>
+            </div>
+          </div>
+
+          <!-- 列表 -->
+          <div class="tr-list-wrap">
+            <table class="data-table tr-list-table">
+              <thead>
+                <tr>
+                  <th style="width:200px;" class="col-drug">药品名称</th>
+                  <th style="width:120px;">缺药类别</th>
+                  <th style="width:80px;">紧急程度</th>
+                  <th style="width:110px;">缺药原因</th>
+                  <th style="width:80px;">提交人</th>
+                  <th style="width:140px;">提交时间</th>
+                  <th style="width:160px;">提交机构</th>
+                  <th style="width:90px;" class="col-status">状态</th>
+                  <th style="width:176px;" class="col-acts">操作</th>
+                </tr>
+              </thead>
+              <tbody id="tbody"></tbody>
+            </table>
+            <div class="table-empty" id="tableEmpty" style="display:none;">暂无数据</div>
+          </div>
+
+          <div class="pager">
+            <span id="pagerInfo"></span>
+            <div class="pager-ctrl">
+              <button class="pager-btn" id="pgPrev" title="上一页">
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+              </button>
+              <span class="pager-num" id="pgNum">1</span>
+              <button class="pager-btn" id="pgNext" title="下一页">
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="modal-mask" id="modalMask"></div>
+<div class="toast" id="toast">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+  <span id="toastText"></span>
+</div>
+
+<script src="mock.js"></script>
+<script src="selection-common.js"></script>
+<script src="shortage-common.js"></script>
+<script>
+(function () {
+  var $ = SEL.$, esc = SEL.esc;
+  var user = SC.user();
+  if (!user) return;
+
+  var state = { category: "", urgency: "", reason: "", status: "", creator: "", from: "", to: "", page: 1, size: 10 };
+
+  function filtered() {
+    return SC.load().filter(function (b) {
+      if (!SC.related(b, user)) return false;
+      if (state.category && b.category !== state.category) return false;
+      if (state.urgency && b.urgency !== state.urgency) return false;
+      if (state.reason && b.reason !== state.reason) return false;
+      if (state.status && b.status !== state.status) return false;
+      if (state.creator && b.creator.toLowerCase().indexOf(state.creator.toLowerCase()) < 0) return false;
+      if (state.from || state.to) {
+        var day = (b.submitTime || "").slice(0, 10);
+        if (!day) return false;
+        if (state.from && day < state.from) return false;
+        if (state.to && day > state.to) return false;
+      }
+      return true;
+    }).sort(function (x, y) {
+      var a = x.submitTime || x.createdAt || "";
+      var b = y.submitTime || y.createdAt || "";
+      if (a === b) return 0;
+      return a < b ? 1 : -1;
+    });
+  }
+
+  function statusHtml(b) {
+    return esc(SC.STATUS[b.status] || "—");
+  }
+
+  function actionHtml(b) {
+    return SC.actionsFor(b, user).map(function (a) {
+      return '<button class="link-btn' + (a.danger ? " is-danger" : "") + '" data-act="' + a.key +
+        '" data-id="' + b.id + '">' + a.label + "</button>";
+    }).join("");
+  }
+
+  function renderTable() {
+    var rows = filtered();
+    var total = rows.length;
+    var pages = Math.max(1, Math.ceil(total / state.size));
+    if (state.page > pages) state.page = pages;
+    var start = (state.page - 1) * state.size;
+
+    $("tbody").innerHTML = rows.slice(start, start + state.size).map(function (b) {
+      return "<tr>" +
+        '<td class="col-drug" title="' + esc(b.drugName + " " + b.spec) + '">' + esc(b.drugName) + "</td>" +
+        "<td>" + esc(SC.CATEGORY[b.category] || "—") + "</td>" +
+        "<td>" + esc(SC.URGENCY[b.urgency] || "—") + "</td>" +
+        "<td title=\"" + esc(b.reason === "其他" ? "其他：" + (b.reasonOther || "—") : b.reason) + "\">" + esc(b.reason) + "</td>" +
+        "<td>" + esc(b.creator) + "</td>" +
+        "<td>" + esc(b.submitTime || "—") + "</td>" +
+        "<td>" + esc(b.creatorOrg || "—") + "</td>" +
+        '<td class="col-status">' + statusHtml(b) + "</td>" +
+        '<td class="col-acts">' + actionHtml(b) + "</td>" +
+      "</tr>";
+    }).join("");
+
+    $("tableEmpty").style.display = total ? "none" : "block";
+    $("pagerInfo").textContent = "共 " + total + " 条";
+    $("pgNum").textContent = state.page + " / " + pages;
+    $("pgPrev").disabled = state.page <= 1;
+    $("pgNext").disabled = state.page >= pages;
+  }
+
+  /* ---------------- 操作 ---------------- */
+  function withBill(id, fn) {
+    var list = SC.load();
+    var b = SC.byId(list, id);
+    if (b) fn(b, list);
+  }
+
+  function doSubmit(id) {
+    withBill(id, function (b) {
+      SEL.confirmDialog({
+        title: "提交登记",
+        text: "确认提交缺药登记「" + b.code + "」？提交后由中心药房受理。",
+        okText: "提交",
+        onOk: function () {
+          SC.submitBill(b);
+          SC.persist(b);
+          SEL.toast("已提交");
+          renderTable();
+        }
+      });
+    });
+  }
+
+  function doWithdraw(id) {
+    withBill(id, function (b) {
+      SEL.confirmDialog({
+        title: "撤回",
+        text: "确认撤回缺药登记「" + b.code + "」？撤回后回到草稿，可修改后重新提交。",
+        okText: "撤回",
+        onOk: function () {
+          SC.withdrawBill(b);
+          SC.persist(b);
+          SEL.toast("已撤回");
+          renderTable();
+        }
+      });
+    });
+  }
+
+  function doDelete(id) {
+    withBill(id, function (b) {
+      SEL.confirmDialog({
+        title: "删除登记",
+        text: "确认删除缺药登记「" + b.code + "」？删除后列表不再展示。",
+        okText: "删除",
+        onOk: function () {
+          b.deleted = true;
+          SC.persist(b);
+          SEL.toast("已删除");
+          renderTable();
+        }
+      });
+    });
+  }
+
+  /* ---------------- 事件 ---------------- */
+  if (user.role === "center" || user.role === "pharmacist") {
+    $("btnCreate").style.display = "none";
+  }
+  $("btnCreate").addEventListener("click", function () {
+    location.href = "shortage-create.html";
+  });
+
+  function doQuery() {
+    state.category = $("fCategory").value;
+    state.urgency = $("fUrgency").value;
+    state.reason = $("fReason").value;
+    state.status = $("fStatus").value;
+    state.creator = $("fCreator").value.trim();
+    state.from = $("fFrom").value;
+    state.to = $("fTo").value;
+    state.page = 1;
+    renderTable();
+  }
+  $("btnQuery").addEventListener("click", doQuery);
+  $("fCreator").addEventListener("keydown", function (e) { if (e.key === "Enter") doQuery(); });
+
+  $("btnReset").addEventListener("click", function () {
+    ["fCategory", "fUrgency", "fReason", "fStatus", "fCreator", "fFrom", "fTo"].forEach(function (id) {
+      $(id).value = "";
+    });
+    state = { category: "", urgency: "", reason: "", status: "", creator: "", from: "", to: "", page: 1, size: 10 };
+    renderTable();
+  });
+
+  $("pgPrev").addEventListener("click", function () { state.page--; renderTable(); });
+  $("pgNext").addEventListener("click", function () { state.page++; renderTable(); });
+
+  $("tbody").addEventListener("click", function (e) {
+    var btn = e.target.closest("[data-id]");
+    if (!btn) return;
+    var id = btn.getAttribute("data-id");
+    var act = btn.getAttribute("data-act");
+    if (act === "view") location.href = "shortage-detail.html?id=" + id;
+    else if (act === "edit") location.href = "shortage-create.html?id=" + id;
+    else if (act === "submit") doSubmit(id);
+    else if (act === "withdraw") doWithdraw(id);
+    else if (act === "delete") doDelete(id);
+    else if (act === "audit") location.href = "shortage-detail.html?id=" + id;
+    else if (act === "solve") location.href = "shortage-detail.html?id=" + id;
+  });
+
+  $("tabClose").addEventListener("click", function () { location.href = "home.html"; });
+  $("headerUser").addEventListener("click", function () {
+    SEL.confirmDialog({
+      title: "退出登录",
+      text: "确认退出当前账号「" + user.name + "」？",
+      okText: "退出",
+      onOk: function () { SEL.logout(); }
+    });
+  });
+
+  SEL.renderHeaderUser(user);
+  SEL.bindNav();
+  renderTable();
+})();
+</script>
+  <script src="nav.js"></script>
+</body>
+</html>

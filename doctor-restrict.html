@@ -1,0 +1,1191 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>限制医生使用管理 · 系统维护</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+/* ===== 系统维护 · 限制医生使用管理 ===== */
+
+/* 灰底水槽 + 白卡浮起 */
+.page.rs-page { background: var(--bg-page); padding: 12px; gap: 0; }
+.rs-card {
+  flex: 1; min-height: 0;
+  display: flex; flex-direction: column;
+  background: var(--bg-white);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 1px 2px rgba(0,0,0,.04);
+  overflow: hidden;
+}
+.rs-card > .page-head {
+  flex: none;
+  height: 48px; padding: 0 16px;
+  border-bottom: 1px solid var(--border);
+}
+/* 标题行：标题旁跟「药房选择」 */
+.rs-title-row { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; }
+.rs-pharmacy { display: flex; align-items: center; gap: 6px; flex: none; }
+.rs-pharmacy .select { height: 30px; width: 200px; }
+.rs-pharmacy-label { font-size: 13px; color: var(--text-tertiary); white-space: nowrap; }
+
+/* 页内 Tab */
+.rs-tabs { display: flex; gap: 8px; padding: 10px 16px 0; background: var(--bg-white); }
+.rs-tab {
+  height: 32px; padding: 0 16px;
+  display: inline-flex; align-items: center;
+  font-size: 13px; color: var(--text-secondary);
+  background: var(--table-head); border: 1px solid var(--border);
+  border-radius: 4px 4px 0 0; border-bottom: none;
+  cursor: pointer; user-select: none;
+}
+.rs-tab:hover { color: var(--primary); }
+.rs-tab.active {
+  background: var(--primary); color: #fff; border-color: var(--primary);
+}
+
+/* 筛选区 */
+.rs-filter {
+  display: flex; flex-wrap: wrap; align-items: center;
+  gap: 10px 20px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-white);
+}
+.rs-filter .filter-item { display: flex; align-items: center; gap: 6px; }
+.rs-filter .filter-label { font-size: 12px; color: var(--text-tertiary); white-space: nowrap; }
+.rs-filter .input, .rs-filter .select { height: 30px; width: 180px; }
+.rs-filter .filter-acts { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+
+/* 表格 */
+.rs-table-wrap { flex: 1; min-height: 0; overflow: auto; background: var(--bg-white); padding: 0 16px; }
+.rs-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.rs-table th {
+  position: sticky; top: 0; z-index: 2;
+  background: var(--table-head);
+  height: 38px; padding: 0 10px;
+  text-align: left; font-weight: 500; color: var(--text-secondary);
+  white-space: nowrap;
+  border-bottom: 1px solid var(--border);
+}
+.rs-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-primary);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  max-width: 320px;
+}
+.rs-table tbody tr:nth-child(even) { background: var(--table-even); }
+.rs-table tbody tr:hover { background: var(--table-hover); }
+.rs-table .col-num { text-align: right; font-variant-numeric: tabular-nums; }
+.rs-link { color: var(--primary); cursor: pointer; font-size: 13px; }
+.rs-link:hover { color: var(--primary-dark); text-decoration: underline; }
+
+/* 分页 */
+.rs-card > .pager { padding: 0 16px; height: 44px; }
+.rs-pager-wrap { display: flex; align-items: center; gap: 12px; }
+.rs-pager-total { font-size: 12px; color: var(--text-secondary); }
+.rs-pager-size {
+  height: 26px; font-size: 12px; width: 74px;
+  border: 1px solid var(--border-input); border-radius: 3px;
+  padding: 0 4px; color: var(--text-secondary);
+}
+.rs-pg-btn {
+  min-width: 26px; height: 26px; padding: 0 6px;
+  border: 1px solid var(--border-input); border-radius: 3px;
+  background: #fff; color: var(--text-secondary);
+  font-size: 12px; cursor: pointer; line-height: 1;
+}
+.rs-pg-btn:hover:not(:disabled):not(.active) { border-color: var(--primary); color: var(--primary); }
+.rs-pg-btn:disabled { color: var(--text-placeholder); border-color: var(--border); cursor: not-allowed; }
+.rs-pg-btn.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+.rs-pg-ellipsis { color: var(--text-tertiary); font-size: 12px; padding: 0 2px; }
+.rs-pager-jump { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary); }
+.rs-pager-jump .input { width: 44px; height: 26px; font-size: 12px; text-align: center; padding: 0 4px; }
+
+/* ---------- 配置弹窗 ---------- */
+.rs-mask {
+  position: fixed; inset: 0; z-index: 900;
+  background: rgba(0,0,0,.45);
+  display: none; align-items: flex-start; justify-content: center;
+  padding: 40px 24px 24px;
+}
+.rs-mask.show { display: flex; }
+.rs-dialog {
+  width: 1080px; max-width: calc(100vw - 48px); height: 100%; max-height: 860px;
+  background: #fff; border-radius: var(--radius-lg);
+  display: flex; flex-direction: column; overflow: hidden;
+  box-shadow: 0 12px 40px rgba(0,0,0,.2);
+}
+.rs-dlg-head {
+  flex: none; height: 46px; padding: 0 16px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+}
+.rs-dlg-title { font-size: 15px; font-weight: 500; }
+.rs-dlg-close {
+  width: 26px; height: 26px; border: none; background: none; cursor: pointer;
+  color: var(--text-tertiary); border-radius: 4px;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.rs-dlg-close:hover { background: var(--table-head); color: var(--text-primary); }
+.rs-dlg-body { flex: 1; min-height: 0; overflow-y: auto; padding: 14px 16px; }
+.rs-dlg-foot {
+  flex: none; padding: 10px 16px;
+  border-top: 1px solid var(--border);
+  display: flex; justify-content: flex-end; gap: 8px;
+  background: var(--bg-white);
+}
+
+/* 信息块（带左侧蓝色竖条标题） */
+.rs-block-title {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 14px; font-weight: 500; color: var(--text-primary);
+  margin-bottom: 10px;
+}
+.rs-block-title::before { content: ""; width: 3px; height: 14px; background: var(--primary); border-radius: 1px; }
+.rs-info-row { display: flex; flex-wrap: wrap; gap: 8px 48px; padding: 4px 0 10px; }
+.rs-info-item { display: flex; align-items: center; gap: 4px; font-size: 13px; min-width: 220px; }
+.rs-info-label { color: var(--text-tertiary); }
+.rs-info-value { color: var(--text-primary); }
+
+/* 双栏穿梭布局 */
+.rs-transfer { display: flex; gap: 12px; align-items: stretch; flex: 1; min-height: 0; }
+.rs-pane {
+  flex: 1; min-width: 0;
+  display: flex; flex-direction: column;
+  border: 1px solid var(--border); border-radius: var(--radius);
+  overflow: hidden; background: var(--bg-white);
+}
+.rs-pane-filter {
+  flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  padding: 10px 10px;
+  border-bottom: 1px solid var(--border); background: var(--bg-white);
+}
+.rs-pane-filter .input, .rs-pane-filter .select { height: 28px; width: 120px; font-size: 12px; }
+.rs-pane-filter .input.grow { flex: 1; min-width: 80px; width: auto; }
+.rs-pane-head {
+  flex: none; padding: 8px 10px 4px;
+}
+.rs-pane-table { flex: 1; min-height: 0; overflow-y: auto; }
+.rs-pane-table table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.rs-pane-table th {
+  position: sticky; top: 0; z-index: 2;
+  background: var(--table-head); height: 32px; padding: 0 8px;
+  text-align: left; font-weight: 500; color: var(--text-secondary);
+  border-bottom: 1px solid var(--border); white-space: nowrap;
+}
+.rs-pane-table td {
+  padding: 6px 8px; border-bottom: 1px solid var(--border);
+  color: var(--text-primary); white-space: nowrap;
+}
+.rs-pane-table tbody tr:nth-child(even) { background: var(--table-even); }
+.rs-pane-table tbody tr:hover { background: var(--table-hover); }
+.rs-pane-foot { flex: none; padding: 6px 10px; }
+.rs-pane-foot .pager { padding: 0; }
+.rs-chk {
+  width: 14px; height: 14px; accent-color: var(--primary); cursor: pointer;
+}
+.rs-note {
+  flex: none; padding: 8px 10px;
+  font-size: 12px; color: #FA8C16;
+  background: #FFF9F0; border-top: 1px solid #FFE7BA;
+}
+/* 中间穿梭按钮 */
+.rs-mid { flex: none; display: flex; flex-direction: column; justify-content: center; gap: 10px; padding: 0 2px; }
+.rs-move-btn {
+  width: 30px; height: 30px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--primary); color: #fff;
+  border: none; border-radius: 4px; cursor: pointer;
+}
+.rs-move-btn:hover:not(:disabled) { background: var(--primary-dark); }
+.rs-move-btn:disabled { opacity: .45; cursor: not-allowed; }
+/* 全指定 / 全取消 */
+.rs-all-btn {
+  height: 28px; padding: 0 12px; font-size: 12px;
+  border: 1px solid var(--primary); color: var(--primary);
+  background: #fff; border-radius: 3px; cursor: pointer; white-space: nowrap;
+}
+.rs-all-btn:hover { background: var(--primary); color: #fff; }
+</style>
+</head>
+<body>
+
+<!-- ========== 顶部导航 ========== -->
+<header class="app-header">
+  <div class="header-left">
+    <div class="header-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3.2" y="9.4" width="17.6" height="5.2" rx="2.6" transform="rotate(-45 12 12)"/>
+        <path d="M8.4 15.6L15.6 8.4"/>
+      </svg>
+    </div>
+    <div class="header-title">区域药房协同管理系统</div>
+  </div>
+  <div class="header-right">
+    <div class="header-user">
+      <div class="header-avatar">孙</div>
+      <span class="header-user-name">孙磊 · HIS 对接</span>
+    </div>
+  </div>
+</header>
+
+<div class="app-body">
+  <!-- ========== 左侧导航 ========== -->
+  <aside class="app-side" id="appSide"></aside>
+<!-- ========== 主区域 ========== -->
+  <main class="app-main">
+    <div class="tabbar">
+      <div class="tab" onclick="location.href='home.html'">首页</div>
+      <div class="tab active">
+        限制医生使用管理
+        <button class="tab-close" title="关闭" onclick="location.href='home.html'">
+          <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 5l14 14M19 5L5 19"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="page rs-page">
+      <div class="rs-card">
+        <!-- 标题行：标题 + 药房选择 -->
+        <div class="page-head">
+          <div class="rs-title-row">
+            <h1 class="page-title">限制医生使用管理</h1>
+            <div class="rs-pharmacy">
+              <span class="rs-pharmacy-label">药房：</span>
+              <select class="select" id="f-pharmacy"></select>
+            </div>
+          </div>
+        </div>
+
+        <!-- 页内 Tab -->
+        <div class="rs-tabs">
+          <div class="rs-tab active" data-tab="doc" onclick="RS.switchTab('doc')">限制医生使用</div>
+          <div class="rs-tab" data-tab="drug" onclick="RS.switchTab('drug')">限制药品使用</div>
+        </div>
+
+        <!-- ========== Tab1：限制医生使用 ========== -->
+        <div id="tab-doc">
+          <div class="rs-filter">
+            <div class="filter-item">
+              <span class="filter-label">药品名称：</span>
+              <input class="input" id="d-kw" placeholder="药品名称/编码/拼普码">
+            </div>
+            <div class="filter-item">
+              <span class="filter-label">药品种类：</span>
+              <select class="select" id="d-kind">
+                <option value="">药品种类</option>
+                <option>西药</option>
+                <option>中成药</option>
+                <option>中药饮片</option>
+              </select>
+            </div>
+            <div class="filter-acts">
+              <button class="btn btn-default" onclick="RS.docReset()">重置</button>
+              <button class="btn btn-primary" onclick="RS.docSearch()">查询</button>
+            </div>
+          </div>
+          <div class="rs-table-wrap">
+            <table class="rs-table">
+              <thead>
+                <tr>
+                  <th style="width:60px">序号</th>
+                  <th style="min-width:110px">品牌编码</th>
+                  <th style="min-width:160px">药品名称</th>
+                  <th style="min-width:80px">药品种类</th>
+                  <th style="min-width:130px">药品规格</th>
+                  <th style="min-width:180px">可使用医生</th>
+                  <th style="min-width:60px">操作</th>
+                </tr>
+              </thead>
+              <tbody id="doc-tbody"></tbody>
+            </table>
+          </div>
+          <div class="pager">
+            <div class="rs-pager-wrap" id="doc-pager"></div>
+          </div>
+        </div>
+
+        <!-- ========== Tab2：限制药品使用 ========== -->
+        <div id="tab-drug" style="display:none">
+          <div class="rs-filter">
+            <div class="filter-item">
+              <span class="filter-label">科室名称：</span>
+              <input class="input" id="p-kw" placeholder="科室名称/编码">
+            </div>
+            <div class="filter-item">
+              <span class="filter-label">科室种类：</span>
+              <select class="select" id="p-kind">
+                <option value="">科室种类</option>
+                <option>门诊</option>
+                <option>急诊</option>
+                <option>住院</option>
+              </select>
+            </div>
+            <div class="filter-acts">
+              <button class="btn btn-default" onclick="RS.deptReset()">重置</button>
+              <button class="btn btn-primary" onclick="RS.deptSearch()">查询</button>
+            </div>
+          </div>
+          <div class="rs-table-wrap">
+            <table class="rs-table">
+              <thead>
+                <tr>
+                  <th style="width:60px">序号</th>
+                  <th style="min-width:80px">科室编码</th>
+                  <th style="min-width:140px">科室名称</th>
+                  <th style="min-width:80px">科室类型</th>
+                  <th style="min-width:260px">不可使用药品</th>
+                  <th style="min-width:60px">操作</th>
+                </tr>
+              </thead>
+              <tbody id="dept-tbody"></tbody>
+            </table>
+          </div>
+          <div class="pager">
+            <div class="rs-pager-wrap" id="dept-pager"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ========== 医生配置弹窗 ========== -->
+<div class="rs-mask" id="dlg-doctor">
+  <div class="rs-dialog">
+    <div class="rs-dlg-head">
+      <span class="rs-dlg-title" id="dlg-doctor-title">配置可使用医生</span>
+      <button class="rs-dlg-close" onclick="RS.closeDialog('dlg-doctor')">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+      </button>
+    </div>
+    <div class="rs-dlg-body">
+      <div class="rs-block-title">药品信息</div>
+      <div class="rs-info-row" id="dlg-doctor-info"></div>
+      <div class="rs-transfer">
+        <!-- 左：全院医生信息 -->
+        <div class="rs-pane">
+          <div class="rs-pane-head"><div class="rs-block-title" style="margin-bottom:0">全院医生信息</div></div>
+          <div class="rs-pane-filter">
+            <input class="input grow" id="dl-kw" placeholder="医生姓名">
+            <button class="rs-all-btn" onclick="RS.docAllAssign()">全指定</button>
+          </div>
+          <div class="rs-pane-table">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width:36px"><input type="checkbox" class="rs-chk" id="dl-chk-all" onclick="RS.docCheckAll('dl', this)"></th>
+                  <th style="width:52px">序号</th>
+                  <th>医生姓名</th>
+                </tr>
+              </thead>
+              <tbody id="dl-tbody"></tbody>
+            </table>
+          </div>
+          <div class="rs-pane-foot"><div class="pager"><div class="rs-pager-wrap" id="dl-pager"></div></div></div>
+        </div>
+        <!-- 中：穿梭按钮 -->
+        <div class="rs-mid">
+          <button class="rs-move-btn" title="移到右侧" onclick="RS.docMove(1)">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+          </button>
+          <button class="rs-move-btn" title="移到左侧" onclick="RS.docMove(-1)">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+          </button>
+        </div>
+        <!-- 右：可使用医生信息 -->
+        <div class="rs-pane">
+          <div class="rs-pane-head"><div class="rs-block-title" style="margin-bottom:0">可使用医生信息</div></div>
+          <div class="rs-pane-filter">
+            <input class="input grow" id="dr-kw" placeholder="医生姓名">
+            <button class="rs-all-btn" onclick="RS.docAllCancel()">全取消</button>
+          </div>
+          <div class="rs-pane-table">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width:36px"><input type="checkbox" class="rs-chk" id="dr-chk-all" onclick="RS.docCheckAll('dr', this)"></th>
+                  <th style="width:52px">序号</th>
+                  <th>医生姓名</th>
+                </tr>
+              </thead>
+              <tbody id="dr-tbody"></tbody>
+            </table>
+          </div>
+          <div class="rs-pane-foot"><div class="pager"><div class="rs-pager-wrap" id="dr-pager"></div></div></div>
+          <div class="rs-note">注：列表为空表示所有医生都可使用，列表有值表示只能配置医生可用。</div>
+        </div>
+      </div>
+    </div>
+    <div class="rs-dlg-foot">
+      <button class="btn" onclick="RS.closeDialog('dlg-doctor')">取消</button>
+      <button class="btn btn-primary" onclick="RS.docSave()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== 药品配置弹窗 ========== -->
+<div class="rs-mask" id="dlg-drug">
+  <div class="rs-dialog">
+    <div class="rs-dlg-head">
+      <span class="rs-dlg-title" id="dlg-drug-title">配置不可使用药品</span>
+      <button class="rs-dlg-close" onclick="RS.closeDialog('dlg-drug')">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+      </button>
+    </div>
+    <div class="rs-dlg-body">
+      <div class="rs-block-title">科室信息</div>
+      <div class="rs-info-row" id="dlg-drug-info"></div>
+      <div class="rs-transfer">
+        <!-- 左：所有药品列表 -->
+        <div class="rs-pane">
+          <div class="rs-pane-head"><div class="rs-block-title" style="margin-bottom:0">所有药品列表</div></div>
+          <div class="rs-pane-filter">
+            <input class="input grow" id="pl-kw" placeholder="药品名称">
+            <select class="select" id="pl-kind">
+              <option value="">请选择药品种类</option>
+              <option>西药</option>
+              <option>中成药</option>
+              <option>中药饮片</option>
+            </select>
+            <button class="rs-all-btn" onclick="RS.drugAllAssign()">全指定</button>
+          </div>
+          <div class="rs-pane-table">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width:36px"><input type="checkbox" class="rs-chk" id="pl-chk-all" onclick="RS.drugCheckAll('pl', this)"></th>
+                  <th style="width:52px">序号</th>
+                  <th style="width:70px">药品种类</th>
+                  <th>药品名称</th>
+                  <th style="width:110px">药品规格</th>
+                </tr>
+              </thead>
+              <tbody id="pl-tbody"></tbody>
+            </table>
+          </div>
+          <div class="rs-pane-foot"><div class="pager"><div class="rs-pager-wrap" id="pl-pager"></div></div></div>
+        </div>
+        <!-- 中：穿梭按钮 -->
+        <div class="rs-mid">
+          <button class="rs-move-btn" title="移到右侧" onclick="RS.drugMove(1)">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+          </button>
+          <button class="rs-move-btn" title="移到左侧" onclick="RS.drugMove(-1)">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+          </button>
+        </div>
+        <!-- 右：不可使用药品列表 -->
+        <div class="rs-pane">
+          <div class="rs-pane-head"><div class="rs-block-title" style="margin-bottom:0">不可使用药品列表</div></div>
+          <div class="rs-pane-filter">
+            <input class="input grow" id="pr-kw" placeholder="药品名称">
+            <select class="select" id="pr-kind">
+              <option value="">请选择药品种类</option>
+              <option>西药</option>
+              <option>中成药</option>
+              <option>中药饮片</option>
+            </select>
+            <button class="rs-all-btn" onclick="RS.drugAllCancel()">全取消</button>
+          </div>
+          <div class="rs-pane-table">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width:36px"><input type="checkbox" class="rs-chk" id="pr-chk-all" onclick="RS.drugCheckAll('pr', this)"></th>
+                  <th style="width:52px">序号</th>
+                  <th style="width:70px">药品种类</th>
+                  <th>药品名称</th>
+                  <th style="width:110px">药品规格</th>
+                </tr>
+              </thead>
+              <tbody id="pr-tbody"></tbody>
+            </table>
+          </div>
+          <div class="rs-pane-foot"><div class="pager"><div class="rs-pager-wrap" id="pr-pager"></div></div></div>
+          <div class="rs-note">注：列表为空表示所有药品都可使用，列表有值表示配置的药品不可用。</div>
+        </div>
+      </div>
+    </div>
+    <div class="rs-dlg-foot">
+      <button class="btn" onclick="RS.closeDialog('dlg-drug')">取消</button>
+      <button class="btn btn-primary" onclick="RS.drugSave()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== Toast ========== -->
+<div class="toast" id="toast">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M20 6L9 17l-5-5"/>
+  </svg>
+  <span id="toastText"></span>
+</div>
+
+<script src="mock.js"></script>
+<script>
+/* ============================================================
+   限制医生使用管理 · 原型脚本
+   ============================================================ */
+(function () {
+  var RS = {};
+  window.RS = RS;
+
+  function $(id) { return document.getElementById(id); }
+  function esc(s) {
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+
+  /* ---------- 稳定伪随机 ---------- */
+  var seed = 42;
+  function srand() { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; }
+  function sItem(arr) { return arr[Math.floor(srand() * arr.length)]; }
+  function sInt(a, b) { return a + Math.floor(srand() * (b - a + 1)); }
+
+  /* ---------- Mock 数据生成 ---------- */
+  var SURNAMES = ["杨","徐","文","夏","凌","朱","陈","汤","宗","高","郭","张","孙","蒋","许","严","李","王","刘","赵","周","吴","郑","冯","褚","卫","沈","韩","秦","何","吕","施","孔","曹","严","华","金","陶","姜","戚","谢","邹","柏","窦","苏","潘","葛","范","彭","郎"];
+  var GIVEN = ["长雨","杏银","明江","昆成","兴华","素平","露","素梅","瑞林","振坤","志锋","诚","彩亮","源","岭溪","萍","斌","恒清","东升","伟","芳","娜","敏","静","丽","强","磊","军","洋","勇","艳","杰","涛","明","超","秀英","霞","平","刚","桂英"];
+  var DOCTORS = [];
+  (function genDoctors() {
+    var used = {};
+    while (DOCTORS.length < 187) {
+      var n = sItem(SURNAMES) + sItem(GIVEN);
+      if (used[n]) continue;
+      used[n] = 1;
+      DOCTORS.push(n);
+    }
+    /* 截图中的初始配置医生确保存在 */
+    ["许斌", "严恒清", "徐东升"].forEach(function (n) { if (used[n]) delete used[n]; });
+    DOCTORS = ["许斌", "严恒清", "徐东升"].concat(DOCTORS.filter(function (n) { return n !== "许斌" && n !== "严恒清" && n !== "徐东升"; }));
+    while (DOCTORS.length > 187) DOCTORS.pop();
+  })();
+
+  var DEPT_NAMES = ["内科门诊","普外科门诊","骨科门诊","儿科门诊","妇产科门诊","专家门诊","口腔科门诊","眼耳鼻咽喉科门诊","产科门诊","中医外科门诊","中医内科门诊","中医皮肤科门诊","针灸科门诊","发热门诊","防保科门诊","外科急诊门诊","120门诊","内科急诊","康复科门诊","皮肤科门诊","肛肠科门诊","泌尿外科门诊","消化内科门诊","呼吸内科门诊","心血管内科门诊","神经内科门诊","内分泌科门诊","肾内科门诊","血液科门诊","肿瘤科门诊","感染科门诊","老年病科门诊","疼痛科门诊","理疗科门诊","中医骨伤科门诊","中医儿科门诊","中医妇科门诊","中医针灸科门诊","推拿科门诊","治未病科门诊","全科门诊","急诊外科","急诊内科","普外科","骨科","泌尿外科","胸外科","神经外科","心胸外科","妇科","产科","儿科"];
+  var DEPTS = [];
+  (function genDepts() {
+    var used = {};
+    DEPT_NAMES.forEach(function (n) {
+      if (DEPTS.length >= 52) return;
+      if (used[n]) return;
+      used[n] = 1;
+      var type = /急诊|120/.test(n) ? "急诊" : "门诊";
+      DEPTS.push({ code: String(DEPTS.length + 1).padStart ? String(DEPTS.length + 1).padStart(3, "0") : ("00" + (DEPTS.length + 1)).slice(-3), name: n, type: type });
+    });
+  })();
+
+  var DRUG_NAMES = ["注射用阿洛西林钠","阿莫西林分散片","阿莫西林胶囊","阿莫西林颗粒","苯唑西林钠胶囊","注射用苯唑西林钠","注射用美洛西林钠","注射用青霉素钾","注射用青霉素钠","注射用哌拉西林钠","注射用头孢曲松钠","注射用头孢呋辛钠","头孢克肟分散片","头孢拉定胶囊","布洛芬缓释胶囊","对乙酰氨基酚片","双氯芬酸钠肠溶片","奥美拉唑肠溶胶囊","克林霉素磷酸酯注射液","左氧氟沙星注射液","阿奇霉素分散片","罗红霉素胶囊","盐酸氨溴索口服液","复方甘草片","板蓝根颗粒","双黄连口服液","六味地黄丸","藿香正气水","急支糖浆","银翘解毒片","黄芪","当归","金银花","丹参","川芎","白术","茯苓","甘草","柴胡","黄芩"];
+  var WEST_SPECS = ["2.0g/瓶","0.125g*24片/盒","0.25g*12片/盒","0.25g*40粒/盒","0.125g*24粒/盒","0.25g*50粒/盒","0.25g*5粒/盒","1.0g/支","1.0g/瓶","0.5g(80万IU)/支","0.96g(160万IU)/瓶","0.24g(40万IU)/瓶","0.5g/支","5g*10片/盒","2g*10片/盒","0.1g*12片/盒","0.3g*20粒/盒","20mg*14粒/盒","100ml/瓶"];
+  var TCM_SPECS = ["10g*20袋","9g*10丸","10ml*10支","100ml/瓶","500g/袋","250g/袋","200g/袋","6g*12袋"];
+  var KINDS = ["西药", "中成药", "中药饮片"];
+
+  /* Tab1 药品行（共 2448 条） */
+  var DRUG_ROWS = [];
+  (function genDrugRows() {
+    for (var i = 0; i < 2448; i++) {
+      var roll = srand();
+      var kind = roll < 0.72 ? "西药" : (roll < 0.9 ? "中成药" : "中药饮片");
+      var name = sItem(DRUG_NAMES);
+      var spec = kind === "西药" ? sItem(WEST_SPECS) : sItem(TCM_SPECS);
+      var code = "10" + String(10100000 + i * 7 + (i % 3)).slice(0, 8);
+      var allowed = "全部";
+      if (i === 0) allowed = "许斌、严恒清、徐东升";
+      else if (i % 97 === 0) allowed = sItem(DOCTORS) + "、" + sItem(DOCTORS);
+      DRUG_ROWS.push({ code: code, name: name, kind: kind, spec: spec, allowed: allowed });
+    }
+    /* 首行对齐截图 */
+    DRUG_ROWS[0] = { code: "1010100101", name: "注射用阿洛西林钠", kind: "西药", spec: "2.0g/瓶", allowed: "许斌、严恒清、徐东升" };
+  })();
+
+  /* 药品配置弹窗左侧：所有药品·规格列表（共 2451 条） */
+  var ALL_SPECS = [];
+  (function genAllSpecs() {
+    var i = 0;
+    KINDS.forEach(function (kind) {
+      var specs = kind === "西药" ? WEST_SPECS : TCM_SPECS;
+      DRUG_NAMES.forEach(function (name) {
+        specs.forEach(function (spec) {
+          if (ALL_SPECS.length >= 2451) return;
+          ALL_SPECS.push({ id: "s" + (i++), kind: kind, name: name, spec: spec });
+        });
+      });
+    });
+    while (ALL_SPECS.length < 2451) {
+      var kind = sItem(KINDS);
+      ALL_SPECS.push({ id: "s" + (i++), kind: kind, name: sItem(DRUG_NAMES), spec: sItem(kind === "西药" ? WEST_SPECS : TCM_SPECS) });
+    }
+  })();
+
+  /* ---------- 配置状态（原型内存态） ---------- */
+  var drugCfg = {};   /* 品牌编码 -> [医生姓名]；空数组 = 全部医生可用 */
+  var deptCfg = {};   /* 科室编码 -> [{id,kind,name,spec}]；空数组 = 全部药品可用 */
+  drugCfg["1010100101"] = ["许斌", "严恒清", "徐东升"];
+  deptCfg["004"] = [{ id: "ban1", kind: "西药", name: "注射用阿洛西林钠", spec: "2.0g/瓶" }];
+
+  /* ---------- 列表状态 ---------- */
+  var ST = {
+    tab: "doc",
+    docPage: 1, docSize: 18, docFiltered: [],
+    deptPage: 1, deptSize: 18, deptFiltered: [],
+    dlg: null /* 当前弹窗状态 */
+  };
+
+  /* ---------- 通用：筛选 + 分页 ---------- */
+  function pageSlice(list, page, size) {
+    var start = (page - 1) * size;
+    return list.slice(start, start + size);
+  }
+
+  /* 通用数字分页：total / page / size / onGo(page) / onSize(size) / opts.simple 面板简化版 */
+  function renderPager(el, total, page, size, onGo, onSize, opts) {
+    var simple = !!(opts && opts.simple);
+    var pages = Math.max(1, Math.ceil(total / size));
+    if (page > pages) page = pages;
+    var html = '<span class="rs-pager-total">共 ' + total + ' 条</span>';
+    if (!simple) {
+      html += '<select class="rs-pager-size">';
+      [10, 18, 30, 50].forEach(function (s) {
+        html += '<option value="' + s + '"' + (s === size ? " selected" : "") + '>' + s + ' 条/页</option>';
+      });
+      html += '</select>';
+    }
+    html += '<button class="rs-pg-btn" data-go="' + (page - 1) + '"' + (page <= 1 ? " disabled" : "") + '>&lt;</button>';
+
+    var nums = [];
+    function push(n) { if (nums.indexOf(n) < 0 && n >= 1 && n <= pages) nums.push(n); }
+    push(1); push(2); push(3); push(4); push(5); push(6);
+    if (page > 8) { nums.push("…"); push(page - 1); }
+    if (page > 2 && page < pages && page > 6) push(page);
+    if (pages > 7) { nums.push("…"); push(pages); }
+    if (pages <= 7) { nums = []; for (var i = 1; i <= pages; i++) nums.push(i); }
+
+    html += nums.map(function (n) {
+      if (n === "…") return '<span class="rs-pg-ellipsis">…</span>';
+      return '<button class="rs-pg-btn' + (n === page ? " active" : "") + '" data-go="' + n + '">' + n + "</button>";
+    }).join("");
+
+    html += '<button class="rs-pg-btn" data-go="' + (page + 1) + '"' + (page >= pages ? " disabled" : "") + '>&gt;</button>';
+    if (!simple) {
+      html += '<span class="rs-pager-jump">跳至 <input class="input" data-jump="1" value="' + page + '"> 页</span>';
+    }
+
+    el.innerHTML = html;
+
+    el.querySelectorAll("[data-go]").forEach(function (b) {
+      b.addEventListener("click", function () { onGo(parseInt(b.getAttribute("data-go"), 10)); });
+    });
+    var jump = el.querySelector("[data-jump]");
+    if (jump) {
+      jump.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") {
+          var n = parseInt(jump.value, 10);
+          if (!isNaN(n)) onGo(n);
+        }
+      });
+      jump.addEventListener("change", function () {
+        var n = parseInt(jump.value, 10);
+        if (!isNaN(n)) onGo(n);
+      });
+    }
+    var sizeSel = el.querySelector(".rs-pager-size");
+    if (sizeSel) sizeSel.addEventListener("change", function () { onSize(parseInt(sizeSel.value, 10)); });
+  }
+
+  /* ---------- Tab 切换 ---------- */
+  RS.switchTab = function (t) {
+    ST.tab = t;
+    document.querySelectorAll(".rs-tab").forEach(function (el) {
+      el.classList.toggle("active", el.getAttribute("data-tab") === t);
+    });
+    $("tab-doc").style.display = t === "doc" ? "" : "none";
+    $("tab-drug").style.display = t === "drug" ? "" : "none";
+  };
+
+  /* ---------- Tab1：限制医生使用 ---------- */
+  RS.docSearch = function () {
+    var kw = $("d-kw").value.trim().toLowerCase();
+    var kind = $("d-kind").value;
+    ST.docFiltered = DRUG_ROWS.filter(function (d) {
+      var hitKw = !kw || d.name.toLowerCase().indexOf(kw) > -1 || d.code.indexOf(kw) > -1;
+      var hitKind = !kind || d.kind === kind;
+      return hitKw && hitKind;
+    });
+    ST.docPage = 1;
+    renderDocTable();
+  };
+  RS.docReset = function () {
+    $("d-kw").value = "";
+    $("d-kind").value = "";
+    RS.docSearch();
+  };
+
+  function docAllowedText(d) {
+    var arr = drugCfg[d.code];
+    return (arr && arr.length) ? arr.join("、") : "全部";
+  }
+
+  function renderDocTable() {
+    var rows = pageSlice(ST.docFiltered, ST.docPage, ST.docSize);
+    var html = "";
+    if (!rows.length) {
+      html = '<tr><td colspan="7" class="table-empty">暂无数据</td></tr>';
+    } else {
+      rows.forEach(function (d, i) {
+        html += '<tr>'
+          + '<td class="col-num">' + ((ST.docPage - 1) * ST.docSize + i + 1) + '</td>'
+          + '<td>' + esc(d.code) + '</td>'
+          + '<td title="' + esc(d.name) + '">' + esc(d.name) + '</td>'
+          + '<td>' + esc(d.kind) + '</td>'
+          + '<td>' + esc(d.spec) + '</td>'
+          + '<td title="' + esc(docAllowedText(d)) + '">' + esc(docAllowedText(d)) + '</td>'
+          + '<td><span class="rs-link" data-cfg="' + esc(d.code) + '">配置</span></td>'
+          + '</tr>';
+      });
+    }
+    $("doc-tbody").innerHTML = html;
+    renderPager($("doc-pager"), ST.docFiltered.length, ST.docPage, ST.docSize,
+      function (n) { ST.docPage = n; renderDocTable(); },
+      function (s) { ST.docSize = s; ST.docPage = 1; renderDocTable(); });
+  }
+
+  $("doc-tbody").addEventListener("click", function (e) {
+    var link = e.target.closest("[data-cfg]");
+    if (!link) return;
+    var code = link.getAttribute("data-cfg");
+    var drug = DRUG_ROWS.filter(function (d) { return d.code === code; })[0];
+    if (drug) RS.openDoctorDialog(drug);
+  });
+
+  /* ---------- Tab2：限制药品使用 ---------- */
+  function deptBanText(dept) {
+    var arr = deptCfg[dept.code];
+    if (!arr || !arr.length) return "";
+    return arr.map(function (x) { return x.name + "(" + x.spec + ")"; }).join("，");
+  }
+
+  RS.deptSearch = function () {
+    var kw = $("p-kw").value.trim().toLowerCase();
+    var kind = $("p-kind").value;
+    ST.deptFiltered = DEPTS.filter(function (d) {
+      var hitKw = !kw || d.name.toLowerCase().indexOf(kw) > -1 || d.code.indexOf(kw) > -1;
+      var hitKind = !kind || d.type === kind;
+      return hitKw && hitKind;
+    });
+    ST.deptPage = 1;
+    renderDeptTable();
+  };
+  RS.deptReset = function () {
+    $("p-kw").value = "";
+    $("p-kind").value = "";
+    RS.deptSearch();
+  };
+
+  function renderDeptTable() {
+    var rows = pageSlice(ST.deptFiltered, ST.deptPage, ST.deptSize);
+    var html = "";
+    if (!rows.length) {
+      html = '<tr><td colspan="6" class="table-empty">暂无数据</td></tr>';
+    } else {
+      rows.forEach(function (d, i) {
+        var ban = deptBanText(d);
+        html += '<tr>'
+          + '<td class="col-num">' + ((ST.deptPage - 1) * ST.deptSize + i + 1) + '</td>'
+          + '<td>' + esc(d.code) + '</td>'
+          + '<td>' + esc(d.name) + '</td>'
+          + '<td>' + esc(d.type) + '</td>'
+          + '<td title="' + esc(ban) + '">' + esc(ban) + '</td>'
+          + '<td><span class="rs-link" data-cfg="' + esc(d.code) + '">配置</span></td>'
+          + '</tr>';
+      });
+    }
+    $("dept-tbody").innerHTML = html;
+    renderPager($("dept-pager"), ST.deptFiltered.length, ST.deptPage, ST.deptSize,
+      function (n) { ST.deptPage = n; renderDeptTable(); },
+      function (s) { ST.deptSize = s; ST.deptPage = 1; renderDeptTable(); });
+  }
+
+  $("dept-tbody").addEventListener("click", function (e) {
+    var link = e.target.closest("[data-cfg]");
+    if (!link) return;
+    var code = link.getAttribute("data-cfg");
+    var dept = DEPTS.filter(function (d) { return d.code === code; })[0];
+    if (dept) RS.openDrugDialog(dept);
+  });
+
+  /* ---------- 弹窗通用 ---------- */
+  RS.closeDialog = function (id) {
+    $(id).classList.remove("show");
+    ST.dlg = null;
+  };
+  RS.toast = function (msg) {
+    var el = $("toast");
+    $("toastText").textContent = msg;
+    el.classList.add("show");
+    clearTimeout(RS._tt);
+    RS._tt = setTimeout(function () { el.classList.remove("show"); }, 2200);
+  };
+
+  /* 面板筛选 */
+  function paneList(side, all, cfgArr, kw, kind) {
+    var kwl = kw.trim().toLowerCase();
+    return all.filter(function (x) {
+      if (cfgArr.some(function (y) { return y.id === x.id; })) return false;
+      if (kwl && x.name.toLowerCase().indexOf(kwl) < 0) return false;
+      if (kind && x.kind !== kind) return false;
+      return true;
+    });
+  }
+
+  /* ---------- 医生配置弹窗 ---------- */
+  RS.openDoctorDialog = function (drug) {
+    var cur = (drugCfg[drug.code] || []).slice();
+    ST.dlg = { type: "doctor", drug: drug, assigned: cur,
+      l: { kw: "", page: 1, size: 18, checked: {} },
+      r: { kw: "", page: 1, size: 18, checked: {} } };
+
+    $("dlg-doctor-info").innerHTML =
+      rsInfo("品名编码", drug.code) +
+      rsInfo("药品名称", drug.name) +
+      rsInfo("药品规格", drug.spec) +
+      rsInfo("药品种类", drug.kind);
+
+    $("dl-kw").value = ""; $("dr-kw").value = "";
+    $("dlg-doctor").classList.add("show");
+    renderDoctorPanes();
+  };
+
+  function rsInfo(label, value) {
+    return '<div class="rs-info-item"><span class="rs-info-label">' + label + '：</span>' +
+      '<span class="rs-info-value">' + esc(value) + '</span></div>';
+  }
+
+  function toDoctorObjs(names) {
+    return names.map(function (n, i) { return { id: "doc-" + n, kind: "", name: n, spec: "" }; });
+  }
+
+  function renderDoctorPanes() {
+    var dlg = ST.dlg;
+    dlg.l.kw = $("dl-kw").value;
+    dlg.r.kw = $("dr-kw").value;
+    var leftAll = toDoctorObjs(DOCTORS);
+    var left = paneList("l", leftAll, toDoctorObjs(dlg.assigned), dlg.l.kw, "");
+    var right = dlg.assigned.filter(function (n) {
+      return !dlg.r.kw.trim() || n.indexOf(dlg.r.kw.trim()) > -1;
+    });
+
+    var lRows = pageSlice(left, dlg.l.page, dlg.l.size);
+    var html = "";
+    if (!lRows.length) html = '<tr><td colspan="3" class="table-empty">暂无数据</td></tr>';
+    else lRows.forEach(function (d, i) {
+      html += '<tr>'
+        + '<td><input type="checkbox" class="rs-chk" data-lid="' + esc(d.id) + '"' + (dlg.l.checked[d.id] ? " checked" : "") + '></td>'
+        + '<td class="col-num">' + ((dlg.l.page - 1) * dlg.l.size + i + 1) + '</td>'
+        + '<td>' + esc(d.name) + '</td></tr>';
+    });
+    $("dl-tbody").innerHTML = html;
+    renderPager($("dl-pager"), left.length, dlg.l.page, dlg.l.size,
+      function (n) { dlg.l.page = n; renderDoctorPanes(); },
+      function (s) { dlg.l.size = s; dlg.l.page = 1; renderDoctorPanes(); }, { simple: true });
+
+    var rRows = pageSlice(right, dlg.r.page, dlg.r.size);
+    html = "";
+    if (!rRows.length) html = '<tr><td colspan="3" class="table-empty">暂无数据</td></tr>';
+    else rRows.forEach(function (d, i) {
+      html += '<tr>'
+        + '<td><input type="checkbox" class="rs-chk" data-rid="' + esc(d) + '"' + (dlg.r.checked[d] ? " checked" : "") + '></td>'
+        + '<td class="col-num">' + ((dlg.r.page - 1) * dlg.r.size + i + 1) + '</td>'
+        + '<td>' + esc(d) + '</td></tr>';
+    });
+    $("dr-tbody").innerHTML = html;
+    renderPager($("dr-pager"), right.length, dlg.r.page, dlg.r.size,
+      function (n) { dlg.r.page = n; renderDoctorPanes(); },
+      function (s) { dlg.r.size = s; dlg.r.page = 1; renderDoctorPanes(); }, { simple: true });
+
+    $("dl-chk-all").checked = false;
+    $("dr-chk-all").checked = false;
+  }
+
+  $("dl-tbody").addEventListener("change", function (e) {
+    var c = e.target.closest("[data-lid]");
+    if (!c) return;
+    if (c.checked) ST.dlg.l.checked[c.getAttribute("data-lid")] = 1;
+    else delete ST.dlg.l.checked[c.getAttribute("data-lid")];
+  });
+  $("dr-tbody").addEventListener("change", function (e) {
+    var c = e.target.closest("[data-rid]");
+    if (!c) return;
+    var n = c.getAttribute("data-rid");
+    if (c.checked) ST.dlg.r.checked[n] = 1;
+    else delete ST.dlg.r.checked[n];
+  });
+
+  RS.docCheckAll = function (side, input) {
+    var dlg = ST.dlg;
+    if (side === "dl") {
+      var rows = Array.prototype.slice.call($("dl-tbody").querySelectorAll("[data-lid]"));
+      rows.forEach(function (c) {
+        c.checked = input.checked;
+        var id = c.getAttribute("data-lid");
+        if (input.checked) dlg.l.checked[id] = 1; else delete dlg.l.checked[id];
+      });
+    } else {
+      var rows2 = Array.prototype.slice.call($("dr-tbody").querySelectorAll("[data-rid]"));
+      rows2.forEach(function (c) {
+        c.checked = input.checked;
+        var n = c.getAttribute("data-rid");
+        if (input.checked) dlg.r.checked[n] = 1; else delete dlg.r.checked[n];
+      });
+    }
+  };
+
+  function checkedLeftNames() {
+    return Object.keys(ST.dlg.l.checked).map(function (id) { return id.replace(/^doc-/, ""); });
+  }
+  function checkedRightNames() {
+    return Object.keys(ST.dlg.r.checked);
+  }
+
+  RS.docMove = function (dir) {
+    var dlg = ST.dlg;
+    if (dir === 1) {
+      var names = checkedLeftNames();
+      if (!names.length) { RS.toast("请先勾选左侧医生"); return; }
+      names.forEach(function (n) { if (dlg.assigned.indexOf(n) < 0) dlg.assigned.push(n); });
+      dlg.l.checked = {};
+    } else {
+      var names2 = checkedRightNames();
+      if (!names2.length) { RS.toast("请先勾选右侧医生"); return; }
+      dlg.assigned = dlg.assigned.filter(function (n) { return names2.indexOf(n) < 0; });
+      dlg.r.checked = {};
+    }
+    renderDoctorPanes();
+  };
+
+  RS.docAllAssign = function () {
+    var dlg = ST.dlg;
+    var leftAll = toDoctorObjs(DOCTORS);
+    var kw = $("dl-kw").value.trim().toLowerCase();
+    var left = leftAll.filter(function (x) {
+      return dlg.assigned.indexOf(x.name) < 0 && (!kw || x.name.toLowerCase().indexOf(kw) > -1);
+    });
+    if (!left.length) { RS.toast("没有可指定的医生"); return; }
+    left.forEach(function (x) { if (dlg.assigned.indexOf(x.name) < 0) dlg.assigned.push(x.name); });
+    dlg.l.page = 1;
+    renderDoctorPanes();
+  };
+
+  RS.docAllCancel = function () {
+    var dlg = ST.dlg;
+    var kw = $("dr-kw").value.trim();
+    if (!kw) { dlg.assigned = []; }
+    else { dlg.assigned = dlg.assigned.filter(function (n) { return n.indexOf(kw) < 0; }); }
+    dlg.r.checked = {};
+    dlg.r.page = 1;
+    renderDoctorPanes();
+  };
+
+  ["dl-kw", "dr-kw"].forEach(function (id) {
+    $(id).addEventListener("keydown", function (e) { if (e.key === "Enter") { ST.dlg.l.page = 1; ST.dlg.r.page = 1; renderDoctorPanes(); } });
+    $(id).addEventListener("input", function () { ST.dlg.l.page = 1; ST.dlg.r.page = 1; renderDoctorPanes(); });
+  });
+
+  RS.docSave = function () {
+    var dlg = ST.dlg;
+    drugCfg[dlg.drug.code] = dlg.assigned.slice();
+    RS.closeDialog("dlg-doctor");
+    renderDocTable();
+    RS.toast("配置已保存（原型演示）");
+  };
+
+  /* ---------- 药品配置弹窗 ---------- */
+  RS.openDrugDialog = function (dept) {
+    var cur = (deptCfg[dept.code] || []).slice();
+    ST.dlg = { type: "drug", dept: dept, banned: cur,
+      l: { kw: "", kind: "", page: 1, size: 18, checked: {} },
+      r: { kw: "", kind: "", page: 1, size: 18, checked: {} } };
+
+    $("dlg-drug-info").innerHTML =
+      rsInfo("科室编码", dept.code) +
+      rsInfo("科室名称", dept.name) +
+      rsInfo("科室种类", dept.type);
+
+    $("pl-kw").value = ""; $("pl-kind").value = "";
+    $("pr-kw").value = ""; $("pr-kind").value = "";
+    $("dlg-drug").classList.add("show");
+    renderDrugPanes();
+  };
+
+  function readPaneFilters(paneId) {
+    return {
+      kw: $(paneId + "-kw").value.trim().toLowerCase(),
+      kind: $(paneId + "-kind").value
+    };
+  }
+
+  function renderDrugPanes() {
+    var dlg = ST.dlg;
+    var lf = readPaneFilters("pl");
+    var rf = readPaneFilters("pr");
+    var left = paneList("l", ALL_SPECS, dlg.banned, lf.kw, lf.kind);
+    var right = dlg.banned.filter(function (x) {
+      if (rf.kw && x.name.toLowerCase().indexOf(rf.kw) < 0) return false;
+      if (rf.kind && x.kind !== rf.kind) return false;
+      return true;
+    });
+
+    var lRows = pageSlice(left, dlg.l.page, dlg.l.size);
+    var html = "";
+    if (!lRows.length) html = '<tr><td colspan="5" class="table-empty">暂无数据</td></tr>';
+    else lRows.forEach(function (d, i) {
+      html += '<tr>'
+        + '<td><input type="checkbox" class="rs-chk" data-lid="' + esc(d.id) + '"' + (dlg.l.checked[d.id] ? " checked" : "") + '></td>'
+        + '<td class="col-num">' + ((dlg.l.page - 1) * dlg.l.size + i + 1) + '</td>'
+        + '<td>' + esc(d.kind) + '</td>'
+        + '<td>' + esc(d.name) + '</td>'
+        + '<td>' + esc(d.spec) + '</td></tr>';
+    });
+    $("pl-tbody").innerHTML = html;
+    renderPager($("pl-pager"), left.length, dlg.l.page, dlg.l.size,
+      function (n) { dlg.l.page = n; renderDrugPanes(); },
+      function (s) { dlg.l.size = s; dlg.l.page = 1; renderDrugPanes(); }, { simple: true });
+
+    var rRows = pageSlice(right, dlg.r.page, dlg.r.size);
+    html = "";
+    if (!rRows.length) html = '<tr><td colspan="5" class="table-empty">暂无数据</td></tr>';
+    else rRows.forEach(function (d, i) {
+      html += '<tr>'
+        + '<td><input type="checkbox" class="rs-chk" data-rid="' + esc(d.id) + '"' + (dlg.r.checked[d.id] ? " checked" : "") + '></td>'
+        + '<td class="col-num">' + ((dlg.r.page - 1) * dlg.r.size + i + 1) + '</td>'
+        + '<td>' + esc(d.kind) + '</td>'
+        + '<td>' + esc(d.name) + '</td>'
+        + '<td>' + esc(d.spec) + '</td></tr>';
+    });
+    $("pr-tbody").innerHTML = html;
+    renderPager($("pr-pager"), right.length, dlg.r.page, dlg.r.size,
+      function (n) { dlg.r.page = n; renderDrugPanes(); },
+      function (s) { dlg.r.size = s; dlg.r.page = 1; renderDrugPanes(); }, { simple: true });
+
+    $("pl-chk-all").checked = false;
+    $("pr-chk-all").checked = false;
+  }
+
+  ["pl", "pr"].forEach(function (side) {
+    $(side + "-tbody").addEventListener("change", function (e) {
+      var c = e.target.closest("[data-" + side + "id]");
+      if (!c) return;
+      var id = c.getAttribute("data-" + side + "id");
+      if (c.checked) ST.dlg[side].checked[id] = 1;
+      else delete ST.dlg[side].checked[id];
+    });
+  });
+
+  RS.drugCheckAll = function (side, input) {
+    var sel = side === "pl" ? "[data-plid]" : "[data-prid]";
+    Array.prototype.slice.call($(side + "-tbody").querySelectorAll(sel)).forEach(function (c) {
+      c.checked = input.checked;
+      var id = c.getAttribute("data-" + side + "id");
+      if (input.checked) ST.dlg[side].checked[id] = 1;
+      else delete ST.dlg[side].checked[id];
+    });
+  };
+
+  RS.drugMove = function (dir) {
+    var dlg = ST.dlg;
+    if (dir === 1) {
+      var ids = Object.keys(dlg.l.checked);
+      if (!ids.length) { RS.toast("请先勾选左侧药品"); return; }
+      ids.forEach(function (id) {
+        var x = ALL_SPECS.filter(function (s) { return s.id === id; })[0];
+        if (x && !dlg.banned.some(function (y) { return y.id === id; })) dlg.banned.push(Object.assign({}, x));
+      });
+      dlg.l.checked = {};
+    } else {
+      var ids2 = Object.keys(dlg.r.checked);
+      if (!ids2.length) { RS.toast("请先勾选右侧药品"); return; }
+      dlg.banned = dlg.banned.filter(function (x) { return !dlg.r.checked[x.id]; });
+      dlg.r.checked = {};
+    }
+    renderDrugPanes();
+  };
+
+  RS.drugAllAssign = function () {
+    var dlg = ST.dlg;
+    var lf = readPaneFilters("pl");
+    var left = paneList("l", ALL_SPECS, dlg.banned, lf.kw, lf.kind);
+    if (!left.length) { RS.toast("没有可指定的药品"); return; }
+    left.forEach(function (x) {
+      if (!dlg.banned.some(function (y) { return y.id === x.id; })) dlg.banned.push(Object.assign({}, x));
+    });
+    dlg.l.page = 1;
+    renderDrugPanes();
+  };
+
+  RS.drugAllCancel = function () {
+    var dlg = ST.dlg;
+    var rf = readPaneFilters("pr");
+    if (!rf.kw && !rf.kind) { dlg.banned = []; }
+    else {
+      dlg.banned = dlg.banned.filter(function (x) {
+        if (rf.kw && x.name.toLowerCase().indexOf(rf.kw) > -1) return false;
+        if (rf.kind && x.kind === rf.kind) return false;
+        return true;
+      });
+    }
+    dlg.r.checked = {};
+    dlg.r.page = 1;
+    renderDrugPanes();
+  };
+
+  ["pl-kw", "pl-kind", "pr-kw", "pr-kind"].forEach(function (id) {
+    $(id).addEventListener(id.indexOf("kw") > -1 ? "input" : "change", function () {
+      ST.dlg.l.page = 1; ST.dlg.r.page = 1; renderDrugPanes();
+    });
+  });
+
+  RS.drugSave = function () {
+    var dlg = ST.dlg;
+    deptCfg[dlg.dept.code] = dlg.banned.slice();
+    RS.closeDialog("dlg-drug");
+    renderDeptTable();
+    RS.toast("配置已保存（原型演示）");
+  };
+
+  /* ---------- 初始化 ---------- */
+  function init() {
+    /* 药房选择 */
+    var pharms = (window.MOCK && MOCK.pharmacyFacilities || []).map(function (p) { return p.name; });
+    if (!pharms.length) pharms = ["中心药房", "门诊药房", "成员机构药房"];
+    var sel = $("f-pharmacy");
+    pharms.forEach(function (n, i) {
+      var o = document.createElement("option");
+      o.value = n; o.textContent = n;
+      if (i === 0) o.selected = true;
+      sel.appendChild(o);
+    });
+    sel.addEventListener("change", function () {
+      RS.docSearch(); RS.deptSearch();
+      RS.toast("已切换药房：" + sel.value);
+    });
+
+    RS.docSearch();
+    RS.deptSearch();
+
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") { RS.closeDialog("dlg-doctor"); RS.closeDialog("dlg-drug"); }
+    });
+    ["dlg-doctor", "dlg-drug"].forEach(function (id) {
+      $(id).addEventListener("click", function (e) {
+        if (e.target === $(id)) RS.closeDialog(id);
+      });
+    });
+  }
+
+  init();
+})();
+</script>
+
+<script src="nav.js"></script>
+</body>
+</html>

@@ -74,7 +74,8 @@
     { name: "系统维护", icon: "sys", items: [
       { name: "库位维护", href: "pharmacy-maintenance.html", files: ["pharmacy-maintenance.html"], roles: C3 },
       { name: "特殊参数设置", href: "param-settings.html", files: ["param-settings.html"], roles: ["center"] },
-      { name: "审批流程配置", href: "approval-flow-config.html", files: ["approval-flow-config.html", "approval-rule-config.html"], roles: ["center"] }
+      { name: "审批流程配置", href: "approval-flow-config.html", files: ["approval-flow-config.html", "approval-rule-config.html"], roles: ["center"] },
+      { name: "限制医生使用管理", href: "doctor-restrict.html", files: ["doctor-restrict.html"], roles: ["his"] }
     ] }
   ];
 

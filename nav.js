@@ -26,7 +26,10 @@
     { name: "药品管理", icon: "drug", items: [
       { name: "药品目录管理", href: "drug-catalog.html", files: ["drug-catalog.html", "drug-create.html"], roles: ["center"] },
       { name: "机构药品目录", href: "org-drug-catalog.html", files: ["org-drug-catalog.html", "org-drug-select.html"], roles: C3 },
-      { name: "药品目录遴选", href: "drug-selection.html", files: ["drug-selection.html", "drug-selection-create.html", "drug-selection-detail.html"], roles: ["center", "member", "village", "expert"] }
+      { name: "药品目录遴选", href: "drug-selection.html", files: ["drug-selection.html", "drug-selection-create.html", "drug-selection-detail.html"], roles: ["center", "member", "village", "expert"] },
+      { name: "企业管理", href: "manufacturer-manage.html", files: ["manufacturer-manage.html", "blacklist-manage.html"], roles: ["center"] },
+      { name: "供应商分配", href: "supplier-allocation.html", files: ["supplier-allocation.html"], roles: ["center"] },
+      { name: "医保对码", href: "medical-insurance-mapping.html", files: ["medical-insurance-mapping.html"], roles: ["center"] }
     ] },
     { name: "采购管理", icon: "cart", items: [
       { name: "采购需求", href: "purchase-need.html", files: ["purchase-need.html", "purchase-need-create.html", "purchase-need-detail.html"], roles: C3 },
@@ -68,9 +71,6 @@
       { name: "药品发药明细", href: "drug-consumption.html", files: ["drug-consumption.html"], roles: ["center", "his"] }
     ], roles: ["center", "his"] },
     { name: "系统维护", icon: "sys", items: [
-      { name: "企业管理", href: "manufacturer-manage.html", files: ["manufacturer-manage.html", "blacklist-manage.html"], roles: ["center"] },
-      { name: "供应商分配", href: "supplier-allocation.html", files: ["supplier-allocation.html"], roles: ["center"] },
-      { name: "医保对码", href: "medical-insurance-mapping.html", files: ["medical-insurance-mapping.html"], roles: ["center"] },
       { name: "库位维护", href: "pharmacy-maintenance.html", files: ["pharmacy-maintenance.html"], roles: C3 },
       { name: "特殊参数设置", href: "param-settings.html", files: ["param-settings.html"], roles: ["center"] }
     ] }

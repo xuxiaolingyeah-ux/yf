@@ -276,7 +276,6 @@
           </div>
           <div class="dl-head-acts">
             <button class="btn btn-sm" id="btnRevoke" style="display:none">撤销登记</button>
-            <button class="btn btn-sm" id="btnSend" style="display:none">送药</button>
             <button class="btn btn-sm btn-primary" id="btnRegister" title="快捷键 Alt + S">配送登记 ( S )</button>
           </div>
         </div>
@@ -284,7 +283,7 @@
         <!-- ---------- 二级标签 ---------- -->
         <div class="dl-tabs">
           <div class="dl-tab active" data-view="reg">送药登记</div>
-          <div class="dl-tab" data-view="deliver">送药</div>
+          <div class="dl-tab" data-view="deliver">快递揽件</div>
         </div>
 
         <!-- ================= 视图一：送药登记 ================= -->
@@ -348,8 +347,8 @@
               </div>
             </div>
             <div class="dl-fi">
-              <span class="lbl">承运商：</span>
-              <div class="ctrl"><input class="input" id="fCarrier" placeholder="请输入承运商" autocomplete="off"></div>
+              <span class="lbl">患者：</span>
+              <div class="ctrl"><input class="input" id="fPatient" placeholder="姓名/联系电话/医疗卡号" autocomplete="off"></div>
             </div>
           </div>
 
@@ -370,7 +369,6 @@
                 <col style="width:80px">
                 <col style="width:112px">
                 <col style="width:180px">
-                <col style="width:92px">
                 <col style="width:106px">
                 <col style="width:150px">
                 <col style="width:140px">
@@ -390,8 +388,7 @@
                   <th>收件人</th>
                   <th>收件电话</th>
                   <th>收件地址</th>
-                  <th>快递类型</th>
-                  <th>药房备注</th>
+                  <th>备注</th>
                   <th>医保卡号</th>
                   <th>登记流水号</th>
                 </tr>
@@ -468,6 +465,7 @@
                 <col style="width:38px">
                 <col style="width:136px">
                 <col style="width:110px">
+                <col style="width:76px">
                 <col style="width:142px">
                 <col style="width:142px">
                 <col style="width:100px">
@@ -480,6 +478,7 @@
                   <th class="c-chk"><input type="checkbox" id="chkAllD" title="全选配送单"></th>
                   <th>配送流水号</th>
                   <th>收件人</th>
+                  <th>包裹数量</th>
                   <th>登记时间</th>
                   <th>配送时间</th>
                   <th>承运商</th>
@@ -524,10 +523,6 @@
     <div class="dl-dsec">
       <div class="dl-dsec-t">配送信息</div>
       <div class="dl-ff">
-        <span class="dl-flbl"><i class="req">*</i>承运商：</span>
-        <input class="input" id="mCarrier" placeholder="请输入承运商" autocomplete="off">
-      </div>
-      <div class="dl-ff">
         <span class="dl-flbl"><i class="req">*</i>收件人：</span>
         <input class="input" id="mReceiver" placeholder="请输入收件人" autocomplete="off">
       </div>
@@ -546,6 +541,10 @@
       <div class="dl-ff dl-addr2">
         <span class="dl-flbl"><i class="req">*</i>详细地址：</span>
         <input class="input" id="mAddrDetail" placeholder="请输入详细地址（街道/门牌号）" autocomplete="off">
+      </div>
+      <div class="dl-ff dl-addr2">
+        <span class="dl-flbl">备注：</span>
+        <input class="input" id="mNote" placeholder="选填" autocomplete="off">
       </div>
     </div>
   </div>
@@ -609,16 +608,32 @@
     </div>
     <div class="modal-body">
       <div class="dl-ff">
-        <span class="dl-flbl">配送单数量：</span>
-        <span id="sendCount" style="font-size:13px;color:var(--text-primary)">1</span>
+        <span class="dl-flbl"><i class="req">*</i>承运商：</span>
+        <select class="select" id="sendCarrierSel">
+          <option value="">请选择承运商</option>
+          <option>顺丰速运</option>
+          <option>京东物流</option>
+          <option>邮政EMS</option>
+          <option>中通快递</option>
+          <option>圆通速递</option>
+          <option>同城配送</option>
+        </select>
       </div>
       <div class="dl-ff">
-        <span class="dl-flbl">承运商：</span>
-        <span id="sendCarrier" style="font-size:13px;color:var(--text-primary)">-</span>
+        <span class="dl-flbl"><i class="req">*</i>包裹数量：</span>
+        <input class="input" id="sendPkg" type="number" min="1" step="1" value="1" placeholder="请输入包裹数量" autocomplete="off">
       </div>
       <div class="dl-ff">
         <span class="dl-flbl">快递单号：</span>
         <input class="input" id="sendExpressNo" placeholder="请输入快递单号（选填）" autocomplete="off">
+      </div>
+      <div class="dl-ff">
+        <span class="dl-flbl">快递员姓名：</span>
+        <input class="input" id="sendCourier" placeholder="请输入快递员姓名（选填）" autocomplete="off">
+      </div>
+      <div class="dl-ff">
+        <span class="dl-flbl">快递员联系方式：</span>
+        <input class="input" id="sendCourierPhone" placeholder="请输入快递员联系方式（选填）" autocomplete="off" maxlength="11">
       </div>
     </div>
     <div class="modal-foot">
@@ -649,9 +664,9 @@
 
   /* ---------- 数据：门诊处方（送药登记维度） ---------- */
   var RX = [
-    { clinic: "202611040001", rx: "M2026110000020", name: "测试7...", sex: "男", dept: "内科门诊", time: "2026-11-04 10:17:54", dispense: "已收费未发药", reg: 1, receiver: "测试7268", phone: "13579881234", addr: "山西省长治市潞城区府西街12号", express: "物流速递", expressNo: "SF1388451200671", note: "", ins: "260920000000005", sn: "2118638177380651" },
-    { clinic: "202611040002", rx: "M2026110000021", name: "冯小容", sex: "女", dept: "内科门诊", time: "2026-11-04 19:59:57", dispense: "已发药", reg: 1, receiver: "冯小容", phone: "13309088589", addr: "山西省长治市潞城区潞华街58号", express: "物流速递", expressNo: "SF1388451200682", note: "", ins: "260430000000001", sn: "2118643365447235" },
-    { clinic: "202611040003", rx: "M2026110000022", name: "冯小容", sex: "女", dept: "内科门诊", time: "2026-11-04 20:09:39", dispense: "已收费未发药", reg: 1, receiver: "冯小容", phone: "13309088589", addr: "山西省长治市潞城区潞华街58号", express: "物流速递", expressNo: "SF1388451200693", note: "中药处方", ins: "260430000000001", sn: "2118643618394092" },
+    { clinic: "202611040001", rx: "M2026110000020", name: "测试7...", sex: "男", dept: "内科门诊", time: "2026-11-04 10:17:54", dispense: "已收费未发药", reg: 1, receiver: "测试7268", phone: "13579881234", addr: "山西省长治市潞城区府西街12号", express: "物流速递", expressNo: "SF1388451200671", pkgCount: 1, courier: "王强", courierPhone: "13903451122", note: "", ins: "260920000000005", sn: "2118638177380651" },
+    { clinic: "202611040002", rx: "M2026110000021", name: "冯小容", sex: "女", dept: "内科门诊", time: "2026-11-04 19:59:57", dispense: "已发药", reg: 1, receiver: "冯小容", phone: "13309088589", addr: "山西省长治市潞城区潞华街58号", express: "物流速递", expressNo: "SF1388451200682", pkgCount: 2, note: "", ins: "260430000000001", sn: "2118643365447235" },
+    { clinic: "202611040003", rx: "M2026110000022", name: "冯小容", sex: "女", dept: "内科门诊", time: "2026-11-04 20:09:39", dispense: "已收费未发药", reg: 1, receiver: "冯小容", phone: "13309088589", addr: "山西省长治市潞城区潞华街58号", express: "物流速递", expressNo: "SF1388451200693", pkgCount: 1, note: "中药处方", ins: "260430000000001", sn: "2118643618394092" },
     { clinic: "202611040004", rx: "M2026110000023", name: "冯小容", sex: "女", dept: "内科门诊", time: "2026-11-05 09:39:47", dispense: "已收费未发药", reg: 0, note: "", ins: "260430000000001" },
     { clinic: "202611040005", rx: "M2026110000024", name: "冯小容", sex: "女", dept: "内科门诊", time: "2026-11-05 11:27:21", dispense: "已发药", reg: 0, note: "", ins: "260430000000001" },
     { clinic: "202611040006", rx: "M2026110000025", name: "冯小容", sex: "女", dept: "内科门诊", time: "2026-11-05 11:32:23", dispense: "已收费未发药", reg: 0, note: "中药处方", ins: "260430000000001" },
@@ -660,7 +675,7 @@
     { clinic: "202611040009", rx: "M2026110000028", name: "冯小容", sex: "女", dept: "内科门诊", time: "2026-11-06 17:44:18", dispense: "已收费未发药", reg: 0, note: "", ins: "260430000000001" },
     { clinic: "202611040010", rx: "M2026110000029", name: "黄道", sex: "男", dept: "中医科", time: "2026-11-06 09:12:03", dispense: "已收费未发药", reg: 0, note: "代煎", ins: "260430000000012" },
     { clinic: "202611040011", rx: "M2026110000030", name: "患者高", sex: "女", dept: "内科门诊", time: "2026-11-06 10:05:41", dispense: "已发药", reg: 0, note: "", ins: "260430000000013" },
-    { clinic: "202611040012", rx: "M2026110000031", name: "李国强", sex: "男", dept: "外科门诊", time: "2026-11-06 11:20:18", dispense: "已收费未发药", reg: 1, receiver: "李国强", phone: "13603551288", addr: "山西省长治市潞州区太行西街66号", express: "同城配送", note: "", ins: "260430000000014", sn: "2118643618394100" }
+    { clinic: "202611040012", rx: "M2026110000031", name: "李国强", sex: "男", dept: "外科门诊", time: "2026-11-06 11:20:18", dispense: "已收费未发药", reg: 1, receiver: "李国强", phone: "13603551288", addr: "山西省长治市潞州区太行西街66号", express: "同城配送", pkgCount: 1, note: "", ins: "260430000000014", sn: "2118643618394100" }
   ];
 
   /* 药品明细（已登记处方才有配送单明细） */
@@ -737,12 +752,17 @@
   function filtered() {
     var dis = $("#fDispense").value;
     var reg = $("#fReg").value;
-    var carrier = $("#fCarrier").value.trim();
+    var patient = $("#fPatient").value.trim().toLowerCase();
     var rxNo = $("#fRxNo").value.trim().toLowerCase();
     return RX.filter(function (r) {
       if (dis && r.dispense !== dis) return false;
       if (reg !== "" && String(r.reg) !== reg) return false;
-      if (carrier && (r.express || "").indexOf(carrier) < 0) return false;
+      if (patient) {
+        var hit = (r.name || "").toLowerCase().indexOf(patient) >= 0 ||
+                  (r.phone || "").indexOf(patient) >= 0 ||
+                  (r.ins || "").indexOf(patient) >= 0;
+        if (!hit) return false;
+      }
       if (rxNo && r.rx.toLowerCase().indexOf(rxNo) < 0) return false;
       return true;
     });
@@ -768,7 +788,6 @@
         '<td>' + (r.receiver || "") + '</td>' +
         '<td>' + (r.phone || "") + '</td>' +
         '<td title="' + (r.addr || "") + '">' + (r.addr || "") + '</td>' +
-        '<td>' + (r.express || "") + '</td>' +
         '<td title="' + (r.note || "") + '">' + (r.note || "") + '</td>' +
         '<td>' + r.ins + '</td>' +
         '<td class="c-mono">' + (r.sn || "") + '</td>' +
@@ -824,7 +843,8 @@
         if (r.addr && addrs.indexOf(r.addr) < 0) addrs.push(r.addr);
       });
       d.names = names; d.addr = addrs.join("；");
-      d.phone = d.rows[0].phone; d.express = d.rows[0].express; d.expressNo = d.rows[0].expressNo || "";
+      d.phone = d.rows[0].phone; d.express = d.rows[0].express || ""; d.expressNo = d.rows[0].expressNo || "";
+      d.pkg = d.rows[0].pkgCount || ""; d.courier = d.rows[0].courier || ""; d.courierPhone = d.rows[0].courierPhone || "";
     });
     return list;
   }
@@ -853,6 +873,7 @@
         '<td class="c-chk"><input type="checkbox" class="chkd" data-sn="' + d.sn + '"' + checked + '></td>' +
         '<td class="c-mono" title="' + d.sn + '">' + d.sn + '</td>' +
         '<td title="' + d.names.join("、") + '">' + d.names.join("、") + '</td>' +
+        '<td>' + (d.pkg || "-") + '</td>' +
         '<td>' + d.regTime + '</td>' +
         '<td>' + (done ? (SENDTIME[d.sn] || "-") : "-") + '</td>' +
         '<td>' + d.express + '</td>' +
@@ -915,31 +936,42 @@
     renderDeliver();
   });
 
-  /* 送药：弹窗展示承运商 + 可选快递单号，确认后 -> 已配送 */
+  /* 送药（快递揽件）：选择承运商、包裹数量等，确认后 -> 已配送 */
   var sendSns = [];
   function openSendModal(sns) {
     sendSns = sns.filter(function (sn) { return sendState(sn) !== "已配送"; });
     if (!sendSns.length) { toast("所选配送单均已配送"); return; }
-    var carriers = [];
-    sendSns.forEach(function (sn) {
-      var d = deliveries().filter(function (x) { return x.sn === sn; })[0];
-      if (d && carriers.indexOf(d.express) < 0) carriers.push(d.express);
-    });
-    $("#sendCount").textContent = sendSns.length;
-    $("#sendCarrier").textContent = carriers.join("、") || "-";
+    $("#sendCarrierSel").value = "";
+    $("#sendPkg").value = "1";
     $("#sendExpressNo").value = "";
+    $("#sendCourier").value = "";
+    $("#sendCourierPhone").value = "";
     openModal("sendMask");
-    $("#sendExpressNo").focus();
+    $("#sendCarrierSel").focus();
   }
 
   function submitSend() {
+    var carrier = $("#sendCarrierSel").value;
+    var pkg = parseInt($("#sendPkg").value, 10);
     var no = $("#sendExpressNo").value.trim();
+    var courier = $("#sendCourier").value.trim();
+    var courierPhone = $("#sendCourierPhone").value.trim();
+
+    if (!carrier) { toast("请选择承运商"); return; }
+    if (!pkg || pkg < 1) { toast("请输入正确的包裹数量"); return; }
+    if (courierPhone && !/^1[3-9]\d{9}$/.test(courierPhone)) { toast("请输入正确的 11 位快递员联系方式"); return; }
+
     sendSns.forEach(function (sn) {
       SEND[sn] = "已配送";
       SENDTIME[sn] = nowStr();
-      if (no) {
-        RX.forEach(function (r) { if (r.sn === sn) r.expressNo = no; });
-      }
+      RX.forEach(function (r) {
+        if (r.sn !== sn) return;
+        r.express = carrier;
+        r.pkgCount = pkg;
+        r.courier = courier;
+        r.courierPhone = courierPhone;
+        if (no) r.expressNo = no;
+      });
     });
     var n = sendSns.length;
     var refreshView = viewSn && sendSns.indexOf(viewSn) >= 0;
@@ -956,7 +988,9 @@
     if (sendState(sn) === "已配送") { toast("已配送的配送单不能撤销登记"); return; }
     RX.forEach(function (r) {
       if (r.sn === sn) {
-        r.reg = 0; r.sn = ""; r.receiver = ""; r.phone = ""; r.addr = ""; r.express = ""; r.expressNo = ""; r._regTime = "";
+        r.reg = 0; r.sn = ""; r.receiver = ""; r.phone = ""; r.addr = "";
+        r.express = ""; r.expressNo = ""; r.pkgCount = ""; r.courier = ""; r.courierPhone = "";
+        r._regTime = "";
       }
     });
     delete SEND[sn]; delete SENDTIME[sn]; delete dSel[sn];
@@ -974,7 +1008,9 @@
     $("#viewInfo").innerHTML = [
       kv("收件人：", d.names.join("、")), kv("收件电话：", d.phone),
       kv("收件地址：", d.addr),
-      kv("承运商：", d.express), kv("快递单号：", d.expressNo || "-"),
+      kv("承运商：", d.express || "-"), kv("快递单号：", d.expressNo || "-"),
+      kv("包裹数量：", d.pkg || "-"),
+      kv("快递员姓名：", d.courier || "-"), kv("快递员联系方式：", d.courierPhone || "-"),
       kv("登记时间：", d.regTime), kv("配送时间：", done ? (SENDTIME[sn] || "-") : "-"),
       kv("配送状态：", s)
     ].join("");
@@ -1063,11 +1099,12 @@
           '</div>';
       }).join("");
 
-      $("#mCarrier").value = ""; $("#mReceiver").value = ""; $("#mPhone").value = "";
+      $("#mReceiver").value = ""; $("#mPhone").value = "";
       $("#mProv").value = ""; $("#mCity").innerHTML = '<option value="">市</option>';
       $("#mDist").innerHTML = '<option value="">区/县</option>'; $("#mAddrDetail").value = "";
+      $("#mNote").value = "";
       openDrawer("regDrawer", "regDrawerMask");
-      $("#mCarrier").focus();
+      $("#mReceiver").focus();
     }
 
     /* 多个患者：先提示确认配送同一地址 */
@@ -1084,13 +1121,12 @@
   function closeReg() { closeDrawer("regDrawer", "regDrawerMask"); }
 
   function submitReg() {
-    var carrier = $("#mCarrier").value.trim();
     var receiver = $("#mReceiver").value.trim();
     var phone = $("#mPhone").value.trim();
     var prov = $("#mProv").value, city = $("#mCity").value, dist = $("#mDist").value;
     var addrDetail = $("#mAddrDetail").value.trim();
+    var note = $("#mNote").value.trim();
 
-    if (!carrier) { toast("请输入承运商"); return; }
     if (!receiver) { toast("请输入收件人"); return; }
     if (!/^1[3-9]\d{9}$/.test(phone)) { toast("请输入正确的 11 位收件电话"); return; }
     if (!prov || !city || !dist) { toast("请选择省/市/区"); return; }
@@ -1104,7 +1140,7 @@
       r.receiver = receiver;
       r.phone = phone;
       r.addr = addr;
-      r.express = carrier;
+      if (note) r.note = note;
       r.sn = sn;
       r._regTime = t;
       delete sel[r.rx];
@@ -1130,7 +1166,6 @@
   function syncHeadBtns(v) {
     $("#btnRegister").style.display = v === "reg" ? "" : "none";
     $("#btnRevoke").style.display = v === "deliver" ? "" : "none";
-    $("#btnSend").style.display = v === "deliver" ? "" : "none";
   }
   $$(".dl-tab").forEach(function (tab) {
     tab.addEventListener("click", function () {
@@ -1168,12 +1203,7 @@
   $("#sendOk").addEventListener("click", submitSend);
   $("#sendExpressNo").addEventListener("keydown", function (e) { if (e.key === "Enter") submitSend(); });
 
-  /* 标题栏批量操作：按勾选的配送单 */
-  $("#btnSend").addEventListener("click", function () {
-    var sns = checkedSns();
-    if (!sns.length) { toast("请先勾选配送单"); return; }
-    openSendModal(sns);
-  });
+  /* 标题栏批量操作：仅支持批量撤销登记（送药仅支持单条操作） */
   $("#btnRevoke").addEventListener("click", function () {
     var sns = checkedSns();
     if (!sns.length) { toast("请先勾选配送单"); return; }
@@ -1183,7 +1213,7 @@
   $("#btnSearch").addEventListener("click", renderList);
   $("#btnReset").addEventListener("click", function () {
     $("#fDispense").value = ""; $("#fReg").value = "";
-    $("#fCarrier").value = ""; $("#fRxNo").value = "";
+    $("#fPatient").value = ""; $("#fRxNo").value = "";
     sel = {};
     renderList();
   });

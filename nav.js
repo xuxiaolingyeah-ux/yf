@@ -76,7 +76,8 @@
       { name: "特殊参数设置", href: "param-settings.html", files: ["param-settings.html"], roles: ["center"] },
       { name: "审批流程配置", href: "approval-flow-config.html", files: ["approval-flow-config.html", "approval-rule-config.html"], roles: ["center"] },
       { name: "机构维护", href: "org-maintenance.html", files: ["org-maintenance.html"], roles: ["center"] },
-      { name: "限制医生使用管理", href: "doctor-restrict.html", files: ["doctor-restrict.html"], roles: ["his"] }
+      { name: "限制医生使用管理", href: "doctor-restrict.html", files: ["doctor-restrict.html"], roles: ["his"] },
+      { name: "HIS 对接配置", href: "his-interface-config.html", files: ["his-interface-config.html"], roles: ["his"] }
     ] }
   ];
 

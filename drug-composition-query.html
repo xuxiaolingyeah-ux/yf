@@ -35,7 +35,7 @@
 /* 表格 */
 .dc-table-wrap { flex: 1; overflow: auto; min-height: 0; padding: 12px 12px 16px; }
 .dc-table {
-  width: 100%; border-collapse: separate; border-spacing: 0;
+  width: auto; border-collapse: separate; border-spacing: 0;
   font-size: 13px; table-layout: fixed;
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -51,12 +51,10 @@
   border-right: 1px solid var(--border);
 }
 /* 分组表头行 */
-.dc-table thead tr.dc-head-group th {
-  height: 36px; top: 0; z-index: 4;
-  text-align: center; font-weight: 500; color: var(--text-primary);
-  background: var(--table-head);
+.dc-table thead tr.dc-head-cols th { top: 0; }
+.dc-table thead th.dc-div, .dc-table tbody td.dc-div {
+  border-left: 1px solid var(--border);
 }
-.dc-table thead tr.dc-head-cols th { top: 36px; }
 .dc-table tbody td {
   padding: 9px 12px;
   border-bottom: 1px solid var(--border);
@@ -67,21 +65,17 @@
 }
 .dc-table tbody tr:nth-child(even) { background: var(--table-even); }
 .dc-table tbody tr:hover td { background: var(--table-hover); }
-.dc-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.dc-table .num { text-align: center; font-variant-numeric: tabular-nums; }
 .dc-table tbody tr:last-child td { border-bottom: none; }
 .dc-table td:last-child, .dc-table th:last-child { border-right: none; }
 
-/* 大类汇总行（医院总数 / 医院基药总数） */
+/* 合计行（医院总数 / 医院基药总数） */
 .dc-table tr.dc-group td {
   font-weight: 600; color: var(--text-primary);
   background: var(--table-head);
+  border-bottom: 1px solid var(--border);
 }
 .dc-table tr.dc-group:hover td { background: var(--table-head); }
-/* 大类下的子项缩进 */
-.dc-table tr.dc-child td:first-child { padding-left: 32px; }
-/* 大类起始行与上组分隔 */
-.dc-table tr.dc-group td { border-top: 1px solid var(--border); }
-.dc-table tr.dc-group:first-child td { border-top: none; }
 
 /* 空表 */
 .dc-empty { padding: 64px 0; text-align: center; color: var(--text-placeholder); font-size: 13px; }
@@ -150,14 +144,13 @@
       <div class="dc-table-wrap">
         <table class="dc-table" id="dcTable">
           <thead id="dcThead">
-            <tr class="dc-head-group">
-              <th colspan="4">药品构成情况</th>
-            </tr>
             <tr class="dc-head-cols">
-              <th style="width:220px">统计项目</th>
-              <th style="width:100px">单位</th>
-              <th style="width:140px">品种数</th>
-              <th style="width:140px">品规数</th>
+              <th style="width:175px">统计项目</th>
+              <th style="width:85px">品种数</th>
+              <th style="width:85px">品规数</th>
+              <th class="dc-div" style="width:175px">统计项目</th>
+              <th style="width:85px">品种数</th>
+              <th style="width:85px">品规数</th>
             </tr>
           </thead>
           <tbody id="dcTbody"></tbody>
@@ -185,27 +178,29 @@
   };
 
   // ---- 统计项目定义 ----
-  // 层级结构：医院总数 / 医院基药总数 两个大类，子项缩进展示
+  // 左右两块并排：左「医院总数」大类、右「医院基药总数」大类，行按品类一一对应
   // kind 为 "__none__" 表示当前演示数据中无该类目（统计为 0），保留行结构以便与业务口径一致
-  var STAT_ITEMS = [
+  var LEFT_ITEMS = [
     { key:"total",        label:"医院总数",       group:true },
-    { key:"west",         label:"西药",           kind:"西药",        child:true },
-    { key:"tibet",        label:"藏药",           kind:"__none__",    child:true },
-    { key:"ccm",          label:"中成药",         kind:"中成药",      child:true },
-    { key:"vaccine",      label:"疫苗",           kind:"疫苗",        child:true },
-    { key:"material",     label:"材料",           kind:"__none__",    child:true },
-    { key:"granule",      label:"配方颗粒",       kind:"配方颗粒",    child:true },
-    { key:"herb",         label:"中药饮片",       kind:"中药饮片",    child:true },
-    { key:"herbSmoke",    label:"中药直服饮片",   kind:"__none__",    child:true },
+    { key:"west",         label:"西药",           kind:"西药" },
+    { key:"tibet",        label:"藏药",           kind:"__none__" },
+    { key:"ccm",          label:"中成药",         kind:"中成药" },
+    { key:"vaccine",      label:"疫苗",           kind:"疫苗" },
+    { key:"material",     label:"材料",           kind:"__none__" },
+    { key:"granule",      label:"配方颗粒",       kind:"配方颗粒" },
+    { key:"herb",         label:"中药饮片",       kind:"中药饮片" },
+    { key:"herbSmoke",    label:"中药直服饮片",   kind:"__none__" }
+  ];
+  var RIGHT_ITEMS = [
     { key:"baseTotal",    label:"医院基药总数",   group:true, base:true },
-    { key:"baseWest",     label:"基药西药",       kind:"西药",        base:true, child:true },
-    { key:"baseTibet",    label:"基药藏药",       kind:"__none__",    base:true, child:true },
-    { key:"baseCcm",      label:"基药中成药",     kind:"中成药",      base:true, child:true },
-    { key:"baseVaccine",  label:"基药疫苗",       kind:"疫苗",        base:true, child:true },
-    { key:"baseMaterial", label:"基药材料",       kind:"__none__",    base:true, child:true },
-    { key:"baseGranule",  label:"基药配方颗粒",   kind:"配方颗粒",    base:true, child:true },
-    { key:"baseHerb",     label:"基药中药饮片",   kind:"中药饮片",    base:true, child:true },
-    { key:"baseHerbSmoke",label:"基药中药直服饮片", kind:"__none__",  base:true, child:true }
+    { key:"baseWest",     label:"基药西药",       kind:"西药",        base:true },
+    { key:"baseTibet",    label:"基药藏药",       kind:"__none__",    base:true },
+    { key:"baseCcm",      label:"基药中成药",     kind:"中成药",      base:true },
+    { key:"baseVaccine",  label:"基药疫苗",       kind:"疫苗",        base:true },
+    { key:"baseMaterial", label:"基药材料",       kind:"__none__",    base:true },
+    { key:"baseGranule",  label:"基药配方颗粒",   kind:"配方颗粒",    base:true },
+    { key:"baseHerb",     label:"基药中药饮片",   kind:"中药饮片",    base:true },
+    { key:"baseHerbSmoke",label:"基药中药直服饮片", kind:"__none__",  base:true }
   ];
 
   // ---- 机构范围（中心药房人员可见全部） ----
@@ -263,17 +258,9 @@
     });
   }
 
-  /** 按 统计项目 归类统计：品种数 = 去重药品数；品规数 = 去重 药品+规格 数 */
-  function computeStats(batches){
-    // 预解析每批次的药品/规格关联
-    var rows = [];
-    batches.forEach(function(b){
-      var ds = MOCK.findDrugSpec(b.drugId, b.si);
-      if (!ds) return;
-      rows.push({ b: b, d: ds.drug, s: ds.spec });
-    });
-
-    return STAT_ITEMS.map(function(item){
+  /** 按统计项目归类统计：品种数 = 去重药品数；品规数 = 去重 药品+规格 数 */
+  function computeStats(items, rows){
+    return items.map(function(item){
       var drugSet = {}, specSet = {};
       rows.forEach(function(r){
         var essential = !!(r.d.marks && r.d.marks.essential);
@@ -292,7 +279,6 @@
       return {
         item: item,
         label: item.label,
-        unit: "个",
         kinds: Object.keys(drugSet).length,
         specs: Object.keys(specSet).length
       };
@@ -303,23 +289,33 @@
   // 渲染
   // =====================================================================
 
-  function renderTable(stats){
+  function renderTable(left, right){
     var tbody = $("dcTbody");
-    if (!stats.length) {
-      tbody.innerHTML = '<tr><td colspan="4"><div class="dc-empty">暂无数据</div></td></tr>';
+    if (!left.length && !right.length) {
+      tbody.innerHTML = '<tr><td colspan="6"><div class="dc-empty">暂无数据</div></td></tr>';
       return;
     }
-    tbody.innerHTML = stats.map(function(r){
-      var trCls = [];
-      if (r.item.group) trCls.push("dc-group");
-      if (r.item.child) trCls.push("dc-child");
-      return '<tr' + (trCls.length ? ' class="' + trCls.join(" ") + '"' : '') + '>' +
-        '<td title="' + esc(r.label) + '">' + esc(r.label) + '</td>' +
-        '<td>' + esc(r.unit) + '</td>' +
-        '<td class="num">' + r.kinds + '</td>' +
-        '<td class="num">' + r.specs + '</td>' +
-        '</tr>';
-    }).join("");
+    var rowCount = Math.max(left.length, right.length);
+    var html = "";
+    for (var i = 0; i < rowCount; i++) {
+      var l = left[i], r = right[i];
+      var trCls = (l && l.item.group) ? ' class="dc-group"' : "";
+      html += "<tr" + trCls + ">" +
+        cellLabel(l) + cellNum(l, "kinds") + cellNum(l, "specs") +
+        cellLabel(r, true) + cellNum(r, "kinds") + cellNum(r, "specs") +
+        "</tr>";
+    }
+    tbody.innerHTML = html;
+  }
+
+  function cellLabel(s, divider){
+    if (!s) return '<td class="' + (divider ? "dc-div" : "") + '"></td>';
+    return '<td class="' + (divider ? "dc-div " : "") + '" title="' + esc(s.label) + '">' + esc(s.label) + '</td>';
+  }
+
+  function cellNum(s, key){
+    if (!s) return '<td class="num"></td>';
+    return '<td class="num">' + s[key] + '</td>';
   }
 
   // =====================================================================
@@ -327,7 +323,14 @@
   // =====================================================================
   function doQuery(){
     var batches = getFilteredBatches();
-    renderTable(computeStats(batches));
+    // 预解析每批次的药品/规格关联，左右两块共用
+    var rows = [];
+    batches.forEach(function(b){
+      var ds = MOCK.findDrugSpec(b.drugId, b.si);
+      if (!ds) return;
+      rows.push({ b: b, d: ds.drug, s: ds.spec });
+    });
+    renderTable(computeStats(LEFT_ITEMS, rows), computeStats(RIGHT_ITEMS, rows));
   }
 
   function resetFilter(){

@@ -81,6 +81,14 @@
 .rx-table .c-code { width: 110px; }
 .rx-table .c-name { width: 92px; }
 .rx-table .c-note { width: 72px; }
+.rx-table .c-deliver { width: 76px; }
+.rx-deliver-yes {
+  display: inline-block; padding: 1px 8px; border-radius: 10px;
+  font-size: 12px; border: 1px solid #B7EB8F; background: #F6FFED; color: #389E0D;
+  cursor: default; max-width: 100%;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.rx-deliver-no { color: var(--text-placeholder); }
 .rx-table .c-act { width: 120px; }
 .rx-table th.c-act, .rx-table td.c-act {
   position: sticky; right: 0; z-index: 2;
@@ -360,6 +368,10 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"></path></svg>
           删除
         </button>
+        <button class="rx-tool" id="btnDeliver" disabled="">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-5.1-7-11a7 7 0 0 1 14 0c0 5.9-7 11-7 11z"></path><circle cx="12" cy="10" r="2.6"></path></svg>
+          外送地址
+        </button>
         <button class="rx-tool" id="btnAudit" disabled="">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"></path></svg>
           审核
@@ -385,6 +397,7 @@
               <th class="c-code">国家医保代码</th>
               <th class="c-name">国家医保名称</th>
               <th class="c-note">医生嘱托</th>
+              <th class="c-deliver">是否外送</th>
               <th class="c-act">操作</th>
             </tr>
           </thead>
@@ -434,7 +447,6 @@
             <div class="rx-chks">
               <label class="rx-chk"><input type="checkbox" id="rxOutside">外配</label>
               <label class="rx-chk"><input type="checkbox" id="rxSkinTest">皮试</label>
-              <label class="rx-chk"><input type="checkbox" id="rxLongRx">长处方</label>
             </div>
             <span class="rx-money">单价：<b id="rxPrice">0.00</b> 元</span>
             <span class="rx-money">总价：<b id="rxAmount">0.00</b> 元</span>
@@ -628,7 +640,7 @@
       id: null, drugKey: "", groupNo: "", dose: "1", doseUnit: "片",
       freq: "bid", route: "口服", days: "1", drip: "", dripUnit: "滴/分",
       total: "1", totalUnit: "盒", pharmacy: "西药房", pharmacies: ["西药房"],
-      note: "", outside: false, skinTest: false, longRx: false, totalManual: false
+      note: "", outside: false, skinTest: false, totalManual: false
     };
   }
 
@@ -681,11 +693,12 @@
   function renderTable(){
     var body = $("rxBody");
     if (!ST.rows.length){
-      body.innerHTML = '<tr><td colspan="15" class="rx-empty">暂无医嘱，点击「新增(A)」录入医嘱</td></tr>';
+      body.innerHTML = '<tr><td colspan="16" class="rx-empty">暂无医嘱，点击「新增(A)」录入医嘱</td></tr>';
       $("chkAll").checked = false;
       $("chkAll").indeterminate = false;
       $("btnDel").disabled = true;
       $("btnAudit").disabled = true;
+      $("btnDeliver").disabled = true;
       return;
     }
     var html = "";
@@ -721,11 +734,20 @@
         + '<td title="' + esc(r.insCode) + '">' + esc(r.insCode) + '</td>'
         + '<td title="' + esc(r.insName) + '">' + esc(r.insName) + '</td>'
         + '<td title="' + esc(r.note) + '">' + esc(r.note) + '</td>'
+        + deliverCell(r)
         + '<td class="c-act"><div class="rx-act">' + acts + '</div></td>'
         + '</tr>';
     });
     body.innerHTML = html;
     syncCheckAll();
+  }
+
+  /* 是否外送单元格：已配置外送地址显示「是」（悬浮展示地址），否则「否」 */
+  function deliverCell(r){
+    if (r.delivery && r.delivery.full){
+      return '<td class="c-deliver"><span class="rx-deliver-yes" title="' + esc(r.delivery.full) + '">是</span></td>';
+    }
+    return '<td class="c-deliver"><span class="rx-deliver-no">否</span></td>';
   }
 
   function syncCheckAll(){
@@ -737,6 +759,8 @@
     $("btnDel").disabled = n === 0;
     /* 批量审核按钮：勾选中存在可审核的毒麻精医嘱时可用 */
     $("btnAudit").disabled = auditableChecked().length === 0;
+    /* 外送地址按钮：勾选中存在可配置外送的医嘱（未发送/待审核）时可用 */
+    $("btnDeliver").disabled = deliverableChecked().length === 0;
   }
 
   function renderSum(){
@@ -791,7 +815,6 @@
     $("rxNote").value = d.note;
     $("rxOutside").checked = !!d.outside;
     $("rxSkinTest").checked = !!d.skinTest;
-    $("rxLongRx").checked = !!d.longRx;
     syncDrip();
 
     $("btnAdd").innerHTML = ST.editingId ? '保存修改(<span class="rx-key">D</span>)' : '添加(<span class="rx-key">D</span>)';
@@ -852,7 +875,7 @@
       total: Number(d.total), totalUnit: d.totalUnit,
       price: drug.price, amount: Number(money(drug.price * Number(d.total))),
       pharmacy: pharms.join("、"), pharmacies: pharms,
-      outside: !!d.outside, skinTest: !!d.skinTest, longRx: !!d.longRx,
+      outside: !!d.outside, skinTest: !!d.skinTest,
       insFlag: drug.insFlag, insClass: drug.insClass,
       insCode: drug.insCode, insName: drug.insName, note: d.note,
       mark: drug.kind === "中成药" ? "成药" : drug.kind
@@ -914,7 +937,7 @@
       total: String(row.total), totalUnit: row.totalUnit,
       pharmacy: row.pharmacy || "西药房", pharmacies: pharms,
       note: row.note || "", outside: !!row.outside, skinTest: !!row.skinTest,
-      longRx: !!row.longRx, totalManual: true
+      totalManual: true
     };
   }
   function startEdit(id){
@@ -1023,6 +1046,29 @@
         toast("已批量拒绝 " + list.length + " 条医嘱");
       }
     );
+  }
+  /* 批量配置外送地址：对勾选的未发送/待审核医嘱统一设置收件信息 */
+  function deliverableChecked(){
+    return ST.rows.filter(function(r){
+      return ST.checked[r.id] && (r.status === "unsent" || r.status === "pending");
+    });
+  }
+  function openDeliver(){
+    var list = deliverableChecked();
+    if (!list.length){
+      toast("请先勾选未发送或待审核的医嘱");
+      return;
+    }
+    var first = list[0].delivery || {};
+    AddrDialog.open({
+      title: "配置外送地址（已选 " + list.length + " 条医嘱）",
+      defaults: first,
+      onSave: function(addr){
+        list.forEach(function(r){ r.delivery = addr; });
+        persist(); renderTable();
+        toast("已为 " + list.length + " 条医嘱配置外送地址");
+      }
+    });
   }
   function deleteChecked(){
     var ids = Object.keys(ST.checked).filter(function(id){ return ST.checked[id]; });
@@ -1215,6 +1261,7 @@
     $("btnSend").onclick = sendOrders;
     $("btnDel").onclick = deleteChecked;
     $("btnAudit").onclick = auditChecked;
+    $("btnDeliver").onclick = openDeliver;
     $("btnAdd").onclick = addOrder;
 
     $("rxEdClose").onclick = function(){
@@ -1256,10 +1303,9 @@
       if ($("rxPanel").classList.contains("show")) renderPanel($("rxDrugInput").value.trim());
     });
 
-    // 外配 / 皮试 / 长处方
+    // 外配 / 皮试
     $("rxOutside").addEventListener("change", function(){ ST.draft.outside = this.checked; });
     $("rxSkinTest").addEventListener("change", function(){ ST.draft.skinTest = this.checked; });
-    $("rxLongRx").addEventListener("change", function(){ ST.draft.longRx = this.checked; });
 
     // 表格操作
     $("rxBody").addEventListener("click", function(e){
@@ -1371,10 +1417,11 @@
 
   /* ---------------- 初始化 ---------------- */
   if (IS_NARC_AUDITOR){
-    // 毒麻精审药医生：只保留查看与审核（含批量审核），隐藏录入/发送/删除工具栏及医嘱录入区
+    // 毒麻精审药医生：只保留查看与审核（含批量审核），隐藏录入/发送/删除/外送工具栏及医嘱录入区
     $("btnNew").style.display = "none";
     $("btnSend").style.display = "none";
     $("btnDel").style.display = "none";
+    $("btnDeliver").style.display = "none";
     $("rxEd").classList.add("is-hidden");
   } else {
     // 其他角色：批量审核按钮不展示
@@ -1389,5 +1436,6 @@
 </script>
 
 
+  <script src="address-dialog.js"></script>
   <script src="nav.js?v=20261111b"></script>
 </body></html>

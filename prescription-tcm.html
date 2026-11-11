@@ -140,6 +140,14 @@
 .tcm-fld .select { width: auto; min-width: 92px; }
 .tcm-fld.w-diag .select { min-width: 180px; }
 .tcm-note { flex: 1; min-width: 200px; }
+.tcm-chk {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 13px; color: var(--text-primary); cursor: pointer; user-select: none;
+}
+.tcm-chk input { accent-color: var(--primary, #4080ff); margin: 0; }
+.tcm-deliver-link { font-size: 13px; color: var(--primary, #4080ff); }
+.tcm-deliver-link:hover { text-decoration: underline; }
+.tcm-deliver-link.is-hidden { display: none; }
 
 /* 弹窗 / toast */
 .tcm-mask {
@@ -326,6 +334,12 @@
           <span class="tcm-lbl">备注：</span>
           <input class="input tcm-note" id="tcmNote" maxlength="100" placeholder="选填，最多100字">
         </div>
+        <div class="tcm-rxrow">
+          <span class="tcm-lbl"></span>
+          <label class="tcm-chk"><input type="checkbox" id="tcmLongRx">长处方</label>
+          <label class="tcm-chk"><input type="checkbox" id="tcmDaifian">代煎</label>
+          <a href="javascript:void(0)" class="tcm-deliver-link is-hidden" id="tcmDeliverLink"></a>
+        </div>
       </div>
 
     </div>
@@ -387,7 +401,8 @@
       pharmacy: "中药房", kind: "中药饮片", rxName: "中草药处方",
       herbs: [], selKey: "",
       doses: "3", usage: "水煎温服", freq: "每日一剂", route: "口服",
-      ml: "200", mlUnit: "ml", timing: "饭后服用", diag: "", note: ""
+      ml: "200", mlUnit: "ml", timing: "饭后服用", diag: "", note: "",
+      longRx: false, daifian: false, delivery: null
     };
   }
   function seedDraft(){
@@ -513,8 +528,25 @@
     $("tcmTiming").value = ST.timing;
     $("tcmDiag").value = ST.diag;
     $("tcmNote").value = ST.note;
+    $("tcmLongRx").checked = !!ST.longRx;
+    $("tcmDaifian").checked = !!ST.daifian;
+    syncDeliverLink();
     var d = drugOf(ST.selKey);
     $("tcmDrugInput").value = d ? d.name : "";
+  }
+
+  /* 代煎外送地址入口：勾选代煎后展示，显示地址填写状态 */
+  function syncDeliverLink(){
+    var link = $("tcmDeliverLink");
+    if (!ST.daifian){
+      link.classList.add("is-hidden");
+      link.textContent = "";
+      return;
+    }
+    link.classList.remove("is-hidden");
+    link.textContent = ST.delivery
+      ? "外送地址：" + ST.delivery.full + "（点击修改）"
+      : "请填写外送地址（必填）";
   }
 
   function renderAll(){
@@ -597,6 +629,21 @@
   /* ---------------- 发送 / 重置 ---------------- */
   function setInvalid(el, bad){ if (el) el.classList.toggle("is-invalid", !!bad); }
 
+  /* 代煎外送地址弹窗：保存后写入草稿；取消视为放弃勾选代煎（由调用方决定） */
+  function openDeliverDialog(onCancel){
+    AddrDialog.open({
+      title: "代煎外送地址",
+      defaults: ST.delivery || {},
+      onSave: function(addr){
+        ST.delivery = addr;
+        persist();
+        syncDeliverLink();
+        toast("外送地址已保存");
+      },
+      onCancel: onCancel
+    });
+  }
+
   function sendRx(){
     var errs = [];
     if (!ST.herbs.length) errs.push("至少 1 味药品");
@@ -608,8 +655,12 @@
     if (!(doses >= 1)) errs.push("剂数");
     setInvalid($("tcmDiag"), !ST.diag);
     if (!ST.diag) errs.push("诊断");
+    /* 选择代煎后必须录入外送地址 */
+    if (ST.daifian && !ST.delivery) errs.push("外送地址（已选代煎）");
     if (errs.length){
       toast("请完善：" + errs.join("、"));
+      /* 未填外送地址时直接打开地址弹窗引导录入 */
+      if (ST.daifian && !ST.delivery) openDeliverDialog();
       return;
     }
     var s = sums();
@@ -639,6 +690,8 @@
           doses: doses, usage: ST.usage, freq: ST.freq, route: ST.route,
           ml: Number(ST.ml) || 0, mlUnit: ST.mlUnit || "ml", timing: ST.timing,
           diag: ST.diag, diagName: diagName, note: ST.note,
+          longRx: !!ST.longRx, daifian: !!ST.daifian,
+          delivery: ST.daifian ? ST.delivery : null,
           weight: s.weight, amount: Number(money(s.amount))
         });
         persistList(list);
@@ -667,7 +720,9 @@
           price: Number(money(s.amount / doses)), amount: Number(money(s.amount)),
           pharmacy: ST.pharmacy, pharmacies: [ST.pharmacy],
           insFlag: "—", insClass: "—", insCode: "—", insName: "中药饮片",
-          note: ST.note || ""
+          note: ST.note || "",
+          longRx: !!ST.longRx, daifian: !!ST.daifian,
+          delivery: ST.daifian ? ST.delivery : null
         });
         persistWx(rows);
 
@@ -827,6 +882,31 @@
     });
     $("tcmNote").addEventListener("input", function(){ ST.note = this.value; persist(); });
 
+    // 长处方 / 代煎：勾选代煎必须录入外送地址
+    $("tcmLongRx").addEventListener("change", function(){ ST.longRx = this.checked; persist(); });
+    $("tcmDaifian").addEventListener("change", function(){
+      var self = this;
+      if (this.checked){
+        ST.daifian = true;
+        persist();
+        syncDeliverLink();
+        /* 勾选代煎立即弹出地址录入；取消则回退勾选 */
+        openDeliverDialog(function(){
+          ST.daifian = false;
+          ST.delivery = null;
+          persist();
+          syncForm();
+          toast("已取消代煎（需先填写外送地址）");
+        });
+      } else {
+        ST.daifian = false;
+        ST.delivery = null;
+        persist();
+        syncDeliverLink();
+      }
+    });
+    $("tcmDeliverLink").addEventListener("click", function(){ openDeliverDialog(); });
+
     // 快捷键 Alt+A 发送 / Alt+R 重置
     document.addEventListener("keydown", function(e){
       if (e.altKey && !e.ctrlKey && !e.metaKey){
@@ -873,5 +953,6 @@
 
 
 
+  <script src="address-dialog.js"></script>
   <script src="nav.js?v=20261111b"></script>
 </body></html>

@@ -71,13 +71,17 @@
 .dc-table tbody tr:last-child td { border-bottom: none; }
 .dc-table td:last-child, .dc-table th:last-child { border-right: none; }
 
-/* 合计行（医院制剂总数） */
-.dc-table tr.dc-total td {
-  font-weight: 600; color: var(--primary-dark);
-  border-top: 1px solid var(--border);
+/* 大类汇总行（医院总数 / 医院基药总数） */
+.dc-table tr.dc-group td {
+  font-weight: 600; color: var(--text-primary);
+  background: var(--table-head);
 }
-/* 基药分组起始行 */
-.dc-table tr.dc-base-start td { border-top: 1px solid var(--border); }
+.dc-table tr.dc-group:hover td { background: var(--table-head); }
+/* 大类下的子项缩进 */
+.dc-table tr.dc-child td:first-child { padding-left: 32px; }
+/* 大类起始行与上组分隔 */
+.dc-table tr.dc-group td { border-top: 1px solid var(--border); }
+.dc-table tr.dc-group:first-child td { border-top: none; }
 
 /* 空表 */
 .dc-empty { padding: 64px 0; text-align: center; color: var(--text-placeholder); font-size: 13px; }
@@ -181,25 +185,27 @@
   };
 
   // ---- 统计项目定义 ----
-  // match 为空表示当前演示数据中无该类目（统计为 0），保留行结构以便与业务口径一致
+  // 层级结构：医院总数 / 医院基药总数 两个大类，子项缩进展示
+  // kind 为 "__none__" 表示当前演示数据中无该类目（统计为 0），保留行结构以便与业务口径一致
   var STAT_ITEMS = [
-    { key:"total",        label:"医院药总数",   kind:null,        total:true },
-    { key:"west",         label:"西药",         kind:"西药" },
-    { key:"tibet",        label:"藏药",         kind:"__none__" },
-    { key:"ccm",          label:"中成药",       kind:"中成药" },
-    { key:"vaccine",      label:"疫苗",         kind:"疫苗" },
-    { key:"material",     label:"材料",         kind:"__none__" },
-    { key:"granule",      label:"配方颗粒",     kind:"配方颗粒" },
-    { key:"herb",         label:"中药饮片",     kind:"中药饮片" },
-    { key:"herbSmoke",    label:"中药熏服饮片", kind:"__none__" },
-    { key:"baseWest",     label:"基药西药",     kind:"西药",        base:true, baseStart:true },
-    { key:"baseTibet",    label:"基药藏药",     kind:"__none__",    base:true },
-    { key:"baseCcm",      label:"基药中成药",   kind:"中成药",      base:true },
-    { key:"baseVaccine",  label:"基药疫苗",     kind:"疫苗",        base:true },
-    { key:"baseMaterial", label:"基药材料",     kind:"__none__",    base:true },
-    { key:"baseGranule",  label:"基药配方颗粒", kind:"配方颗粒",    base:true },
-    { key:"baseHerb",     label:"基药中药饮片", kind:"中药饮片",    base:true },
-    { key:"baseHerbSmoke",label:"基药中药熏服饮片", kind:"__none__", base:true }
+    { key:"total",        label:"医院总数",       group:true },
+    { key:"west",         label:"西药",           kind:"西药",        child:true },
+    { key:"tibet",        label:"藏药",           kind:"__none__",    child:true },
+    { key:"ccm",          label:"中成药",         kind:"中成药",      child:true },
+    { key:"vaccine",      label:"疫苗",           kind:"疫苗",        child:true },
+    { key:"material",     label:"材料",           kind:"__none__",    child:true },
+    { key:"granule",      label:"配方颗粒",       kind:"配方颗粒",    child:true },
+    { key:"herb",         label:"中药饮片",       kind:"中药饮片",    child:true },
+    { key:"herbSmoke",    label:"中药直服饮片",   kind:"__none__",    child:true },
+    { key:"baseTotal",    label:"医院基药总数",   group:true, base:true },
+    { key:"baseWest",     label:"基药西药",       kind:"西药",        base:true, child:true },
+    { key:"baseTibet",    label:"基药藏药",       kind:"__none__",    base:true, child:true },
+    { key:"baseCcm",      label:"基药中成药",     kind:"中成药",      base:true, child:true },
+    { key:"baseVaccine",  label:"基药疫苗",       kind:"疫苗",        base:true, child:true },
+    { key:"baseMaterial", label:"基药材料",       kind:"__none__",    base:true, child:true },
+    { key:"baseGranule",  label:"基药配方颗粒",   kind:"配方颗粒",    base:true, child:true },
+    { key:"baseHerb",     label:"基药中药饮片",   kind:"中药饮片",    base:true, child:true },
+    { key:"baseHerbSmoke",label:"基药中药直服饮片", kind:"__none__",  base:true, child:true }
   ];
 
   // ---- 机构范围（中心药房人员可见全部） ----
@@ -270,10 +276,15 @@
     return STAT_ITEMS.map(function(item){
       var drugSet = {}, specSet = {};
       rows.forEach(function(r){
-        var hit = item.total
-          ? true
-          : (item.kind !== "__none__" && r.d.kind === item.kind &&
-             (!item.base || !!(r.d.marks && r.d.marks.essential)));
+        var essential = !!(r.d.marks && r.d.marks.essential);
+        var hit;
+        if (item.group) {
+          // 大类行：医院总数=全部；医院基药总数=仅基药
+          hit = !item.base || essential;
+        } else {
+          hit = item.kind !== "__none__" && r.d.kind === item.kind &&
+                (!item.base || essential);
+        }
         if (!hit) return;
         drugSet[r.d.id] = true;
         specSet[r.d.id + "_" + r.b.si] = true;
@@ -300,8 +311,8 @@
     }
     tbody.innerHTML = stats.map(function(r){
       var trCls = [];
-      if (r.item.total) trCls.push("dc-total");
-      if (r.item.baseStart) trCls.push("dc-base-start");
+      if (r.item.group) trCls.push("dc-group");
+      if (r.item.child) trCls.push("dc-child");
       return '<tr' + (trCls.length ? ' class="' + trCls.join(" ") + '"' : '') + '>' +
         '<td title="' + esc(r.label) + '">' + esc(r.label) + '</td>' +
         '<td>' + esc(r.unit) + '</td>' +

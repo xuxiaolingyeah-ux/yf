@@ -360,6 +360,10 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"></path></svg>
           删除
         </button>
+        <button class="rx-tool" id="btnAudit" disabled="">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"></path></svg>
+          审核
+        </button>
       </div>
 
       <!-- ========== 门诊明细 ========== -->
@@ -593,14 +597,16 @@
     rejected: { t: "已拒绝", dot: "is-danger", cls: "is-danger" }
   };
 
-  /* 毒麻精审药医生（narcotics）：待审核的毒麻精医嘱在此页面审核 */
-  function myRole(){
+  /* 毒麻精审药医生（his 子角色 narcotics）：待审核的毒麻精医嘱在此页面审核 */
+  function myUser(){
     try {
-      var u = JSON.parse(sessionStorage.getItem("SEL_USER") || "null");
-      return (u && u.role) || "center";
-    } catch(e){ return "center"; }
+      return JSON.parse(sessionStorage.getItem("SEL_USER") || "null") || {};
+    } catch(e){ return {}; }
   }
-  var IS_NARC_AUDITOR = myRole() === "narcotics";
+  function myRole(){
+    return myUser().role || "center";
+  }
+  var IS_NARC_AUDITOR = myUser().subRole === "narcotics" || myRole() === "narcotics";
 
   function drugOf(key){
     for (var i = 0; i < MOCK.rxDrugs.length; i++){
@@ -679,6 +685,7 @@
       $("chkAll").checked = false;
       $("chkAll").indeterminate = false;
       $("btnDel").disabled = true;
+      $("btnAudit").disabled = true;
       return;
     }
     var html = "";
@@ -728,6 +735,8 @@
     $("chkAll").checked = ids.length > 0 && n === ids.length;
     $("chkAll").indeterminate = n > 0 && n < ids.length;
     $("btnDel").disabled = n === 0;
+    /* 批量审核按钮：勾选中存在可审核的毒麻精医嘱时可用 */
+    $("btnAudit").disabled = auditableChecked().length === 0;
   }
 
   function renderSum(){
@@ -985,6 +994,36 @@
       }
     );
   }
+  /* 批量审核：对勾选的待审核毒麻精医嘱统一通过 / 拒绝 */
+  function auditableChecked(){
+    return ST.rows.filter(function(r){ return ST.checked[r.id] && r.status === "pending" && r.needAudit; });
+  }
+  function auditChecked(){
+    var list = auditableChecked();
+    if (!list.length){
+      toast("请先勾选待审核的毒麻精医嘱");
+      return;
+    }
+    var names = list.slice(0, 3).map(function(r){ return r.drugName; }).join("、");
+    auditDialog(
+      "毒麻精医嘱批量审核",
+      "已选中 " + list.length + " 条待审核的毒麻精医嘱"
+        + (list.length > 3 ? "（" + names + " 等）" : "（" + names + "）")
+        + "，请选择批量通过或批量拒绝。通过后医生方可点击「发送」；拒绝后医嘱状态变为已拒绝。",
+      function(){ // 批量通过
+        list.forEach(function(r){ r.status = "unsent"; r.audited = true; });
+        ST.checked = {};
+        persist(); renderTable(); renderSum();
+        toast("已批量审核通过 " + list.length + " 条医嘱，均已回到未发送");
+      },
+      function(){ // 批量拒绝
+        list.forEach(function(r){ r.status = "rejected"; });
+        ST.checked = {};
+        persist(); renderTable(); renderSum();
+        toast("已批量拒绝 " + list.length + " 条医嘱");
+      }
+    );
+  }
   function deleteChecked(){
     var ids = Object.keys(ST.checked).filter(function(id){ return ST.checked[id]; });
     if (!ids.length) return;
@@ -1175,6 +1214,7 @@
     };
     $("btnSend").onclick = sendOrders;
     $("btnDel").onclick = deleteChecked;
+    $("btnAudit").onclick = auditChecked;
     $("btnAdd").onclick = addOrder;
 
     $("rxEdClose").onclick = function(){
@@ -1331,11 +1371,14 @@
 
   /* ---------------- 初始化 ---------------- */
   if (IS_NARC_AUDITOR){
-    // 毒麻精审药医生：只保留查看与审核，隐藏录入/发送/删除工具栏及医嘱录入区
+    // 毒麻精审药医生：只保留查看与审核（含批量审核），隐藏录入/发送/删除工具栏及医嘱录入区
     $("btnNew").style.display = "none";
     $("btnSend").style.display = "none";
     $("btnDel").style.display = "none";
     $("rxEd").classList.add("is-hidden");
+  } else {
+    // 其他角色：批量审核按钮不展示
+    $("btnAudit").style.display = "none";
   }
   fillSelects();
   bind();

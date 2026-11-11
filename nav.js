@@ -21,6 +21,7 @@
      ["his"] 仅 HIS 对接人员可见；
      ["narcotics"] 仅毒麻精审药医生可见；
      ["narcoticAuditor"] 仅毒麻精药房审核专员可见。
+     subRole = "narcotics"（毒麻精审药医生，HIS 角色下的子角色）：仅可见「门诊处方管理 → 门诊医嘱开具」。
      hideFor = 账号例外名单：命中账号（如 zhaomin/chenjing）即使角色匹配也隐藏该项。 */
   var C3 = ["center", "member", "village"];
   var NAV = [
@@ -61,7 +62,7 @@
     ], roles: C3 },
     { name: "门诊处方管理", icon: "rx", items: [
       { name: "中药医嘱开具", href: "prescription-tcm.html", files: ["prescription-tcm.html"], roles: ["his"] },
-      { name: "门诊医嘱开具", href: "prescription-western.html", files: ["prescription-western.html"], roles: ["his", "narcotics"] },
+      { name: "门诊医嘱开具", href: "prescription-western.html", files: ["prescription-western.html"], roles: ["his"] },
       { name: "门诊处方发药", href: "prescription-dispensing.html", files: ["prescription-dispensing.html"], roles: ["his"] },
       { name: "毒麻精发药审核", href: "narcotic-audit.html", files: ["narcotic-audit.html"], roles: ["narcoticAuditor"] },
       { name: "门诊处方送药", href: "prescription-delivery.html", files: ["prescription-delivery.html"], roles: ["his"] },
@@ -120,12 +121,15 @@
     if (!side) return;
     var me = currentUser();
     var role = me.role || "center";
+    /* 毒麻精审药医生（his 子角色）：仅可见门诊处方管理 → 门诊医嘱开具 */
+    var isNarc = me.subRole === "narcotics" || role === "narcotics";
     var g = activeGroup();
     var html = "";
 
     NAV.forEach(function (group, gi) {
       /* 一级菜单权限 */
       if (!hasRole(group.roles, role)) return;
+      if (isNarc && group.name !== "门诊处方管理") return;
 
       if (group.href) {
         var homeActive = group.files.indexOf(current) >= 0;
@@ -136,6 +140,7 @@
       }
       /* 过滤二级子项 */
       var visibleItems = (group.items || []).filter(function (item) {
+        if (isNarc && item.name !== "门诊医嘱开具") return false;
         return hasRole(item.roles, role) && !hiddenFor(item, me);
       });
       if (!visibleItems.length) return;
@@ -174,7 +179,7 @@
     { id: "u6", account: "zhouwen", name: "周雯", org: "县域医共体药学专家库", role: "expert", roleName: "药学专家" },
     { id: "u7", account: "fengtao", name: "冯涛", org: "县域医共体药学专家库", role: "expert", roleName: "临床专家" },
     { id: "u8", account: "liuyun", name: "刘芸", org: "区域中心药房", role: "narcoticAuditor", roleName: "毒麻精药房审核专员" },
-    { id: "u9", account: "linwei", name: "林伟", org: "区域中心药房", role: "narcotics", roleName: "毒麻精审药医生" }
+    { id: "u9", account: "linwei", name: "林伟", org: "区域中心药房", role: "his", roleName: "毒麻精审药医生", subRole: "narcotics" }
   ];
 
   function demoUsers() {
@@ -245,7 +250,8 @@
         try {
           sessionStorage.setItem("SEL_USER", JSON.stringify({
             id: user.id, account: user.account, name: user.name,
-            org: user.org, role: user.role, roleName: user.roleName
+            org: user.org, role: user.role, roleName: user.roleName,
+            subRole: user.subRole
           }));
         } catch (err) { /* ignore */ }
         location.reload();

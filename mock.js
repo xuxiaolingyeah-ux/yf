@@ -595,7 +595,7 @@ MOCK.users = [
 ];
 
 /* 毒麻精审药医生：处方含毒麻精药品时，在「门诊医嘱开具」中执行审核 */
-MOCK.users.push({ id: "u9", account: "linwei", password: "123456", name: "林伟", org: "区域中心药房", role: "narcotics", roleName: "毒麻精审药医生" });
+MOCK.users.push({ id: "u9", account: "linwei", password: "123456", name: "林伟", org: "区域中心药房", role: "his", roleName: "毒麻精审药医生", subRole: "narcotics" });
 
 MOCK.selections = [
   {

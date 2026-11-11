@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>出库明细查询 · 统计查询</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+/* ===== 统计查询 · 出库明细查询 ===== */
+
+/* 灰底水槽 + 白卡浮起 */
+.page.odq-page { background: var(--bg-page); padding: 12px; gap: 0; }
+.odq-card {
+  flex: 1; min-height: 0;
+  display: flex; flex-direction: column;
+  background: var(--bg-white);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 1px 2px rgba(0,0,0,.04);
+  overflow: hidden;
+}
+.odq-card > .page-head {
+  flex: none;
+  height: 48px; padding: 0 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-white);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+/* 紧凑筛选区 */
+.odq-filter {
+  display: flex; flex-wrap: wrap; align-items: center;
+  gap: 10px 20px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-white);
+}
+.odq-filter .filter-item { display: flex; align-items: center; gap: 6px; }
+.odq-filter .filter-label { font-size: 12px; color: var(--text-tertiary); white-space: nowrap; }
+.odq-filter .input, .odq-filter .select { height: 30px; }
+.odq-filter .filter-item .input, .odq-filter .filter-item .select { width: 160px; }
+.odq-filter .filter-item .input[type="date"] { width: 130px; }
+.odq-filter .filter-date-sep { font-size: 12px; color: var(--text-tertiary); }
+.odq-filter .filter-item.kw .input { width: 220px; }
+.odq-filter .filter-acts { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+
+/* 出库方式：纯文字展示 */
+
+/* 明细表格容器 */
+.odq-table-wrap {
+  flex: 1; min-height: 0; overflow: auto;
+  background: var(--bg-white);
+  padding: 0 16px;
+}
+.odq-table {
+  width: max-content; min-width: 100%;
+  border-collapse: collapse; font-size: 13px;
+}
+.odq-table th {
+  position: sticky; top: 0; z-index: 2;
+  background: var(--table-head);
+  height: 38px; padding: 0 10px;
+  text-align: left; font-weight: 500; color: var(--text-secondary);
+  white-space: nowrap;
+  border-bottom: 1px solid var(--border);
+}
+.odq-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+.odq-table tbody tr:nth-child(even) { background: var(--table-even); }
+.odq-table tbody tr:hover { background: var(--table-hover); }
+.odq-table .col-num { text-align: right; font-variant-numeric: tabular-nums; }
+.odq-table .amt { font-weight: 500; color: var(--primary-dark); }
+.odq-table .doc-no { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; }
+
+/* 底部分页：左侧汇总 + 右侧标准 pager */
+.odq-card > .pager { padding: 0 16px; }
+.odq-summary { font-size: 12px; color: var(--text-secondary); }
+.odq-summary strong { color: var(--primary-dark); font-weight: 500; }
+
+/* 导出按钮 */
+.btn-export { display: inline-flex; align-items: center; gap: 4px; }
+.btn-export::before {
+  content: ""; width: 13px; height: 13px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2'><path d='M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4'/><polyline points='7 10 12 15 17 10'/><line x1='12' y1='15' x2='12' y2='3'/></svg>") center/contain no-repeat;
+          mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2'><path d='M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4'/><polyline points='7 10 12 15 17 10'/><line x1='12' y1='15' x2='12' y2='3'/></svg>") center/contain no-repeat;
+}
+
+</style>
+</head>
+<body>
+
+<!-- ========== 顶部导航 ========== -->
+<header class="app-header">
+  <div class="header-left">
+    <div class="header-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3.2" y="9.4" width="17.6" height="5.2" rx="2.6" transform="rotate(-45 12 12)"/>
+        <path d="M8.4 15.6L15.6 8.4"/>
+      </svg>
+    </div>
+    <div class="header-title">区域药房协同管理系统</div>
+  </div>
+  <div class="header-right">
+    <div class="header-user">
+      <div class="header-avatar">赵</div>
+      <span class="header-user-name">赵敏 · 中心药房</span>
+    </div>
+  </div>
+</header>
+
+<div class="app-body">
+  <!-- ========== 左侧导航 ========== -->
+  <aside class="app-side" id="appSide"></aside>
+<!-- ========== 主区域 ========== -->
+  <main class="app-main">
+    <div class="tabbar">
+      <div class="tab" onclick="location.href='drug-catalog.html'">首页</div>
+      <div class="tab active">
+        出库明细查询
+        <button class="tab-close" title="关闭" onclick="location.href='drug-catalog.html'">
+          <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 5l14 14M19 5L5 19"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="page odq-page">
+      <div class="odq-card">
+        <!-- 标题行 -->
+        <div class="page-head">
+          <h1 class="page-title">出库明细查询</h1>
+          <div class="page-acts">
+            <button class="btn btn-default btn-export" onclick="ODQ.exportData()">导出</button>
+          </div>
+        </div>
+
+        <!-- 筛选 + 表格 + 分页 -->
+        <div class="odq-filter">
+          <div class="filter-item">
+            <span class="filter-label">出库方式：</span>
+            <select class="select" id="f-way">
+              <option value="" selected>全部</option>
+              <option value="院内调拨出库">院内调拨出库</option>
+              <option value="调拨出库">调拨出库</option>
+              <option value="退库出库">退库出库</option>
+              <option value="报损出库">报损出库</option>
+            </select>
+          </div>
+
+          <div class="filter-item">
+            <span class="filter-label">出库时间：</span>
+            <input class="input" type="date" id="f-date-start">
+            <span class="filter-date-sep">至</span>
+            <input class="input" type="date" id="f-date-end">
+          </div>
+
+          <div class="filter-item">
+            <span class="filter-label">出库机构：</span>
+            <select class="select" id="f-out-org"></select>
+          </div>
+
+          <div class="filter-item">
+            <span class="filter-label">出库库位：</span>
+            <select class="select" id="f-out-loc"></select>
+          </div>
+
+          <div class="filter-item">
+            <span class="filter-label">接收机构：</span>
+            <select class="select" id="f-recv-org"></select>
+          </div>
+
+          <div class="filter-item">
+            <span class="filter-label">接收库位：</span>
+            <select class="select" id="f-recv-loc"></select>
+          </div>
+
+          <div class="filter-item kw">
+            <span class="filter-label">药品名称：</span>
+            <input class="input" id="f-kw" placeholder="药品名称 / 拼音码 / 编码">
+          </div>
+
+          <div class="filter-acts">
+            <button class="btn btn-default" onclick="ODQ.reset()">重置</button>
+            <button class="btn btn-primary" onclick="ODQ.search()">查询</button>
+          </div>
+        </div>
+
+        <!-- 表格 -->
+        <div class="odq-table-wrap">
+          <table class="odq-table" id="odq-table">
+            <thead>
+              <tr>
+                <th style="min-width:88px">出库方式</th>
+                <th style="min-width:150px">出库时间</th>
+                <th style="min-width:150px">单号</th>
+                <th style="min-width:140px">出库机构</th>
+                <th style="min-width:90px">出库库位</th>
+                <th style="min-width:150px">接收机构</th>
+                <th style="min-width:90px">接收库位</th>
+                <th style="min-width:150px">药品名称</th>
+                <th style="min-width:110px">编码</th>
+                <th style="min-width:110px">规格</th>
+                <th style="min-width:170px">生产企业</th>
+                <th style="min-width:120px">批次号</th>
+                <th style="min-width:86px; text-align:right">出库量</th>
+                <th style="min-width:80px; text-align:right">进货价</th>
+                <th style="min-width:80px; text-align:right">零售价</th>
+                <th style="min-width:110px; text-align:right">进货价金额合计</th>
+                <th style="min-width:110px; text-align:right">零售价金额合计</th>
+                <th style="min-width:100px">有效期</th>
+              </tr>
+            </thead>
+            <tbody id="odq-tbody"></tbody>
+          </table>
+        </div>
+
+        <!-- 底部分页 -->
+        <div class="pager">
+          <span class="odq-summary" id="odq-summary">共 0 条记录</span>
+          <span class="pager-ctrl" id="odq-pager"></span>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+/* ============================================================
+   出库明细查询 · 原型脚本
+   ============================================================ */
+(function () {
+  var ODQ = {};
+  window.ODQ = ODQ;
+
+  function $(id) { return document.getElementById(id); }
+  function pad(n) { return n < 10 ? '0' + n : '' + n; }
+  function fmtDate(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  function fmtDT(d)   { return fmtDate(d) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds()); }
+  function money(n)   { return '¥' + Number(n).toFixed(2); }
+  function esc(s)     { return String(s == null ? '' : s).replace(/[<>&"]/g, function (c) {
+                          return { '<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;' }[c];
+                        }); }
+
+  /* ---------- 基础字典 ---------- */
+  var WAYS = ['院内调拨出库', '调拨出库', '退库出库', '报损出库'];
+
+  /* 机构 → 库位（报损出库无接收方） */
+  var ORGS = [
+    { id: 'org-c',  name: '区域中心药房',           locs: ['西药库', '中药库', '藏药库'] },
+    { id: 'org-a1', name: 'XX 社区卫生服务中心',    locs: ['门诊西药库', '门诊中药库'] },
+    { id: 'org-a2', name: 'YY 人民医院',            locs: ['住院西药库', '住院中药库'] },
+    { id: 'org-a3', name: 'ZZ 中西医结合医院',      locs: ['西药房', '中药房'] }
+  ];
+  var ORG_NAMES = {};
+  ORGS.forEach(function (o) { ORG_NAMES[o.id] = o.name; });
+  function orgById(id) { return ORGS.filter(function (o) { return o.id === id; })[0] || null; }
+
+  /* 报损出库为库内损耗核销，无接收机构 / 接收库位 */
+  var NO_RECV = '报损出库';
+
+  var DRUG_POOL = [
+    { name:'阿莫西林胶囊',     code:'YP001001', py:'AMXLJN',  spec:'0.25g*24粒',  unit:'盒', purchase:0.85, retail:1.35, vendor:'华北制药股份有限公司',             batch:'H260115A', expiry:'2028-01-15' },
+    { name:'头孢克肟分散片',   code:'YP001002', py:'TBKWFSP', spec:'0.1g*12片',   unit:'盒', purchase:3.20, retail:4.80, vendor:'石药集团欧意药业有限公司',         batch:'H260218B', expiry:'2028-02-18' },
+    { name:'布洛芬缓释胶囊',   code:'YP001003', py:'BLFHSJN', spec:'0.3g*20粒',   unit:'盒', purchase:2.10, retail:3.50, vendor:'中美天津史克制药有限公司',         batch:'H260305C', expiry:'2028-03-05' },
+    { name:'奥美拉唑肠溶胶囊', code:'YP001004', py:'AMLZCRJN',spec:'20mg*14粒',   unit:'盒', purchase:1.50, retail:2.80, vendor:'山东罗欣药业集团股份有限公司',     batch:'H260122D', expiry:'2028-01-22' },
+    { name:'复方甘草片',       code:'YP001005', py:'FFGCP',   spec:'100片',       unit:'瓶', purchase:0.08, retail:0.15, vendor:'安徽丰原药业股份有限公司',         batch:'H260228E', expiry:'2028-02-28' },
+    { name:'硝苯地平控释片',   code:'YP001006', py:'XBDKSP',  spec:'30mg*7片',    unit:'盒', purchase:20.50,retail:29.80,vendor:'拜耳医药保健有限公司',             batch:'H260310A', expiry:'2028-03-10' },
+    { name:'盐酸二甲双胍片',   code:'YP001007', py:'YSEJAGP', spec:'0.5g*20片',   unit:'盒', purchase:10.20,retail:15.60,vendor:'中美上海施贵宝制药有限公司',       batch:'H260120A', expiry:'2028-01-20' },
+    { name:'阿托伐他汀钙片',   code:'YP001008', py:'ATWTTGP', spec:'20mg*7片',    unit:'盒', purchase:26.50,retail:38.90,vendor:'辉瑞制药有限公司',                 batch:'H260208A', expiry:'2028-02-08' },
+    { name:'双黄连口服液',     code:'YP002001', py:'SHLKFY',  spec:'10ml*10支',   unit:'盒', purchase:1.80, retail:3.20, vendor:'哈药集团三精制药有限公司',         batch:'Z260108A', expiry:'2028-01-08' },
+    { name:'板蓝根颗粒',       code:'YP002002', py:'BLGKL',   spec:'10g*20袋',    unit:'袋', purchase:0.25, retail:0.50, vendor:'广州白云山和记黄埔中药有限公司',   batch:'Z260215B', expiry:'2028-02-15' },
+    { name:'六味地黄丸',       code:'YP002003', py:'LWDHW',   spec:'9g*10丸',     unit:'盒', purchase:1.20, retail:2.50, vendor:'北京同仁堂科技发展股份有限公司',   batch:'Z260301C', expiry:'2028-03-01' },
+    { name:'急支糖浆',         code:'YP002004', py:'JZTJ',    spec:'100ml',       unit:'瓶', purchase:2.30, retail:4.20, vendor:'太极集团重庆涪陵制药厂有限公司',   batch:'Z260128D', expiry:'2028-01-28' },
+    { name:'黄芪',             code:'YP003001', py:'HQ',      spec:'500g/袋',     unit:'袋', purchase:0.60, retail:1.20, vendor:'甘肃陇西中药材有限公司',           batch:'Y260105A', expiry:'2028-01-05' },
+    { name:'当归',             code:'YP003002', py:'DG',      spec:'500g/袋',     unit:'袋', purchase:0.80, retail:1.60, vendor:'岷县当归种植专业合作社',           batch:'Y260220B', expiry:'2028-02-20' },
+    { name:'金银花',           code:'YP003003', py:'JYH',     spec:'250g/袋',     unit:'袋', purchase:1.20, retail:2.50, vendor:'山东平邑金银花种植基地',           batch:'Y260310C', expiry:'2028-03-10' },
+    { name:'黄芪配方颗粒',     code:'YP004001', py:'HQPFKL',  spec:'10g*30袋',    unit:'盒', purchase:0.45, retail:0.90, vendor:'华润三九医药股份有限公司',         batch:'P260118A', expiry:'2028-01-18' },
+    { name:'川芎配方颗粒',     code:'YP004002', py:'CXPFKL',  spec:'10g*30袋',    unit:'盒', purchase:0.50, retail:1.00, vendor:'江阴天江药业有限公司',             batch:'P260225B', expiry:'2028-02-25' },
+    { name:'盐酸吗啡注射液',   code:'YP005001', py:'YSMFZSY', spec:'10mg*1ml*5支',unit:'支', purchase:12.00,retail:18.50,vendor:'东北制药集团股份有限公司',         batch:'M260112A', expiry:'2028-01-12' }
+  ];
+
+  /* ---------- Mock 数据生成 ---------- */
+  function genMockData() {
+    var rows = [];
+    var today = new Date();
+    var seed = 20261111;
+    function srand() { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; }
+    function sItem(arr) { return arr[Math.floor(srand() * arr.length)]; }
+    function sInt(a, b) { return a + Math.floor(srand() * (b - a + 1)); }
+
+    for (var i = 0; i < 156; i++) {
+      var drug  = sItem(DRUG_POOL);
+      var outOrg = sItem(ORGS);
+      var outLoc = sItem(outOrg.locs);
+      var way   = sItem(WAYS);
+
+      /* 接收方：报损出库为空；院内调拨出库 = 同机构其他库位；调拨/退库出库 = 其他机构 */
+      var recvOrg = null, recvLoc = null;
+      if (way === '院内调拨出库') {
+        var sameLocs = outOrg.locs.filter(function (l) { return l !== outLoc; });
+        recvOrg = outOrg;
+        recvLoc = sameLocs.length ? sItem(sameLocs) : outLoc;
+      } else if (way !== NO_RECV) {
+        recvOrg = sItem(ORGS.filter(function (o) { return o.id !== outOrg.id; }));
+        recvLoc = sItem(recvOrg.locs);
+      }
+
+      var offsetHours = sInt(0, 24 * 30);
+      var time = new Date(today.getTime() - offsetHours * 3600 * 1000 - sInt(0, 3600) * 1000);
+      var qty = sInt(1, 60);
+
+      var wayPrefix = { '院内调拨出库':'NBCK', '调拨出库':'DBCK', '退库出库':'TKCK', '报损出库':'BSCK' }[way];
+
+      rows.push({
+        id: 'D' + String(100000 + i),
+        way: way,
+        time: time,
+        docNo: wayPrefix + fmtDate(time).replace(/-/g, '') + pad(sInt(1, 999)),
+        outOrg: outOrg.id, outLoc: outLoc,
+        recvOrg: recvOrg ? recvOrg.id : '', recvLoc: recvLoc || '',
+        drugName: drug.name, drugCode: drug.code, py: drug.py,
+        spec: drug.spec, unit: drug.unit, vendor: drug.vendor,
+        batch: drug.batch + '-' + pad(sInt(1, 99)),
+        qty: qty, unitName: drug.unit,
+        purchase: drug.purchase, retail: drug.retail,
+        expiry: drug.expiry
+      });
+    }
+    rows.sort(function (a, b) { return b.time - a.time; });
+    return rows;
+  }
+
+  /* ---------- 状态 ---------- */
+  var ST = { all: [], filtered: [], page: 1, pageSize: 20 };
+
+  /* ---------- 初始化 ---------- */
+  function init() {
+    ST.all = genMockData();
+    var end = new Date();
+    var start = new Date(end.getTime() - 29 * 86400 * 1000);
+    $('f-date-start').value = fmtDate(start);
+    $('f-date-end').value   = fmtDate(end);
+    fillOrgSelect('f-out-org',  true);   /* 出库机构：全部 + 各机构 */
+    fillOrgSelect('f-recv-org', true);   /* 接收机构 */
+    fillLocSelect('f-out-loc');
+    fillLocSelect('f-recv-loc');
+    bindEvents();
+    ODQ.search();
+  }
+
+  function fillOrgSelect(id, withAll) {
+    var sel = $(id);
+    var html = '';
+    if (withAll) html += '<option value="">全部</option>';
+    ORGS.forEach(function (o) { html += '<option value="' + o.id + '">' + esc(o.name) + '</option>'; });
+    sel.innerHTML = html;
+    if (!withAll) sel.value = ORGS[0].id;
+  }
+
+  /* 库位下拉默认"全部"，列出所有机构的库位；机构选择后级联过滤 */
+  function fillLocSelect(id) {
+    var sel = $(id);
+    var html = '<option value="">全部</option>';
+    ORGS.forEach(function (o) {
+      o.locs.forEach(function (loc) {
+        html += '<option value="' + loc + '" data-org="' + o.id + '">' + esc(loc) + '</option>';
+      });
+    });
+    sel.innerHTML = html;
+  }
+
+  /* 机构选择变化后，过滤对应库位下拉 */
+  function cascadeLoc(locSelId, orgVal) {
+    var sel = $(locSelId);
+    var prev = sel.value;
+    Array.prototype.forEach.call(sel.options, function (opt) {
+      if (!opt.value) return; /* 保留"全部" */
+      var orgOfOpt = opt.getAttribute('data-org');
+      opt.style.display = (!orgVal || orgOfOpt === orgVal) ? '' : 'none';
+    });
+    /* 若当前选中项被过滤掉，回退为"全部" */
+    var cur = sel.options[sel.selectedIndex];
+    if (cur && cur.value && orgVal && cur.getAttribute('data-org') !== orgVal) sel.value = '';
+    else if (prev && prev !== sel.value) { /* 保持 */
+    }
+  }
+
+  function bindEvents() {
+    $('f-kw').addEventListener('keydown', function (e) { if (e.key === 'Enter') ODQ.search(); });
+    $('f-out-org').addEventListener('change', function () { cascadeLoc('f-out-loc', this.value); });
+    $('f-recv-org').addEventListener('change', function () { cascadeLoc('f-recv-loc', this.value); });
+  }
+
+  /* ---------- 查询 / 重置 ---------- */
+  ODQ.search = function () {
+    var way   = $('f-way').value;
+    var dateS = $('f-date-start').value;
+    var dateE = $('f-date-end').value;
+    var outOrg = $('f-out-org').value;
+    var outLoc = $('f-out-loc').value;
+    var recvOrg = $('f-recv-org').value;
+    var recvLoc = $('f-recv-loc').value;
+    var kw = $('f-kw').value.trim().toLowerCase();
+
+    ST.filtered = ST.all.filter(function (r) {
+      if (way && r.way !== way) return false;
+      if (dateS) {
+        var ds = new Date(dateS + 'T00:00:00');
+        if (r.time < ds) return false;
+      }
+      if (dateE) {
+        var de = new Date(dateE + 'T23:59:59');
+        if (r.time > de) return false;
+      }
+      if (outOrg && r.outOrg !== outOrg) return false;
+      if (outLoc && r.outLoc !== outLoc) return false;
+      if (recvOrg && r.recvOrg !== recvOrg) return false;
+      if (recvLoc && r.recvLoc !== recvLoc) return false;
+      if (kw) {
+        var hit = (r.drugName || '').toLowerCase().indexOf(kw) !== -1
+               || (r.py || '').toLowerCase().indexOf(kw) !== -1
+               || (r.drugCode || '').toLowerCase().indexOf(kw) !== -1;
+        if (!hit) return false;
+      }
+      return true;
+    });
+
+    ST.page = 1;
+    render();
+  };
+
+  ODQ.reset = function () {
+    $('f-way').value = '';
+    var end = new Date();
+    var start = new Date(end.getTime() - 29 * 86400 * 1000);
+    $('f-date-start').value = fmtDate(start);
+    $('f-date-end').value   = fmtDate(end);
+    $('f-out-org').value = '';
+    $('f-recv-org').value = '';
+    cascadeLoc('f-out-loc', '');
+    cascadeLoc('f-recv-loc', '');
+    $('f-out-loc').value = '';
+    $('f-recv-loc').value = '';
+    $('f-kw').value = '';
+    ODQ.search();
+  };
+
+  /* ---------- 渲染 ---------- */
+  function render() {
+    renderTable();
+    renderFooter();
+    renderPager();
+  }
+
+  function renderTable() {
+    var tbody = $('odq-tbody');
+    var start = (ST.page - 1) * ST.pageSize;
+    var pageRows = ST.filtered.slice(start, start + ST.pageSize);
+
+    if (pageRows.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="18" class="table-empty">暂无数据</td></tr>';
+      return;
+    }
+
+    var html = '';
+    pageRows.forEach(function (r) {
+      var amtIn = +(r.qty * r.purchase).toFixed(2);
+      var amtRetail = +(r.qty * r.retail).toFixed(2);
+      html += '<tr>'
+        + '<td>' + esc(r.way) + '</td>'
+        + '<td>' + fmtDT(r.time) + '</td>'
+        + '<td class="doc-no">' + esc(r.docNo) + '</td>'
+        + '<td>' + esc(ORG_NAMES[r.outOrg] || r.outOrg) + '</td>'
+        + '<td>' + esc(r.outLoc) + '</td>'
+        + '<td>' + (r.recvOrg ? esc(ORG_NAMES[r.recvOrg] || r.recvOrg) : '—') + '</td>'
+        + '<td>' + (r.recvLoc ? esc(r.recvLoc) : '—') + '</td>'
+        + '<td title="' + esc(r.drugName) + '">' + esc(r.drugName) + '</td>'
+        + '<td>' + esc(r.drugCode) + '</td>'
+        + '<td>' + esc(r.spec) + '</td>'
+        + '<td title="' + esc(r.vendor) + '">' + esc(r.vendor) + '</td>'
+        + '<td>' + esc(r.batch) + '</td>'
+        + '<td class="col-num">' + esc(r.qty) + ' ' + esc(r.unitName) + '</td>'
+        + '<td class="col-num">' + money(r.purchase) + '</td>'
+        + '<td class="col-num">' + money(r.retail) + '</td>'
+        + '<td class="col-num amt">' + money(amtIn) + '</td>'
+        + '<td class="col-num amt">' + money(amtRetail) + '</td>'
+        + '<td>' + esc(r.expiry) + '</td>'
+        + '</tr>';
+    });
+    tbody.innerHTML = html;
+  }
+
+  function renderFooter() {
+    $('odq-summary').innerHTML = '共 <strong>' + ST.filtered.length + '</strong> 条记录';
+  }
+
+  function renderPager() {
+    var ctrl = $('odq-pager');
+    var total = ST.filtered.length;
+    var pages = Math.max(1, Math.ceil(total / ST.pageSize));
+    ST.page = Math.min(ST.page, pages);
+
+    var html = '';
+    html += '<button class="pager-btn"' + (ST.page <= 1 ? ' disabled' : '') + ' onclick="ODQ.goPage(' + (ST.page - 1) + ')" title="上一页">'
+      + '<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button>';
+    html += '<span class="pager-num">' + ST.page + ' / ' + pages + '</span>';
+    html += '<button class="pager-btn"' + (ST.page >= pages ? ' disabled' : '') + ' onclick="ODQ.goPage(' + (ST.page + 1) + ')" title="下一页">'
+      + '<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>';
+
+    ctrl.innerHTML = html;
+  }
+
+  ODQ.goPage = function (n) {
+    var pages = Math.max(1, Math.ceil(ST.filtered.length / ST.pageSize));
+    if (n < 1 || n > pages) return;
+    ST.page = n;
+    render();
+    var wrap = document.querySelector('.odq-table-wrap');
+    if (wrap) wrap.scrollTop = 0;
+  };
+
+  /* ---------- 导出 CSV ---------- */
+  var EXPORT_HEADERS = ['出库方式','出库时间','单号','出库机构','出库库位','接收机构','接收库位','药品名称','编码','规格','生产企业','批次号','出库量','进货价','零售价','进货价金额合计','零售价金额合计','有效期'];
+
+  ODQ.exportData = function () {
+    if (ST.filtered.length === 0) {
+      showToast('没有可导出的数据');
+      return;
+    }
+    var lines = [EXPORT_HEADERS.join(',')];
+    ST.filtered.forEach(function (r) {
+      var row = [
+        r.way, fmtDT(r.time), r.docNo,
+        ORG_NAMES[r.outOrg] || r.outOrg, r.outLoc,
+        r.recvOrg ? (ORG_NAMES[r.recvOrg] || r.recvOrg) : '', r.recvLoc || '',
+        r.drugName, r.drugCode, r.spec, r.vendor, r.batch,
+        r.qty + r.unitName, r.purchase, r.retail,
+        (r.qty * r.purchase).toFixed(2), (r.qty * r.retail).toFixed(2),
+        r.expiry
+      ];
+      lines.push(row.map(function (v) {
+        var s = String(v).replace(/"/g, '""');
+        return /[",\n]/.test(s) ? '"' + s + '"' : s;
+      }).join(','));
+    });
+    var csv = '\uFEFF' + lines.join('\n');
+    var blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = '出库明细查询_' + fmtDate(new Date()) + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('已导出 ' + ST.filtered.length + ' 条记录');
+  };
+
+  /* ---------- Toast ---------- */
+  function showToast(msg) {
+    var t = document.createElement('div');
+    t.textContent = msg;
+    t.style.cssText = 'position:fixed;top:72px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.8);color:#fff;padding:8px 20px;border-radius:4px;font-size:13px;z-index:9999;';
+    document.body.appendChild(t);
+    setTimeout(function () {
+      t.style.opacity = '0'; t.style.transition = 'opacity .3s';
+      setTimeout(function () { t.remove(); }, 300);
+    }, 1800);
+  }
+
+  init();
+})();
+</script>
+
+  <script src="nav.js?v=20261111b"></script>
+</body>
+</html>

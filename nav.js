@@ -19,6 +19,7 @@
      ["center"] 仅中心药房（含 pharmacist，发起人/审核人共享权限）；
      ["center","member","village"] = 三类药房人员可见、HIS 对接人员不可见；
      ["his"] 仅 HIS 对接人员可见；
+     ["narcotics"] 仅毒麻精审药医生可见；
      ["narcoticAuditor"] 仅毒麻精药房审核专员可见。
      hideFor = 账号例外名单：命中账号（如 zhaomin/chenjing）即使角色匹配也隐藏该项。 */
   var C3 = ["center", "member", "village"];
@@ -59,15 +60,15 @@
       { name: "缺药登记", href: "shortage.html", files: ["shortage.html", "shortage-create.html", "shortage-detail.html"], roles: C3 }
     ], roles: C3 },
     { name: "门诊处方管理", icon: "rx", items: [
-      { name: "中药饮片处方开具", href: "prescription-tcm.html", files: ["prescription-tcm.html"], roles: ["his"] },
-      { name: "西药处方开具", href: "prescription-western.html", files: ["prescription-western.html"], roles: ["his"] },
+      { name: "中药医嘱开具", href: "prescription-tcm.html", files: ["prescription-tcm.html"], roles: ["his"] },
+      { name: "门诊医嘱开具", href: "prescription-western.html", files: ["prescription-western.html"], roles: ["his", "narcotics"] },
       { name: "门诊处方发药", href: "prescription-dispensing.html", files: ["prescription-dispensing.html"], roles: ["his"] },
       { name: "毒麻精发药审核", href: "narcotic-audit.html", files: ["narcotic-audit.html"], roles: ["narcoticAuditor"] },
       { name: "门诊处方送药", href: "prescription-delivery.html", files: ["prescription-delivery.html"], roles: ["his"] },
       { name: "门诊处方退药", href: "prescription-return.html", files: ["prescription-return.html"], roles: ["his"] },
       { name: "门诊处方退药审核", href: "prescription-return-audit.html", files: ["prescription-return-audit.html"], roles: ["his"] },
       { name: "预减管理", href: "pre-deduction.html", files: ["pre-deduction.html"], roles: ["his"] }
-    ], roles: ["his", "narcoticAuditor"] },
+    ], roles: ["his", "narcotics", "narcoticAuditor"] },
     { name: "统计查询", icon: "stat", items: [
       { name: "库存查询", href: "stock-query.html", files: ["stock-query.html"], roles: ["center"] },
       { name: "处方查询", href: "prescription-query.html", files: ["prescription-query.html"], roles: ["center", "his"], hideFor: ["zhaomin", "chenjing"] },
@@ -172,7 +173,8 @@
     { id: "u5", account: "sunlei", name: "孙磊", org: "信息中心 · HIS 对接", role: "his", roleName: "HIS 对接人员" },
     { id: "u6", account: "zhouwen", name: "周雯", org: "县域医共体药学专家库", role: "expert", roleName: "药学专家" },
     { id: "u7", account: "fengtao", name: "冯涛", org: "县域医共体药学专家库", role: "expert", roleName: "临床专家" },
-    { id: "u8", account: "liuyun", name: "刘芸", org: "区域中心药房", role: "narcoticAuditor", roleName: "毒麻精药房审核专员" }
+    { id: "u8", account: "liuyun", name: "刘芸", org: "区域中心药房", role: "narcoticAuditor", roleName: "毒麻精药房审核专员" },
+    { id: "u9", account: "linwei", name: "林伟", org: "区域中心药房", role: "narcotics", roleName: "毒麻精审药医生" }
   ];
 
   function demoUsers() {

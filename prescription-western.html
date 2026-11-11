@@ -2,10 +2,10 @@
 <html lang="zh-CN"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>西药处方开具 · 中心药房</title>
+<title>门诊医嘱开具 · 中心药房</title>
 <link rel="stylesheet" href="styles.css">
 <style>
-/* ===== 处方管理 · 西药处方开具 局部样式 ===== */
+/* ===== 处方管理 · 门诊医嘱开具 局部样式 ===== */
 .rx-card {
   flex: 1; min-height: 0; margin: 12px;
   display: flex; flex-direction: column;
@@ -69,7 +69,7 @@
 .rx-table .num { text-align: right; font-variant-numeric: tabular-nums; }
 .rx-table .c-chk { width: 32px; text-align: center; padding: 0; }
 .rx-table .c-status { width: 76px; }
-.rx-table .c-mark { width: 42px; }
+.rx-table .c-mark { width: 64px; }
 .rx-table .c-time { width: 148px; }
 .rx-table .c-content { width: 372px; }
 .rx-table .c-ins { width: 76px; }
@@ -110,6 +110,7 @@
   font-size: 12px;
 }
 .rx-mark.is-cy { border-color: #FFD8A8; background: #FFF7E6; color: #D46B08; }
+.rx-mark.is-narc { border-color: #FFA39E; background: #FFF1F0; color: #CF1322; }
 .rx-act { display: flex; align-items: center; gap: 8px; }
 .rx-act a { color: var(--primary-dark); font-size: 13px; cursor: pointer; }
 .rx-act a:hover { text-decoration: underline; }
@@ -335,7 +336,7 @@
     <div class="tabbar">
       <div class="tab" onclick="location.href='drug-catalog.html'">首页</div>
       <div class="tab active">
-        西药处方开具
+        门诊医嘱开具
         <button class="tab-close" title="关闭" onclick="location.href='drug-catalog.html'">
           <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 5l14 14M19 5L5 19"></path></svg>
         </button>
@@ -548,6 +549,7 @@
     <div class="rx-dlg-body" id="rxDlgBody"></div>
     <div class="rx-dlg-foot">
       <button class="btn" id="rxDlgCancel">取消</button>
+      <button class="btn" id="rxDlgReject" style="display:none">拒绝</button>
       <button class="btn btn-primary" id="rxDlgOk">确定</button>
     </div>
   </div>
@@ -575,7 +577,7 @@
       + pad(d.getHours()) + ":" + pad(d.getMinutes()) + ":" + pad(d.getSeconds());
   }
 
-  var KEY = "RX_WX_DATA_V1";
+  var KEY = "RX_WX_DATA_V2"; /* V2：新增毒麻精审核流与已拒绝状态，升级后重置演示数据 */
   var FREQ = [
     { v: "qd",  n: 1, t: "每日一次" }, { v: "bid", n: 2, t: "每日两次" },
     { v: "tid", n: 3, t: "每日三次" }, { v: "qid", n: 4, t: "每日四次" },
@@ -584,11 +586,21 @@
   ];
   var ROUTES = ["口服", "外用", "静脉输液", "肌肉注射", "皮下注射", "雾化吸入", "舌下含服"];
   var STATUS = {
-    unsent:  { t: "未发送", dot: "is-warn",   cls: "" },
-    pending: { t: "待审核", dot: "is-danger", cls: "is-danger" },
-    sent:    { t: "已发送", dot: "is-ok",     cls: "is-ok" },
-    void:    { t: "已作废", dot: "is-mute",   cls: "is-mute" }
+    unsent:   { t: "未发送", dot: "is-warn",   cls: "" },
+    pending:  { t: "待审核", dot: "is-danger", cls: "is-danger" },
+    sent:     { t: "已发送", dot: "is-ok",     cls: "is-ok" },
+    void:     { t: "已作废", dot: "is-mute",   cls: "is-mute" },
+    rejected: { t: "已拒绝", dot: "is-danger", cls: "is-danger" }
   };
+
+  /* 毒麻精审药医生（narcotics）：待审核的毒麻精医嘱在此页面审核 */
+  function myRole(){
+    try {
+      var u = JSON.parse(sessionStorage.getItem("SEL_USER") || "null");
+      return (u && u.role) || "center";
+    } catch(e){ return "center"; }
+  }
+  var IS_NARC_AUDITOR = myRole() === "narcotics";
 
   function drugOf(key){
     for (var i = 0; i < MOCK.rxDrugs.length; i++){
@@ -672,14 +684,27 @@
     var html = "";
     ST.rows.forEach(function(r){
       var st = STATUS[r.status] || STATUS.unsent;
-      var canEdit = r.status === "unsent" || r.status === "pending";
-      var canVoid = canEdit;
-      html += '<tr data-id="' + r.id + '"' + (r.status === "void" ? ' class="is-void"' : '') + '>'
+      var isTcm = r.source === "tcm"; // 中药医嘱开具流转而来的处方行，不可进入西药录入编辑器
+      var canEdit = (r.status === "unsent" || r.status === "pending") && !isTcm;
+      var canVoid = r.status === "unsent" || r.status === "pending";
+      var ctext = contentOf(r) || r.content || "";
+      var narcBadge = r.needAudit ? '<span class="rx-mark is-narc" title="含毒麻精药品，须毒麻精审药医生审核">毒麻精</span>' : "";
+      var acts = "";
+      if (IS_NARC_AUDITOR){
+        // 毒麻精审药医生：仅对待审核的毒麻精医嘱提供审核入口
+        if (r.status === "pending" && r.needAudit) acts += '<a data-act="audit" data-id="' + r.id + '">审核</a>';
+        if (!acts) acts = '<span style="color:var(--text-placeholder)">—</span>';
+      } else {
+        acts += '<a data-act="edit" data-id="' + r.id + '" class="' + (canEdit ? "" : "is-disabled") + '">编辑</a>'
+          + '<a data-act="copy" data-id="' + r.id + '" class="' + (isTcm ? "is-disabled" : "") + '">复用</a>'
+          + '<a data-act="void" data-id="' + r.id + '" class="' + (canVoid ? "" : "is-disabled") + '">作废</a>';
+      }
+      html += '<tr data-id="' + r.id + '"' + (r.status === "void" || r.status === "rejected" ? ' class="is-void"' : '') + '>'
         + '<td class="c-chk"><input type="checkbox" data-chk="' + r.id + '"' + (ST.checked[r.id] ? " checked" : "") + '></td>'
         + '<td><span class="rx-dot ' + st.dot + '"></span><span class="rx-status ' + st.cls + '">' + st.t + '</span></td>'
         + '<td><span class="rx-mark' + (r.mark === "成药" ? " is-cy" : "") + '">' + esc(r.mark) + '</span></td>'
         + '<td>' + esc(r.time) + '</td>'
-        + '<td class="c-content" title="' + esc(contentOf(r)) + '"><span class="rx-content">' + esc(contentOf(r)) + '</span></td>'
+        + '<td class="c-content" title="' + esc(ctext) + '"><span class="rx-content">' + narcBadge + esc(ctext) + '</span></td>'
         + '<td>' + esc(r.insFlag) + '</td>'
         + '<td class="num">' + r.days + '</td>'
         + '<td class="num">' + r.total + r.totalUnit + '</td>'
@@ -689,11 +714,7 @@
         + '<td title="' + esc(r.insCode) + '">' + esc(r.insCode) + '</td>'
         + '<td title="' + esc(r.insName) + '">' + esc(r.insName) + '</td>'
         + '<td title="' + esc(r.note) + '">' + esc(r.note) + '</td>'
-        + '<td class="c-act"><div class="rx-act">'
-          + '<a data-act="edit" data-id="' + r.id + '" class="' + (canEdit ? "" : "is-disabled") + '">编辑</a>'
-          + '<a data-act="copy" data-id="' + r.id + '">复用</a>'
-          + '<a data-act="void" data-id="' + r.id + '" class="' + (canVoid ? "" : "is-disabled") + '">作废</a>'
-        + '</div></td>'
+        + '<td class="c-act"><div class="rx-act">' + acts + '</div></td>'
         + '</tr>';
     });
     body.innerHTML = html;
@@ -712,7 +733,7 @@
   function renderSum(){
     var all = 0, unsent = 0;
     ST.rows.forEach(function(r){
-      if (r.status === "void") return;
+      if (r.status === "void" || r.status === "rejected") return;
       all += Number(r.amount) || 0;
       // 未发送费用：尚未发药（未发送 + 待审核）的费用
       if (r.status !== "sent") unsent += Number(r.amount) || 0;
@@ -836,19 +857,32 @@
       return;
     }
     var data = rowsFromDraft();
+    // 毒麻精药品：须毒麻精审药医生审核，审核通过后才可发送
+    var drug = drugOf(ST.draft.drugKey);
+    var narc = !!(drug && drug.attr === "毒麻精");
     if (ST.editingId){
       var row = null;
       ST.rows.forEach(function(r){ if (r.id === ST.editingId) row = r; });
       if (row){
         Object.keys(data).forEach(function(k){ row[k] = data[k]; });
+        if (narc && row.status === "unsent"){
+          row.status = "pending"; row.needAudit = true; row.audited = false;
+          toast("医嘱已保存；含毒麻精药品，重新进入待审核");
+        } else {
+          toast("医嘱已保存");
+        }
       }
-      toast("医嘱已保存");
     } else {
       data.id = "rxo" + Date.now();
-      data.status = "unsent";
       data.time = nowStr();
+      if (narc){
+        data.status = "pending"; data.needAudit = true; data.audited = false;
+        toast("医嘱含毒麻精药品，已进入待审核，待毒麻精审药医生审核");
+      } else {
+        data.status = "unsent";
+        toast("医嘱已添加，状态为未发送");
+      }
       ST.rows.push(data);
-      toast("医嘱已添加，状态为未发送");
     }
     ST.editingId = null;
     ST.draft = blankDraft();
@@ -907,19 +941,49 @@
     });
   }
 
-  /* ---------------- 发送 / 删除 ---------------- */
+  /* ---------------- 发送 / 审核 / 删除 ---------------- */
   function sendOrders(){
     var list = ST.rows.filter(function(r){ return r.status === "unsent"; });
     if (!list.length){
       toast("没有待发送的医嘱");
       return;
     }
-    confirmDialog("发送医嘱", "将发送 " + list.length + " 条未发送医嘱，发送后进入待审核。", "发送", function(){
+    var narcN = list.filter(function(r){ return r.needAudit; }).length;
+    var tip = narcN
+      ? "将发送 " + list.length + " 条未发送医嘱（其中 " + narcN + " 条毒麻精医嘱已审核通过，发送后直接进入发药环节），其余发送后进入待审核。"
+      : "将发送 " + list.length + " 条未发送医嘱，发送后进入待审核。";
+    confirmDialog("发送医嘱", tip, "发送", function(){
       var t = nowStr();
-      list.forEach(function(r){ r.status = "pending"; r.time = t; });
+      list.forEach(function(r){
+        r.status = r.needAudit ? "sent" : "pending";
+        r.time = t;
+      });
       persist(); renderTable(); renderSum(); syncEditor();
-      toast("已发送 " + list.length + " 条医嘱，等待审核");
+      toast("已发送 " + list.length + " 条医嘱");
     });
+  }
+
+  /* 毒麻精医嘱审核：通过 → 医生可点击「发送」；拒绝 → 状态改为已拒绝 */
+  function auditOrder(id){
+    var row = null;
+    ST.rows.forEach(function(r){ if (r.id === id) row = r; });
+    if (!row) return;
+    auditDialog(
+      "毒麻精医嘱审核",
+      "医嘱「" + row.drugName + "（" + row.spec + "）」含毒麻精药品，请审核是否允许开具。"
+        + "审核通过后医生方可点击「发送」；拒绝后该医嘱状态变为已拒绝。",
+      function(){ // 通过
+        row.status = "unsent";
+        row.audited = true;
+        persist(); renderTable(); renderSum();
+        toast("审核通过，医嘱已回到未发送，可点击「发送」");
+      },
+      function(){ // 拒绝
+        row.status = "rejected";
+        persist(); renderTable(); renderSum();
+        toast("已拒绝该医嘱");
+      }
+    );
   }
   function deleteChecked(){
     var ids = Object.keys(ST.checked).filter(function(id){ return ST.checked[id]; });
@@ -1065,17 +1129,31 @@
     closePanel();
   }
 
-  var dlgOk = null;
+  var dlgOk = null, dlgReject = null;
   function confirmDialog(title, body, okText, onOk){
     $("rxDlgTitle").textContent = title;
     $("rxDlgBody").textContent = body;
     $("rxDlgOk").textContent = okText || "确定";
+    $("rxDlgReject").style.display = "none";
     dlgOk = onOk;
+    dlgReject = null;
+    $("rxMask").classList.add("show");
+  }
+  /* 审核弹窗：确定=通过，拒绝按钮=拒绝 */
+  function auditDialog(title, body, onApprove, onReject){
+    $("rxDlgTitle").textContent = title;
+    $("rxDlgBody").textContent = body;
+    $("rxDlgOk").textContent = "通过";
+    $("rxDlgReject").style.display = "";
+    dlgOk = onApprove;
+    dlgReject = onReject;
     $("rxMask").classList.add("show");
   }
   function closeDialog(){
     $("rxMask").classList.remove("show");
+    $("rxDlgReject").style.display = "none";
     dlgOk = null;
+    dlgReject = null;
   }
 
   var toastTimer = null;
@@ -1149,8 +1227,10 @@
       if (a){
         if (a.classList.contains("is-disabled")) return;
         var id = a.getAttribute("data-id");
-        if (a.getAttribute("data-act") === "edit") startEdit(id);
-        else if (a.getAttribute("data-act") === "copy") copyOrder(id);
+        var act = a.getAttribute("data-act");
+        if (act === "edit") startEdit(id);
+        else if (act === "copy") copyOrder(id);
+        else if (act === "audit") auditOrder(id);
         else voidOrder(id);
         return;
       }
@@ -1217,8 +1297,9 @@
     $("rxPharmacy").addEventListener("change", function(){ ST.draft.pharmacy = this.value; });
     $("rxNote").addEventListener("input", function(){ ST.draft.note = this.value; });
 
-    // 快捷键 Alt+A / Alt+S / Alt+D
+    // 快捷键 Alt+A / Alt+S / Alt+D（毒麻精审药医生为只读审核视角，不响应录入/发送快捷键）
     document.addEventListener("keydown", function(e){
+      if (IS_NARC_AUDITOR) return;
       if (e.altKey && !e.ctrlKey && !e.metaKey){
         var k = (e.key || "").toLowerCase();
         if (k === "a"){ e.preventDefault(); $("btnNew").click(); }
@@ -1238,12 +1319,24 @@
       closeDialog();
       if (fn) fn();
     };
+    $("rxDlgReject").onclick = function(){
+      var fn = dlgReject;
+      closeDialog();
+      if (fn) fn();
+    };
     $("rxMask").addEventListener("click", function(e){
       if (e.target === this) closeDialog();
     });
   }
 
   /* ---------------- 初始化 ---------------- */
+  if (IS_NARC_AUDITOR){
+    // 毒麻精审药医生：只保留查看与审核，隐藏录入/发送/删除工具栏及医嘱录入区
+    $("btnNew").style.display = "none";
+    $("btnSend").style.display = "none";
+    $("btnDel").style.display = "none";
+    $("rxEd").classList.add("is-hidden");
+  }
   fillSelects();
   bind();
   renderTable();
@@ -1253,5 +1346,5 @@
 </script>
 
 
-  <script src="nav.js?v=20261110a"></script>
+  <script src="nav.js?v=20261111b"></script>
 </body></html>

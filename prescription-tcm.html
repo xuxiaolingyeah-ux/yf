@@ -2,10 +2,10 @@
 <html lang="zh-CN"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>中医药处方开具 · 中心药房</title>
+<title>中药医嘱开具 · 中心药房</title>
 <link rel="stylesheet" href="styles.css">
 <style>
-/* ===== 处方管理 · 中医药处方开具 局部样式 ===== */
+/* ===== 处方管理 · 中药医嘱开具 局部样式 ===== */
 .tcm-card {
   flex: 1; min-height: 0; margin: 12px;
   display: flex; flex-direction: column;
@@ -183,7 +183,7 @@
     <div class="tabbar">
       <div class="tab" onclick="location.href='drug-catalog.html'">首页</div>
       <div class="tab active">
-        中医药处方开具
+        中药医嘱开具
         <button class="tab-close" title="关闭" onclick="location.href='drug-catalog.html'">
           <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 5l14 14M19 5L5 19"></path></svg>
         </button>
@@ -430,6 +430,23 @@
     try { sessionStorage.setItem(KEY_LIST, JSON.stringify({ v: 1, list: list })); } catch(e){}
   }
 
+  /* 发送医嘱成功后，同步流转到「门诊医嘱开具」（prescription-western.html 的数据源）。
+     含毒麻精药品（attr=毒麻精药品）时以「待审核」进入，由毒麻精审药医生审核。 */
+  var KEY_WX = "RX_WX_DATA_V2"; /* 与门诊医嘱开具页保持一致（V2） */
+  function wxRows(){
+    try {
+      var raw = sessionStorage.getItem(KEY_WX);
+      if (raw){
+        var data = JSON.parse(raw);
+        if (data && data.v === 1 && Array.isArray(data.rows)) return data.rows;
+      }
+    } catch(e){}
+    return JSON.parse(JSON.stringify(MOCK.rxOrders));
+  }
+  function persistWx(rows){
+    try { sessionStorage.setItem(KEY_WX, JSON.stringify({ v: 1, rows: rows })); } catch(e){}
+  }
+
   var ST = loadDraft();
 
   /* ---------------- 计算 ---------------- */
@@ -601,15 +618,16 @@
     confirmDialog(
       "发送医嘱",
       "将发送当前" + (ST.rxName || RX_NAME[ST.kind] || "处方") + "（共 " + s.cnt + " 种药，剂数 " + doses
-        + " 剂，总金额 " + money(s.amount) + " 元），发送后进入待审核。",
+        + " 剂，总金额 " + money(s.amount) + " 元），发送后流转至门诊医嘱开具。",
       "发送",
       function(){
         var list = loadList();
         var d = new Date();
         var code = "CF" + d.getFullYear() + pad(d.getMonth()+1) + pad(d.getDate()) + pad(list.length + 1 + 100).slice(-2);
+        var rxNameText = ST.rxName || RX_NAME[ST.kind] || "中草药处方";
         list.push({
           id: "tcmrx" + Date.now(), code: code, time: nowStr(), status: "pending",
-          pharmacy: ST.pharmacy, kind: ST.kind, rxName: ST.rxName || RX_NAME[ST.kind] || "中草药处方",
+          pharmacy: ST.pharmacy, kind: ST.kind, rxName: rxNameText,
           herbs: ST.herbs.map(function(h){
             var drug = drugOf(h.key);
             return {
@@ -624,12 +642,43 @@
           weight: s.weight, amount: Number(money(s.amount))
         });
         persistList(list);
+
+        // 流转到「门诊医嘱开具」：整张处方作为一条医嘱明细
+        var narc = false;
+        ST.herbs.forEach(function(h){
+          var drug = drugOf(h.key);
+          if (drug && drug.attr === "毒麻精药品") narc = true;
+        });
+        var rows = wxRows();
+        rows.push({
+          id: "rxo-tcm-" + Date.now(), source: "tcm",
+          status: narc ? "pending" : "unsent", needAudit: narc, audited: false,
+          mark: ST.kind, time: nowStr(),
+          drugKey: "", drugName: rxNameText, spec: "共 " + s.cnt + " 味", specCode: "",
+          content: rxNameText + "（" + s.cnt + " 味 × " + doses + " 剂，" + ST.usage + "，" + ST.freq + "）："
+            + ST.herbs.map(function(h){
+              var drug = drugOf(h.key);
+              return drug.name + " " + h.qty + unitOf(drug) + (h.usage ? "（" + h.usage + "）" : "");
+            }).join("、"),
+          groupNo: "", dose: doses, doseUnit: "剂",
+          freq: ST.freq, route: ST.route, days: doses,
+          drip: "", dripUnit: "滴/分",
+          total: doses, totalUnit: "剂",
+          price: Number(money(s.amount / doses)), amount: Number(money(s.amount)),
+          pharmacy: ST.pharmacy, pharmacies: [ST.pharmacy],
+          insFlag: "—", insClass: "—", insCode: "—", insName: "中药饮片",
+          note: ST.note || ""
+        });
+        persistWx(rows);
+
         var kind = ST.kind;
         ST = blankDraft();
         ST.kind = kind;
         persist();
         renderAll();
-        toast("处方已发送，进入待审核");
+        toast(narc
+          ? "医嘱已发送至门诊医嘱开具；含毒麻精药品，已进入待审核，待毒麻精审药医生审核"
+          : "医嘱已发送至门诊医嘱开具");
       }
     );
   }
@@ -824,5 +873,5 @@
 
 
 
-  <script src="nav.js?v=20261110a"></script>
+  <script src="nav.js?v=20261111b"></script>
 </body></html>

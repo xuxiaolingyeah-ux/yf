@@ -594,6 +594,9 @@ MOCK.users = [
   { id: "u8", account: "liuyun", password: "123456", name: "刘芸", org: "区域中心药房", role: "narcoticAuditor", roleName: "毒麻精药房审核专员" }
 ];
 
+/* 毒麻精审药医生：处方含毒麻精药品时，在「门诊医嘱开具」中执行审核 */
+MOCK.users.push({ id: "u9", account: "linwei", password: "123456", name: "林伟", org: "区域中心药房", role: "narcotics", roleName: "毒麻精审药医生" });
+
 MOCK.selections = [
   {
     id: "s1", title: "2026年四季度常用药品补充申请", orgType: "village",
@@ -1561,11 +1564,12 @@ Object.assign(MOCK.aiReasons, {
 });
 
 /* ==========================================================================
-   处方管理 · 西药处方开具
+   处方管理 · 门诊医嘱开具（原 西药处方开具）
    rxDrugs：门诊处方药品字典（price 为包装单位零售价，pkgFactor 为每包装单位可拆零数）
    rxOrders：演示医嘱数据
-     status  unsent=未发送 / pending=待审核 / sent=已发送 / void=已作废
-     mark    西药 / 成药（中成药）
+     status    unsent=未发送 / pending=待审核 / sent=已发送 / void=已作废 / rejected=已拒绝
+     needAudit 含毒麻精药品，须毒麻精审药医生审核；audited=审核已通过
+     mark      西药 / 成药（中成药）/ 中药饮片等（中药医嘱开具流转而来）
    ========================================================================== */
 MOCK.rxDrugs = [
   { key: "rx1", name: "六神丸", spec: "10粒*12支/盒", specCode: "311013830201", kind: "中成药", py: "LSL",
@@ -1597,7 +1601,10 @@ MOCK.rxDrugs = [
     insClass: "甲类", insFlag: "YB", insCode: "XJ01XD0101010101032", insName: "甲硝唑片" },
   { key: "rx10", name: "藿香正气水", spec: "10ml*10支/盒", specCode: "311013831001", kind: "中成药", py: "HXZQS",
     pkgUnit: "盒", pkgFactor: 10, doseUnit: "支", price: 9.80, stock: 64,
-    insClass: "甲类", insFlag: "YB", insCode: "ZT02AAF0001010101032", insName: "藿香正气水" }
+    insClass: "甲类", insFlag: "YB", insCode: "ZT02AAF0001010101032", insName: "藿香正气水" },
+  { key: "rx11", name: "地西泮片", spec: "2.5mg*24片/盒", specCode: "311013831101", kind: "西药", py: "DXP",
+    pkgUnit: "盒", pkgFactor: 24, doseUnit: "片", price: 9.60, stock: 36,
+    insClass: "乙类", insFlag: "YB", insCode: "XB03JSL0132010102766", insName: "地西泮片" }
 ];
 
 MOCK.rxOrders = [
@@ -1612,7 +1619,13 @@ MOCK.rxOrders = [
     groupNo: "", dose: 5, doseUnit: "片", freq: "tid", route: "口服", days: 5,
     drip: "", dripUnit: "滴/分", total: 4, totalUnit: "袋",
     price: 12.12, amount: 48.48, pharmacy: "西药房",
-    insFlag: "YB", insClass: "甲类", insCode: "XB03BAF0532010102766", insName: "复方阿胶浆", note: "" }
+    insFlag: "YB", insClass: "甲类", insCode: "XB03BAF0532010102766", insName: "复方阿胶浆", note: "" },
+  { id: "rxo3", status: "pending", needAudit: true, audited: false, mark: "西药", time: "2026-11-04 19:09:12",
+    drugKey: "rx11", drugName: "地西泮片", spec: "2.5mg*24片/盒", specCode: "311013831101",
+    groupNo: "", dose: 1, doseUnit: "片", freq: "bid", route: "口服", days: 3,
+    drip: "", dripUnit: "滴/分", total: 1, totalUnit: "盒",
+    price: 9.60, amount: 9.60, pharmacy: "西药房",
+    insFlag: "YB", insClass: "乙类", insCode: "XB03JSL0132010102766", insName: "地西泮片", note: "" }
 ];
 
 /* 药品选择弹窗的补充展示字段（剂型 / 拆零 / 属性 / 抗菌素级别 / 自付比例 / 基药 / 医保说明） */
@@ -1626,7 +1639,8 @@ var RX_EXTRA = {
   rx7:  { form: "散剂",   split: "是", essential: "是", anti: "非抗生素",    selfPay: 0,   insDesc: "无" },
   rx8:  { form: "片剂",   split: "是", essential: "否", anti: "非抗生素",    selfPay: 0,   insDesc: "全自费" },
   rx9:  { form: "片剂",   split: "是", essential: "是", anti: "非抗生素",    selfPay: 0,   insDesc: "无" },
-  rx10: { form: "口服液", split: "否", essential: "是", anti: "非抗生素",    selfPay: 0,   insDesc: "无" }
+  rx10: { form: "口服液", split: "否", essential: "是", anti: "非抗生素",    selfPay: 0,   insDesc: "无" },
+  rx11: { form: "片剂",   split: "是", essential: "否", anti: "非抗生素",    selfPay: 0,   insDesc: "二类精神药品，凭专用处方", attr: "毒麻精" }
 };
 MOCK.rxDrugs.forEach(function (d) {
   var e = RX_EXTRA[d.key] || {};
@@ -1636,7 +1650,7 @@ MOCK.rxDrugs.forEach(function (d) {
   d.location = d.kind === "中成药" ? "中药房" : "西药房";
   /* 药品所属药房：仅所选药房的药品可在医嘱中被检索、选择 */
   d.pharm = d.location;
-  d.attr = "普通";
+  d.attr = e.attr || "普通";
   d.antibiotic = e.anti || "非抗生素";
   d.selfPay = e.selfPay === undefined ? 0 : e.selfPay;
   d.essential = e.essential || "否";
@@ -1671,6 +1685,7 @@ MOCK.tcmHerbs = [
   { key: "tcm13", name: "葛花",   spec: "1g/g", kind: "中药饮片", py: "GH",  price: 0.300, stock: 180,  attr: "普通药品", insLevel: "自费", insNote: "—", vendor: "亳州药材有限公司" },
   { key: "tcm14", name: "金银花", spec: "1g/g", kind: "中药饮片", py: "JYH", price: 0.320, stock: 960,  attr: "普通药品", insLevel: "甲类", insNote: "—", vendor: "江苏紫石中药饮片有限公司" },
   { key: "tcm15", name: "甘草",   spec: "1g/g", kind: "中药饮片", py: "GC",  price: 0.120, stock: 1500, attr: "普通药品", insLevel: "甲类", insNote: "—", vendor: "安徽省金芙蓉中药饮片有限公司" },
+  { key: "tcm25", name: "罂粟壳", spec: "1g/g", kind: "中药饮片", py: "YK",  price: 0.150, stock: 60,   attr: "毒麻精药品", insLevel: "自费", insNote: "麻醉中药，凭专用处方", vendor: "亳州市京九中药饮片有限公司" },
   /* 配方颗粒（价格元/袋） */
   { key: "tcm16", name: "黄芪配方颗粒", spec: "1g/袋", kind: "配方颗粒", py: "HQ",  price: 0.85, stock: 600, attr: "普通药品", insLevel: "乙类", insNote: "限门诊统筹", vendor: "广东一方制药有限公司" },
   { key: "tcm17", name: "当归配方颗粒", spec: "1g/袋", kind: "配方颗粒", py: "DG",  price: 0.92, stock: 540, attr: "普通药品", insLevel: "乙类", insNote: "限门诊统筹", vendor: "江阴天江药业有限公司" },

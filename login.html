@@ -76,8 +76,10 @@
         location.href = ret;
         return;
       }
-      // 登录后进入系统首页，由左侧目录进入各业务模块；HIS 对接人员无首页，直接进入门诊处方模块；专家直达药品目录遴选；毒麻精药房审核专员直达毒麻精发药审核
+      // 登录后进入系统首页，由左侧目录进入各业务模块；HIS 对接人员无首页，直接进入门诊处方模块；
+      // 毒麻精审药医生直达门诊医嘱开具执行审核；毒麻精药房审核专员直达毒麻精发药审核；专家直达药品目录遴选
       location.href = user.role === "his" ? "prescription-tcm.html"
+        : user.role === "narcotics" ? "prescription-western.html"
         : user.role === "expert" ? "drug-selection.html"
         : user.role === "narcoticAuditor" ? "narcotic-audit.html"
         : "home.html";

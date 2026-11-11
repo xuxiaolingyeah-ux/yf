@@ -44,6 +44,7 @@
       { name: "药品批次管理", href: "batch-management.html", files: ["batch-management.html"], roles: ["center"] },
       { name: "药品入库", href: "stock-in.html", files: ["stock-in.html", "stock-in-create.html", "stock-in-detail.html"], roles: C3 },
       { name: "药品出库", href: "outbound.html", files: ["outbound.html", "outbound-create.html", "outbound-detail.html"], roles: C3 },
+      { name: "药品退货", href: "drug-return.html", files: ["drug-return.html", "drug-return-create.html", "drug-return-detail.html"], roles: C3 },
       { name: "药品增损", href: "stock-adjust.html", files: ["stock-adjust.html", "stock-adjust-create.html", "stock-adjust-detail.html"], roles: C3 },
       { name: "药品调拨管理", href: "transfer.html", files: ["transfer.html", "transfer-create.html", "transfer-h-create.html", "transfer-detail.html", "transfer-outbound.html", "transfer-inbound.html", "transfer-audit-center.html", "transfer-audit-member.html"], roles: C3 },
       { name: "药品退库", href: "stock-return.html", files: ["stock-return.html", "stock-return-create.html", "stock-return-detail.html"], roles: C3 },

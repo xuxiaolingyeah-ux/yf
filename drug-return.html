@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>药品退货 · 区域药房协同管理系统</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ========== 顶部导航 ========== -->
+<header class="app-header">
+  <div class="header-left">
+    <div class="header-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3.2" y="9.4" width="17.6" height="5.2" rx="2.6" transform="rotate(-45 12 12)"/>
+        <path d="M8.4 15.6L15.6 8.4"/>
+      </svg>
+    </div>
+    <div class="header-title">区域药房协同管理系统</div>
+  </div>
+  <div class="header-right">
+    <div class="header-user" id="headerUser" title="点击退出登录">
+      <span class="header-avatar">药</span>
+      <span class="header-user-name">—</span>
+      <svg class="user-arrow" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+    </div>
+  </div>
+</header>
+
+<div class="app-body">
+  <!-- ========== 左侧导航 ========== -->
+  <aside class="app-side" id="appSide"></aside>
+  <!-- ========== 主区域 ========== -->
+  <main class="app-main">
+    <div class="tabbar">
+      <div class="tab">首页</div>
+      <div class="tab active">
+        药品退货
+        <button class="tab-close" id="tabClose" title="关闭">
+          <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="page sel-page">
+      <div class="sel-main">
+        <div class="page-head">
+          <h1 class="page-title">药品退货</h1>
+          <div class="page-acts" style="margin-left:auto;" id="pageActs"></div>
+        </div>
+
+        <div class="sel-card">
+          <!-- 筛选 -->
+          <div class="filter-bar">
+            <div class="filter-item">
+              <span class="filter-label">单号</span>
+              <input class="input" id="fCode" placeholder="请输入退货单号" style="width:170px;">
+            </div>
+            <div class="filter-item">
+              <span class="filter-label">出库时间</span>
+              <input class="input" type="date" id="fDateFrom">
+              <span class="filter-sep">至</span>
+              <input class="input" type="date" id="fDateTo">
+            </div>
+            <div class="filter-item">
+              <span class="filter-label">供应商</span>
+              <select class="select" id="fSupplier" style="width:200px;">
+                <option value="">全部供应商</option>
+              </select>
+            </div>
+            <div class="filter-item">
+              <span class="filter-label">审核状态</span>
+              <select class="select" id="fStatus" style="width:130px;">
+                <option value="">全部状态</option>
+                <option value="draft">草稿</option>
+                <option value="audit">待审核</option>
+                <option value="approved">审核通过</option>
+                <option value="rejected">已拒绝</option>
+              </select>
+            </div>
+            <div class="filter-acts">
+              <button class="btn" id="btnReset">重置</button>
+              <button class="btn btn-primary" id="btnQuery">查询</button>
+            </div>
+          </div>
+
+          <!-- 列表 -->
+          <div class="pa-list-wrap">
+            <table class="data-table pur-table">
+              <thead>
+                <tr>
+                  <th style="width:150px;">单号</th>
+                  <th style="width:150px;">出库时间</th>
+                  <th style="min-width:180px;">供应商</th>
+                  <th style="width:100px;" class="num">涉及药品笔数</th>
+                  <th style="width:120px;" class="num">进货价金额合计</th>
+                  <th style="width:120px;" class="num">零售价金额合计</th>
+                  <th style="width:90px;">提交人</th>
+                  <th style="width:145px;">提交时间</th>
+                  <th style="width:130px;">审核状态</th>
+                  <th class="col-acts">操作</th>
+                </tr>
+              </thead>
+              <tbody id="tbody"></tbody>
+            </table>
+            <div class="table-empty" id="tableEmpty" style="display:none;">暂无数据</div>
+          </div>
+
+          <div class="pager">
+            <span id="pagerInfo"></span>
+            <div class="pager-ctrl">
+              <button class="pager-btn" id="pgPrev" title="上一页">
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+              </button>
+              <span class="pager-num" id="pgNum">1</span>
+              <button class="pager-btn" id="pgNext" title="下一页">
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="modal-mask" id="modalMask"></div>
+<div class="toast" id="toast">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+  <span id="toastText"></span>
+</div>
+
+<script src="mock.js"></script>
+<script src="selection-common.js"></script>
+<script src="purchase-mgmt-common.js"></script>
+<script src="stock-in-common.js"></script>
+<script src="drug-return-common.js"></script>
+<script>
+(function () {
+  var $ = SEL.$, esc = SEL.esc;
+
+  var user = DR.user();
+  if (!user) return;
+
+  /* 三类药房人员可见；HIS 对接人员不可见 */
+  if (user.role === "his") { location.href = "home.html"; return; }
+
+  var state = {
+    code: "", dateFrom: "", dateTo: "", supplier: "", status: "",
+    page: 1, size: 10
+  };
+
+  /* 供应商下拉（启用中） */
+  DR.suppliersOn().forEach(function (s) {
+    var opt = document.createElement("option");
+    opt.value = s.name;
+    opt.textContent = s.name;
+    $("fSupplier").appendChild(opt);
+  });
+
+  /* ---------------- 列表（全部单据合并展示） ---------------- */
+  function statusLabel(r) {
+    if (r.status === "member") return "待审核（成员机构）";
+    if (r.status === "center") return "待审核（中心药房）";
+    if (r.status === "platform") return "待审核（上级机构）";
+    return DR.STATUS[r.status] || "—";
+  }
+
+  function filtered() {
+    return DR.load().filter(function (r) {
+      if (!DR.inScope(r, user)) return false;
+      if (state.code && r.code.toLowerCase().indexOf(state.code.toLowerCase()) < 0) return false;
+      if (state.supplier && r.supplier !== state.supplier) return false;
+      if (state.status) {
+        if (state.status === "audit") {
+          if (r.status !== "member" && r.status !== "center" && r.status !== "platform") return false;
+        } else if (r.status !== state.status) return false;
+      }
+      if (state.dateFrom || state.dateTo) {
+        /* 出库时间口径 = 退货申请提交时间 */
+        var day = r.createdAt.slice(0, 10);
+        if (state.dateFrom && day < state.dateFrom) return false;
+        if (state.dateTo && day > state.dateTo) return false;
+      }
+      return true;
+    }).sort(function (x, y) {
+      if (x.createdAt === y.createdAt) return 0;
+      return x.createdAt < y.createdAt ? 1 : -1;
+    });
+  }
+
+  function actionHtml(r) {
+    var acts = ['<button class="link-btn" data-act="view" data-id="' + r.id + '">查看</button>'];
+    var mine = DR.isCreator(r, user);
+
+    if (r.status === "draft" || r.status === "rejected") {
+      if (mine) {
+        acts.push('<button class="link-btn" data-act="edit" data-id="' + r.id + '">编辑</button>');
+        acts.push('<button class="link-btn" data-act="submit" data-id="' + r.id + '">提交</button>');
+        acts.push('<button class="link-btn is-danger" data-act="del" data-id="' + r.id + '">删除</button>');
+      }
+    } else if (r.status === "member" || r.status === "center" || r.status === "platform") {
+      if (mine) acts.push('<button class="link-btn" data-act="withdraw" data-id="' + r.id + '">撤销</button>');
+      if (DR.canAudit(r, user)) acts.push('<button class="link-btn" data-act="audit" data-id="' + r.id + '">审核</button>');
+    }
+    return acts.join("");
+  }
+
+  function renderTable() {
+    var rows = filtered();
+    var total = rows.length;
+    var pages = Math.max(1, Math.ceil(total / state.size));
+    if (state.page > pages) state.page = pages;
+    var start = (state.page - 1) * state.size;
+    var slice = rows.slice(start, start + state.size);
+
+    $("tbody").innerHTML = slice.map(function (r) {
+      var s = DR.sums(r);
+      return "<tr>" +
+        "<td>" + esc(r.code) + "</td>" +
+        "<td>" + esc(r.createdAt) + "</td>" +
+        '<td><div class="cell-ellipsis" title="' + esc(r.supplier) + '">' + esc(r.supplier) + "</div></td>" +
+        '<td class="num">' + (r.items ? r.items.length : 0) + "</td>" +
+        '<td class="num">' + esc(DR.fmtMoney(s.purchase)) + "</td>" +
+        '<td class="num">' + esc(DR.fmtMoney(s.retail)) + "</td>" +
+        "<td>" + esc(r.creator) + "</td>" +
+        "<td>" + esc(r.createdAt) + "</td>" +
+        '<td><span class="status-text">' + esc(statusLabel(r)) + "</span></td>" +
+        '<td class="col-acts">' + actionHtml(r) + "</td>" +
+      "</tr>";
+    }).join("");
+
+    $("tableEmpty").style.display = total ? "none" : "block";
+    $("pagerInfo").textContent = "共 " + total + " 条";
+    $("pgNum").textContent = state.page + " / " + pages;
+    $("pgPrev").disabled = state.page <= 1;
+    $("pgNext").disabled = state.page >= pages;
+  }
+
+  /* ---------------- 操作 ---------------- */
+  function doSubmit(id) {
+    var list = DR.load();
+    var r = DR.byId(list, id);
+    if (!r) return;
+    var tip = r.creatorRole === "center"
+      ? "确认提交药品退货单「" + r.code + "」？提交后由上级机构审核，期间不可编辑。"
+      : "确认提交药品退货单「" + r.code + "」？提交后由上一级机构审核，期间不可编辑。";
+    SEL.confirmDialog({
+      title: "提交药品退货单",
+      text: tip,
+      okText: "提交",
+      onOk: function () {
+        r.records.push({ node: "提交", org: r.creatorOrg, person: r.creator, result: "已提交", opinion: "—", time: SEL.fmtNow() });
+        r.status = DR.nextStatus(r);
+        DR.persist(r);
+        SEL.toast("已提交，待上一级机构审核");
+        renderTable();
+      }
+    });
+  }
+
+  function doWithdraw(id) {
+    var list = DR.load();
+    var r = DR.byId(list, id);
+    if (!r) return;
+    SEL.confirmDialog({
+      title: "撤销退货申请",
+      text: "确认撤销药品退货单「" + r.code + "」？撤销后回到草稿，可重新编辑提交。",
+      okText: "撤销",
+      onOk: function () {
+        r.status = "draft";
+        r.records.push({ node: "撤销", org: r.creatorOrg, person: r.creator, result: "已撤销", opinion: "—", time: SEL.fmtNow() });
+        DR.persist(r);
+        SEL.toast("已撤销");
+        renderTable();
+      }
+    });
+  }
+
+  function doDelete(id) {
+    var list = DR.load();
+    var r = DR.byId(list, id);
+    if (!r) return;
+    SEL.confirmDialog({
+      title: "删除退货单",
+      text: "确认删除药品退货单「" + r.code + "」？删除后不可恢复。",
+      okText: "删除",
+      onOk: function () {
+        DR.save(list.filter(function (x) { return x.id !== id; }));
+        SEL.toast("已删除");
+        renderTable();
+      }
+    });
+  }
+
+  /* ---------------- 事件 ---------------- */
+  $("pageActs").innerHTML = '<button class="btn btn-primary" id="btnCreate">新增退货</button>';
+  $("btnCreate").addEventListener("click", function () {
+    location.href = "drug-return-create.html";
+  });
+
+  function doQuery() {
+    state.code = $("fCode").value.trim();
+    state.dateFrom = $("fDateFrom").value;
+    state.dateTo = $("fDateTo").value;
+    state.supplier = $("fSupplier").value;
+    state.status = $("fStatus").value;
+    state.page = 1;
+    renderTable();
+  }
+  $("btnQuery").addEventListener("click", doQuery);
+  $("fCode").addEventListener("keydown", function (e) { if (e.key === "Enter") doQuery(); });
+
+  $("btnReset").addEventListener("click", function () {
+    state.code = ""; state.dateFrom = ""; state.dateTo = ""; state.supplier = ""; state.status = ""; state.page = 1;
+    $("fCode").value = ""; $("fDateFrom").value = ""; $("fDateTo").value = "";
+    $("fSupplier").value = ""; $("fStatus").value = "";
+    renderTable();
+  });
+
+  $("pgPrev").addEventListener("click", function () { state.page--; renderTable(); });
+  $("pgNext").addEventListener("click", function () { state.page++; renderTable(); });
+
+  $("tbody").addEventListener("click", function (e) {
+    var btn = e.target.closest("[data-id]");
+    if (!btn) return;
+    var id = btn.getAttribute("data-id");
+    var act = btn.getAttribute("data-act") || "view";
+    if (act === "view") location.href = "drug-return-detail.html?id=" + id;
+    else if (act === "edit") location.href = "drug-return-create.html?id=" + id;
+    else if (act === "audit") location.href = "drug-return-detail.html?id=" + id + "&mode=approve";
+    else if (act === "submit") doSubmit(id);
+    else if (act === "withdraw") doWithdraw(id);
+    else if (act === "del") doDelete(id);
+  });
+
+  $("tabClose").addEventListener("click", function () { location.href = "home.html"; });
+  $("headerUser").addEventListener("click", function () {
+    SEL.confirmDialog({
+      title: "退出登录",
+      text: "确认退出当前账号「" + user.name + "」？",
+      okText: "退出",
+      onOk: function () { SEL.logout(); }
+    });
+  });
+
+  SEL.renderHeaderUser(user);
+  SEL.bindNav();
+  renderTable();
+})();
+</script>
+  <script src="nav.js?v=20261111c"></script>
+</body>
+</html>

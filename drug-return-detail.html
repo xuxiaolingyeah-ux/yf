@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>药品退货详情 · 区域药房协同管理系统</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ========== 顶部导航 ========== -->
+<header class="app-header">
+  <div class="header-left">
+    <div class="header-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3.2" y="9.4" width="17.6" height="5.2" rx="2.6" transform="rotate(-45 12 12)"/>
+        <path d="M8.4 15.6L15.6 8.4"/>
+      </svg>
+    </div>
+    <div class="header-title">区域药房协同管理系统</div>
+  </div>
+  <div class="header-right">
+    <div class="header-user" id="headerUser">
+      <span class="header-avatar">药</span>
+      <span class="header-user-name">—</span>
+    </div>
+  </div>
+</header>
+
+<div class="app-body">
+  <!-- ========== 左侧导航 ========== -->
+  <aside class="app-side" id="appSide"></aside>
+  <!-- ========== 主区域 ========== -->
+  <main class="app-main">
+    <div class="tabbar">
+      <div class="tab">首页</div>
+      <div class="tab active">
+        药品退货详情
+        <button class="tab-close" id="tabClose" title="关闭">
+          <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="page sel-page">
+      <div class="sel-main">
+        <div class="page-head">
+          <div class="head-back">
+            <button class="back-btn" id="btnBack" title="返回药品退货列表">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+            </button>
+            <h1 class="page-title">药品退货详情</h1>
+            <span class="pa-code" id="headCode">退货单号：—</span>
+          </div>
+          <span class="status-text" id="headStatus"></span>
+        </div>
+
+        <div class="sel-card pur-detail" id="detailCard">
+          <!-- 快速定位 -->
+          <div class="page-tabs" id="jumpTabs">
+            <span class="page-tab active" data-jump="top">退货详情</span>
+            <span class="page-tab" data-jump="records">审批记录</span>
+          </div>
+
+          <div class="card-body" id="detailBody" style="padding:16px;">
+            <div class="form-wrap">
+
+              <!-- 退货信息 -->
+              <section class="block" id="secInfo">
+                <div class="block-head"><h2 class="block-title">退货信息</h2></div>
+                <div class="form-grid-4">
+                  <div class="form-item">
+                    <span class="form-label">退货单号</span>
+                    <span class="text-value" id="vCode"></span>
+                  </div>
+                  <div class="form-item">
+                    <span class="form-label">供应商</span>
+                    <span class="text-value" id="vSupplier"></span>
+                  </div>
+                  <div class="form-item">
+                    <span class="form-label">发票号</span>
+                    <span class="text-value" id="vInvoiceNo">—</span>
+                  </div>
+                  <div class="form-item">
+                    <span class="form-label">提交人</span>
+                    <span class="text-value" id="vCreator"></span>
+                  </div>
+                  <div class="form-item">
+                    <span class="form-label">提交时间</span>
+                    <span class="text-value" id="vCreatedAt"></span>
+                  </div>
+                  <div class="form-item">
+                    <span class="form-label">关联入库单</span>
+                    <span class="text-value" id="vInBills">—</span>
+                  </div>
+                  <div class="form-item span-3">
+                    <span class="form-label">退货说明</span>
+                    <span class="text-value" id="vDesc">—</span>
+                  </div>
+                </div>
+              </section>
+
+              <!-- 药品明细 -->
+              <section class="block" id="secItems">
+                <div class="block-head">
+                  <h2 class="block-title">药品明细<span class="count" id="itemCount"></span></h2>
+                </div>
+                <div class="pa-list-wrap">
+                  <table class="data-table pur-table">
+                    <thead>
+                      <tr>
+                        <th>药品名称</th>
+                        <th style="width:110px;">编码</th>
+                        <th style="width:110px;">规格</th>
+                        <th>生产企业</th>
+                        <th style="width:90px;">批号</th>
+                        <th style="width:80px;" class="num">库存量</th>
+                        <th style="width:80px;" class="num">退货量</th>
+                        <th style="width:70px;" class="num">进货价</th>
+                        <th style="width:70px;" class="num">零售价</th>
+                        <th style="width:110px;" class="num">进货价金额合计</th>
+                        <th style="width:110px;" class="num">零售价金额合计</th>
+                        <th style="width:130px;">批准文号</th>
+                        <th style="width:130px;">发票号</th>
+                        <th style="width:80px;" class="num">追溯码</th>
+                      </tr>
+                    </thead>
+                    <tbody id="itemBody"></tbody>
+                  </table>
+                </div>
+                <div class="tr-sum-line">
+                  <span class="item">进货价合计金额<b id="sumPurchase">0.00</b></span>
+                  <span class="item">零售价合计金额<b id="sumRetail">0.00</b></span>
+                </div>
+              </section>
+
+              <!-- 审批记录 -->
+              <section class="block" id="secRecords">
+                <div class="block-head"><h2 class="block-title">审批记录</h2></div>
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th style="width:150px;">节点名称</th>
+                      <th style="width:190px;">审核机构</th>
+                      <th style="width:100px;">审核人</th>
+                      <th style="width:100px;">审核结果</th>
+                      <th>审核意见</th>
+                      <th style="width:150px;">审核时间</th>
+                    </tr>
+                  </thead>
+                  <tbody id="recordBody"></tbody>
+                </table>
+              </section>
+
+            </div>
+          </div>
+        </div>
+
+        <div class="page-foot" id="pageFoot"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="modal-mask" id="modalMask"></div>
+<div class="toast" id="toast">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+  <span id="toastText"></span>
+</div>
+
+<script src="mock.js"></script>
+<script src="selection-common.js"></script>
+<script src="purchase-mgmt-common.js"></script>
+<script src="stock-in-common.js"></script>
+<script src="drug-return-common.js"></script>
+<script>
+(function () {
+  var $ = SEL.$, esc = SEL.esc;
+
+  var user = DR.user();
+  if (!user) return;
+  if (user.role === "his") { location.href = "home.html"; return; }
+
+  var doc = DR.byId(DR.load(), SEL.qs("id"));
+  if (!doc) { location.href = "drug-return.html"; return; }
+  /* 数据权限：不在可见机构范围内的单据不允许查看 */
+  if (!DR.inScope(doc, user)) { location.href = "drug-return.html"; return; }
+
+  /* view = 查看（只读）；approve = 审核（底部出现审批区） */
+  var mode = SEL.qs("mode") === "approve" ? "approve" : "view";
+
+  function statusLabel() {
+    if (doc.status === "member") return "待审核（成员机构）";
+    if (doc.status === "center") return "待审核（中心药房）";
+    if (doc.status === "platform") return "待审核（上级机构）";
+    return DR.STATUS[doc.status];
+  }
+
+  function canApprove() {
+    return mode === "approve" && DR.canAudit(doc, user);
+  }
+
+  function inBillCodes() {
+    var bills = DR.inboundBills(doc.creatorRole);
+    return (doc.inIds || []).map(function (id) {
+      var b = bills.filter(function (x) { return x.id === id; })[0];
+      return b ? b.code : id;
+    }).join("、");
+  }
+
+  /* ---------------- 渲染 ---------------- */
+  function renderDetail() {
+    document.title = "药品退货详情 " + doc.code + " · 区域药房协同管理系统";
+    $("headCode").textContent = "退货单号：" + doc.code;
+    $("headStatus").textContent = "状态：" + statusLabel();
+
+    $("vCode").textContent = doc.code || "—";
+    $("vSupplier").textContent = doc.supplier || "—";
+    $("vInvoiceNo").textContent = doc.invoiceNo || "—";
+    $("vCreator").textContent = doc.creator || "—";
+    $("vCreatedAt").textContent = doc.createdAt || "—";
+    $("vInBills").textContent = inBillCodes() || "—";
+    $("vDesc").textContent = doc.desc || "—";
+
+    $("itemCount").textContent = "（" + doc.items.length + "）";
+    $("itemBody").innerHTML = doc.items.length ? doc.items.map(function (it) {
+      return "<tr>" +
+        '<td><div class="cell-ellipsis" title="' + esc(it.drugName) + '">' + esc(it.drugName) + "</div></td>" +
+        "<td>" + esc(it.drugCode) + "</td>" +
+        "<td>" + esc(it.spec) + "</td>" +
+        '<td><div class="cell-ellipsis" title="' + esc(it.vendor) + '">' + esc(it.vendor) + "</div></td>" +
+        "<td>" + esc(it.batch) + "</td>" +
+        '<td class="num">' + esc(it.stock) + " " + esc(it.unit || "") + "</td>" +
+        '<td class="num">' + esc(it.qty) + " " + esc(it.unit || "") + "</td>" +
+        '<td class="num">' + DR.num2(it.purchase) + "</td>" +
+        '<td class="num">' + DR.num2(it.retail) + "</td>" +
+        '<td class="num">' + DR.num2(DR.purchaseAmt(it)) + "</td>" +
+        '<td class="num">' + DR.num2(DR.retailAmt(it)) + "</td>" +
+        "<td>" + esc(it.approvalNo) + "</td>" +
+        "<td>" + esc(it.invoiceNo || "—") + "</td>" +
+        '<td class="num">' + ((it.traces || []).length) + " 条</td>" +
+      "</tr>";
+    }).join("") : '<tr class="pa-empty-row"><td colspan="14">暂无药品明细</td></tr>';
+
+    var s = DR.sums(doc);
+    $("sumPurchase").textContent = DR.num2(s.purchase);
+    $("sumRetail").textContent = DR.num2(s.retail);
+  }
+
+  function renderRecords() {
+    var rows = DR.recordRows(doc);
+    $("recordBody").innerHTML = rows.length
+      ? rows.map(function (r) {
+          return "<tr>" +
+            "<td>" + esc(r.node) + "</td>" +
+            "<td>" + esc(r.org || "—") + "</td>" +
+            "<td>" + esc(r.person) + "</td>" +
+            "<td>" + esc(r.result) + "</td>" +
+            '<td><div class="cell-ellipsis" title="' + esc(r.opinion) + '">' + esc(r.opinion) + "</div></td>" +
+            "<td>" + esc(r.time) + "</td>" +
+          "</tr>";
+        }).join("")
+      : '<tr><td colspan="6" class="pa-empty">暂无审批记录</td></tr>';
+  }
+
+  function renderFoot() {
+    if (canApprove()) {
+      $("detailCard").classList.add("has-foot");
+      $("pageFoot").innerHTML =
+        '<div class="approve-row">' +
+          '<label class="radio"><input type="radio" name="decision" value="pass" checked><span>通过</span></label>' +
+          '<label class="radio"><input type="radio" name="decision" value="reject"><span>拒绝</span></label>' +
+        '</div>' +
+        '<div class="approve-row">' +
+          '<textarea class="textarea" id="fOpinion" placeholder="审核意见（拒绝时必填）" maxlength="200"></textarea>' +
+        '</div>' +
+        '<div class="approve-row approve-btns">' +
+          '<button class="btn" data-act="cancel">取消</button>' +
+          '<button class="btn btn-primary" data-act="submit">提交</button>' +
+        '</div>';
+      $("fOpinion").addEventListener("input", function () { this.classList.remove("is-invalid"); });
+      $("pageFoot").querySelectorAll('input[name="decision"]').forEach(function (radio) {
+        radio.addEventListener("change", function () { $("fOpinion").classList.remove("is-invalid"); });
+      });
+    } else {
+      $("detailCard").classList.remove("has-foot");
+      $("pageFoot").innerHTML = "";
+    }
+  }
+
+  function renderAll() {
+    renderDetail();
+    renderRecords();
+    renderFoot();
+  }
+
+  /* ---------------- 审核 ---------------- */
+  function decide() {
+    var choice = $("pageFoot").querySelector('input[name="decision"]:checked');
+    var passed = !choice || choice.value === "pass";
+    var opinionEl = $("fOpinion");
+    var opinion = opinionEl ? opinionEl.value.trim() : "";
+    if (!passed && !opinion) {
+      opinionEl.classList.add("is-invalid");
+      SEL.toast("拒绝时必须填写审核意见");
+      return;
+    }
+    var node = doc.status === "member" ? "成员机构审核"
+      : doc.status === "center" ? "中心药房审核" : "上级机构审核";
+    doc.records.push({
+      node: node,
+      org: user.org,
+      person: user.name,
+      result: passed ? "通过" : "拒绝",
+      opinion: opinion || "—",
+      time: SEL.fmtNow()
+    });
+    doc.status = passed ? DR.passStatus(doc) : "rejected";
+    DR.persist(doc);
+    SEL.toast(passed ? "审核已通过" : "已拒绝，退货单已退回发起人");
+    renderAll();
+  }
+
+  /* ---------------- 快速定位：退货详情 / 审批记录 ---------------- */
+  var detailBody = $("detailBody");
+  var jumpTabs = $("jumpTabs");
+
+  function setActiveJump(name) {
+    [].slice.call(jumpTabs.children).forEach(function (t) {
+      t.classList.toggle("active", t.getAttribute("data-jump") === name);
+    });
+  }
+
+  function jumpTo(name) {
+    var top = 0;
+    if (name === "records") {
+      top = $("secRecords").getBoundingClientRect().top
+        - detailBody.getBoundingClientRect().top + detailBody.scrollTop;
+    }
+    detailBody.scrollTo({ top: top, behavior: "auto" });
+    setActiveJump(name);
+  }
+
+  jumpTabs.addEventListener("click", function (e) {
+    var tab = e.target.closest(".page-tab");
+    if (tab) jumpTo(tab.getAttribute("data-jump"));
+  });
+
+  detailBody.addEventListener("scroll", function () {
+    var offset = $("secRecords").getBoundingClientRect().top - detailBody.getBoundingClientRect().top;
+    var atBottom = detailBody.scrollTop > 0 &&
+      detailBody.scrollTop >= detailBody.scrollHeight - detailBody.clientHeight - 2;
+    setActiveJump(offset <= 24 || atBottom ? "records" : "top");
+  });
+
+  function goBack() { location.href = "drug-return.html"; }
+  $("btnBack").addEventListener("click", goBack);
+  $("tabClose").addEventListener("click", goBack);
+
+  $("pageFoot").addEventListener("click", function (e) {
+    var btn = e.target.closest("[data-act]");
+    if (!btn) return;
+    var act = btn.getAttribute("data-act");
+    if (act === "cancel") goBack();
+    else if (act === "submit") decide();
+  });
+
+  SEL.renderHeaderUser(user);
+  SEL.bindNav();
+  renderAll();
+})();
+</script>
+  <script src="nav.js?v=20261111c"></script>
+</body>
+</html>

@@ -43,7 +43,31 @@
 .si-items .w-drug { width: 170px; } .si-items .w-code { width: 100px; } .si-items .w-spec { width: 90px; }
 .si-items .w-pack { width: 90px; } .si-items .w-vendor { width: 180px; } .si-items .w-factor { width: 80px; }
 .si-items .w-unit { width: 70px; } .si-items .w-ins { width: 160px; } .si-items .w-insn { width: 100px; }
-.si-items .w-batch { width: 130px; } .si-items .w-qty { width: 80px; } .si-items .w-price { width: 90px; }
+.si-items .w-batch { width: 130px; }
+/* 批次号：可输入 + 下拉可选的组合控件 */
+.batch-combo { position: relative; display: flex; align-items: center; }
+.batch-combo .batch-input { padding-right: 22px; }
+.batch-combo .batch-clear { position: absolute; right: 3px; top: 50%; transform: translateY(-50%); width: 14px; height: 14px; line-height: 12px; text-align: center; border: none; border-radius: 50%; background: rgba(0,0,0,.10); color: #fff; font-size: 11px; cursor: pointer; padding: 0; }
+.batch-combo .batch-clear:hover { background: rgba(0,0,0,.30); }
+/* 批次下拉面板（浮层，避免表格滚动区裁剪） */
+.batch-pop { position: fixed; z-index: 3000; display: none; width: 380px; background: var(--bg-white); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: 0 6px 24px rgba(0,0,0,.14); flex-direction: column; overflow: hidden; }
+.batch-pop.show { display: flex; }
+.batch-pop-scroll { flex: 1 1 auto; min-height: 0; overflow: auto; }
+.batch-pop-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.batch-pop-table th { height: 34px; padding: 0 10px; text-align: left; font-weight: 500; color: var(--text-secondary); background: var(--table-head); border-bottom: 1px solid var(--border); white-space: nowrap; }
+.batch-pop-table th.num { text-align: right; }
+.batch-pop-table td { height: 32px; padding: 4px 10px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.batch-pop-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.batch-pop-table tbody tr { cursor: pointer; }
+.batch-pop-table tbody tr:hover { background: var(--table-hover); }
+.batch-pop-table tbody tr.is-cur { background: rgba(22,119,255,.08); }
+.batch-pop-empty { padding: 18px 10px; text-align: center; font-size: 12px; color: var(--text-placeholder); }
+.batch-pop-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 10px; font-size: 12px; color: var(--text-tertiary); border-top: 1px solid var(--border); }
+.batch-pop-pager { display: flex; align-items: center; gap: 4px; }
+.batch-pop-pager .bp-btn { width: 20px; height: 20px; line-height: 18px; text-align: center; padding: 0; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-white); color: var(--text-secondary); font-size: 12px; cursor: pointer; }
+.batch-pop-pager .bp-btn:disabled { color: var(--text-placeholder); cursor: not-allowed; background: var(--bg-disabled); }
+.batch-pop-pager .bp-page { min-width: 20px; height: 20px; line-height: 20px; text-align: center; padding: 0 3px; border: none; background: none; color: var(--primary-dark); font-size: 12px; cursor: pointer; border-radius: var(--radius); }
+.batch-pop-pager .bp-page.on { background: var(--primary); color: #fff; } .si-items .w-qty { width: 80px; } .si-items .w-price { width: 90px; }
 .si-items .w-date { width: 120px; } .si-items .w-reason { width: 150px; } .si-items .w-amt { width: 100px; }
 .si-items .w-inv { width: 130px; } .si-items .w-acts { width: 150px; min-width: 150px; }
 /* 操作列右固定 */
@@ -225,13 +249,12 @@
         <thead>
           <tr>
             <th style="width:40px"></th>
-            <th>药品名称</th><th>药品编码</th><th>药品规格</th><th>生产企业</th>
-            <th>批次号</th><th>有效期</th><th class="num">进货价</th><th class="num">零售价</th>
+            <th>药品名称</th><th>药品编码</th><th>药品规格</th><th>药品包装</th><th>生产企业</th><th>批准文号</th>
           </tr>
         </thead>
         <tbody id="pickBody"></tbody>
       </table>
-      <div class="si-pick-empty" id="pickEmpty" style="display:none">未找到符合条件的药品批次</div>
+      <div class="si-pick-empty" id="pickEmpty" style="display:none">未找到符合条件的药品</div>
     </div>
     <div class="modal-foot">
       <button class="btn" id="pkCancel">取消</button>
@@ -287,6 +310,27 @@
   </div>
 </div>
 
+<!-- ========== 批次号下拉面板（浮层） ========== -->
+<div class="batch-pop" id="batchPop">
+  <div class="batch-pop-scroll" id="batchPopScroll">
+    <table class="batch-pop-table">
+      <thead>
+        <tr><th>批号</th><th>有效期</th><th class="num">进货价</th><th class="num">零售价</th></tr>
+      </thead>
+      <tbody id="batchPopBody"></tbody>
+    </table>
+    <div class="batch-pop-empty" id="batchPopEmpty" style="display:none">该药品暂无已有批次，可直接输入批号</div>
+  </div>
+  <div class="batch-pop-foot">
+    <span id="batchPopTotal">共 0 条</span>
+    <div class="batch-pop-pager">
+      <button class="bp-btn" id="bpPrev" title="上一页">‹</button>
+      <span id="bpPages"></span>
+      <button class="bp-btn" id="bpNext" title="下一页">›</button>
+    </div>
+  </div>
+</div>
+
 <!-- toast -->
 <div id="toast" style="position:fixed;top:70px;left:50%;transform:translateX(-50%);padding:8px 16px;background:rgba(0,0,0,.78);color:#fff;border-radius:4px;font-size:13px;z-index:9999;display:none"></div>
 
@@ -316,7 +360,7 @@
     items: []
   };
 
-  function blankItem(){ return { name:"", code:"", spec:"", packSpec:"", vendor:"", approval:"", factor:"", packUnit:"", insCode:"", insName:"", batch:"", expiry:"", purchase:"", retail:"", qty:"", unq:0, reason:"", invoiceNo:"", traces:[] }; }
+  function blankItem(){ return { name:"", code:"", spec:"", packSpec:"", vendor:"", approval:"", factor:"", packUnit:"", insCode:"", insName:"", batch:"", batchSource:"", priceFrom:"", expiry:"", purchase:"", retail:"", qty:"", unq:0, reason:"", invoiceNo:"", traces:[] }; }
 
   /* ===== 初始化下拉 ===== */
   /* 入库机构：只读，显示当前登录机构名称 */
@@ -363,7 +407,7 @@
       ['<span class="req">*</span>药品名称','w-drug'],['药品编码','w-code'],['药品规格','w-spec'],['包装规格','w-pack'],
       ['生产企业','w-vendor'],['最小换算系数','w-factor'],['包装单位','w-unit'],['国家医保编码','w-ins'],['国家医保名称','w-insn'],
       ['批次号','w-batch'],['<span class="req">*</span>入库量','w-qty'],
-      ['进货价','w-price'],['零售价','w-price'],['有效期','w-date'],
+      ['<span class="req">*</span>进货价','w-price'],['<span class="req">*</span>零售价','w-price'],['<span class="req">*</span>有效期','w-date'],
       ['合格数量','w-qty'],['<span class="req">*</span>不合格数量','w-qty'],['<span class="req">*</span>不合格原因','w-reason'],
       ['追溯码进度','w-qty'],
       ['进货价金额合计','w-amt'],['零售价金额合计','w-amt']
@@ -388,11 +432,21 @@
       h += '<td class="w-unit">'+SI.esc(it.packUnit)+'</td>';
       h += '<td class="w-ins">'+SI.esc(it.insCode)+'</td>';
       h += '<td class="w-insn">'+SI.esc(it.insName)+'</td>';
-      h += '<td class="w-batch">'+SI.esc(it.batch)+'</td>';
+      /* 批次号：同一控件内可直接输入，也可点击下拉选择已有批次 */
+      if(!hasDrug){
+        h += '<td class="w-batch">—</td>';
+      } else {
+        var curBatch = it.batch ? SI.esc(it.batch) : "";
+        h += '<td class="w-batch"><div class="batch-combo">'
+          + '<input class="cell-input batch-input" data-f="batch" data-idx="'+i+'" value="'+curBatch+'" placeholder="选择或输入批号" autocomplete="off">'
+          + '<button type="button" class="batch-clear" data-act="batchClear" data-idx="'+i+'" title="清空"'+(it.batch?'':' style="display:none"')+'>×</button>'
+          + '</div></td>';
+      }
       h += '<td class="w-qty"><input class="cell-input" type="number" min="0" data-f="qty" data-idx="'+i+'" value="'+SI.raw(it.qty)+'"></td>';
-      h += '<td class="w-price num">'+(it.purchase===""?"":SI.num2(it.purchase))+'</td>';
-      h += '<td class="w-price num">'+(it.retail===""?"":SI.num2(it.retail))+'</td>';
-      h += '<td class="w-date">'+SI.esc(it.expiry)+'</td>';
+      /* 进货价、零售价、有效期：选择已有批次自动带出，手工录入批号时手工填写 */
+      h += '<td class="w-price"><input class="cell-input" type="number" step="0.0001" min="0" data-f="purchase" data-idx="'+i+'" value="'+SI.raw(it.purchase)+'" placeholder="进货价"></td>';
+      h += '<td class="w-price"><input class="cell-input" type="number" step="0.01" min="0" data-f="retail" data-idx="'+i+'" value="'+SI.raw(it.retail)+'" placeholder="零售价"></td>';
+      h += '<td class="w-date"><input class="cell-input" type="date" data-f="expiry" data-idx="'+i+'" value="'+SI.raw(it.expiry)+'" placeholder="请输入日期"></td>';
       h += '<td class="w-qty num" data-c="qualified">'+qualified+'</td>';
       h += '<td class="w-qty"><input class="cell-input" type="number" min="0" data-f="unq" data-idx="'+i+'" value="'+SI.raw(it.unq)+'"></td>';
       var reasonOpts = '<option value="">请选择</option>' + SI.REASONS.map(function(r){return '<option'+(r===it.reason?' selected':'')+'>'+r+'</option>';}).join("");
@@ -451,6 +505,22 @@
     var i = parseInt(t.getAttribute("data-idx"),10), it = ST.items[i];
     if(f==="reason"){ it.reason = t.value; return; }
     if(f==="invoiceNo"){ it.invoiceNo = t.value; return; }
+    if(f==="batch"){
+      /* 手工输入的批号若与已有批次一致，且价格/有效期为空，则自动带出 */
+      it.batch = t.value.trim();
+      it.batchSource = "manual";
+      var hit = (SI.BATCHES[it.code]||[]).filter(function(x){ return x.batch===it.batch; })[0];
+      if(hit && !it.priceFrom){
+        it.expiry = it.expiry || hit.expiry;
+        it.purchase = (it.purchase===""||it.purchase===null) ? hit.purchase : it.purchase;
+        it.retail = (it.retail===""||it.retail===null) ? hit.retail : it.retail;
+        it.priceFrom = hit.batch;
+        syncRowPriceInputs(i);
+        updateRowComputed(i);
+      }
+      return;
+    }
+    if(f==="expiry"){ it.expiry = t.value; return; }
     /* 数值类 */
     it[f] = t.value==="" ? "" : Number(t.value);
     if(f==="unq" && it[f]==="") it[f]=0;
@@ -462,6 +532,14 @@
     var act = a.getAttribute("data-act"), i = parseInt(a.getAttribute("data-idx"),10);
     if(act==="pick"){ openPicker(i); return; }
     if(act==="trace"){ openTrace(i); return; }
+    if(act==="batchClear"){
+      closeBatchPop();
+      var it = ST.items[i];
+      it.batch=""; it.batchSource=""; it.priceFrom="";
+      it.purchase=""; it.retail=""; it.expiry="";
+      renderItems();
+      return;
+    }
     if(act==="del"){
       confirmDlg("删除药品明细", "确认删除该药品明细行？", "删除", true, function(){
         ST.items.splice(i,1); renderItems(); toast("已删除");
@@ -470,39 +548,180 @@
   });
   $("#btnAddRow").addEventListener("click", function(){ openPicker(-1); });
 
-  /* ===== 选药弹窗（药品+批次合并列表，多选，确定后带入明细） ===== */
-  var pickIdx = -1;   /* -1=追加模式；>=0 表示从某行打开，首个选中项替换该行 */
-  var pickRows = [];  /* 当前过滤出的药品批次组合 */
-  function rowAdded(code, batch){
-    return ST.items.some(function(it, i){ return i!==pickIdx && it.code===code && it.batch===batch; });
+  /* ===== 批次号下拉面板：点击即可选已有批次，也可直接输入批号 ===== */
+  var BP = { idx:-1, page:1, list:[], kw:"" };
+  var BP_PER = 8;
+
+  function syncRowPriceInputs(i){
+    var it = ST.items[i];
+    var tr = $('#itemsBody tr[data-idx="'+i+'"]');
+    if(!tr) return;
+    var p = tr.querySelector('[data-f="purchase"]'); if(p) p.value = SI.raw(it.purchase);
+    var r = tr.querySelector('[data-f="retail"]'); if(r) r.value = SI.raw(it.retail);
+    var e = tr.querySelector('[data-f="expiry"]'); if(e) e.value = SI.raw(it.expiry);
   }
+  function toggleBatchClear(i, hasVal){
+    var tr = $('#itemsBody tr[data-idx="'+i+'"]');
+    if(!tr) return;
+    var c = tr.querySelector('.batch-clear');
+    if(c) c.style.display = hasVal ? "" : "none";
+  }
+  function renderBatchPop(){
+    var it = ST.items[BP.idx];
+    var per = BP_PER, total = BP.list.length;
+    var pages = Math.max(1, Math.ceil(total/per));
+    if(BP.page > pages) BP.page = pages;
+    if(BP.page < 1) BP.page = 1;
+    var rows = BP.list.slice((BP.page-1)*per, BP.page*per);
+    var cur = it ? it.batch : "";
+    $("#batchPopBody").innerHTML = rows.map(function(b, k){
+      return '<tr data-bp="'+((BP.page-1)*per + k)+'"'+(b.batch===cur?' class="is-cur"':'')+'>'
+        +'<td>'+SI.esc(b.batch)+'</td><td>'+SI.esc(b.expiry)+'</td>'
+        +'<td class="num">'+SI.num2(b.purchase)+'</td><td class="num">'+SI.num2(b.retail)+'</td></tr>';
+    }).join("");
+    $("#batchPopEmpty").style.display = total ? "none" : "block";
+    $("#batchPopTotal").textContent = "共 " + total + " 条";
+    var pageHtml = "";
+    for(var p=1; p<=pages; p++){
+      pageHtml += '<button class="bp-page'+(p===BP.page?' on':'')+'" data-bp-page="'+p+'">'+p+'</button>';
+    }
+    $("#bpPages").innerHTML = pageHtml;
+    $("#bpPrev").disabled = BP.page <= 1;
+    $("#bpNext").disabled = BP.page >= pages;
+  }
+  function positionBatchPop(){
+    var input = $('#itemsBody .batch-input[data-idx="'+BP.idx+'"]');
+    var pop = $("#batchPop");
+    if(!input) return;
+    var r = input.getBoundingClientRect();
+    pop.style.maxHeight = "none";
+    var w = pop.offsetWidth || 380, natural = pop.offsetHeight || 320;
+    var left = Math.max(8, Math.min(r.left, window.innerWidth - w - 8));
+    var below = window.innerHeight - r.bottom - 12;
+    var above = r.top - 12;
+    /* 优先向下展开；下方空间不足时向上，并限制高度、内部滚动 */
+    var placeBelow = (below >= Math.min(natural, 260)) || (below >= above);
+    var avail = placeBelow ? below : above;
+    var maxH = Math.max(160, Math.min(natural, avail));
+    pop.style.maxHeight = maxH + "px";
+    var hh = Math.min(natural, maxH);
+    var top = placeBelow ? (r.bottom + 4) : Math.max(8, r.top - hh - 4);
+    pop.style.left = left + "px";
+    pop.style.top = top + "px";
+  }
+  function openBatchPop(i, kw){
+    var it = ST.items[i];
+    if(!it || !it.code) return;
+    BP.idx = i; BP.page = 1; BP.kw = (kw||"").trim().toLowerCase();
+    BP.list = (SI.BATCHES[it.code]||[]).filter(function(b){
+      return !BP.kw || String(b.batch).toLowerCase().indexOf(BP.kw) >= 0;
+    });
+    renderBatchPop();
+    $("#batchPop").classList.add("show");
+    positionBatchPop();
+  }
+  function closeBatchPop(){ $("#batchPop").classList.remove("show"); BP.idx = -1; }
+  function pickBatch(b){
+    var i = BP.idx;
+    if(i < 0 || !b) return;
+    var it = ST.items[i];
+    it.batch = b.batch; it.batchSource = "auto"; it.priceFrom = b.batch;
+    it.expiry = b.expiry; it.purchase = b.purchase; it.retail = b.retail;
+    var input = $('#itemsBody .batch-input[data-idx="'+i+'"]');
+    if(input) input.value = b.batch;
+    toggleBatchClear(i, true);
+    syncRowPriceInputs(i);
+    updateRowComputed(i);
+    closeBatchPop();
+  }
+  /* 面板交互：选行 / 翻页 */
+  $("#batchPopBody").addEventListener("mousedown", function(e){
+    var tr = e.target.closest("tr[data-bp]");
+    if(!tr) return;
+    e.preventDefault();  /* 阻止输入框 blur，保证选中生效 */
+    pickBatch(BP.list[parseInt(tr.getAttribute("data-bp"),10)]);
+  });
+  $("#bpPages").addEventListener("mousedown", function(e){
+    var b = e.target.closest("[data-bp-page]");
+    if(!b) return;
+    e.preventDefault();
+    BP.page = parseInt(b.getAttribute("data-bp-page"),10);
+    renderBatchPop();
+    positionBatchPop();
+  });
+  $("#bpPrev").addEventListener("mousedown", function(e){ e.preventDefault(); if(BP.page>1){ BP.page--; renderBatchPop(); positionBatchPop(); } });
+  $("#bpNext").addEventListener("mousedown", function(e){ e.preventDefault(); BP.page++; renderBatchPop(); positionBatchPop(); });
+
+  /* 明细表：批次输入框的输入/聚焦事件 */
+  $("#itemsBody").addEventListener("input", function(e){
+    var t = e.target;
+    if(t.getAttribute("data-f") !== "batch") return;
+    var i = parseInt(t.getAttribute("data-idx"),10), it = ST.items[i];
+    var val = t.value.trim();
+    it.batch = val;
+    it.batchSource = "manual";
+    toggleBatchClear(i, !!val);
+    /* 改动了批号，原批次带出的价格/有效期失效，清空待手工填写 */
+    if(it.priceFrom && val !== it.priceFrom){
+      it.purchase = ""; it.retail = ""; it.expiry = ""; it.priceFrom = "";
+      syncRowPriceInputs(i);
+      updateRowComputed(i);
+    }
+    openBatchPop(i, val);
+  });
+  $("#itemsBody").addEventListener("focusin", function(e){
+    var t = e.target;
+    if(t.getAttribute("data-f") !== "batch") return;
+    var i = parseInt(t.getAttribute("data-idx"),10);
+    if($("#batchPop").classList.contains("show") && BP.idx === i) return;
+    openBatchPop(i, "");
+  });
+  /* 点击空白 / 任意区域滚动 / 窗口缩放时收起面板 */
+  document.addEventListener("mousedown", function(e){
+    if(!$("#batchPop").classList.contains("show")) return;
+    if(e.target.closest("#batchPop")) return;
+    if(e.target.classList && e.target.classList.contains("batch-input")) return;
+    closeBatchPop();
+  });
+  document.addEventListener("scroll", function(e){
+    if(!$("#batchPop").classList.contains("show")) return;
+    /* 面板内部滚动不处理，其他区域滚动时跟随输入框重新定位 */
+    if(e.target && e.target.closest && e.target.closest("#batchPop")) return;
+    positionBatchPop();
+  }, true);
+  window.addEventListener("resize", function(){
+    if($("#batchPop").classList.contains("show")) positionBatchPop();
+  });
+  document.addEventListener("keydown", function(e){ if(e.key==="Escape") closeBatchPop(); });
+
+  /* ===== 选药弹窗（药品列表，多选；批次号在明细行中选择或手工录入） ===== */
+  var pickIdx = -1;   /* -1=追加模式；>=0 表示从某行打开，首个选中项替换该行 */
+  var pickRows = [];  /* 当前过滤出的药品列表 */
   function renderPick(){
     var k = $("#pkKey").value.trim().toLowerCase(), v = $("#pkVendor").value.trim().toLowerCase();
-    pickRows = [];
-    SI.DRUGS.forEach(function(d){
-      if(k && d.name.toLowerCase().indexOf(k)<0 && d.py.toLowerCase().indexOf(k)<0) return;
-      if(v && d.vendor.toLowerCase().indexOf(v)<0) return;
-      (SI.BATCHES[d.code]||[]).forEach(function(b){ pickRows.push({ d:d, b:b }); });
+    pickRows = SI.DRUGS.filter(function(d){
+      if(k && d.name.toLowerCase().indexOf(k)<0 && d.py.toLowerCase().indexOf(k)<0) return false;
+      if(v && d.vendor.toLowerCase().indexOf(v)<0) return false;
+      return true;
     });
     $("#pickEmpty").style.display = pickRows.length ? "none" : "block";
-    $("#pickBody").innerHTML = pickRows.map(function(r, i){
-      var added = rowAdded(r.d.code, r.b.batch);
-      return '<tr data-i="'+i+'"'+(added?' class="is-added"':'')+'>'
-        +'<td><input type="checkbox" data-pk="'+i+'"'+(added?' disabled':'')+'></td>'
-        +'<td>'+SI.esc(r.d.name)+(added?'<span class="added-tag">已添加</span>':'')+'</td>'
-        +'<td>'+SI.esc(r.d.code)+'</td><td>'+SI.esc(r.d.spec)+'</td>'
-        +'<td class="cell-ellipsis" title="'+SI.esc(r.d.vendor)+'">'+SI.esc(r.d.vendor)+'</td>'
-        +'<td>'+SI.esc(r.b.batch)+'</td><td>'+SI.esc(r.b.expiry)+'</td>'
-        +'<td class="num">'+SI.num2(r.b.purchase)+'</td><td class="num">'+SI.num2(r.b.retail)+'</td></tr>';
+    $("#pickBody").innerHTML = pickRows.map(function(d, i){
+      return '<tr data-i="'+i+'">'
+        +'<td><input type="checkbox" data-pk="'+i+'"></td>'
+        +'<td>'+SI.esc(d.name)+'</td>'
+        +'<td>'+SI.esc(d.code)+'</td><td>'+SI.esc(d.spec)+'</td>'
+        +'<td>'+SI.esc(d.packSpec)+'</td>'
+        +'<td class="cell-ellipsis" title="'+SI.esc(d.vendor)+'">'+SI.esc(d.vendor)+'</td>'
+        +'<td>'+SI.esc(d.approval)+'</td></tr>';
     }).join("");
     $$('#pickBody input[type="checkbox"]').forEach(function(cb){
       cb.addEventListener("change", syncPickOk);
     });
-    $$('#pickBody tr:not(.is-added)').forEach(function(tr){
+    $$('#pickBody tr').forEach(function(tr){
       tr.addEventListener("click", function(e){
         if(e.target.type==="checkbox") return;
         var cb = tr.querySelector('input[type="checkbox"]');
-        if(!cb || cb.disabled) return;
+        if(!cb) return;
         cb.checked = !cb.checked;
         syncPickOk();
       });
@@ -512,11 +731,11 @@
   function syncPickOk(){
     $("#pkOk").disabled = !$$('#pickBody input[type="checkbox"]:checked').length;
   }
-  function itemFromPick(r){
+  function itemFromPick(d){
+    /* 只带药品基础信息；批次号、有效期、价格由明细行选择批次或手工录入 */
     var it = blankItem();
-    it.name=r.d.name; it.code=r.d.code; it.spec=r.d.spec; it.packSpec=r.d.packSpec; it.vendor=r.d.vendor;
-    it.approval=r.d.approval; it.factor=r.d.factor; it.packUnit=r.d.packUnit; it.insCode=r.d.insCode; it.insName=r.d.insName;
-    it.batch=r.b.batch; it.expiry=r.b.expiry; it.purchase=r.b.purchase; it.retail=r.b.retail;
+    it.name=d.name; it.code=d.code; it.spec=d.spec; it.packSpec=d.packSpec; it.vendor=d.vendor;
+    it.approval=d.approval; it.factor=d.factor; it.packUnit=d.packUnit; it.insCode=d.insCode; it.insName=d.insName;
     return it;
   }
   function openPicker(i){
@@ -625,6 +844,16 @@
     ST.invoiceMode = editBill.invoiceMode; ST.invoiceNo = editBill.invoiceNo;
     ST.invoiceAmt = editBill.invoiceAmount; ST.invoiceDate = editBill.invoiceDate;
     ST.items = (editBill.items||[]).map(function(it){ return Object.assign(blankItem(), it); });
+    /* 回填批次来源：批次号存在于已有批次库 → 价格视为自动带出，否则视为手工录入 */
+    ST.items.forEach(function(it){
+      if(it.batch){
+        var exists = (SI.BATCHES[it.code]||[]).some(function(b){ return b.batch===it.batch; });
+        it.batchSource = exists ? "auto" : "manual";
+        it.priceFrom = exists ? it.batch : "";
+      } else {
+        it.batchSource = ""; it.priceFrom = "";
+      }
+    });
     $("#fOrg").value = (SI.orgOf(ST.orgId) || {}).name || ""; fillLocations();
     $("#fLocation").value = ST.location;
   $("#fMethod").value = ST.method;
@@ -648,6 +877,7 @@
 
   /* ===== 校验 ===== */
   var NUM_RE = /^\d+(\.\d{1,2})?$/;
+  var NUM_RE4 = /^\d+(\.\d{1,4})?$/;   /* 进货价允许 4 位小数 */
   function markInvalid(el, bad){ if(el) el.classList.toggle("is-invalid", !!bad); }
   function validate(){
     var errs = [];
@@ -663,7 +893,7 @@
       else {
         if(!it.batch) errs.push(n+"批次号");
         if(it.qty==="" || !NUM_RE.test(String(it.qty)) || Number(it.qty)<=0) errs.push(n+"入库量");
-        if(it.purchase==="" || !NUM_RE.test(String(it.purchase))) errs.push(n+"进货价");
+        if(it.purchase==="" || !NUM_RE4.test(String(it.purchase))) errs.push(n+"进货价");
         if(it.retail==="" || !NUM_RE.test(String(it.retail))) errs.push(n+"零售价");
         if(!it.expiry) errs.push(n+"有效期");
         if(it.unq==="" || !/^\d+$/.test(String(it.unq))) errs.push(n+"不合格数量");
@@ -699,6 +929,40 @@
     }
     return b;
   }
+  /* 发起入库申请后：
+   * 1) 批次号写入入库模块已有批次池（后续入库可选择，自动带出价格/有效期）
+   * 2) 在「药品批次管理」自动生成一条批次记录，供应商 = 入库单选择的供应商 */
+  function syncNewBatches(bill){
+    var arr;
+    try { arr = JSON.parse(sessionStorage.getItem("BM_NEW_BATCHES") || "[]"); } catch(e){ arr = []; }
+    bill.items.forEach(function(it){
+      if(!it.code || !it.batch) return;
+      SI.addBatchExtra(it.code, { batch: it.batch, expiry: it.expiry, purchase: Number(it.purchase)||0, retail: Number(it.retail)||0 });
+      if(arr.some(function(r){ return r.code===it.code && r.batchNo===it.batch; })) return;
+      var factor = Number(it.factor) || 1;
+      var qualified = SI.qualified(it);
+      arr.push({
+        autoCreated: true,
+        locationId: "", locationName: bill.location || "",
+        status: "on", name: it.name, code: it.code, kind: "西药",
+        spec: it.spec, minFactor: factor,
+        availQty: qualified, sendQty: qualified, sendUnit: it.packUnit || "盒",
+        batchNo: it.batch, expire: it.expiry, produce: "",
+        outPrice: Number(it.retail)||0, splitOutPrice: +((Number(it.retail)||0)/factor).toFixed(2),
+        stockQty: qualified, stockBig: factor ? Math.floor(qualified/factor) : 0,
+        stopQty: 0, preQty: 0, vendor: it.vendor,
+        inPrice: Number(it.purchase)||0, splitInPrice: +((Number(it.purchase)||0)/factor).toFixed(2),
+        outTotal: +SI.retailAmt(it).toFixed(2),
+        supplier: bill.supplier || "", approval: it.approval,
+        essential: "否", negotiated: "否", volume: "否",
+        firstInTime: bill.submitTime, inNos: [bill.code],
+        prepUnit: it.packUnit || "盒", minPkgUnit: it.packUnit || "盒",
+        toxic: "否", spirit: "否", form: "—", insCode: it.insCode, insName: it.insName,
+        split: "否", priority: "否"
+      });
+    });
+    sessionStorage.setItem("BM_NEW_BATCHES", JSON.stringify(arr));
+  }
   function doSave(submit){
     var errs = validate();
     if(errs.length){
@@ -708,6 +972,7 @@
     var b = buildBill(submit);
     if(!editBill) list.push(b);
     SI.save(list);
+    if(submit) syncNewBatches(b);
     toast(submit ? "已提交，待审核" : "已暂存草稿");
     setTimeout(function(){ location.href = "stock-in.html"; }, 600);
   }

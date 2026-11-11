@@ -88,6 +88,31 @@
     ]
   };
 
+  /* ---------- 批次扩展（入库单提交后新增的批次，跨页面持久于 sessionStorage） ---------- */
+  var BATCH_EXTRA_KEY = "SI_BATCH_EXTRA";
+  (function mergeBatchExtra() {
+    try {
+      var m = JSON.parse(sessionStorage.getItem(BATCH_EXTRA_KEY) || "{}");
+      Object.keys(m).forEach(function (code) {
+        (m[code] || []).forEach(function (b) {
+          var arr = BATCHES[code] = BATCHES[code] || [];
+          if (!arr.some(function (x) { return x.batch === b.batch; })) arr.push(b);
+        });
+      });
+    } catch (e) {}
+  })();
+  function addBatchExtra(code, b) {
+    if (!code || !b || !b.batch) return;
+    var arr = BATCHES[code] = BATCHES[code] || [];
+    if (arr.some(function (x) { return x.batch === b.batch; })) return;
+    arr.push(b);
+    try {
+      var m = JSON.parse(sessionStorage.getItem(BATCH_EXTRA_KEY) || "{}");
+      (m[code] = m[code] || []).push(b);
+      sessionStorage.setItem(BATCH_EXTRA_KEY, JSON.stringify(m));
+    } catch (e) {}
+  }
+
   /* ---------- 工具 ---------- */
   function qs(k) { var m = location.search.match(new RegExp("[?&]" + k + "=([^&]*)")); return m ? decodeURIComponent(m[1]) : ""; }
   function esc(v) {
@@ -295,7 +320,7 @@
     STATUS: STATUS, UPLOAD: UPLOAD,
     qs: qs, esc: esc, raw: raw, fmtNow: fmtNow, money: money, num2: num2,
     currentUser: currentUser, setUser: setUser, orgOf: orgOf,
-    load: load, save: save, billOf: billOf, newCode: newCode,
+    load: load, save: save, billOf: billOf, newCode: newCode, addBatchExtra: addBatchExtra,
     canAudit: canAudit, opsFor: opsFor, createInnerInBill: createInnerInBill,
     qualified: qualified, purchaseAmt: purchaseAmt, retailAmt: retailAmt, sums: sums
   };

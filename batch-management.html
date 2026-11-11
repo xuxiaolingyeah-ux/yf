@@ -517,7 +517,7 @@
           <div class="ctrl"><input class="input" type="date" id="fExpire"></div>
         </div>
         <div class="fi">
-          <span class="lbl"><span class="req">*</span>生产日期：</span>
+          <span class="lbl">生产日期：</span>
           <div class="ctrl"><input class="input" type="date" id="fProduce"></div>
         </div>
         <div class="fi">
@@ -637,6 +637,30 @@
   var DRUG_KINDS = ["西药","中成药","中药饮片","生物制品","疫苗"];
   var FORMS = ["片剂","胶囊剂","颗粒剂","注射剂","丸剂","口服液","软膏剂","贴剂"];
   var CLASSES = ["化学药品","中成药","生物制品","中药饮片"];
+
+  /* ===== 合并入库申请自动生成的批次记录 =====
+   * 新增入库提交后，会在 sessionStorage "BM_NEW_BATCHES" 写入批次记录；
+   * 此处按 药品编码+批号 去重后并入列表，供应商取自入库申请单。 */
+  function mergeAutoBatches(){
+    var arr;
+    try { arr = JSON.parse(sessionStorage.getItem("BM_NEW_BATCHES") || "[]"); } catch(e){ arr = []; }
+    if(!Array.isArray(arr) || !arr.length) return;
+    var locSel = $("#selLocation");
+    var fallbackLoc = locSel.options.length ? locSel.options[0].value : "";
+    var added = 0;
+    arr.forEach(function(nb){
+      if(!nb || !nb.code || !nb.batchNo) return;
+      if(BATCHES.some(function(r){ return r.code===nb.code && r.batchNo===nb.batchNo; })) return;
+      var rec = Object.assign({}, nb);
+      var knownLoc = false;
+      Array.prototype.forEach.call(locSel.options, function(o){ if(o.value===rec.locationId) knownLoc = true; });
+      if(!knownLoc) rec.locationId = fallbackLoc;
+      BATCHES.unshift(rec);
+      added++;
+    });
+    sessionStorage.removeItem("BM_NEW_BATCHES");
+    if(added) toast("已从入库申请同步生成 "+added+" 条批次记录");
+  }
 
   var ST = { page:1, pageSize:20, filtered:BATCHES.slice(), editId:null };
   var listSel = new Set();   // 列表中已勾选的批次（存对象引用）
@@ -858,7 +882,7 @@
       $("#fApproval").value=r.approval;
       $("#fBatchNo").value=r.batchNo;
       $("#fExpire").value=r.expire;
-      $("#fProduce").value=r.firstInTime.split(" ")[0];
+      $("#fProduce").value=r.produce||"";
       $("#fInPrice").value=r.inPrice;
       $("#fOutPrice").value=r.outPrice;
       $("#pkSupInput").value=r.supplier; $("#pkSupInput").classList.add("is-filled");
@@ -999,7 +1023,7 @@
       var sup=$("#pkSupInput").value.trim();
       if(!batchNo){toast("请输入批号");return;}
       if(!expire){toast("请选择有效期");return;}
-      if(!produce){toast("请选择生产日期");return;}
+      /* 生产日期为非必填项 */
       if(isNaN(inPrice)){toast("请输入进货价");return;}
       if(isNaN(outPrice)){toast("请输入零售价");return;}
       if(!sup){toast("请选择供应商");return;}
@@ -1007,7 +1031,7 @@
       var factor=parseInt(d.minFactor)||24;
       if(ST.editId!=null){
         var r=ST.filtered[ST.editId];
-        Object.assign(r,{batchNo:batchNo,expire:expire,inPrice:inPrice,outPrice:outPrice,
+        Object.assign(r,{batchNo:batchNo,expire:expire,produce:produce,inPrice:inPrice,outPrice:outPrice,
           splitOutPrice:+(outPrice/factor).toFixed(2),splitInPrice:+(inPrice/factor).toFixed(2),supplier:sup});
         toast("保存成功");
       }else{
@@ -1016,7 +1040,7 @@
           locationId: locSel.value,
           locationName: locSel.selectedOptions[0] ? locSel.selectedOptions[0].textContent : "",
           status:"on",name:d.name,code:d.code,kind:"西药",spec:d.spec,minFactor:factor,
-          availQty:0,sendQty:0,sendUnit:"盒",batchNo:batchNo,expire:expire,
+          availQty:0,sendQty:0,sendUnit:"盒",batchNo:batchNo,expire:expire,produce:produce,
           outPrice:outPrice,splitOutPrice:+(outPrice/factor).toFixed(2),stockQty:0,stockBig:0,
           stopQty:0,preQty:0,vendor:d.vendor,inPrice:inPrice,splitInPrice:+(inPrice/factor).toFixed(2),
           outTotal:0,supplier:sup,approval:d.approval,essential:"否",
@@ -1113,6 +1137,7 @@
   }
 
   initSelects();
+  mergeAutoBatches();
   bindEvents();
   doFilter();  // 初始化后按默认库位过滤
 })();

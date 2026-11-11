@@ -47,7 +47,8 @@
       { name: "药品增损", href: "stock-adjust.html", files: ["stock-adjust.html", "stock-adjust-create.html", "stock-adjust-detail.html"], roles: C3 },
       { name: "药品调拨管理", href: "transfer.html", files: ["transfer.html", "transfer-create.html", "transfer-h-create.html", "transfer-detail.html", "transfer-outbound.html", "transfer-inbound.html", "transfer-audit-center.html", "transfer-audit-member.html"], roles: C3 },
       { name: "药品退库", href: "stock-return.html", files: ["stock-return.html", "stock-return-create.html", "stock-return-detail.html"], roles: C3 },
-      { name: "库存盘点", href: "stock-check.html", files: ["stock-check.html", "stock-check-count.html", "stock-check-detail.html"], roles: ["center"] }
+      { name: "库存盘点", href: "stock-check.html", files: ["stock-check.html", "stock-check-count.html", "stock-check-detail.html"], roles: ["center"] },
+      { name: "台账管理", href: "ledger.html", files: ["ledger.html", "ledger-detail.html", "ledger-book.html"], roles: C3 }
     ] },
     { name: "物价管理", icon: "price", items: [
       { name: "药品调价", href: "price-adjust.html", files: ["price-adjust.html", "price-adjust-create.html", "price-adjust-detail.html"], roles: ["center"] }

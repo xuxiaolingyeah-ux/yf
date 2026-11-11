@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>账簿管理 · 中心药房</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+/* ===== 账簿管理 ===== */
+.lb-page { background: var(--bg-page); }
+.lb-card { flex: 1; min-height: 0; display: flex; flex-direction: column;
+  background: var(--bg-white); margin: 12px; border-radius: var(--radius-lg);
+  box-shadow: 0 1px 2px rgba(0,0,0,.04); overflow: hidden; }
+.lb-head { flex: none; height: 56px; display: flex; align-items: center; justify-content: space-between;
+  padding: 0 20px; border-bottom: 1px solid var(--border); gap: 12px; }
+.lb-head-left { display: flex; align-items: center; gap: 10px; }
+.lb-head .page-title { font-size: 16px; font-weight: 500; }
+.lb-head-acts { display: flex; align-items: center; gap: 8px; }
+/* 说明条 */
+.lb-tipbar { flex: none; display: flex; align-items: flex-start; gap: 8px; margin: 12px 20px 0;
+  padding: 8px 12px; border: 1px solid #D6E6FF; background: var(--primary-lighter); border-radius: var(--radius);
+  font-size: 12px; color: var(--text-secondary); line-height: 1.6; }
+.lb-tipbar svg { flex: none; width: 14px; height: 14px; margin-top: 2px; color: var(--primary); }
+/* 筛选栏 */
+.lb-filter { flex: none; display: flex; align-items: flex-end; gap: 14px; padding: 12px 20px; border-bottom: 1px solid var(--border); }
+.lb-fields { flex: 1; min-width: 0; display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 8px 16px; }
+.lb-fi { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.lb-fi .lbl { width: 72px; flex: none; text-align: right; font-size: 12px; color: var(--text-tertiary); white-space: nowrap; }
+.lb-fi .ctrl { flex: 1; min-width: 0; display: flex; }
+.lb-fi .input, .lb-fi .select { width: 100%; }
+.lb-filter-acts { flex: none; display: flex; align-items: center; gap: 8px; }
+/* 表格 */
+.lb-table-wrap { flex: 1; min-height: 0; overflow: auto; }
+.lb-table { width: 100%; min-width: 980px; border-collapse: collapse; font-size: 13px; }
+.lb-table th { position: sticky; top: 0; z-index: 2; background: var(--table-head);
+  height: 40px; padding: 0 12px; text-align: left; font-weight: 500; color: var(--text-secondary);
+  white-space: nowrap; border-bottom: 1px solid var(--border); }
+.lb-table td { padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.lb-table tbody tr:nth-child(even) td { background: var(--table-even); }
+.lb-table tbody tr:hover td { background: var(--table-hover); }
+.lb-table .link-btn + .link-btn { margin-left: 10px; }
+.lb-table .is-off td { color: var(--text-tertiary); }
+.lb-kinds { display: flex; flex-wrap: wrap; gap: 4px; }
+.lb-kind { display: inline-flex; align-items: center; height: 20px; padding: 0 6px; border-radius: 3px;
+  font-size: 12px; color: var(--primary-dark); background: var(--primary-lighter); border: 1px solid #D6E6FF; }
+.lb-empty { padding: 80px 0; text-align: center; color: var(--text-placeholder); font-size: 13px; }
+.lb-foot { flex: none; height: 44px; display: flex; align-items: center; padding: 0 20px;
+  border-top: 1px solid var(--border); font-size: 13px; color: var(--text-secondary); }
+.lb-foot b { font-weight: 400; color: var(--text-primary); }
+/* 弹窗表单 */
+.lb-modal-mask .modal { width: 620px; }
+.lb-form { display: flex; flex-direction: column; gap: 14px; }
+.lb-item { display: flex; align-items: flex-start; gap: 10px; }
+.lb-item > .lbl { width: 84px; flex: none; text-align: right; font-size: 13px; color: var(--text-secondary); line-height: 32px; }
+.lb-item > .lbl .req { color: var(--danger); margin-right: 2px; }
+.lb-item > .ctrl { flex: 1; min-width: 0; }
+.lb-item .input, .lb-item .select { width: 100%; }
+.lb-item .textarea { width: 100%; height: 56px; }
+.lb-hint { font-size: 12px; color: var(--text-tertiary); line-height: 1.6; margin-top: 4px; }
+.lb-checks { display: flex; flex-wrap: wrap; gap: 8px 18px; padding-top: 6px; min-height: 32px; }
+.lb-checks label { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-primary); cursor: pointer; }
+.lb-checks input { width: 14px; height: 14px; margin: 0; accent-color: var(--primary); cursor: pointer; }
+.lb-err { font-size: 12px; color: var(--danger); margin-top: 4px; line-height: 1.6; display: none; }
+.lb-err.show { display: block; }
+/* 确认弹窗 */
+.lb-confirm .modal { width: 420px; }
+.lb-confirm-desc { font-size: 13px; color: var(--text-secondary); line-height: 1.7; }
+</style>
+</head>
+<body>
+
+<!-- ========== 顶部导航 ========== -->
+<header class="app-header">
+  <div class="header-left">
+    <div class="header-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3.2" y="9.4" width="17.6" height="5.2" rx="2.6" transform="rotate(-45 12 12)"/>
+        <path d="M8.4 15.6L15.6 8.4"/>
+      </svg>
+    </div>
+    <div class="header-title">区域药房协同管理系统</div>
+    <span class="header-sub">中心药房</span>
+  </div>
+  <div class="header-right"></div>
+</header>
+
+<div class="app-body">
+  <!-- ========== 左侧导航 ========== -->
+  <aside class="app-side" id="appSide"></aside>
+  <!-- ========== 主区域 ========== -->
+  <main class="app-main">
+    <div class="tabbar">
+      <div class="tab" onclick="location.href='home.html'">首页</div>
+      <div class="tab" onclick="location.href='ledger.html'">台账管理</div>
+      <div class="tab active">
+        账簿管理
+        <button class="tab-close" title="关闭" onclick="location.href='ledger.html'">
+          <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="page lb-page">
+      <div class="lb-card">
+        <div class="lb-head">
+          <div class="lb-head-left">
+            <button class="back-btn" id="btnBack" title="返回台账">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+            </button>
+            <div class="page-title">账簿管理</div>
+          </div>
+          <div class="lb-head-acts">
+            <button class="btn" id="btnBack2">返回台账</button>
+            <button class="btn btn-primary" id="btnAdd">新增账簿</button>
+          </div>
+        </div>
+
+        <div class="lb-tipbar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg>
+          <span>每个账簿对应一个库位 + 一组药品种类，是台账按月汇总的口径。同一库位下的同一药品种类只能归属一个账簿，避免重复记账。</span>
+        </div>
+
+        <!-- 筛选栏 -->
+        <div class="lb-filter">
+          <div class="lb-fields">
+            <div class="lb-fi"><span class="lbl">账簿名称：</span><div class="ctrl"><input class="input" id="fName" placeholder="请输入账簿名称" autocomplete="off"></div></div>
+          </div>
+          <div class="lb-filter-acts">
+            <button class="btn btn-sm" id="btnReset">重置</button>
+            <button class="btn btn-sm btn-primary" id="btnSearch">查询</button>
+          </div>
+        </div>
+
+        <!-- 表格 -->
+        <div class="lb-table-wrap">
+          <table class="lb-table">
+            <thead>
+              <tr>
+                <th style="width:240px">账簿名称</th>
+                <th style="width:220px">库位</th>
+                <th>药品种类</th>
+                <th style="width:150px">创建时间</th>
+                <th style="width:150px">操作</th>
+              </tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+          </table>
+          <div class="lb-empty" id="empty" style="display:none">暂无符合条件的账簿</div>
+        </div>
+
+        <div class="lb-foot">共 <b id="totalNum">0</b> 个账簿</div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ========== 新增 / 编辑账簿 ========== -->
+<div class="modal-mask lb-modal-mask" id="formMask">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title" id="formTitle">新增账簿</div>
+      <button class="drawer-close" id="formClose" title="关闭">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="lb-form">
+        <div class="lb-item">
+          <span class="lbl"><span class="req">*</span>账簿名称</span>
+          <div class="ctrl">
+            <input class="input" id="mName" placeholder="如：中心药房西药台账" autocomplete="off" maxlength="30">
+            <div class="lb-err" id="eName"></div>
+          </div>
+        </div>
+        <div class="lb-item">
+          <span class="lbl"><span class="req">*</span>库位</span>
+          <div class="ctrl">
+            <select class="select" id="mLoc"></select>
+            <div class="lb-hint" id="locHint">库位决定台账取数的库存范围（单选）。</div>
+            <div class="lb-err" id="eLoc"></div>
+          </div>
+        </div>
+        <div class="lb-item">
+          <span class="lbl"><span class="req">*</span>药品种类</span>
+          <div class="ctrl">
+            <div class="lb-checks" id="mKinds"></div>
+            <div class="lb-hint">可多选；台账明细只汇总所选种类的药品。</div>
+            <div class="lb-err" id="eKinds"></div>
+          </div>
+        </div>
+        <div class="lb-item">
+          <span class="lbl">备注</span>
+          <div class="ctrl"><textarea class="textarea" id="mRemark" placeholder="选填，如记账口径说明" maxlength="100"></textarea></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" id="formCancel">取消</button>
+      <button class="btn btn-primary" id="formOk">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== 确认弹窗 ========== -->
+<div class="modal-mask lb-confirm" id="cfMask">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title" id="cfTitle">提示</div>
+      <button class="drawer-close" id="cfClose" title="关闭">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+      </button>
+    </div>
+    <div class="modal-body"><div class="lb-confirm-desc" id="cfDesc"></div></div>
+    <div class="modal-foot">
+      <button class="btn" id="cfCancel">取消</button>
+      <button class="btn btn-primary" id="cfOk">确定</button>
+    </div>
+  </div>
+</div>
+
+<!-- toast -->
+<div id="toast" style="position:fixed;top:70px;left:50%;transform:translateX(-50%);padding:8px 16px;background:rgba(0,0,0,.78);color:#fff;border-radius:4px;font-size:13px;z-index:9999;display:none"></div>
+
+<script src="identity.js"></script>
+<script src="ledger-common.js"></script>
+<script>
+(function () {
+  "use strict";
+  var LG = window.LG;
+  var $ = function (s, c) { return (c || document).querySelector(s); };
+  var $$ = function (s, c) { return Array.prototype.slice.call((c || document).querySelectorAll(s)); };
+  function toast(msg) { var t = $("#toast"); t.textContent = msg; t.style.display = "block"; clearTimeout(t._t); t._t = setTimeout(function () { t.style.display = "none"; }, 1800); }
+
+  var books = LG.loadBooks();
+  var periods = LG.loadPeriods();
+  var editing = null;   /* 当前编辑的账簿 id，null = 新增 */
+
+  /* ===== 列表 ===== */
+  var ST = { keyword: "" };
+
+  function bookPeriodCount(bid) {
+    return periods.filter(function (p) { return p.bookId === bid && p.status === "done"; }).length;
+  }
+
+  function renderTable() {
+    var list = books.filter(function (b) {
+      if (ST.keyword && (b.name || "").indexOf(ST.keyword) < 0) return false;
+      return true;
+    });
+    $("#empty").style.display = list.length ? "none" : "block";
+    $("#tbody").innerHTML = list.map(function (b) {
+      var kinds = (b.kinds || []).map(function (k) { return '<span class="lb-kind">' + LG.esc(k) + '</span>'; }).join("");
+      return '<tr>'
+        + '<td>' + LG.esc(b.name) + '</td>'
+        + '<td>' + LG.esc(b.location) + '</td>'
+        + '<td><div class="lb-kinds">' + kinds + '</div></td>'
+        + '<td>' + LG.esc((b.createdAt || "").slice(0, 16)) + '</td>'
+        + '<td><a class="link-btn" data-op="edit" data-id="' + b.id + '">编辑</a>'
+        + '<a class="link-btn is-danger" data-op="del" data-id="' + b.id + '">删除</a></td>'
+        + '</tr>';
+    }).join("");
+    $("#totalNum").textContent = list.length;
+    $$("#tbody .link-btn").forEach(function (a) { a.addEventListener("click", onOp); });
+  }
+
+  $("#btnSearch").addEventListener("click", function () {
+    ST.keyword = $("#fName").value.trim();
+    renderTable();
+  });
+  $("#fName").addEventListener("keydown", function (e) { if (e.key === "Enter") $("#btnSearch").click(); });
+  $("#btnReset").addEventListener("click", function () {
+    $("#fName").value = "";
+    ST.keyword = ""; renderTable();
+  });
+
+  /* ===== 确认弹窗 ===== */
+  var cfCb = null;
+  function confirmDlg(title, desc, okText, cb) {
+    $("#cfTitle").textContent = title;
+    $("#cfDesc").innerHTML = desc;
+    $("#cfOk").textContent = okText;
+    cfCb = cb; $("#cfMask").classList.add("show");
+  }
+  function closeCf() { $("#cfMask").classList.remove("show"); cfCb = null; }
+  $("#cfCancel").addEventListener("click", closeCf);
+  $("#cfClose").addEventListener("click", closeCf);
+  $("#cfOk").addEventListener("click", function () { var cb = cfCb; closeCf(); if (cb) cb(); });
+
+  /* ===== 表单 ===== */
+  function locOptions() {
+    return '<option value="">请选择库位</option>' + LG.LOCS.map(function (l) {
+      return '<option value="' + LG.esc(l.name) + '">' + LG.esc(l.name) + ' · ' + LG.esc(l.pharmacy) + '</option>';
+    }).join("");
+  }
+  function kindsChecks(checked) {
+    return LG.KINDS.map(function (k) {
+      return '<label><input type="checkbox" value="' + LG.esc(k) + '"' + (checked.indexOf(k) >= 0 ? " checked" : "") + '>' + LG.esc(k) + '</label>';
+    }).join("");
+  }
+  function clearErr() {
+    $$(".lb-err").forEach(function (e) { e.classList.remove("show"); e.textContent = ""; });
+    ["#mName", "#mLoc"].forEach(function (s) { $(s).classList.remove("is-invalid"); });
+  }
+  function showErr(id, msg) { var e = $(id); e.textContent = msg; e.classList.add("show"); }
+
+  function openForm(book) {
+    editing = book ? book.id : null;
+    $("#formTitle").textContent = book ? "编辑账簿" : "新增账簿";
+    $("#mName").value = book ? book.name : "";
+    $("#mLoc").innerHTML = locOptions();
+    $("#mLoc").value = book ? book.location : "";
+    $("#mKinds").innerHTML = kindsChecks(book ? book.kinds : []);
+    $("#mRemark").value = book ? (book.remark || "") : "";
+    updateLocHint();
+    clearErr();
+    $("#formMask").classList.add("show");
+    setTimeout(function () { $("#mName").focus(); }, 30);
+  }
+  function closeForm() { $("#formMask").classList.remove("show"); }
+
+  function selectedKinds() {
+    return $$("#mKinds input:checked").map(function (i) { return i.value; });
+  }
+  function updateLocHint() {
+    var loc = LG.locOf($("#mLoc").value);
+    $("#locHint").textContent = loc
+      ? "库位可选分类：" + (loc.cats.length ? loc.cats.join("、") : "—") + "（取该库位在「库位维护」中配置的药品分类）"
+      : "库位决定台账取数的库存范围（单选）。";
+  }
+
+  /* 选择库位后，若尚未勾选种类，自动带出该库位的分类 */
+  $("#mLoc").addEventListener("change", function () {
+    updateLocHint();
+    var loc = LG.locOf(this.value);
+    if (!loc) return;
+    var cur = selectedKinds();
+    if (!cur.length && loc.cats.length) {
+      $("#mKinds").innerHTML = kindsChecks(loc.cats);
+    }
+  });
+
+  $("#btnAdd").addEventListener("click", function () { openForm(null); });
+  $("#formClose").addEventListener("click", closeForm);
+  $("#formCancel").addEventListener("click", closeForm);
+
+  /* 校验：名称必填/唯一，库位必选，种类≥1，且不与其它启用账簿在同一库位重复分类 */
+  function validate(draft) {
+    clearErr();
+    var ok = true;
+    if (!draft.name) { showErr("#eName", "请输入账簿名称"); $("#mName").classList.add("is-invalid"); ok = false; }
+    else if (books.some(function (b) { return b.id !== editing && b.name === draft.name; })) {
+      showErr("#eName", "账簿名称已存在，请更换"); $("#mName").classList.add("is-invalid"); ok = false;
+    }
+    if (!draft.location) { showErr("#eLoc", "请选择库位"); $("#mLoc").classList.add("is-invalid"); ok = false; }
+    if (!draft.kinds.length) { showErr("#eKinds", "请至少选择一种药品种类"); ok = false; }
+
+    /* 同一库位 + 同一分类 不允许归属两个启用中的账簿 */
+    var conflict = [];
+    books.forEach(function (b) {
+      if (b.id === editing || b.status === "off" || b.location !== draft.location) return;
+      draft.kinds.forEach(function (k) {
+        if ((b.kinds || []).indexOf(k) >= 0) conflict.push({ book: b, kind: k });
+      });
+    });
+    if (conflict.length) {
+      showErr("#eKinds", "库位「" + draft.location + "」下的「" + conflict.map(function (c) { return c.kind; }).join("、")
+        + "」已归属账簿「" + conflict[0].book.name + "」，同一库位同一分类不能重复建账");
+      ok = false;
+    }
+    return ok;
+  }
+
+  $("#formOk").addEventListener("click", function () {
+    var draft = {
+      name: $("#mName").value.trim(),
+      location: $("#mLoc").value,
+      kinds: selectedKinds(),
+      remark: $("#mRemark").value.trim()
+    };
+    if (!validate(draft)) return;
+
+    if (editing) {
+      var b = books.filter(function (x) { return x.id === editing; })[0];
+      if (!b) return;
+      b.name = draft.name; b.location = draft.location; b.kinds = draft.kinds; b.remark = draft.remark;
+      LG.saveBooks(books);
+      closeForm(); renderTable(); toast("账簿已保存");
+    } else {
+      var seq = books.length + 1;
+      books.push({
+        id: "b" + (Date.now() % 100000),
+        code: "ZB" + new Date().getFullYear() + ("00" + seq).slice(-3),
+        name: draft.name, location: draft.location, kinds: draft.kinds, remark: draft.remark,
+        status: "on", createdBy: LG.currentUser().name, createdAt: LG.fmtNow()
+      });
+      LG.saveBooks(books);
+      closeForm(); renderTable(); toast("账簿已新增，可在台账管理中生成数据");
+    }
+  });
+
+  /* ===== 行操作 ===== */
+  function onOp() {
+    var op = this.getAttribute("data-op"), id = this.getAttribute("data-id");
+    var b = books.filter(function (x) { return x.id === id; })[0];
+    if (!b) return;
+
+    if (op === "edit") { openForm(b); return; }
+
+    if (op === "del") {
+      var done = bookPeriodCount(b.id);
+      if (done > 0) {
+        toast("该账簿已有 " + done + " 期已生成台账，不能删除，请改为停用");
+        return;
+      }
+      confirmDlg("删除账簿", "删除后该账簿及其未生成的台账期间一并移除，且不可恢复。确认删除「" + LG.esc(b.name) + "」？", "删除", function () {
+        books = books.filter(function (x) { return x.id !== id; });
+        periods = periods.filter(function (p) { return p.bookId !== id; });
+        LG.saveBooks(books); LG.savePeriods(periods);
+        renderTable(); toast("已删除");
+      });
+    }
+  }
+
+  $("#btnBack").addEventListener("click", function () { location.href = "ledger.html"; });
+  $("#btnBack2").addEventListener("click", function () { location.href = "ledger.html"; });
+
+  renderTable();
+})();
+</script>
+<script src="nav.js"></script>
+</body>
+</html>

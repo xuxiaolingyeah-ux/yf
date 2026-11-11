@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>台账详情 · 中心药房</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+/* ===== 台账详情 ===== */
+.lgx-page { background: var(--bg-page); }
+.lgx-card { flex: 1; min-height: 0; display: flex; flex-direction: column;
+  background: var(--bg-white); margin: 12px; border-radius: var(--radius-lg);
+  box-shadow: 0 1px 2px rgba(0,0,0,.04); overflow: hidden; }
+.lgx-head { flex: none; height: 56px; display: flex; align-items: center; gap: 10px;
+  padding: 0 20px; border-bottom: 1px solid var(--border); }
+.lgx-head .page-title { font-size: 16px; font-weight: 500; }
+.lgx-head .lgx-period { font-size: 13px; color: var(--text-tertiary); }
+.lgx-head .lgx-status { margin-left: auto; display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--success); }
+.lgx-head .lgx-status::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.lgx-head .lgx-gentime { font-size: 12px; color: var(--text-tertiary); }
+/* 基本信息（单行） */
+.lgx-info { flex: none; display: flex; align-items: center; padding: 8px 20px; overflow: hidden;
+  border-bottom: 1px solid var(--border); background: #FCFDFF; }
+.lgx-info .fi { display: flex; align-items: center; gap: 4px; min-width: 0; padding-right: 18px; }
+.lgx-info .fi + .fi { padding-left: 18px; border-left: 1px solid var(--border); }
+.lgx-info .fi.lg-row-end + .fi { border-left: 0; }
+.lgx-info .lbl { flex: none; font-size: 12px; color: var(--text-tertiary); line-height: 20px; }
+.lgx-info .val { min-width: 0; font-size: 13px; color: var(--text-primary); line-height: 20px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lgx-info #vBook, .lgx-info #vLoc { max-width: 220px; }
+.lgx-info #vKinds { display: flex; align-items: center; gap: 4px; overflow: hidden; }
+.lgx-info .val .lg-kind { display: inline-flex; align-items: center; height: 20px; padding: 0 6px; flex: none;
+  border-radius: 3px; font-size: 12px; color: var(--primary-dark); background: var(--primary-lighter); border: 1px solid #D6E6FF; }
+/* 工具条 */
+.lgx-bar { flex: none; display: flex; align-items: center; gap: 12px; padding: 10px 20px; border-bottom: 1px solid var(--border); }
+.lgx-bar .seg { display: inline-flex; background: var(--bg-page); padding: 3px; border-radius: 6px; gap: 3px; }
+.lgx-bar .seg-btn { padding: 4px 14px; border-radius: 4px; font-size: 13px; color: var(--text-secondary); cursor: pointer; user-select: none; }
+.lgx-bar .seg-btn.active { background: var(--bg-white); color: var(--primary-dark); font-weight: 500; box-shadow: 0 1px 2px rgba(0,0,0,.06); }
+.lgx-bar .bar-lbl { font-size: 12px; color: var(--text-tertiary); }
+.lgx-bar .search { position: relative; width: 260px; }
+.lgx-bar .search .input { width: 100%; padding-left: 28px; }
+.lgx-bar .search svg { position: absolute; left: 8px; top: 50%; transform: translateY(-50%); width: 14px; height: 14px; color: var(--text-placeholder); }
+.lgx-bar .grow { flex: 1; }
+.lgx-bar .hit { font-size: 12px; color: var(--text-tertiary); }
+/* 明细表 */
+.lgx-table-wrap { flex: 1; min-height: 0; overflow: auto; }
+.lgx-table { width: max-content; min-width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; }
+.lgx-table th, .lgx-table td { white-space: nowrap; }
+.lgx-table thead th {
+  position: sticky; background: var(--table-head); color: var(--text-secondary);
+  font-weight: 500; text-align: left; padding: 0 8px; height: 32px;
+  border-bottom: 1px solid var(--border); border-right: 1px solid rgba(0,0,0,.04);
+}
+.lgx-table thead tr:first-child th { top: 0; z-index: 4; height: 34px; }
+.lgx-table thead tr:nth-child(2) th { top: 34px; z-index: 4; height: 30px; }
+.lgx-table thead tr:nth-child(3) th { top: 64px; z-index: 4; }
+.lgx-table thead th.grp { text-align: center; font-size: 12px; letter-spacing: .3px; }
+.lgx-table thead th.dim { text-align: center; font-size: 12px; }
+.lgx-table thead th.dim-in { background: #EDF8EF; color: #2E7D3B; }
+.lgx-table thead th.dim-out { background: #FDF0ED; color: #A8432C; }
+.lgx-table thead th.grp-open { background: #D8E9FB; color: #1C5FA8; }
+.lgx-table thead th.grp-in { background: #DFF2E3; color: #2E7D3B; }
+.lgx-table thead th.grp-out { background: #FBE3DE; color: #A8432C; }
+.lgx-table thead th.grp-bal { background: #E7E1FA; color: #55409C; }
+.lgx-table thead th.sub-open { background: #EAF3FD; }
+.lgx-table thead th.sub-in { background: #EDF8EF; }
+.lgx-table thead th.sub-out { background: #FDF0ED; }
+.lgx-table thead th.sub-bal { background: #F1EDFC; }
+.lgx-table thead th.num, .lgx-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.lgx-table tbody td { padding: 8px; border-bottom: 1px solid var(--border); vertical-align: middle; background: var(--bg-white); }
+.lgx-table tbody tr:nth-child(even) td { background: var(--table-even); }
+.lgx-table tbody tr:hover td { background: var(--table-hover); }
+/* 冻结列：药品名称 / 规格 / 生产企业（表头与内容均固定） */
+.lgx-table .c-drug, .lgx-table .c-spec, .lgx-table .c-vendor { position: sticky; z-index: 3; }
+/* 表头冻结列：z-index 需压过行级规则（thead tr:first-child th 的 z-index:4 特异性更高），否则会被后续列表头覆盖 */
+.lgx-table thead .c-drug, .lgx-table thead .c-spec, .lgx-table thead .c-vendor { z-index: 9 !important; background: var(--table-head); }
+.lgx-table thead .c-code { z-index: 5 !important; background: var(--table-head); }  /* 仅吸顶，需低于冻结列(9)，否则滚动时会盖住冻结表头 */
+.lgx-table .c-drug { left: 0; width: 190px; min-width: 190px; }
+.lgx-table .c-spec { left: 190px; width: 132px; min-width: 132px; }
+.lgx-table .c-vendor { left: 322px; width: 196px; min-width: 196px; border-right: 1px solid var(--border); }
+.lgx-table .c-code { width: 118px; min-width: 118px; }
+.lgx-table tbody tr:nth-child(even) td.c-drug, .lgx-table tbody tr:nth-child(even) td.c-spec,
+.lgx-table tbody tr:nth-child(even) td.c-vendor { background: var(--table-even); }
+.lgx-table tbody tr:hover td.c-drug, .lgx-table tbody tr:hover td.c-spec,
+.lgx-table tbody tr:hover td.c-vendor { background: var(--table-hover); }
+.lgx-table .c-vendor { box-shadow: inset -1px 0 0 rgba(0,0,0,.06); }
+/* 汇总列加粗 */
+.lgx-table td.sum-in, .lgx-table td.sum-out, .lgx-table td.open-amt, .lgx-table td.bal-amt { font-weight: 500; color: var(--text-primary); }
+/* 合计行 */
+.lgx-table tfoot td { position: sticky; bottom: 0; z-index: 3; background: #EEF4FC; font-weight: 500;
+  padding: 9px 8px; border-top: 1px solid var(--border); font-variant-numeric: tabular-nums; }
+.lgx-table tfoot td.c-drug, .lgx-table tfoot td.c-spec, .lgx-table tfoot td.c-vendor { z-index: 5; background: #E7EFFB; }
+.lgx-table tfoot td.num { text-align: right; }
+/* 空态 */
+.lgx-empty { padding: 70px 0; text-align: center; color: var(--text-placeholder); font-size: 13px; }
+/* 图例 */
+.lgx-legend { flex: none; display: flex; align-items: center; gap: 16px; padding: 8px 20px;
+  border-top: 1px solid var(--border); font-size: 12px; color: var(--text-tertiary); }
+.lgx-legend .dot { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 5px; }
+.lgx-legend .lgx-src { padding-left: 14px; border-left: 1px solid var(--border); }
+.lgx-legend .lgx-formula { margin-left: auto; }
+</style>
+</head>
+<body>
+
+<!-- ========== 顶部导航 ========== -->
+<header class="app-header">
+  <div class="header-left">
+    <div class="header-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3.2" y="9.4" width="17.6" height="5.2" rx="2.6" transform="rotate(-45 12 12)"/>
+        <path d="M8.4 15.6L15.6 8.4"/>
+      </svg>
+    </div>
+    <div class="header-title">区域药房协同管理系统</div>
+    <span class="header-sub">中心药房</span>
+  </div>
+  <div class="header-right"></div>
+</header>
+
+<div class="app-body">
+  <!-- ========== 左侧导航 ========== -->
+  <aside class="app-side" id="appSide"></aside>
+  <!-- ========== 主区域 ========== -->
+  <main class="app-main">
+    <div class="tabbar">
+      <div class="tab" onclick="location.href='home.html'">首页</div>
+      <div class="tab" onclick="location.href='ledger.html'">台账管理</div>
+      <div class="tab active">
+        台账详情
+        <button class="tab-close" title="关闭" onclick="location.href='ledger.html'">
+          <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="page lgx-page">
+      <div class="lgx-card">
+        <!-- 标题 -->
+        <div class="lgx-head">
+          <button class="back-btn" id="btnBack" title="返回台账">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+          </button>
+          <div class="page-title" id="pageTitle">台账详情</div>
+          <span class="lgx-period" id="headPeriod"></span>
+          <span class="lgx-status" id="headStatus">数据已生成</span>
+          <span class="lgx-gentime" id="vGenTime"></span>
+        </div>
+
+        <!-- 基本信息（单行） -->
+        <div class="lgx-info">
+          <div class="fi"><span class="lbl">会计年度：</span><span class="val" id="vYear"></span></div>
+          <div class="fi"><span class="lbl">会计期间：</span><span class="val" id="vPeriod"></span></div>
+          <div class="fi"><span class="lbl">账簿：</span><span class="val" id="vBook"></span></div>
+          <div class="fi"><span class="lbl">库位：</span><span class="val" id="vLoc"></span></div>
+          <div class="fi"><span class="lbl">药品种类：</span><span class="val" id="vKinds"></span></div>
+        </div>
+
+        <!-- 工具条 -->
+        <div class="lgx-bar">
+          <span class="bar-lbl">价格口径：</span>
+          <div class="seg" id="priceSeg">
+            <div class="seg-btn active" data-mode="retail">零售价</div>
+            <div class="seg-btn" data-mode="purchase">进货价</div>
+          </div>
+          <div class="grow"></div>
+          <div class="search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+            <input class="input" id="fKeyword" placeholder="药品名称 / 编码 / 拼音码" autocomplete="off">
+          </div>
+          <span class="hit" id="hitCount"></span>
+          <button class="btn btn-sm" id="btnExport">导出</button>
+        </div>
+
+        <!-- 明细表 -->
+        <div class="lgx-table-wrap">
+          <table class="lgx-table" id="mainTable">
+            <thead>
+              <tr>
+                <th rowspan="3" class="c-drug">药品名称</th>
+                <th rowspan="3" class="c-spec">规格</th>
+                <th rowspan="3" class="c-vendor">生产企业</th>
+                <th rowspan="3" class="c-code">品规编码</th>
+                <th colspan="2" rowspan="2" class="grp grp-open">药品期初</th>
+                <th colspan="12" class="grp grp-in">药品增加</th>
+                <th colspan="12" class="grp grp-out">药品减少</th>
+                <th colspan="2" rowspan="2" class="grp grp-bal">药品结存</th>
+              </tr>
+              <tr id="dimHead"></tr>
+              <tr id="subHead"></tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+            <tfoot id="tfoot"></tfoot>
+          </table>
+          <div class="lgx-empty" id="empty" style="display:none">没有匹配的药品明细</div>
+        </div>
+
+        <!-- 图例 -->
+        <div class="lgx-legend">
+          <span><i class="dot" style="background:#D8E9FB"></i>期初</span>
+          <span><i class="dot" style="background:#DFF2E3"></i>增加（入库类）</span>
+          <span><i class="dot" style="background:#FBE3DE"></i>减少（出库类）</span>
+          <span><i class="dot" style="background:#E7E1FA"></i>结存</span>
+          <span class="lgx-src">取数说明：按库位 + 药品种类汇总出入库流水</span>
+          <span class="lgx-formula">结存数量 = 期初 + 增加汇总 − 减少汇总；金额随价格口径同步换算</span>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- toast -->
+<div id="toast" style="position:fixed;top:70px;left:50%;transform:translateX(-50%);padding:8px 16px;background:rgba(0,0,0,.78);color:#fff;border-radius:4px;font-size:13px;z-index:9999;display:none"></div>
+
+<script src="identity.js"></script>
+<script src="ledger-common.js"></script>
+<script>
+(function () {
+  "use strict";
+  var LG = window.LG;
+  var $ = function (s, c) { return (c || document).querySelector(s); };
+  var $$ = function (s, c) { return Array.prototype.slice.call((c || document).querySelectorAll(s)); };
+  function toast(msg) { var t = $("#toast"); t.textContent = msg; t.style.display = "block"; clearTimeout(t._t); t._t = setTimeout(function () { t.style.display = "none"; }, 1800); }
+
+  /* ---------- 取数 ---------- */
+  var id = (location.search.match(/[?&]id=([^&]*)/) || [])[1] || "";
+  id = decodeURIComponent(id);
+  var period = id ? LG.periodOf(id) : null;
+  if (!period || period.status !== "done") { location.href = "ledger.html"; return; }
+
+  var book = LG.bookOf(period.bookId) || {};
+  var loc = LG.locOf(book.location) || {};
+  var rows = LG.rowsOf(period);
+
+  var ST = { mode: "retail", keyword: "", view: [] };
+
+  /* ---------- 头部 ---------- */
+  document.title = "台账详情 · " + (book.name || "");
+  $("#headPeriod").textContent = (book.name || "") + " · " + period.year + " 年 " + period.month + " 月";
+  $("#vYear").textContent = period.year + " 年";
+  $("#vPeriod").textContent = period.year + " 年 " + period.month + " 月";
+  $("#vBook").textContent = book.name || "—";
+  $("#vLoc").textContent = (book.location || "—") + (loc.pharmacy ? "（" + loc.pharmacy + "）" : "");
+  $("#vKinds").innerHTML = (book.kinds || []).map(function (k) { return '<span class="lg-kind">' + LG.esc(k) + '</span>'; }).join("") || "—";
+  $("#vGenTime").textContent = period.genTime ? "生成于 " + period.genTime : "";
+
+  /* ---------- 表头（三行：分组 / 维度 / 数量金额） ---------- */
+  function dimHeadHtml() {
+    var h = "";
+    LG.IN_DIMS.forEach(function (d) {
+      h += '<th colspan="2" class="dim dim-in" title="增加-' + d.label + '">' + d.label + '</th>';
+    });
+    h += '<th colspan="2" class="dim dim-in">汇总</th>';
+    LG.OUT_DIMS.forEach(function (d) {
+      h += '<th colspan="2" class="dim dim-out" title="减少-' + d.label + '">' + d.label + '</th>';
+    });
+    h += '<th colspan="2" class="dim dim-out">汇总</th>';
+    return h;
+  }
+  function subHeadHtml() {
+    var h = '<th class="sub-open num" style="width:96px">金额</th><th class="sub-open num" style="width:76px">数量</th>';
+    LG.IN_DIMS.forEach(function (d) {
+      h += '<th class="sub-in num" style="width:76px">数量</th><th class="sub-in num" style="width:96px">金额</th>';
+    });
+    h += '<th class="sub-in num" style="width:80px">数量</th><th class="sub-in num" style="width:100px">金额</th>';
+    LG.OUT_DIMS.forEach(function (d) {
+      h += '<th class="sub-out num" style="width:76px">数量</th><th class="sub-out num" style="width:96px">金额</th>';
+    });
+    h += '<th class="sub-out num" style="width:80px">数量</th><th class="sub-out num" style="width:100px">金额</th>';
+    h += '<th class="sub-bal num" style="width:96px">金额</th><th class="sub-bal num" style="width:76px">数量</th>';
+    return h;
+  }
+  $("#dimHead").innerHTML = dimHeadHtml();
+  $("#subHead").innerHTML = subHeadHtml();
+
+  /* ---------- 金额 / 数量格式 ---------- */
+  function priceOf(r) { return Number(ST.mode === "retail" ? r.retail : r.purchase) || 0; }
+  function amt(qty, r) { return (Number(qty) || 0) * priceOf(r); }
+  function money(v) { return LG.money(v); }
+  function qty(n) {
+    var s = String(Math.round(Number(n) || 0));
+    return s.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  }
+  function zeroDash(v) { return (Number(v) || 0) === 0 ? "—" : null; }
+
+  /* ---------- 筛选 ---------- */
+  function matchRow(r) {
+    var kw = ST.keyword.toUpperCase();
+    if (kw) {
+      var hit = (r.name || "").toUpperCase().indexOf(kw) >= 0
+        || (r.code || "").indexOf(kw) >= 0
+        || (r.py || "").toUpperCase().indexOf(kw) >= 0;
+      if (!hit) return false;
+    }
+    return true;
+  }
+
+  /* ---------- 表格渲染 ---------- */
+  function render() {
+    ST.view = rows.filter(matchRow);
+    $("#empty").style.display = ST.view.length ? "none" : "block";
+    $("#hitCount").textContent = "共 " + ST.view.length + " 个药品";
+
+    var body = ST.view.map(function (r) {
+      var cells = '<td class="c-drug" title="' + LG.esc(r.name) + '">' + LG.esc(r.name) + '</td>'
+        + '<td class="c-spec">' + LG.esc(r.spec) + '</td>'
+        + '<td class="c-vendor" title="' + LG.esc(r.vendor) + '">' + LG.esc(r.vendor) + '</td>'
+        + '<td class="c-code">' + LG.esc(r.code) + '</td>'
+        + '<td class="num open-amt">' + money(amt(r.openQty, r)) + '</td>'
+        + '<td class="num">' + qty(r.openQty) + '</td>';
+      LG.IN_DIMS.forEach(function (d) {
+        var q = Number(r.inQty[d.key]) || 0;
+        cells += '<td class="num">' + (zeroDash(q) || qty(q)) + '</td>'
+          + '<td class="num">' + (zeroDash(q) || money(amt(q, r))) + '</td>';
+      });
+      cells += '<td class="num sum-in">' + qty(r.inSumQty) + '</td><td class="num sum-in">' + money(amt(r.inSumQty, r)) + '</td>';
+      LG.OUT_DIMS.forEach(function (d) {
+        var q = Number(r.outQty[d.key]) || 0;
+        cells += '<td class="num">' + (zeroDash(q) || qty(q)) + '</td>'
+          + '<td class="num">' + (zeroDash(q) || money(amt(q, r))) + '</td>';
+      });
+      cells += '<td class="num sum-out">' + qty(r.outSumQty) + '</td><td class="num sum-out">' + money(amt(r.outSumQty, r)) + '</td>';
+      cells += '<td class="num bal-amt">' + money(amt(r.closeQty, r)) + '</td><td class="num">' + qty(r.closeQty) + '</td>';
+      return '<tr>' + cells + '</tr>';
+    }).join("");
+    $("#tbody").innerHTML = body || "";
+
+    renderTotal();
+  }
+
+  function renderTotal() {
+    var t = {
+      openAmt: 0, openQty: 0,
+      inAmt: {}, inQty: {}, inSumAmt: 0, inSumQty: 0,
+      outAmt: {}, outQty: {}, outSumAmt: 0, outSumQty: 0,
+      closeAmt: 0, closeQty: 0
+    };
+    LG.IN_DIMS.forEach(function (d) { t.inAmt[d.key] = 0; t.inQty[d.key] = 0; });
+    LG.OUT_DIMS.forEach(function (d) { t.outAmt[d.key] = 0; t.outQty[d.key] = 0; });
+
+    ST.view.forEach(function (r) {
+      t.openQty += r.openQty; t.openAmt += amt(r.openQty, r);
+      LG.IN_DIMS.forEach(function (d) {
+        t.inQty[d.key] += Number(r.inQty[d.key]) || 0;
+        t.inAmt[d.key] += amt(r.inQty[d.key], r);
+      });
+      LG.OUT_DIMS.forEach(function (d) {
+        t.outQty[d.key] += Number(r.outQty[d.key]) || 0;
+        t.outAmt[d.key] += amt(r.outQty[d.key], r);
+      });
+      t.inSumQty += r.inSumQty; t.inSumAmt += amt(r.inSumQty, r);
+      t.outSumQty += r.outSumQty; t.outSumAmt += amt(r.outSumQty, r);
+      t.closeQty += r.closeQty; t.closeAmt += amt(r.closeQty, r);
+    });
+
+    var h = '<td class="c-drug">合计（' + ST.view.length + ' 个药品）</td><td class="c-spec"></td><td class="c-vendor"></td><td>—</td>'
+      + '<td class="num">' + money(t.openAmt) + '</td><td class="num">' + qty(t.openQty) + '</td>';
+    LG.IN_DIMS.forEach(function (d) {
+      h += '<td class="num">' + qty(t.inQty[d.key]) + '</td><td class="num">' + money(t.inAmt[d.key]) + '</td>';
+    });
+    h += '<td class="num">' + qty(t.inSumQty) + '</td><td class="num">' + money(t.inSumAmt) + '</td>';
+    LG.OUT_DIMS.forEach(function (d) {
+      h += '<td class="num">' + qty(t.outQty[d.key]) + '</td><td class="num">' + money(t.outAmt[d.key]) + '</td>';
+    });
+    h += '<td class="num">' + qty(t.outSumQty) + '</td><td class="num">' + money(t.outSumAmt) + '</td>';
+    h += '<td class="num">' + money(t.closeAmt) + '</td><td class="num">' + qty(t.closeQty) + '</td>';
+    $("#tfoot").innerHTML = '<tr>' + h + '</tr>';
+  }
+
+  /* ---------- 交互 ---------- */
+  $$("#priceSeg .seg-btn").forEach(function (el) {
+    el.addEventListener("click", function () {
+      $$("#priceSeg .seg-btn").forEach(function (x) { x.classList.remove("active"); });
+      this.classList.add("active");
+      ST.mode = this.getAttribute("data-mode");
+      render();
+      toast(ST.mode === "retail" ? "已按零售价换算金额" : "已按进货价换算金额");
+    });
+  });
+
+  var timer = null;
+  $("#fKeyword").addEventListener("input", function () {
+    var v = this.value;
+    clearTimeout(timer);
+    timer = setTimeout(function () { ST.keyword = v.trim(); render(); }, 120);
+  });
+
+  /* ---------- 导出 CSV（按当前价格口径与筛选结果） ---------- */
+  $("#btnExport").addEventListener("click", function () {
+    var head = ["药品名称", "规格", "生产企业", "品规编码", "期初金额", "期初数量"];
+    LG.IN_DIMS.forEach(function (d) { head.push("增加-" + d.label + "数量", "增加-" + d.label + "金额"); });
+    head.push("增加-汇总数量", "增加-汇总金额");
+    LG.OUT_DIMS.forEach(function (d) { head.push("减少-" + d.label + "数量", "减少-" + d.label + "金额"); });
+    head.push("减少-汇总数量", "减少-汇总金额", "结存金额", "结存数量");
+
+    var lines = [head.join(",")];
+    ST.view.forEach(function (r) {
+      var c = [r.name, r.spec, r.vendor, r.code, amt(r.openQty, r).toFixed(2), r.openQty];
+      LG.IN_DIMS.forEach(function (d) { var q = Number(r.inQty[d.key]) || 0; c.push(q, amt(q, r).toFixed(2)); });
+      c.push(r.inSumQty, amt(r.inSumQty, r).toFixed(2));
+      LG.OUT_DIMS.forEach(function (d) { var q = Number(r.outQty[d.key]) || 0; c.push(q, amt(q, r).toFixed(2)); });
+      c.push(r.outSumQty, amt(r.outSumQty, r).toFixed(2), amt(r.closeQty, r).toFixed(2), r.closeQty);
+      lines.push(c.map(function (x) { return '"' + String(x).replace(/"/g, '""') + '"'; }).join(","));
+    });
+    var csv = "\ufeff" + lines.join("\r\n");
+    var blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "台账_" + (book.name || "账簿") + "_" + period.year + "-" + ("0" + period.month).slice(-2)
+      + (ST.mode === "retail" ? "_零售价" : "_进货价") + ".csv";
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    toast("已导出当前筛选的 " + ST.view.length + " 行明细");
+  });
+
+  $("#btnBack").addEventListener("click", function () { location.href = "ledger.html"; });
+
+  render();
+})();
+</script>
+<script src="nav.js"></script>
+</body>
+</html>

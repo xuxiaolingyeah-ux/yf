@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>台账管理 · 中心药房</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+/* ===== 台账管理 · 列表页 ===== */
+.lg-page { background: var(--bg-page); }
+.lg-card { flex: 1; min-height: 0; display: flex; flex-direction: column;
+  background: var(--bg-white); margin: 12px; border-radius: var(--radius-lg);
+  box-shadow: 0 1px 2px rgba(0,0,0,.04); overflow: hidden; }
+.lg-head { flex: none; height: 56px; display: flex; align-items: center; justify-content: space-between;
+  padding: 0 20px; border-bottom: 1px solid var(--border); gap: 12px; }
+.lg-head .page-title { font-size: 16px; font-weight: 500; }
+.lg-head-acts { display: flex; align-items: center; gap: 8px; }
+/* 筛选栏 */
+.lg-filter { flex: none; display: flex; align-items: flex-end; gap: 14px; padding: 12px 20px; border-bottom: 1px solid var(--border); }
+.lg-fields { flex: 1; min-width: 0; display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 8px 16px; }
+.lg-fi { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.lg-fi .lbl { width: 72px; flex: none; text-align: right; font-size: 12px; color: var(--text-tertiary); white-space: nowrap; }
+.lg-fi .ctrl { flex: 1; min-width: 0; display: flex; }
+.lg-fi .input, .lg-fi .select { width: 100%; }
+.lg-filter-acts { flex: none; display: flex; align-items: center; gap: 8px; }
+/* 表格 */
+.lg-table-wrap { flex: 1; min-height: 0; overflow: auto; }
+.lg-table { width: 100%; min-width: 1040px; border-collapse: collapse; font-size: 13px; }
+.lg-table th { position: sticky; top: 0; z-index: 2; background: var(--table-head);
+  height: 40px; padding: 0 12px; text-align: left; font-weight: 500;
+  color: var(--text-secondary); white-space: nowrap; border-bottom: 1px solid var(--border); }
+.lg-table td { padding: 9px 12px; border-bottom: 1px solid var(--border); color: var(--text-primary); vertical-align: middle; }
+.lg-table tbody tr:nth-child(even) td { background: var(--table-even); }
+.lg-table tbody tr:hover td { background: var(--table-hover); }
+.lg-table .col-name { min-width: 168px; }
+.lg-table .col-loc { min-width: 116px; }
+.lg-table .col-kinds { min-width: 240px; }
+.lg-table .col-status { width: 150px; }
+.lg-table .col-acts { width: 120px; }
+.lg-table .link-btn + .link-btn { margin-left: 10px; }
+/* 药品种类胶囊 */
+.lg-kinds { display: flex; flex-wrap: wrap; gap: 4px; }
+.lg-kind { display: inline-flex; align-items: center; height: 20px; padding: 0 6px; border-radius: 3px;
+  font-size: 12px; color: var(--primary-dark); background: var(--primary-lighter); border: 1px solid #D6E6FF; }
+.lg-kind.is-more { color: var(--text-secondary); background: var(--bg-page); border-color: var(--border); }
+/* 状态 */
+.lg-st { display: flex; flex-direction: column; gap: 2px; }
+.lg-st .badge { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; }
+.lg-st .badge::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.lg-st .st-done { color: var(--success); }
+.lg-st .st-todo { color: var(--text-placeholder); }
+.lg-st .st-time { font-size: 12px; color: var(--text-tertiary); }
+/* 空态 / 分页 */
+.lg-empty { padding: 80px 0; text-align: center; color: var(--text-placeholder); font-size: 13px; }
+.lg-pager { flex: none; height: 48px; display: flex; align-items: center; gap: 10px;
+  padding: 0 20px; border-top: 1px solid var(--border); font-size: 13px; color: var(--text-secondary); }
+.lg-pager .total b { font-weight: 400; color: var(--text-primary); }
+.lg-pager .pager-btn { height: 28px; min-width: 28px; padding: 0 8px; border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--bg-white); color: var(--text-secondary); cursor: pointer; font-size: 13px; }
+.lg-pager .pager-btn:hover:not(:disabled) { border-color: var(--primary); color: var(--primary-dark); }
+.lg-pager .pager-btn:disabled { color: var(--text-placeholder); cursor: not-allowed; }
+.lg-pager .pager-num { min-width: 28px; height: 28px; padding: 0 8px; display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid transparent; border-radius: var(--radius); cursor: pointer; color: var(--text-secondary); }
+.lg-pager .pager-num.is-cur { background: var(--primary); color: #fff; border-color: var(--primary); }
+/* 底部提示 */
+.lg-tip { flex: none; padding: 0 20px 12px; font-size: 12px; color: var(--text-tertiary); }
+/* 确认弹窗 */
+.lg-confirm .modal { width: 420px; }
+.lg-confirm-desc { font-size: 13px; color: var(--text-secondary); line-height: 1.7; }
+.lg-confirm-desc b { color: var(--text-primary); font-weight: 500; }
+</style>
+</head>
+<body>
+
+<!-- ========== 顶部导航 ========== -->
+<header class="app-header">
+  <div class="header-left">
+    <div class="header-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3.2" y="9.4" width="17.6" height="5.2" rx="2.6" transform="rotate(-45 12 12)"/>
+        <path d="M8.4 15.6L15.6 8.4"/>
+      </svg>
+    </div>
+    <div class="header-title">区域药房协同管理系统</div>
+    <span class="header-sub">中心药房</span>
+  </div>
+  <div class="header-right"></div>
+</header>
+
+<div class="app-body">
+  <!-- ========== 左侧导航 ========== -->
+  <aside class="app-side" id="appSide"></aside>
+  <!-- ========== 主区域 ========== -->
+  <main class="app-main">
+    <div class="tabbar">
+      <div class="tab" onclick="location.href='home.html'">首页</div>
+      <div class="tab active">
+        台账管理
+        <button class="tab-close" title="关闭" onclick="location.href='home.html'">
+          <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="page lg-page">
+      <div class="lg-card">
+        <!-- 标题行 -->
+        <div class="lg-head">
+          <div class="page-title">台账管理</div>
+          <div class="lg-head-acts">
+            <button class="btn" id="btnBooks">账簿管理</button>
+            <button class="btn" id="btnBatch">批量生成</button>
+          </div>
+        </div>
+
+        <!-- 筛选栏 -->
+        <div class="lg-filter">
+          <div class="lg-fields">
+            <div class="lg-fi"><span class="lbl">会计年度：</span><div class="ctrl"><select class="select" id="fYear"></select></div></div>
+            <div class="lg-fi"><span class="lbl">账簿：</span><div class="ctrl"><select class="select" id="fBook"></select></div></div>
+            <div class="lg-fi"><span class="lbl">数据状态：</span><div class="ctrl"><select class="select" id="fStatus"></select></div></div>
+          </div>
+          <div class="lg-filter-acts">
+            <button class="btn btn-sm" id="btnReset">重置</button>
+            <button class="btn btn-sm btn-primary" id="btnSearch">查询</button>
+          </div>
+        </div>
+
+        <!-- 表格 -->
+        <div class="lg-table-wrap">
+          <table class="lg-table" id="mainTable">
+            <thead>
+              <tr>
+                <th style="width:96px">会计年度</th>
+                <th style="width:96px">会计月度</th>
+                <th class="col-name">账簿</th>
+                <th class="col-loc">库位</th>
+                <th class="col-kinds">药品种类</th>
+                <th class="col-status">数据生成状态</th>
+                <th class="col-acts">操作</th>
+              </tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+          </table>
+          <div class="lg-empty" id="empty" style="display:none">暂无符合条件的台账期间</div>
+        </div>
+
+        <!-- 分页 -->
+        <div class="lg-pager">
+          <span class="total">共 <b id="totalNum">0</b> 条</span>
+          <button class="pager-btn" id="pgPrev">‹</button>
+          <span id="pgNums"></span>
+          <button class="pager-btn" id="pgNext">›</button>
+          <span id="pgInfo" style="margin-left:auto"></span>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ========== 生成确认弹窗 ========== -->
+<div class="modal-mask lg-confirm" id="cfMask">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title" id="cfTitle">生成台账数据</div>
+      <button class="drawer-close" id="cfClose" title="关闭">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+      </button>
+    </div>
+    <div class="modal-body"><div class="lg-confirm-desc" id="cfDesc"></div></div>
+    <div class="modal-foot">
+      <button class="btn" id="cfCancel">取消</button>
+      <button class="btn btn-primary" id="cfOk">确定生成</button>
+    </div>
+  </div>
+</div>
+
+<!-- toast -->
+<div id="toast" style="position:fixed;top:70px;left:50%;transform:translateX(-50%);padding:8px 16px;background:rgba(0,0,0,.78);color:#fff;border-radius:4px;font-size:13px;z-index:9999;display:none"></div>
+
+<script src="identity.js"></script>
+<script src="ledger-common.js"></script>
+<script>
+(function () {
+  "use strict";
+  var LG = window.LG;
+  var $ = function (s, c) { return (c || document).querySelector(s); };
+  var $$ = function (s, c) { return Array.prototype.slice.call((c || document).querySelectorAll(s)); };
+  function toast(msg) { var t = $("#toast"); t.textContent = msg; t.style.display = "block"; clearTimeout(t._t); t._t = setTimeout(function () { t.style.display = "none"; }, 1800); }
+
+  var user = LG.currentUser();
+  var books = LG.loadBooks();
+  var periods = LG.loadPeriods();
+
+  var ST = { page: 1, pageSize: 20, filtered: [] };
+
+  /* ===== 下拉初始化 ===== */
+  $("#fYear").innerHTML = '<option value="">全部年度</option><option value="2026" selected>2026</option><option value="2025">2025</option>';
+  $("#fBook").innerHTML = '<option value="">全部账簿</option>' + books.map(function (b) {
+    return '<option value="' + b.id + '">' + LG.esc(b.name) + (b.status === "off" ? "（已停用）" : "") + '</option>';
+  }).join("");
+  $("#fStatus").innerHTML = '<option value="">全部状态</option><option value="done">已生成</option><option value="todo">未生成</option>';
+
+  /* ===== 筛选 ===== */
+  function applyFilter() {
+    var y = $("#fYear").value, bid = $("#fBook").value, st = $("#fStatus").value;
+    ST.filtered = periods.filter(function (p) {
+      if (y && String(p.year) !== y) return false;
+      if (bid && p.bookId !== bid) return false;
+      if (st && p.status !== st) return false;
+      return true;
+    }).sort(function (a, b) {
+      if (a.year !== b.year) return b.year - a.year;
+      if (a.month !== b.month) return b.month - a.month;
+      var ba = LG.bookOf(a.bookId), bb = LG.bookOf(b.bookId);
+      return (ba ? ba.name : "").localeCompare(bb ? bb.name : "", "zh");
+    });
+    ST.page = 1;
+    renderTable();
+  }
+  $("#btnSearch").addEventListener("click", applyFilter);
+  $("#fYear").addEventListener("change", applyFilter);
+  $("#fBook").addEventListener("change", applyFilter);
+  $("#fStatus").addEventListener("change", applyFilter);
+  $("#btnReset").addEventListener("click", function () {
+    $("#fYear").value = "2026"; $("#fBook").value = ""; $("#fStatus").value = "";
+    applyFilter();
+  });
+
+  /* ===== 表格渲染 ===== */
+  function kindsHtml(book) {
+    var ks = (book && book.kinds) || [];
+    var show = ks.slice(0, 3).map(function (k) { return '<span class="lg-kind">' + LG.esc(k) + '</span>'; }).join("");
+    if (ks.length > 3) show += '<span class="lg-kind is-more">+' + (ks.length - 3) + '</span>';
+    return '<div class="lg-kinds">' + show + '</div>';
+  }
+
+  function renderTable() {
+    var start = (ST.page - 1) * ST.pageSize;
+    var rows = ST.filtered.slice(start, start + ST.pageSize);
+    $("#empty").style.display = ST.filtered.length ? "none" : "block";
+    $("#tbody").innerHTML = rows.map(function (p) {
+      var book = LG.bookOf(p.bookId) || {};
+      var loc = LG.locOf(book.location) || {};
+      var done = p.status === "done";
+      var op = done
+        ? '<a class="link-btn" data-op="view" data-id="' + p.id + '">查看</a>'
+        : '<a class="link-btn" data-op="gen" data-id="' + p.id + '">生成数据</a>';
+      return '<tr>'
+        + '<td>' + p.year + '</td>'
+        + '<td>' + p.month + '月</td>'
+        + '<td title="' + LG.esc(book.code) + '">' + LG.esc(book.name) + '</td>'
+        + '<td title="' + LG.esc(loc.pharmacy || "") + '">' + LG.esc(book.location) + '</td>'
+        + '<td>' + kindsHtml(book) + '</td>'
+        + '<td><div class="lg-st"><span class="badge ' + (done ? "st-done" : "st-todo") + '">' + (done ? "已生成" : "未生成") + '</span>'
+        + (done && p.genTime ? '<span class="st-time">' + LG.esc(p.genTime.slice(0, 16)) + '</span>' : "") + '</div></td>'
+        + '<td class="col-acts">' + op + '</td>'
+        + '</tr>';
+    }).join("");
+    $("#totalNum").textContent = ST.filtered.length;
+    $("#pgInfo").textContent = ST.filtered.length
+      ? "第 " + (start + 1) + "-" + Math.min(start + ST.pageSize, ST.filtered.length) + " 条"
+      : "";
+    renderPager();
+    $$("#tbody .link-btn").forEach(function (a) { a.addEventListener("click", onOp); });
+  }
+
+  function renderPager() {
+    var total = ST.filtered.length, pages = Math.max(1, Math.ceil(total / ST.pageSize));
+    $("#pgPrev").disabled = ST.page <= 1;
+    $("#pgNext").disabled = ST.page >= pages;
+    var h = "";
+    for (var i = 1; i <= pages; i++) h += '<span class="pager-num' + (i === ST.page ? " is-cur" : "") + '" data-p="' + i + '">' + i + '</span>';
+    $("#pgNums").innerHTML = h;
+    $$("#pgNums .pager-num").forEach(function (el) {
+      el.addEventListener("click", function () { ST.page = parseInt(el.getAttribute("data-p"), 10); renderTable(); });
+    });
+  }
+  $("#pgPrev").addEventListener("click", function () { if (ST.page > 1) { ST.page--; renderTable(); } });
+  $("#pgNext").addEventListener("click", function () {
+    var pages = Math.ceil(ST.filtered.length / ST.pageSize);
+    if (ST.page < pages) { ST.page++; renderTable(); }
+  });
+
+  /* ===== 确认弹窗 ===== */
+  var cfCb = null;
+  function confirmDlg(title, descHtml, okText, cb) {
+    $("#cfTitle").textContent = title;
+    $("#cfDesc").innerHTML = descHtml;
+    $("#cfOk").textContent = okText;
+    cfCb = cb;
+    $("#cfMask").classList.add("show");
+  }
+  function closeCf() { $("#cfMask").classList.remove("show"); cfCb = null; }
+  $("#cfCancel").addEventListener("click", closeCf);
+  $("#cfClose").addEventListener("click", closeCf);
+  $("#cfOk").addEventListener("click", function () { var cb = cfCb; closeCf(); if (cb) cb(); });
+
+  /* ===== 操作 ===== */
+  function onOp() {
+    var op = this.getAttribute("data-op"), id = this.getAttribute("data-id");
+    if (op === "view") { location.href = "ledger-detail.html?id=" + id; return; }
+    if (op === "gen") {
+      var p = LG.periodOf(id); if (!p) return;
+      var book = LG.bookOf(p.bookId) || {};
+      confirmDlg("生成台账数据",
+        '将按账簿 <b>' + LG.esc(book.name) + '</b>（' + LG.esc(book.location) + '）汇总 <b>' + p.year + ' 年 ' + p.month + ' 月</b> 的出入库明细，生成该期间台账。<br><br>生成后数据只读，如需修正请走「重新生成」并保留操作痕迹。',
+        "确定生成", function () {
+          var n = LG.generate([id], user);
+          periods = LG.loadPeriods();
+          applyFilter();
+          toast(n ? "台账已生成" : "该期间已生成，无需重复操作");
+        });
+    }
+  }
+
+  /* ===== 批量生成（当前筛选结果内的未生成期间） ===== */
+  $("#btnBatch").addEventListener("click", function () {
+    var todos = ST.filtered.filter(function (p) { return p.status !== "done"; });
+    if (!todos.length) { toast("当前筛选结果中没有未生成的期间"); return; }
+    var years = {};
+    todos.forEach(function (p) { years[p.year] = (years[p.year] || 0) + 1; });
+    var desc = Object.keys(years).map(function (y) { return y + " 年 " + years[y] + " 期"; }).join("、");
+    confirmDlg("批量生成台账", '当前筛选结果中共有 <b>' + todos.length + '</b> 个未生成期间（' + desc + '），确认一并生成？', "全部生成", function () {
+      var n = LG.generate(todos.map(function (p) { return p.id; }), user);
+      periods = LG.loadPeriods();
+      applyFilter();
+      toast("已生成 " + n + " 期台账");
+    });
+  });
+
+  /* ===== 账簿管理 ===== */
+  $("#btnBooks").addEventListener("click", function () { location.href = "ledger-book.html"; });
+
+  /* ===== 初始化 ===== */
+  applyFilter();
+})();
+</script>
+<script src="nav.js"></script>
+</body>
+</html>

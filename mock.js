@@ -2534,12 +2534,17 @@ MOCK.rxQuery = [
     "rxTime": "2026-10-28 14:46:53",
     "chargeTime": "2026-10-28 14:47:08",
     "dispenseTime": "2026-10-28 15:12:30",
+    "auditTime": "2026-10-28 14:48:12",
+    "auditBy": "王丽华",
+    "dispensingTime": "2026-10-28 15:02:41",
+    "dispensingBy": "陈静",
     "feeTime": "2026-10-28 14:47:08",
     "amount": 88.6,
     "phone": "15583379297",
     "doses": 7,
     "usage": "水煎服，每日一剂，早晚分服",
     "remark": "忌生冷油腻",
+"agreementRx": "独活寄生汤",
     "items": [
       {
         "seq": 1,
@@ -2556,6 +2561,9 @@ MOCK.rxQuery = [
         "unit": "g",
         "amount": 13.65,
         "manufacturer": "安徽康和中药饮片有限公司",
+        "dispenseQty": "105",
+        "dispenseUnit": "g",
+        "dispenseConv": 1,
         "usage": "水煎服"
       },
       {
@@ -2573,6 +2581,9 @@ MOCK.rxQuery = [
         "unit": "g",
         "amount": 16.8,
         "manufacturer": "甘肃岷县当归饮片厂",
+        "dispenseQty": "70",
+        "dispenseUnit": "g",
+        "dispenseConv": 1,
         "usage": "水煎服"
       },
       {
@@ -2590,6 +2601,9 @@ MOCK.rxQuery = [
         "unit": "g",
         "amount": 6.3,
         "manufacturer": "四川新荷花中药饮片股份有限公司",
+        "dispenseQty": "70",
+        "dispenseUnit": "g",
+        "dispenseConv": 1,
         "usage": "水煎服"
       },
       {
@@ -2607,6 +2621,9 @@ MOCK.rxQuery = [
         "unit": "g",
         "amount": 6.72,
         "manufacturer": "湖南金太阳杜仲饮片有限公司",
+        "dispenseQty": "84",
+        "dispenseUnit": "g",
+        "dispenseConv": 1,
         "usage": "水煎服"
       },
       {
@@ -2624,6 +2641,9 @@ MOCK.rxQuery = [
         "unit": "g",
         "amount": 10.5,
         "manufacturer": "河南四大怀药饮片有限公司",
+        "dispenseQty": "70",
+        "dispenseUnit": "g",
+        "dispenseConv": 1,
         "usage": "水煎服"
       },
       {
@@ -2641,6 +2661,9 @@ MOCK.rxQuery = [
         "unit": "g",
         "amount": 7.35,
         "manufacturer": "广东康美药业股份有限公司",
+        "dispenseQty": "105",
+        "dispenseUnit": "g",
+        "dispenseConv": 1,
         "usage": "水煎服"
       },
       {
@@ -2658,6 +2681,9 @@ MOCK.rxQuery = [
         "unit": "g",
         "amount": 5.95,
         "manufacturer": "甘肃独一味生物制药股份有限公司",
+        "dispenseQty": "70",
+        "dispenseUnit": "g",
+        "dispenseConv": 1,
         "usage": "水煎服"
       },
       {
@@ -2675,6 +2701,9 @@ MOCK.rxQuery = [
         "unit": "g",
         "amount": 6.65,
         "manufacturer": "青海正心堂中药饮片有限公司",
+        "dispenseQty": "70",
+        "dispenseUnit": "g",
+        "dispenseConv": 1,
         "usage": "水煎服"
       },
       {
@@ -2692,6 +2721,9 @@ MOCK.rxQuery = [
         "unit": "g",
         "amount": 8.4,
         "manufacturer": "陕西正北药业有限公司",
+        "dispenseQty": "70",
+        "dispenseUnit": "g",
+        "dispenseConv": 1,
         "usage": "水煎服"
       },
       {
@@ -2709,6 +2741,9 @@ MOCK.rxQuery = [
         "unit": "g",
         "amount": 7.7,
         "manufacturer": "河北安国饮片厂",
+        "dispenseQty": "70",
+        "dispenseUnit": "g",
+        "dispenseConv": 1,
         "usage": "水煎服"
       }
     ],
@@ -2737,10 +2772,15 @@ MOCK.rxQuery = [
     "rxTime": "2026-10-28 14:50:12",
     "chargeTime": "2026-10-28 14:51:05",
     "dispenseTime": "2026-10-28 15:15:40",
+    "auditTime": "2026-10-28 14:52:18",
+    "auditBy": "陈静",
+    "dispensingTime": "2026-10-28 15:08:33",
+    "dispensingBy": "林落落",
     "feeTime": "2026-10-28 14:51:05",
     "amount": 45.8,
     "phone": "15583379297",
     "remark": "—",
+"agreementRx": "—",
     "items": [
       {
         "seq": 1,
@@ -2757,6 +2797,9 @@ MOCK.rxQuery = [
         "unit": "盒",
         "amount": 21.5,
         "manufacturer": "石家庄以岭药业股份有限公司",
+        "dispenseQty": "1",
+        "dispenseUnit": "盒",
+        "dispenseConv": 10,
         "usage": "口服"
       },
       {
@@ -2774,6 +2817,9 @@ MOCK.rxQuery = [
         "unit": "盒",
         "amount": 24.3,
         "manufacturer": "雷允上药业集团有限公司",
+        "dispenseQty": "1",
+        "dispenseUnit": "盒",
+        "dispenseConv": 10,
         "usage": "口服"
       }
     ],
@@ -2802,10 +2848,15 @@ MOCK.rxQuery = [
     "rxTime": "2026-10-28 15:02:33",
     "chargeTime": "2026-10-28 15:03:20",
     "dispenseTime": "",
+    "auditTime": "2026-10-28 15:04:02",
+    "auditBy": "赵敏",
+    "dispensingTime": "—",
+    "dispensingBy": "—",
     "feeTime": "2026-10-28 15:03:20",
     "amount": 78.9,
     "phone": "15583379297",
     "remark": "—",
+"agreementRx": "—",
     "items": [
       {
         "seq": 1,
@@ -2822,6 +2873,9 @@ MOCK.rxQuery = [
         "unit": "盒",
         "amount": 25.2,
         "manufacturer": "珠海联邦制药股份有限公司",
+        "dispenseQty": "—",
+        "dispenseUnit": "—",
+        "dispenseConv": "—",
         "usage": "口服"
       },
       {
@@ -2839,6 +2893,9 @@ MOCK.rxQuery = [
         "unit": "盒",
         "amount": 32.5,
         "manufacturer": "拜耳医药保健有限公司",
+        "dispenseQty": "—",
+        "dispenseUnit": "—",
+        "dispenseConv": "—",
         "usage": "口服"
       },
       {
@@ -2856,6 +2913,9 @@ MOCK.rxQuery = [
         "unit": "盒",
         "amount": 21.2,
         "manufacturer": "拜耳医药保健有限公司",
+        "dispenseQty": "—",
+        "dispenseUnit": "—",
+        "dispenseConv": "—",
         "usage": "口服"
       }
     ],
@@ -2884,12 +2944,17 @@ MOCK.rxQuery = [
     "rxTime": "2026-10-28 16:12:44",
     "chargeTime": "2026-10-28 16:13:55",
     "dispenseTime": "2026-10-28 16:30:18",
+    "auditTime": "2026-10-28 16:14:47",
+    "auditBy": "王丽华",
+    "dispensingTime": "2026-10-28 16:22:09",
+    "dispensingBy": "陈静",
     "feeTime": "2026-10-28 16:13:55",
     "amount": 125.4,
     "phone": "13853124567",
     "doses": 14,
     "usage": "水煎服，每日一剂，睡前温服",
     "remark": "避免睡前饮茶",
+"agreementRx": "附子理中汤",
     "items": [
       {
         "seq": 1,
@@ -2906,6 +2971,9 @@ MOCK.rxQuery = [
         "unit": "g",
         "amount": 98,
         "manufacturer": "河北安国酸枣仁饮片厂",
+        "dispenseQty": "280",
+        "dispenseUnit": "g",
+        "dispenseConv": 1,
         "usage": "水煎服"
       },
       {
@@ -2923,6 +2991,9 @@ MOCK.rxQuery = [
         "unit": "g",
         "amount": 25.2,
         "manufacturer": "山西万荣茯神加工厂",
+        "dispenseQty": "210",
+        "dispenseUnit": "g",
+        "dispenseConv": 1,
         "usage": "水煎服"
       },
       {
@@ -2940,6 +3011,9 @@ MOCK.rxQuery = [
         "unit": "g",
         "amount": 11.2,
         "manufacturer": "山西道地中药材饮片厂",
+        "dispenseQty": "140",
+        "dispenseUnit": "g",
+        "dispenseConv": 1,
         "usage": "水煎服"
       },
       {
@@ -2957,6 +3031,9 @@ MOCK.rxQuery = [
         "unit": "g",
         "amount": 17.64,
         "manufacturer": "辽宁五味子饮片有限公司",
+        "dispenseQty": "84",
+        "dispenseUnit": "g",
+        "dispenseConv": 1,
         "usage": "水煎服"
       },
       {
@@ -2974,6 +3051,9 @@ MOCK.rxQuery = [
         "unit": "g",
         "amount": 30.24,
         "manufacturer": "山东柏子仁加工厂",
+        "dispenseQty": "168",
+        "dispenseUnit": "g",
+        "dispenseConv": 1,
         "usage": "水煎服"
       }
     ],
@@ -3002,10 +3082,15 @@ MOCK.rxQuery = [
     "rxTime": "2026-10-27 09:22:15",
     "chargeTime": "2026-10-27 09:23:40",
     "dispenseTime": "2026-10-27 09:45:12",
+    "auditTime": "2026-10-27 09:24:15",
+    "auditBy": "孙浩",
+    "dispensingTime": "2026-10-27 09:38:52",
+    "dispensingBy": "孙浩",
     "feeTime": "2026-10-27 09:23:40",
     "amount": 56.3,
     "phone": "13969012345",
     "remark": "患者反馈服用后有轻微头晕，申请退药",
+"agreementRx": "—",
     "items": [
       {
         "seq": 1,
@@ -3022,6 +3107,9 @@ MOCK.rxQuery = [
         "unit": "瓶",
         "amount": 28.8,
         "manufacturer": "京都念慈菴总厂有限公司",
+        "dispenseQty": "1",
+        "dispenseUnit": "瓶",
+        "dispenseConv": 1,
         "usage": "口服"
       },
       {
@@ -3039,6 +3127,9 @@ MOCK.rxQuery = [
         "unit": "瓶",
         "amount": 27.5,
         "manufacturer": "太极集团重庆涪陵制药厂有限公司",
+        "dispenseQty": "1",
+        "dispenseUnit": "瓶",
+        "dispenseConv": 1,
         "usage": "口服"
       }
     ],
@@ -3067,10 +3158,15 @@ MOCK.rxQuery = [
     "rxTime": "2026-10-27 09:30:58",
     "chargeTime": "2026-10-27 09:32:10",
     "dispenseTime": "2026-10-27 09:50:30",
+    "auditTime": "2026-10-27 09:33:28",
+    "auditBy": "陈静",
+    "dispensingTime": "2026-10-27 09:44:15",
+    "dispensingBy": "陈静",
     "feeTime": "2026-10-27 09:32:10",
     "amount": 34.5,
     "phone": "13969012345",
     "remark": "—",
+"agreementRx": "—",
     "items": [
       {
         "seq": 1,
@@ -3087,6 +3183,9 @@ MOCK.rxQuery = [
         "unit": "袋",
         "amount": 5.04,
         "manufacturer": "博福-益普生(天津)制药有限公司",
+        "dispenseQty": "3",
+        "dispenseUnit": "袋",
+        "dispenseConv": 1,
         "usage": "冲服"
       },
       {
@@ -3104,6 +3203,9 @@ MOCK.rxQuery = [
         "unit": "片",
         "amount": 0.45,
         "manufacturer": "东北制药集团股份有限公司",
+        "dispenseQty": "5",
+        "dispenseUnit": "片",
+        "dispenseConv": 1,
         "usage": "口服"
       },
       {
@@ -3121,6 +3223,9 @@ MOCK.rxQuery = [
         "unit": "盒",
         "amount": 12.8,
         "manufacturer": "中美天津史克制药有限公司",
+        "dispenseQty": "1",
+        "dispenseUnit": "盒",
+        "dispenseConv": 10,
         "usage": "口服"
       },
       {
@@ -3138,6 +3243,9 @@ MOCK.rxQuery = [
         "unit": "盒",
         "amount": 16.21,
         "manufacturer": "仁和药业股份有限公司",
+        "dispenseQty": "1",
+        "dispenseUnit": "盒",
+        "dispenseConv": 10,
         "usage": "口服"
       }
     ],
@@ -3166,12 +3274,17 @@ MOCK.rxQuery = [
     "rxTime": "2026-10-28 10:05:21",
     "chargeTime": "2026-10-28 10:06:45",
     "dispenseTime": "",
+    "auditTime": "2026-10-28 10:08:31",
+    "auditBy": "赵敏",
+    "dispensingTime": "—",
+    "dispensingBy": "—",
     "feeTime": "2026-10-28 10:06:45",
     "amount": 96.8,
     "phone": "13309608869",
     "doses": 10,
     "usage": "水煎服，每日一剂，分两次饭后温服",
     "remark": "忌辛辣油腻，保证充足睡眠",
+"agreementRx": "玉屏风散",
     "items": [
       {
         "seq": 1,
@@ -3188,6 +3301,9 @@ MOCK.rxQuery = [
         "unit": "g",
         "amount": 12.75,
         "manufacturer": "河南封丘金银花饮片有限公司",
+        "dispenseQty": "—",
+        "dispenseUnit": "—",
+        "dispenseConv": "—",
         "usage": "水煎服"
       },
       {
@@ -3205,6 +3321,9 @@ MOCK.rxQuery = [
         "unit": "g",
         "amount": 13.5,
         "manufacturer": "山西道地连翘饮片有限公司",
+        "dispenseQty": "—",
+        "dispenseUnit": "—",
+        "dispenseConv": "—",
         "usage": "水煎服"
       },
       {
@@ -3222,6 +3341,9 @@ MOCK.rxQuery = [
         "unit": "g",
         "amount": 7.5,
         "manufacturer": "河北黄芩饮片有限公司",
+        "dispenseQty": "—",
+        "dispenseUnit": "—",
+        "dispenseConv": "—",
         "usage": "水煎服"
       },
       {
@@ -3239,6 +3361,9 @@ MOCK.rxQuery = [
         "unit": "g",
         "amount": 13.8,
         "manufacturer": "四川峨嵋黄连饮片厂",
+        "dispenseQty": "—",
+        "dispenseUnit": "—",
+        "dispenseConv": "—",
         "usage": "水煎服"
       },
       {
@@ -3256,6 +3381,9 @@ MOCK.rxQuery = [
         "unit": "g",
         "amount": 6.5,
         "manufacturer": "四川黄柏饮片有限公司",
+        "dispenseQty": "—",
+        "dispenseUnit": "—",
+        "dispenseConv": "—",
         "usage": "水煎服"
       },
       {
@@ -3273,6 +3401,9 @@ MOCK.rxQuery = [
         "unit": "g",
         "amount": 21,
         "manufacturer": "安徽亳州丹参饮片厂",
+        "dispenseQty": "—",
+        "dispenseUnit": "—",
+        "dispenseConv": "—",
         "usage": "水煎服"
       },
       {
@@ -3290,6 +3421,9 @@ MOCK.rxQuery = [
         "unit": "g",
         "amount": 11.4,
         "manufacturer": "安徽赤芍饮片有限公司",
+        "dispenseQty": "—",
+        "dispenseUnit": "—",
+        "dispenseConv": "—",
         "usage": "水煎服"
       },
       {
@@ -3307,6 +3441,9 @@ MOCK.rxQuery = [
         "unit": "g",
         "amount": 7,
         "manufacturer": "河北白芷饮片厂",
+        "dispenseQty": "—",
+        "dispenseUnit": "—",
+        "dispenseConv": "—",
         "usage": "水煎服"
       },
       {
@@ -3324,6 +3461,9 @@ MOCK.rxQuery = [
         "unit": "g",
         "amount": 6.6,
         "manufacturer": "江苏桑白皮饮片厂",
+        "dispenseQty": "—",
+        "dispenseUnit": "—",
+        "dispenseConv": "—",
         "usage": "水煎服"
       }
     ],
@@ -3352,10 +3492,15 @@ MOCK.rxQuery = [
     "rxTime": "2026-10-26 08:55:33",
     "chargeTime": "",
     "dispenseTime": "",
+    "auditTime": "—",
+    "auditBy": "—",
+    "dispensingTime": "—",
+    "dispensingBy": "—",
     "feeTime": "",
     "amount": 68,
     "phone": "18678901234",
     "remark": "—",
+"agreementRx": "—",
     "items": [
       {
         "seq": 1,
@@ -3372,6 +3517,9 @@ MOCK.rxQuery = [
         "unit": "盒",
         "amount": 32.5,
         "manufacturer": "北京同仁堂科技发展股份有限公司",
+        "dispenseQty": "—",
+        "dispenseUnit": "—",
+        "dispenseConv": "—",
         "usage": "口服"
       },
       {
@@ -3389,6 +3537,9 @@ MOCK.rxQuery = [
         "unit": "盒",
         "amount": 35.5,
         "manufacturer": "山东东阿阿胶股份有限公司",
+        "dispenseQty": "—",
+        "dispenseUnit": "—",
+        "dispenseConv": "—",
         "usage": "口服"
       }
     ],
@@ -3417,10 +3568,15 @@ MOCK.rxQuery = [
     "rxTime": "2026-10-28 17:22:10",
     "chargeTime": "2026-10-28 17:23:45",
     "dispenseTime": "2026-10-28 17:45:22",
+    "auditTime": "2026-10-28 17:24:50",
+    "auditBy": "王丽华",
+    "dispensingTime": "2026-10-28 17:37:16",
+    "dispensingBy": "王丽华",
     "feeTime": "2026-10-28 17:23:45",
     "amount": 156.7,
     "phone": "13700001234",
     "remark": "按时换药，注意伤口卫生",
+"agreementRx": "—",
     "items": [
       {
         "seq": 1,
@@ -3437,6 +3593,9 @@ MOCK.rxQuery = [
         "unit": "盒",
         "amount": 57,
         "manufacturer": "广州白云山制药股份有限公司",
+        "dispenseQty": "2",
+        "dispenseUnit": "盒",
+        "dispenseConv": 10,
         "usage": "口服"
       },
       {
@@ -3454,6 +3613,9 @@ MOCK.rxQuery = [
         "unit": "盒",
         "amount": 18.9,
         "manufacturer": "东北制药集团股份有限公司",
+        "dispenseQty": "1",
+        "dispenseUnit": "盒",
+        "dispenseConv": 10,
         "usage": "口服"
       },
       {
@@ -3471,6 +3633,9 @@ MOCK.rxQuery = [
         "unit": "盒",
         "amount": 36.4,
         "manufacturer": "诺华制药有限公司",
+        "dispenseQty": "1",
+        "dispenseUnit": "盒",
+        "dispenseConv": 10,
         "usage": "口服"
       },
       {
@@ -3488,6 +3653,9 @@ MOCK.rxQuery = [
         "unit": "盒",
         "amount": 22.8,
         "manufacturer": "阿斯利康制药有限公司",
+        "dispenseQty": "1",
+        "dispenseUnit": "盒",
+        "dispenseConv": 10,
         "usage": "口服"
       },
       {
@@ -3505,6 +3673,9 @@ MOCK.rxQuery = [
         "unit": "盒",
         "amount": 21.6,
         "manufacturer": "中国大冢制药有限公司",
+        "dispenseQty": "1",
+        "dispenseUnit": "盒",
+        "dispenseConv": 10,
         "usage": "口服"
       }
     ],
@@ -3533,12 +3704,17 @@ MOCK.rxQuery = [
     "rxTime": "2026-10-25 11:30:05",
     "chargeTime": "2026-10-25 11:31:40",
     "dispenseTime": "2026-10-25 11:55:28",
+    "auditTime": "2026-10-25 11:32:26",
+    "auditBy": "孙浩",
+    "dispensingTime": "2026-10-25 11:47:03",
+    "dispensingBy": "孙浩",
     "feeTime": "2026-10-25 11:31:40",
     "amount": 78.2,
     "phone": "13500005678",
     "doses": 7,
     "usage": "水煎服，每日一剂，饭前温服",
     "remark": "患者服药后出现腹泻，经沟通退药",
+"agreementRx": "四物汤",
     "items": [
       {
         "seq": 1,
@@ -3555,6 +3731,9 @@ MOCK.rxQuery = [
         "unit": "g",
         "amount": 18.9,
         "manufacturer": "山西潞党参饮片有限公司",
+        "dispenseQty": "105",
+        "dispenseUnit": "g",
+        "dispenseConv": 1,
         "usage": "水煎服"
       },
       {
@@ -3572,6 +3751,9 @@ MOCK.rxQuery = [
         "unit": "g",
         "amount": 7.98,
         "manufacturer": "浙江磐安白术饮片厂",
+        "dispenseQty": "84",
+        "dispenseUnit": "g",
+        "dispenseConv": 1,
         "usage": "水煎服"
       },
       {
@@ -3589,6 +3771,9 @@ MOCK.rxQuery = [
         "unit": "g",
         "amount": 6.3,
         "manufacturer": "云南茯苓饮片有限公司",
+        "dispenseQty": "105",
+        "dispenseUnit": "g",
+        "dispenseConv": 1,
         "usage": "水煎服"
       },
       {
@@ -3606,6 +3791,9 @@ MOCK.rxQuery = [
         "unit": "g",
         "amount": 8.93,
         "manufacturer": "河南焦作山药饮片有限公司",
+        "dispenseQty": "105",
+        "dispenseUnit": "g",
+        "dispenseConv": 1,
         "usage": "水煎服"
       },
       {
@@ -3623,6 +3811,9 @@ MOCK.rxQuery = [
         "unit": "g",
         "amount": 2.31,
         "manufacturer": "内蒙古甘草饮片厂",
+        "dispenseQty": "42",
+        "dispenseUnit": "g",
+        "dispenseConv": 1,
         "usage": "水煎服"
       },
       {
@@ -3640,6 +3831,9 @@ MOCK.rxQuery = [
         "unit": "g",
         "amount": 4.9,
         "manufacturer": "广东新会陈皮饮片厂",
+        "dispenseQty": "70",
+        "dispenseUnit": "g",
+        "dispenseConv": 1,
         "usage": "水煎服"
       },
       {
@@ -3657,6 +3851,9 @@ MOCK.rxQuery = [
         "unit": "g",
         "amount": 6.3,
         "manufacturer": "广东阳春砂仁饮片有限公司",
+        "dispenseQty": "42",
+        "dispenseUnit": "g",
+        "dispenseConv": 1,
         "usage": "水煎服"
       },
       {
@@ -3674,6 +3871,9 @@ MOCK.rxQuery = [
         "unit": "g",
         "amount": 5.6,
         "manufacturer": "云南木香饮片有限公司",
+        "dispenseQty": "70",
+        "dispenseUnit": "g",
+        "dispenseConv": 1,
         "usage": "水煎服"
       },
       {
@@ -3691,6 +3891,9 @@ MOCK.rxQuery = [
         "unit": "g",
         "amount": 8.4,
         "manufacturer": "河北鸡内金加工厂",
+        "dispenseQty": "70",
+        "dispenseUnit": "g",
+        "dispenseConv": 1,
         "usage": "水煎服"
       },
       {
@@ -3708,6 +3911,9 @@ MOCK.rxQuery = [
         "unit": "g",
         "amount": 4.55,
         "manufacturer": "山东山楂饮片加工厂",
+        "dispenseQty": "70",
+        "dispenseUnit": "g",
+        "dispenseConv": 1,
         "usage": "水煎服"
       },
       {
@@ -3725,6 +3931,9 @@ MOCK.rxQuery = [
         "unit": "g",
         "amount": 2.8,
         "manufacturer": "甘肃麦芽加工厂",
+        "dispenseQty": "70",
+        "dispenseUnit": "g",
+        "dispenseConv": 1,
         "usage": "水煎服"
       },
       {
@@ -3742,6 +3951,9 @@ MOCK.rxQuery = [
         "unit": "g",
         "amount": 3.85,
         "manufacturer": "陕西神曲加工厂",
+        "dispenseQty": "70",
+        "dispenseUnit": "g",
+        "dispenseConv": 1,
         "usage": "水煎服"
       }
     ],

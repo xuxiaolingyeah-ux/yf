@@ -236,7 +236,7 @@
 /* 药品明细表 */
 .pq-dwrap { flex: 1; min-height: 0; overflow: auto; }
 .pq-dtable {
-  width: 100%; min-width: 1400px;
+  width: 100%; min-width: 1620px;
   border-collapse: separate; border-spacing: 0;
   table-layout: fixed; font-size: 12px;
 }
@@ -275,6 +275,9 @@
 .pq-dtable .c-usage { width: 96px; }
 .pq-dtable .c-amt { width: 72px; }
 .pq-dtable .c-mfr { width: 170px; }
+.pq-dtable .c-dqty { width: 70px; }
+.pq-dtable .c-dunit { width: 66px; }
+.pq-dtable .c-dconv { width: 90px; }
 .pq-d-empty td { text-align: center; color: var(--text-placeholder); padding: 40px 0; }
 </style>
 </head>
@@ -498,6 +501,9 @@
                 <th class="c-usage">药品用法</th>
                 <th class="c-amt num">金额</th>
                 <th class="c-mfr">生产企业</th>
+                <th class="c-dqty num">发药数量</th>
+                <th class="c-dunit">发药单位</th>
+                <th class="c-dconv num">发药换算系数</th>
               </tr>
             </thead>
             <tbody id="pqDetailBody"></tbody>
@@ -689,7 +695,9 @@
         ["处方状态", p.rxStatus], ["处方类型", p.rxType], ["处方种类", p.rxCategory || "—"],
         ["收费种类", p.feeType], ["处方金额", money(p.rxAmount !== undefined ? p.rxAmount : p.amount)],
         ["处方时间", p.rxTime], ["收费时间", p.chargeTime || "—"],
-        ["发药人", p.dispenser || "—"], ["发药时间", p.dispenseTime || "—"],
+        ["审核时间", p.auditTime || "—"], ["审核人", p.auditBy || "—"],
+        ["调配时间", p.dispensingTime || "—"], ["调配人", p.dispensingBy || "—"],
+        ["发药时间", p.dispenseTime || "—"], ["发药人", p.dispenser || "—"],
         ["诊断", p.diagnose], ["过敏药物", p.allergic || "—"]
       ];
       if (p.rxType === "中药饮片处方"){
@@ -697,12 +705,15 @@
         rows.push(["用法", p.usage || "—"]);
       }
       rows.push(["备注", p.remark || "—"]);
+      rows.push(["协定处方", p.agreementRx || "—"]);
     } else {
       ["姓名","性别","年龄","联系电话","处方号","门诊号","医疗号",
        "开单科室","药房","医师","处方状态","处方类型","处方种类",
-       "收费种类","处方金额","处方时间","收费时间","发药人","发药时间",
+       "收费种类","处方金额","处方时间","收费时间",
+       "审核时间","审核人","调配时间","调配人","发药时间","发药人",
        "诊断","过敏药物"].forEach(function(k){ rows.push([k, "—"]); });
       rows.push(["备注", "—"]);
+      rows.push(["协定处方", "—"]);
     }
     $("pqInfoGrid").innerHTML = rows.map(function(r){
       var text = r[1] === null || r[1] === undefined ? "" : String(r[1]);
@@ -711,12 +722,12 @@
     }).join("");
   }
 
-  /* ---------------- 药品明细（隐藏商品名称，规格改药品规格，数量改药品总量，加药品用法，去单位，最后加生产企业） ---------------- */
+  /* ---------------- 药品明细（隐藏商品名称，规格改药品规格，数量改药品总量，加药品用法，去单位，最后加生产企业、发药数量/发药单位/发药换算系数） ---------------- */
   function renderDetail(){
     var p = current();
     var body = $("pqDetailBody");
     if (!p || !p.items.length){
-      body.innerHTML = '<tr class="pq-d-empty"><td colspan="13">' + (p ? "该处方暂无药品明细" : "请从左侧选择一张处方") + '</td></tr>';
+      body.innerHTML = '<tr class="pq-d-empty"><td colspan="16">' + (p ? "该处方暂无药品明细" : "请从左侧选择一张处方") + '</td></tr>';
       return;
     }
     body.innerHTML = p.items.map(function(it, i){
@@ -734,6 +745,9 @@
         + '<td title="' + esc(it.usage) + '">' + esc(it.usage) + '</td>'
         + '<td class="num">' + money(it.amount) + '</td>'
         + '<td title="' + esc(it.manufacturer) + '">' + esc(it.manufacturer) + '</td>'
+        + '<td class="num">' + esc(it.dispenseQty || "—") + '</td>'
+        + '<td>' + esc(it.dispenseUnit || "—") + '</td>'
+        + '<td class="num">' + esc(it.dispenseConv === undefined ? "—" : it.dispenseConv) + '</td>'
         + '</tr>';
     }).join("");
   }

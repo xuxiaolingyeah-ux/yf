@@ -155,7 +155,7 @@
               <div class="fi"><span class="lbl"><span class="req">*</span>入库机构：</span><div class="ctrl"><input class="input is-readonly" id="fOrg" readonly></div></div>
               <div class="fi"><span class="lbl"><span class="req">*</span>入库库位：</span><div class="ctrl"><select class="select" id="fLocation"></select></div></div>
               <div class="fi"><span class="lbl"><span class="req">*</span>入库方式：</span><div class="ctrl"><select class="select" id="fMethod"></select></div></div>
-              <div class="fi"><span class="lbl" id="lblSupplier">供应商：</span><div class="ctrl"><select class="select" id="fSupplier"><option value="">请选择供应商</option></select></div></div>
+              <div class="fi"><span class="lbl" id="lblSupplier"><span class="req">*</span>供应商：</span><div class="ctrl"><select class="select" id="fSupplier"><option value="">请选择供应商</option></select></div></div>
               <div class="fi"><span class="lbl">提交人：</span><div class="ctrl"><input class="input is-readonly" id="fCreator" readonly></div></div>
               <div class="fi"><span class="lbl">提交时间：</span><div class="ctrl"><input class="input is-readonly" id="fTime" readonly></div></div>
               <div class="fi" style="grid-column: span 2"><span class="lbl">验收情况：</span><div class="ctrl"><input class="input" id="fAccept" placeholder="选填，如：外包装完好，数量核对无误" autocomplete="off"></div></div>
@@ -330,14 +330,14 @@
     locs = locs.filter(function(l,i){ return locs.indexOf(l) === i; });
     $("#fLocation").innerHTML = '<option value="">请选择库位</option>' + locs.map(function(l){return '<option>'+SI.esc(l)+'</option>';}).join("");
   }
-  $("#fMethod").innerHTML = '<option value="">请选择入库方式</option>' + SI.METHODS.map(function(m){return '<option>'+m+'</option>';}).join("");
+  $("#fMethod").innerHTML = '<option value="">请选择入库方式</option>' + SI.CREATE_METHODS.map(function(m){return '<option>'+m+'</option>';}).join("");
   $("#fSupplier").innerHTML = '<option value="">请选择供应商</option>' + SI.SUPPLIERS.map(function(s){return '<option>'+s+'</option>';}).join("");
   fillLocations();
   $("#fLocation").addEventListener("change",function(){ ST.location=this.value; });
   $("#fMethod").addEventListener("change",function(){
     ST.method = this.value;
-    /* 购货入库时供应商必填 */
-    $("#lblSupplier").innerHTML = (ST.method==="购货入库" ? '<span class="req">*</span>' : '') + '供应商：';
+    /* 购货入库 / 捐赠入库 供应商均必填 */
+    $("#lblSupplier").innerHTML = '<span class="req">*</span>供应商：';
   });
   $("#fSupplier").addEventListener("change",function(){ ST.supplier=this.value; });
   $("#fAccept").addEventListener("input",function(){ ST.accept=this.value; });
@@ -627,8 +627,12 @@
     ST.items = (editBill.items||[]).map(function(it){ return Object.assign(blankItem(), it); });
     $("#fOrg").value = (SI.orgOf(ST.orgId) || {}).name || ""; fillLocations();
     $("#fLocation").value = ST.location;
-    $("#fMethod").value = ST.method;
-    $("#lblSupplier").innerHTML = (ST.method==="购货入库" ? '<span class="req">*</span>' : '') + '供应商：';
+  $("#fMethod").value = ST.method;
+  /* 编辑兜底：历史单据方式若不在新增可选范围内（如院内调拨入库），补一个禁用选项保证回填可见 */
+  if (ST.method && SI.CREATE_METHODS.indexOf(ST.method) < 0) {
+    $("#fMethod").insertAdjacentHTML("afterbegin", '<option disabled>'+SI.esc(ST.method)+'</option>');
+  }
+  $("#lblSupplier").innerHTML = '<span class="req">*</span>供应商：';
     $("#fSupplier").value = ST.supplier;
     $("#fAccept").value = ST.accept;
     $$('input[name="invMode"]').forEach(function(r){ r.checked = (r.value===ST.invoiceMode); });
@@ -650,7 +654,7 @@
     markInvalid($("#fOrg"), !ST.orgId);            if(!ST.orgId) errs.push("入库机构");
     markInvalid($("#fLocation"), !ST.location);    if(!ST.location) errs.push("入库库位");
     markInvalid($("#fMethod"), !ST.method);        if(!ST.method) errs.push("入库方式");
-    var supBad = ST.method==="购货入库" && !ST.supplier;
+    var supBad = !ST.supplier;
     markInvalid($("#fSupplier"), supBad);          if(supBad) errs.push("供应商");
     if(!ST.items.length) errs.push("药品明细（至少 1 条）");
     ST.items.forEach(function(it, i){

@@ -165,10 +165,10 @@
           <div class="oc-sec">
             <div class="oc-sec-title">出库信息</div>
             <div class="oc-form">
-              <div class="fi"><span class="lbl">出库方式：</span><div class="ctrl"><input class="input is-readonly" id="fMethod" value="直接出库" readonly></div></div>
+              <div class="fi"><span class="lbl">出库方式：</span><div class="ctrl"><input class="input is-readonly" id="fMethod" value="院内调拨出库" readonly></div></div>
               <div class="fi"><span class="lbl">出库机构：</span><div class="ctrl"><input class="input is-readonly" id="fOrg" readonly></div></div>
               <div class="fi"><span class="lbl"><span class="req">*</span>出库库位：</span><div class="ctrl"><select class="select" id="fLocation"></select></div></div>
-              <div class="fi"><span class="lbl"><span class="req">*</span>接收机构：</span><div class="ctrl"><select class="select" id="fInOrg"></select></div></div>
+              <div class="fi"><span class="lbl">接收机构：</span><div class="ctrl"><input class="input is-readonly" id="fInOrg" readonly title="院内调拨：接收机构固定为当前机构"></div></div>
               <div class="fi"><span class="lbl"><span class="req">*</span>接收库位：</span><div class="ctrl"><select class="select" id="fInLocation"></select></div></div>
               <div class="fi"><span class="lbl">提交人：</span><div class="ctrl"><input class="input is-readonly" id="fCreator" readonly></div></div>
               <div class="fi"><span class="lbl">提交时间：</span><div class="ctrl"><input class="input is-readonly" id="fTime" readonly></div></div>
@@ -363,15 +363,15 @@
 
   /* ===== 顶部信息 ===== */
   $("#fOrg").value = OB.orgName(user.orgId);
+  /* 接收机构：院内调拨固定为当前机构，只读 */
+  $("#fInOrg").value = OB.orgName(user.orgId);
+  ST.inOrgId = user.orgId;
   $("#fCreator").value = user.name;
   $("#fTime").value = OB.fmtNow();
 
   function fillOptions(){
     $("#fLocation").innerHTML = '<option value="">请选择库位</option>' + OB.LOCATIONS.map(function(l){
       return '<option>'+OB.esc(l)+'</option>';
-    }).join("");
-    $("#fInOrg").innerHTML = '<option value="">请选择接收机构</option>' + OB.ORGS.map(function(o){
-      return '<option value="'+o.id+'">'+OB.esc(o.name)+'</option>';
     }).join("");
     $("#fInLocation").innerHTML = '<option value="">请选择库位</option>' + OB.LOCATIONS.map(function(l){
       return '<option>'+OB.esc(l)+'</option>';
@@ -380,7 +380,6 @@
   fillOptions();
 
   $("#fLocation").addEventListener("change", function(){ ST.location = this.value; this.classList.remove("is-invalid"); });
-  $("#fInOrg").addEventListener("change", function(){ ST.inOrgId = this.value; this.classList.remove("is-invalid"); });
   $("#fInLocation").addEventListener("change", function(){ ST.inLocation = this.value; this.classList.remove("is-invalid"); });
   $("#fRemark").addEventListener("input", function(){ ST.remark = this.value; });
 
@@ -707,12 +706,11 @@
     $("#headStatus").style.display = "";
     $("#headStatus").textContent = "审核状态：" + (OB.AUDIT_STATUS[editBill.auditStatus] || "—");
     ST.location = editBill.outLocation || "";
-    ST.inOrgId = editBill.inOrgId || "";
+    ST.inOrgId = user.orgId;   /* 接收机构固定当前机构 */
     ST.inLocation = editBill.inLocation || "";
     ST.remark = editBill.remark || "";
     ST.items = (editBill.items || []).map(function(it){ return Object.assign(blankItem(), it, { traces: (it.traces || []).slice() }); });
     $("#fLocation").value = ST.location;
-    $("#fInOrg").value = ST.inOrgId;
     $("#fInLocation").value = ST.inLocation;
     $("#fRemark").value = ST.remark;
     $("#fCreator").value = editBill.creatorName;
@@ -727,8 +725,11 @@
   function validate(submit){
     var errs = [];
     markInvalid($("#fLocation"), !ST.location);   if(!ST.location) errs.push("出库库位");
-    markInvalid($("#fInOrg"), !ST.inOrgId);       if(!ST.inOrgId) errs.push("接收机构");
     markInvalid($("#fInLocation"), !ST.inLocation); if(!ST.inLocation) errs.push("接收库位");
+    if (ST.location && ST.inLocation && ST.location === ST.inLocation) {
+      markInvalid($("#fInLocation"), true);
+      errs.push("接收库位不能与出库库位相同（院内调拨需跨库位）");
+    }
     if(!ST.items.length) errs.push("药品明细（至少 1 条）");
     ST.items.forEach(function(it, i){
       var n = "第" + (i + 1) + "行";
@@ -752,7 +753,7 @@
       b = { id: "c" + Date.now(), code: "", records: [] };
       list.push(b);
     }
-    b.method = "直接出库";
+    b.method = "院内调拨出库";
     b.outOrgId = b.outOrgId || user.orgId;
     b.outLocation = ST.location;
     b.inOrgId = ST.inOrgId;

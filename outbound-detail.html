@@ -269,6 +269,7 @@
 
 <script src="identity.js"></script>
   <script src="outbound-common.js"></script>
+  <script src="stock-in-common.js?v=20261111b"></script>
 <script>
 (function(){
   "use strict";
@@ -457,10 +458,16 @@
         return;
       }
       var now = OB.fmtNow();
+      var pairedMsg = "";
       if(result === "通过"){
         bill.auditStatus = "approved";
         bill.auditTime = now;
         OB.deductStock(bill);
+        /* 院内调拨：接收侧自动生成「院内调拨入库」入库单（来源单号 = 出库单号） */
+        if (window.SI && bill.method === "院内调拨出库") {
+          var inb = SI.createInnerInBill(bill);
+          pairedMsg = inb ? "，已自动生成入库单 " + inb.code : "";
+        }
       } else {
         bill.auditStatus = "rejected";
         bill.auditTime = now;
@@ -471,7 +478,7 @@
         node: "审核", person: user.name, org: bill.auditorOrg, time: now, result: result, opinion: opinion
       }]);
       OB.save(list);
-      toast(result === "通过" ? "审核已通过，库存已扣减" : "已驳回，库存预占已释放");
+      toast(result === "通过" ? "审核已通过，库存已扣减" + pairedMsg : "已驳回，库存预占已释放");
       renderInfo(); renderItems(); renderRecords(); renderFoot();
     });
   }

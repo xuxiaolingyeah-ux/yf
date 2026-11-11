@@ -127,6 +127,7 @@
               <div class="fi"><span class="lbl">入库机构：</span><span class="val" id="vOrg"></span></div>
               <div class="fi"><span class="lbl">入库库位：</span><span class="val" id="vLocation"></span></div>
               <div class="fi"><span class="lbl">入库方式：</span><span class="val" id="vMethod"></span></div>
+              <div class="fi" id="fiSrcCode" style="display:none"><span class="lbl">来源单号：</span><span class="val" id="vSrcCode"></span></div>
               <div class="fi"><span class="lbl">供应商：</span><span class="val" id="vSupplier"></span></div>
               <div class="fi" style="grid-column: span 2"><span class="lbl">验收情况：</span><span class="val" id="vAccept"></span></div>
               <div class="fi"><span class="lbl">提交人：</span><span class="val" id="vCreator"></span></div>
@@ -230,6 +231,8 @@
     $("#headStatus").textContent = "审核状态：" + SI.STATUS[bill.status];
     setV("#vOrg", orgName()); setV("#vLocation", bill.location);
     setV("#vMethod", bill.method); setV("#vSupplier", bill.supplier); setV("#vAccept", bill.accept);
+  /* 来源单号：仅系统生成的院内调拨入库单有值 */
+  if (bill.srcCode) { $("#fiSrcCode").style.display = ""; setV("#vSrcCode", bill.srcCode + "（院内调拨出库）"); }
     setV("#vCreator", bill.creatorName); setV("#vTime", bill.submitTime);
     setV("#vInvMode", bill.invoiceMode==="detail" ? "按明细" : "按汇总");
     setV("#vInvNo", bill.invoiceMode==="detail" ? "见明细" : bill.invoiceNo);

@@ -65,20 +65,24 @@
     { code: "1310200101", name: "黄芪配方颗粒", py: "HQPFKL", spec: "1g×15袋/盒", vendor: "江阴天江药业有限公司", kind: "配方颗粒", purchase: 36.00, retail: 52.00 }
   ];
 
-  /* ---------- 增减维度 ---------- */
+  /* ---------- 增减维度 ----------
+   * max = 单维度单月流水幅度上限（仅用于生成演示数据，页面只读 key/label）
+   * 业务口径：调拨入库/调拨出库 = 跨机构调拨；院内调拨入库/出库 = 院内药房之间 */
   var IN_DIMS = [
-    { key: "transferIn", label: "调拨入库" },
-    { key: "gainIn", label: "报增入库" },
-    { key: "returnIn", label: "退库入库" },
-    { key: "rxReturnIn", label: "退药入库" },
-    { key: "otherIn", label: "入库" }
+    { key: "transferIn", label: "调拨入库", max: 45 },
+    { key: "gainIn", label: "报增入库", max: 18 },
+    { key: "returnIn", label: "退库入库", max: 22 },
+    { key: "rxReturnIn", label: "退药入库", max: 30 },
+    { key: "innerTransferIn", label: "院内调拨入库", max: 50 },
+    { key: "purchaseIn", label: "购货入库", max: 120 },
+    { key: "donationIn", label: "捐赠入库", max: 12 }
   ];
   var OUT_DIMS = [
-    { key: "transferOut", label: "调拨出库" },
-    { key: "lossOut", label: "报损出库" },
-    { key: "returnOut", label: "退库出库" },
-    { key: "dispenseOut", label: "发药出库" },
-    { key: "otherOut", label: "出库" }
+    { key: "transferOut", label: "调拨出库", max: 60 },
+    { key: "lossOut", label: "报损出库", max: 14 },
+    { key: "returnOut", label: "退库出库", max: 24 },
+    { key: "dispenseOut", label: "发药出库", max: 120 },
+    { key: "innerTransferOut", label: "院内调拨出库", max: 60 }
   ];
 
   /* ---------- 工具 ---------- */
@@ -198,10 +202,10 @@
     var quiet = hash(key) % 4 === 0;   /* 约 1/4 的月份该药品无任何发生额 */
     var f = { __quiet: quiet };
     IN_DIMS.forEach(function (d) {
-      f[d.key] = quiet ? 0 : pickFlow(key + d.key, 60);
+      f[d.key] = quiet ? 0 : pickFlow(key + d.key, d.max || 60);
     });
     OUT_DIMS.forEach(function (d) {
-      f[d.key] = quiet ? 0 : pickFlow(key + d.key, 90);
+      f[d.key] = quiet ? 0 : pickFlow(key + d.key, d.max || 90);
     });
     return f;
   }
@@ -241,11 +245,11 @@
             OUT_DIMS.forEach(function (d) { outs += f[d.key]; });
             closeQty = qty + ins - outs;
           }
-          /* 低储补货：结存过低时按基准补货（通过「入库」维度），避免库存长期趴零 */
+          /* 低储补货：结存过低时按基准补货（走「购货入库」，符合采购补货业务） */
           if (!f.__quiet && closeQty < 100) {
             var base = 220 + (hash(book.id + drug.code + "|base") % 480);
             var need = base - closeQty + (hash(book.id + drug.code + "|" + y + "-" + m + "|rp") % 80);
-            if (need > 0) { f.otherIn += need; closeQty += need; }
+            if (need > 0) { f.purchaseIn += need; closeQty += need; }
           }
           last = { open: qty, flows: f, inSum: 0, outSum: 0, close: closeQty };
           IN_DIMS.forEach(function (d) { last.inSum += f[d.key]; });

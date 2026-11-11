@@ -252,6 +252,7 @@
     if(!b.outLocation) errs.push("出库库位");
     if(!b.inOrgId) errs.push("接收机构");
     if(!b.inLocation) errs.push("接收库位");
+    if(b.outLocation && b.inLocation && b.outLocation === b.inLocation) errs.push("接收库位不能与出库库位相同（院内调拨需跨库位）");
     if(!(b.items||[]).length) errs.push("药品明细（至少 1 条）");
     (b.items||[]).forEach(function(it, i){
       var n = "第" + (i+1) + "行";

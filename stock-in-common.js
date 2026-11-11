@@ -30,7 +30,13 @@
 
   var SUPPLIERS = ["山东医药集团", "济南医药供应站", "上海医药分销", "广州医药集团", "天津医药集团", "辉瑞制药", "扬子江药业", "常州药业股份"];
 
-  var METHODS = ["购货入库", "捐赠入库", "调拨入库", "退库入库", "盘盈入库", "报增入库"];
+  /* ---------- 入库方式 ----------
+   * 新增仅开放：购货入库 / 捐赠入库；
+   * 列表筛选用全量 6 类 —— 调拨入库 / 报增入库 / 退库入库 / 院内调拨入库
+   * 由上游业务单据（药品调拨、药品增损、药品退库、院内调拨出库）自动生成，不提供手工新增入口 */
+  var CREATE_METHODS = ["购货入库", "捐赠入库"];
+  var FILTER_METHODS = ["调拨入库", "报增入库", "退库入库", "院内调拨入库", "购货入库", "捐赠入库"];
+  var METHODS = FILTER_METHODS; /* 兼容旧引用（列表筛选） */
   var REASONS = ["包装不合格", "外观质量不合格", "内在质量不合格"];
 
   /* ---------- 药品库（选药弹窗数据源） ---------- */
@@ -170,10 +176,7 @@
         records: [
           { node: "提交", person: "陈静", org: "区域中心药房", time: "2026-10-24 16:08:45", result: "已提交", opinion: "" },
           { node: "审核", person: "赵敏", org: "区域中心药房", time: "2026-10-24 17:20:10", result: "通过", opinion: "" }
-        ] },
-      { id: "b8", code: "RK20261101008", orgId: "o2", pharmacyId: "p21", location: "货架二区", method: "盘盈入库", supplier: "", accept: "", invoiceMode: "sum", invoiceNo: "", invoiceAmount: "", invoiceDate: "", creatorId: "u2", creatorName: "李强", submitTime: "2026-11-01 08:45:00", status: "draft", auditorRole: "center", uploadStatus: "none",
-        items: [ item("1210501101", 0, 20, 0) ],
-        records: [] }
+        ] }
     ];
   }
 
@@ -227,6 +230,55 @@
   }
 
   /* ---------- 明细计算 ---------- */
+  /* ---------- 院内调拨配对 ----------
+   * 出库单（院内调拨出库）审核通过后，接收库位所在机构自动生成一张「院内调拨入库」入库单，
+   * 来源单号 = 出库单号；同一出库单只生成一次（幂等）。由 outbound-detail 审核通过时调用。 */
+  function siItemFromOut(it) {
+    var d = DRUGS.filter(function (x) { return x.code === it.code; })[0] || {};
+    return {
+      name: it.name || d.name || "", code: it.code, spec: it.spec || d.spec || "",
+      packSpec: it.packSpec || d.packSpec || "", vendor: it.vendor || d.vendor || "",
+      approval: d.approval || "", factor: d.factor || "", packUnit: d.packUnit || "",
+      insCode: d.insCode || "", insName: d.insName || "",
+      batch: it.batch || "", expiry: it.expiry || "",
+      purchase: it.purchase || 0, retail: it.retail || 0,
+      qty: Number(it.qty || 0), unq: 0, reason: "", invoiceNo: "",
+      traces: (it.traces || []).map(function (t) {
+        if (typeof t === "object") return t;
+        return { code: t, name: it.name || d.name || "", spec: it.spec || d.spec || "", approval: d.approval || "" };
+      })
+    };
+  }
+  function createInnerInBill(ob) {
+    if (!ob || ob.method !== "院内调拨出库" || !ob.inOrgId) return null;
+    var list = load();
+    /* 幂等：同一出库单已生成过则跳过 */
+    if (list.some(function (b) { return b.srcId === ob.id; })) return null;
+    var org = orgOf(ob.inOrgId);
+    var pharmacy = org && org.pharmacies[0];
+    var now = fmtNow();
+    var bill = {
+      id: "b" + Date.now(), code: newCode(list),
+      orgId: ob.inOrgId, pharmacyId: pharmacy ? pharmacy.id : "",
+      location: ob.inLocation || (pharmacy && pharmacy.locations[0]) || "",
+      method: "院内调拨入库",
+      supplier: "", accept: "院内调拨自动入库（来源：" + (ob.code || "出库单") + "）",
+      invoiceMode: "", invoiceNo: "", invoiceAmount: "", invoiceDate: "",
+      srcCode: ob.code || "", srcId: ob.id,
+      creatorId: "", creatorName: "系统自动生成",
+      submitTime: now, status: "approved", auditorRole: "center", uploadStatus: "none",
+      items: (ob.items || []).map(siItemFromOut),
+      records: [
+        { node: "提交", person: "系统自动生成", org: org ? org.name : "", time: now, result: "已提交", opinion: "院内调拨出库单 " + (ob.code || "") + " 审核通过，自动生成" },
+        { node: "审核", person: "系统自动审批", org: org ? org.name : "", time: now, result: "通过", opinion: "院内调拨配对入库，自动通过" }
+      ]
+    };
+    list.push(bill);
+    save(list);
+    return bill;
+  }
+
+  /* ---------- 明细计算 ---------- */
   function qualified(it) { return Math.max(0, Number(it.qty || 0) - Number(it.unq || 0)); }
   function purchaseAmt(it) { return Number(it.qty || 0) * Number(it.purchase || 0); }
   function retailAmt(it) { return Number(it.qty || 0) * Number(it.retail || 0); }
@@ -238,12 +290,13 @@
 
   window.SI = {
     USERS: USERS, ORGS: ORGS, SUPPLIERS: SUPPLIERS, METHODS: METHODS, REASONS: REASONS,
+    CREATE_METHODS: CREATE_METHODS, FILTER_METHODS: FILTER_METHODS,
     DRUGS: DRUGS, BATCHES: BATCHES,
     STATUS: STATUS, UPLOAD: UPLOAD,
     qs: qs, esc: esc, raw: raw, fmtNow: fmtNow, money: money, num2: num2,
     currentUser: currentUser, setUser: setUser, orgOf: orgOf,
     load: load, save: save, billOf: billOf, newCode: newCode,
-    canAudit: canAudit, opsFor: opsFor,
+    canAudit: canAudit, opsFor: opsFor, createInnerInBill: createInnerInBill,
     qualified: qualified, purchaseAmt: purchaseAmt, retailAmt: retailAmt, sums: sums
   };
 })();

@@ -3,10 +3,10 @@
  * 依赖：无（独立 IIFE，挂 window.OB）
  * 数据：sessionStorage "OB_DATA_V2" / "OB_STOCK" / "OB_USER"
  * 说明：
- *   1) 历史单据由调拨 / 退库 / 报损 / 盘亏 / 退货业务自动生成，审核状态统一为
+ *   1) 历史单据由调拨 / 退库 / 报损业务自动生成，审核状态统一为
  *      「审核通过」，审核人「系统自动审批」；
- *   2) 新增出库 = 直接出库，提交时生成单号并预占可用库存；
- *      驳回 / 撤回 / 删除释放预占，审核通过转为实际扣减。
+ *   2) 新增出库 = 院内调拨出库（出库库位 → 本院其他库位），提交时生成单号并预占可用库存；
+ *      驳回 / 撤回 / 删除释放预占，审核通过转为实际扣减，并自动生成接收方「院内调拨入库」单。
  * ========================================================= */
 (function () {
   "use strict";
@@ -29,14 +29,14 @@
   /* 库位字典：出库库位 / 接收库位共用 */
   var LOCATIONS = ["西药房", "中药房", "门诊药房", "西药库"];
 
-  /* ---------- 出库方式 / 来源单据 ---------- */
-  var METHODS = ["直接出库", "调拨出库", "退库出库", "报损出库", "盘亏出库", "退货出库"];
+  /* ---------- 出库方式 / 来源单据 ----------
+   * 院内调拨出库 = 手工新增（本院库位 → 本院库位），审核通过后自动生成接收方「院内调拨入库」单；
+   * 调拨 / 退库 / 报损出库由上游业务单据自动生成 */
+  var METHODS = ["院内调拨出库", "调拨出库", "退库出库", "报损出库"];
   var SRC_TYPE = {
     "调拨出库": "调拨单号",
     "退库出库": "退库单号",
-    "报损出库": "报损单号",
-    "盘亏出库": "盘亏单号",
-    "退货出库": "退货单号"
+    "报损出库": "报损单号"
   };
 
   /* ---------- 审核状态 ---------- */
@@ -153,7 +153,7 @@
   }
 
   /* ---------- 出库单种子（历史自动生成单据） ----------
-   * outOrgId 空缺 = 患者退药（无出库方）；inOrgId 空缺 = 报损 / 盘亏（无接收方） */
+   * inOrgId 空缺 = 报损出库（无接收方）；盘亏 / 退货类单据已按业务口径移除 */
   function seed() {
     var raw = [
       { id: "c1", code: "CK20261101001", method: "调拨出库",
@@ -176,35 +176,11 @@
         srcCode: "BS20261031003",
         items: [item("1210501601", 0, 6)] },
 
-      { id: "c4", code: "CK20261031004", method: "盘亏出库",
-        outOrgId: "o3", outLocation: "西药库",
-        creatorId: "u4", creatorName: "陈静", submitTime: "2026-10-31 15:48:30",
-        srcCode: "PK20261031004",
-        items: [item("1210501301", 0, 8), item("1210501401", 0, 3)] },
-
-      { id: "c5", code: "CK20261030005", method: "退货出库",
-        inOrgId: "o3", inLocation: "西药库",
-        creatorId: "u3", creatorName: "赵敏", submitTime: "2026-10-30 09:05:12",
-        srcCode: "TH20261030005",
-        items: [item("1210500601", 1, 2)] },
-
-      { id: "c6", code: "CK20261030006", method: "退货出库",
-        inOrgId: "o3", inLocation: "西药库",
-        creatorId: "u4", creatorName: "陈静", submitTime: "2026-10-30 14:20:45",
-        srcCode: "TH20261030006",
-        items: [item("1210500901", 0, 3)] },
-
       { id: "c7", code: "CK20261029007", method: "报损出库",
         outOrgId: "o3", outLocation: "西药库",
         creatorId: "u4", creatorName: "陈静", submitTime: "2026-10-29 16:33:18",
         srcCode: "BS20261029007",
         items: [item("1210500501", 0, 5)] },
-
-      { id: "c8", code: "CK20261028008", method: "盘亏出库",
-        outOrgId: "o3", outLocation: "西药库",
-        creatorId: "u3", creatorName: "赵敏", submitTime: "2026-10-28 11:30:05",
-        srcCode: "PK20261028008",
-        items: [item("1210501201", 0, 5)] },
 
       { id: "c9", code: "CK20261027009", method: "调拨出库",
         outOrgId: "o3", outLocation: "中药房",
@@ -219,12 +195,6 @@
         creatorId: "u4", creatorName: "陈静", submitTime: "2026-10-26 09:12:30",
         srcCode: "DB20261028003", srcId: "t3",
         items: [item("1210501101", 0, 30)] },
-
-      { id: "c11", code: "CK20261025011", method: "退货出库",
-        inOrgId: "o3", inLocation: "中药房",
-        creatorId: "u3", creatorName: "赵敏", submitTime: "2026-10-25 15:06:18",
-        srcCode: "TH20261025011",
-        items: [item("1210501601", 0, 1)] },
 
       { id: "c12", code: "CK20261025012", method: "退库出库",
         outOrgId: "o2", outLocation: "门诊药房",
@@ -253,18 +223,6 @@
         srcCode: "TK20261023015",
         items: [item("1210501101", 0, 20)] },
 
-      { id: "c16", code: "CK20261023016", method: "盘亏出库",
-        outOrgId: "o1", outLocation: "西药房",
-        creatorId: "u1", creatorName: "王芳", submitTime: "2026-10-23 11:30:05",
-        srcCode: "PK20261023016",
-        items: [item("1210501201", 0, 3)] },
-
-      { id: "c17", code: "CK20261022017", method: "退货出库",
-        inOrgId: "o1", inLocation: "西药房",
-        creatorId: "u1", creatorName: "王芳", submitTime: "2026-10-22 09:05:12",
-        srcCode: "TH20261022017",
-        items: [item("1210500601", 1, 2)] },
-
       { id: "c18", code: "CK20261022018", method: "报损出库",
         outOrgId: "o1", outLocation: "西药房",
         creatorId: "u1", creatorName: "王芳", submitTime: "2026-10-22 17:21:55",
@@ -272,15 +230,14 @@
         items: [item("1210500301", 1, 4)] }
     ];
 
-    /* 历史自动生成单据：审核通过 + 系统自动审批；除盘亏外都需要追溯码 */
+    /* 历史自动生成单据：审核通过 + 系统自动审批；均需要追溯码 */
     return raw.map(function (b, bi) {
-      var noTrace = b.method === "盘亏出库";
       b.auditStatus = "approved";
       b.auditorId = "";
       b.auditorName = "系统自动审批";
       b.auditorOrg = "区域中心药房";
       b.auditTime = b.submitTime;
-      b.traceRequired = !noTrace;
+      b.traceRequired = true;
       b.remark = "业务单据自动生成";
       b.records = [
         { node: "提交", person: b.creatorName, org: orgName(ownerOrg(b)) || "系统", time: b.submitTime, result: "已提交", opinion: "业务单据自动生成" },
@@ -288,7 +245,7 @@
       ];
       b.items = (b.items || []).map(function (it, ii) {
         it.minFactor = (drugOf(it.code) || {}).minFactor || "";
-        it.traces = noTrace ? [] : makeTraces(b.code, ii, Number(it.qty || 0));
+        it.traces = makeTraces(b.code, ii, Number(it.qty || 0));
         return it;
       });
       return b;

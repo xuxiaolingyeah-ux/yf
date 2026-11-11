@@ -56,6 +56,20 @@
 .rs-filter .filter-label { font-size: 12px; color: var(--text-tertiary); white-space: nowrap; }
 .rs-filter .input, .rs-filter .select { height: 30px; width: 180px; }
 .rs-filter .filter-acts { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+/* 特殊药品属性复选：毒性 / 麻醉 / 精神 */
+.rs-filter .rs-checks { gap: 14px; padding-left: 2px; }
+.rs-ck { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--text-secondary); cursor: pointer; user-select: none; }
+.rs-ck input[type="checkbox"] { width: 13px; height: 13px; margin: 0; accent-color: var(--primary); cursor: pointer; }
+.rs-ck:hover span { color: var(--primary); }
+/* 药品名称后的属性小标签 */
+.rs-tag {
+  display: inline-block; margin-left: 5px; padding: 0 4px;
+  font-size: 11px; line-height: 16px; border-radius: 2px;
+  border: 1px solid transparent; vertical-align: 1px; white-space: nowrap;
+}
+.rs-tag-toxic { color: #d4380d; background: #fff2e8; border-color: #ffbb96; }
+.rs-tag-narcotic { color: #ad6800; background: #fffbe6; border-color: #ffe58f; }
+.rs-tag-psychic { color: #531dab; background: #f9f0ff; border-color: #d3adf7; }
 
 /* 表格 */
 .rs-table-wrap { flex: 1; min-height: 0; overflow: auto; background: var(--bg-white); padding: 0 16px; }
@@ -280,6 +294,11 @@
                 <option>中成药</option>
                 <option>中药饮片</option>
               </select>
+            </div>
+            <div class="filter-item rs-checks">
+              <label class="rs-ck"><input type="checkbox" id="d-tag-toxic"><span>毒性</span></label>
+              <label class="rs-ck"><input type="checkbox" id="d-tag-narcotic"><span>麻醉</span></label>
+              <label class="rs-ck"><input type="checkbox" id="d-tag-psychic"><span>精神</span></label>
             </div>
             <div class="filter-acts">
               <button class="btn btn-default" onclick="RS.docReset()">重置</button>
@@ -581,6 +600,18 @@
   var TCM_SPECS = ["10g*20袋","9g*10丸","10ml*10支","100ml/瓶","500g/袋","250g/袋","200g/袋","6g*12袋"];
   var KINDS = ["西药", "中成药", "中药饮片"];
 
+  /* 特殊药品属性（按药品名固定，保证同一药品各行一致） */
+  var SPECIAL_TAGS = {
+    "复方甘草片": ["麻醉"],
+    "藿香正气水": ["毒性"],
+    "急支糖浆": ["精神"],
+    "黄芪": ["毒性", "精神"],
+    "丹参": ["毒性"],
+    "川芎": ["麻醉"],
+    "白术": ["毒性"]
+  };
+  function nameTags(name) { return SPECIAL_TAGS[name] || []; }
+
   /* Tab1 药品行（共 2448 条） */
   var DRUG_ROWS = [];
   (function genDrugRows() {
@@ -593,10 +624,10 @@
       var allowed = "全部";
       if (i === 0) allowed = "许斌、严恒清、徐东升";
       else if (i % 97 === 0) allowed = sItem(DOCTORS) + "、" + sItem(DOCTORS);
-      DRUG_ROWS.push({ code: code, name: name, kind: kind, spec: spec, allowed: allowed });
+      DRUG_ROWS.push({ code: code, name: name, kind: kind, spec: spec, allowed: allowed, tags: nameTags(name) });
     }
     /* 首行对齐截图 */
-    DRUG_ROWS[0] = { code: "1010100101", name: "注射用阿洛西林钠", kind: "西药", spec: "2.0g/瓶", allowed: "许斌、严恒清、徐东升" };
+    DRUG_ROWS[0] = { code: "1010100101", name: "注射用阿洛西林钠", kind: "西药", spec: "2.0g/瓶", allowed: "许斌、严恒清、徐东升", tags: [] };
   })();
 
   /* 药品配置弹窗左侧：所有药品·规格列表（共 2451 条） */
@@ -707,10 +738,15 @@
   RS.docSearch = function () {
     var kw = $("d-kw").value.trim().toLowerCase();
     var kind = $("d-kind").value;
+    var wantTags = [];
+    if ($("d-tag-toxic").checked) wantTags.push("毒性");
+    if ($("d-tag-narcotic").checked) wantTags.push("麻醉");
+    if ($("d-tag-psychic").checked) wantTags.push("精神");
     ST.docFiltered = DRUG_ROWS.filter(function (d) {
       var hitKw = !kw || d.name.toLowerCase().indexOf(kw) > -1 || d.code.indexOf(kw) > -1;
       var hitKind = !kind || d.kind === kind;
-      return hitKw && hitKind;
+      var hitTag = !wantTags.length || (d.tags || []).some(function (t) { return wantTags.indexOf(t) > -1; });
+      return hitKw && hitKind && hitTag;
     });
     ST.docPage = 1;
     renderDocTable();
@@ -718,12 +754,23 @@
   RS.docReset = function () {
     $("d-kw").value = "";
     $("d-kind").value = "";
+    $("d-tag-toxic").checked = false;
+    $("d-tag-narcotic").checked = false;
+    $("d-tag-psychic").checked = false;
     RS.docSearch();
   };
 
   function docAllowedText(d) {
     var arr = drugCfg[d.code];
     return (arr && arr.length) ? arr.join("、") : "全部";
+  }
+
+  /* 特殊属性小标签 */
+  function tagBadges(d) {
+    if (!d.tags || !d.tags.length) return "";
+    return d.tags.map(function (t) {
+      return '<span class="rs-tag rs-tag-' + (t === "毒性" ? "toxic" : t === "麻醉" ? "narcotic" : "psychic") + '">' + esc(t) + '</span>';
+    }).join("");
   }
 
   function renderDocTable() {
@@ -736,7 +783,7 @@
         html += '<tr>'
           + '<td class="col-num">' + ((ST.docPage - 1) * ST.docSize + i + 1) + '</td>'
           + '<td>' + esc(d.code) + '</td>'
-          + '<td title="' + esc(d.name) + '">' + esc(d.name) + '</td>'
+          + '<td title="' + esc(d.name) + '">' + esc(d.name) + tagBadges(d) + '</td>'
           + '<td>' + esc(d.kind) + '</td>'
           + '<td>' + esc(d.spec) + '</td>'
           + '<td title="' + esc(docAllowedText(d)) + '">' + esc(docAllowedText(d)) + '</td>'

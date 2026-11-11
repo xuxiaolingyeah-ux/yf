@@ -165,8 +165,6 @@
 .disp-ltable .c-no { width: 118px; }
 .disp-ltable .c-name { width: 56px; }
 .disp-ltable .c-outp { width: auto; }
-.disp-ltable .c-user { width: 56px; }
-.disp-ltable .c-time { width: 130px; }
 .disp-l-empty { padding: 40px 0; text-align: center; color: var(--text-placeholder); font-size: 12px; }
 
 /* 已选处方条 */
@@ -830,24 +828,14 @@
   }
 
   /* ---------------- 左侧列表 ---------------- */
-  /* 列定义按 tab 区分：未摆药增加审核人/审核时间；已摆药增加摆药人/摆药时间/审核人/审核时间 */
+  /* 两个 tab 列一致：处方号/姓名/门诊号（审核人、审核时间等只在右侧详情区展示） */
   function listColumns(){
-    var cols = [
+    return [
       { cls: "c-chk", chk: true },
       { cls: "c-no", label: "处方号", key: "rxNo" },
       { cls: "c-name", label: "姓名", key: "name" },
       { cls: "c-outp", label: "门诊号", key: "outpatientNo" }
     ];
-    if (ST.tab === "unprepared"){
-      cols.push({ cls: "c-user", label: "审核人", key: "auditUser" });
-      cols.push({ cls: "c-time", label: "审核时间", key: "auditTime" });
-    } else {
-      cols.push({ cls: "c-user", label: "摆药人", key: "prepareUser" });
-      cols.push({ cls: "c-time", label: "摆药时间", key: "prepareTime" });
-      cols.push({ cls: "c-user", label: "审核人", key: "auditUser" });
-      cols.push({ cls: "c-time", label: "审核时间", key: "auditTime" });
-    }
-    return cols;
   }
 
   function renderList(){

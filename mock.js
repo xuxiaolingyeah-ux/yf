@@ -590,7 +590,8 @@ MOCK.users = [
   { id: "u3", account: "zhaomin", password: "123456", name: "赵敏", org: "区域中心药房", role: "center", roleName: "中心药房审核人" },
   { id: "u5", account: "sunlei", password: "123456", name: "孙磊", org: "信息中心 · HIS 对接", role: "his", roleName: "HIS 对接人员" },
   { id: "u6", account: "zhouwen", password: "123456", name: "周雯", org: "县域医共体药学专家库", role: "expert", roleName: "药学专家" },
-  { id: "u7", account: "fengtao", password: "123456", name: "冯涛", org: "县域医共体药学专家库", role: "expert", roleName: "临床专家" }
+  { id: "u7", account: "fengtao", password: "123456", name: "冯涛", org: "县域医共体药学专家库", role: "expert", roleName: "临床专家" },
+  { id: "u8", account: "liuyun", password: "123456", name: "刘芸", org: "区域中心药房", role: "narcoticAuditor", roleName: "毒麻精药房审核专员" }
 ];
 
 MOCK.selections = [
@@ -1712,15 +1713,18 @@ MOCK.tcmSeed = {
 };
 
 /* ==========================================================================
-   处方管理 · 处方发药（门诊处方发药 · 中药房）
-   rxDisp：已收费 / 未收费处方，items 为处方明细
-     feeStatus  paid=已收费 / unpaid=未收费
-     dispensed  是否已发药（已发药后不再出现在已收费待发药列表）
-     audited    是否已审核
+   处方管理 · 处方发药（门诊处方发药）
+   rxDisp：进入本列表的处方均已收费（未摆药 / 已摆药 两个 tab）
+     prepared     是否已摆药（tab 划分依据：未摆药 / 已摆药）
+     prepareUser / prepareTime   摆药人 / 摆药时间（摆药完成后回填）
+     narcotic     是否涉及毒麻精类药品（审核在独立的毒麻精发药审核页面完成）
+     auditStatus  毒麻精处方审核状态：approved=审核通过（仅审核通过的处方进入本列表）
+     auditUser / auditTime       审核人 / 审核时间（仅毒麻精处方，审核通过后回填）
+     dispensed    是否已发药（发药后移出本列表）
    ========================================================================== */
 MOCK.rxDisp = [
   {
-    id: "dp1", feeStatus: "paid", rxNo: "M202611000005A", rxType: "中成药处方", decoct: "否",
+    id: "dp1", rxNo: "M202611000005A", rxType: "中成药处方", decoct: "否",
     name: "冯小容", py: "FXR", idNo: "370102198202030028",
     gender: "女性", age: "44岁", medicalNo: "260430000000001", outpatientNo: "202611040002",
     insNo: "2604300000000001", dept: "内科门诊", doctor: "林落落", pharmacy: "中药房", diagnose: "痤疮; 虚证; 痤疮",
@@ -1728,7 +1732,9 @@ MOCK.rxDisp = [
     allergic: "青霉素类抗生素", agreement: "—", feeType: "自费", amount: 26.45,
     temp: "", pulse: "—", resp: "", height: "—", weight: "—", bp: "—",
     remark: "—",
-    audited: false, dispensed: false,
+    prepared: false, prepareUser: "", prepareTime: "",
+    narcotic: false, auditUser: "", auditTime: "",
+    dispensed: false,
     items: [
       { drugCode: "304032060201", name: "六神丸", category: "中成药", qty: "1盒", route: "口服", dose: "10粒", freq: "qd",
         days: 1, spec: "10粒*12支/盒", amount: 26.45, price: 26.45, insLevel: "", essential: "否",
@@ -1738,7 +1744,7 @@ MOCK.rxDisp = [
     ]
   },
   {
-    id: "dp2", feeStatus: "paid", rxNo: "M202611000007A", rxType: "中成药处方", decoct: "否",
+    id: "dp2", rxNo: "M202611000007A", rxType: "中成药处方", decoct: "否",
     name: "冯小容", py: "FXR", idNo: "370102198202030028",
     gender: "女性", age: "44岁", medicalNo: "260430000000001", outpatientNo: "202611040003",
     insNo: "2604300000000002", dept: "内科门诊", doctor: "林落落", pharmacy: "中药房", diagnose: "风热感冒; 咳嗽",
@@ -1746,7 +1752,9 @@ MOCK.rxDisp = [
     allergic: "青霉素类抗生素", agreement: "—", feeType: "自费", amount: 26.54,
     temp: "", pulse: "—", resp: "", height: "—", weight: "—", bp: "—",
     remark: "患者自述青霉素过敏，用药后如有不适请及时就诊",
-    audited: false, dispensed: false,
+    prepared: false, prepareUser: "", prepareTime: "",
+    narcotic: false, auditUser: "", auditTime: "",
+    dispensed: false,
     items: [
       { drugCode: "311013830601", name: "连花清瘟胶囊", category: "中成药", qty: "1盒", route: "口服", dose: "4粒", freq: "tid",
         days: 5, spec: "0.35g*24粒/盒", amount: 21.50, price: 21.50, insLevel: "甲类", essential: "是",
@@ -1761,7 +1769,7 @@ MOCK.rxDisp = [
     ]
   },
   {
-    id: "dp3", feeStatus: "paid", rxNo: "M202611000009A", rxType: "中药饮片处方", decoct: "是",
+    id: "dp3", rxNo: "M202611000009A", rxType: "中药饮片处方", decoct: "是",
     name: "王秀兰", py: "WXL", idNo: "370102196505120046",
     gender: "女性", age: "61岁", medicalNo: "260430000000028", outpatientNo: "202611040006",
     insNo: "2604300000000028", dept: "妇产科门诊", doctor: "周敏", pharmacy: "中药房", diagnose: "月经不调; 气血两虚",
@@ -1770,7 +1778,9 @@ MOCK.rxDisp = [
     temp: "", pulse: "—", resp: "", height: "—", weight: "—", bp: "—",
     doses: 5, usage: "水煎服，每日一剂，分两次温服",
     remark: "先煎后下，饭后温服，忌辛辣",
-    audited: false, dispensed: false,
+    prepared: false, prepareUser: "", prepareTime: "",
+    narcotic: false, auditUser: "", auditTime: "",
+    dispensed: false,
     items: [
       { drugCode: "120101010101", name: "黄芪", category: "中药饮片", qty: "75g", route: "口服", dose: "15g", freq: "qd",
         days: 5, spec: "净制饮片", amount: 6.50, price: 1.30, insLevel: "甲类", essential: "是",
@@ -1787,26 +1797,138 @@ MOCK.rxDisp = [
     ]
   },
   {
-    id: "dp4", feeStatus: "unpaid", rxNo: "M202611000011A", rxType: "西药处方", decoct: "否",
+    id: "dp4", rxNo: "M202611000011A", rxType: "西药处方", decoct: "否",
     name: "李建国", py: "LJG", idNo: "370102195811230031",
     gender: "男性", age: "68岁", medicalNo: "260430000000035", outpatientNo: "202611040008",
     insNo: "2604300000000035", dept: "内科门诊", doctor: "陈涛", pharmacy: "中药房", diagnose: "上呼吸道感染; 咽喉肿痛",
     rxTime: "2026-11-04 20:25:44", chargeTime: "—", phone: "13969012345",
-    allergic: "—", agreement: "—", feeType: "居民医保", amount: 25.65,
+    allergic: "—", agreement: "—", feeType: "居民医保", amount: 31.40,
     temp: "", pulse: "—", resp: "", height: "—", weight: "—", bp: "—",
     remark: "—",
-    audited: false, dispensed: false,
+    prepared: false, prepareUser: "", prepareTime: "",
+    narcotic: true, auditUser: "孙浩", auditTime: "2026-11-04 21:02:33",
+    auditStatus: "approved",
+    dispensed: false,
     items: [
       { drugCode: "311013830101", name: "阿莫西林胶囊", category: "西药", qty: "2盒", route: "口服", dose: "0.5g", freq: "tid",
         days: 5, spec: "0.25g*24粒/盒", amount: 25.20, price: 12.60, insLevel: "甲类", essential: "是",
         vendor: "联邦制药（中国）有限公司", loc: "", batch: "F251023", stock: "36.0000盒",
         insCode: "", insName: "", dispUnit: "盒", factor: 1, dispQty: "", goodsName: "", bulk: "",
         wholeNeed: 2, splitNeed: 0, splitAllowed: false },
-      { drugCode: "311013830801", name: "维生素C片", category: "西药", qty: "5片", route: "口服", dose: "1片", freq: "qd",
-        days: 5, spec: "100mg*100片/瓶", amount: 0.45, price: 0.09, insLevel: "自费", essential: "否",
-        vendor: "华中药业股份有限公司", loc: "", batch: "E250605", stock: "0.2000瓶",
-        insCode: "", insName: "", dispUnit: "片", factor: 100, dispQty: "", goodsName: "", bulk: "",
-        wholeNeed: 0, splitNeed: 5, splitAllowed: true }
+      { drugCode: "311014090101", name: "地西泮片", category: "西药", qty: "1盒", route: "口服", dose: "5mg", freq: "qn",
+        days: 7, spec: "5mg*24片/盒", amount: 6.20, price: 6.20, insLevel: "甲类", essential: "否",
+        vendor: "华中药业股份有限公司", loc: "", batch: "E250605", stock: "18.0000盒",
+        insCode: "", insName: "", dispUnit: "盒", factor: 1, dispQty: "", goodsName: "", bulk: "",
+        wholeNeed: 1, splitNeed: 0, splitAllowed: false }
+    ]
+  },
+  {
+    id: "dp5", rxNo: "M202611000013A", rxType: "西药处方", decoct: "否",
+    name: "陈志强", py: "CZQ", idNo: "370102197506170037",
+    gender: "男性", age: "51岁", medicalNo: "260430000000041", outpatientNo: "202611050003",
+    insNo: "2604300000000041", dept: "骨科门诊", doctor: "陈涛", pharmacy: "中药房", diagnose: "腰腿痛",
+    rxTime: "2026-11-05 08:30:12", chargeTime: "2026-11-05 08:41:50", phone: "13605317890",
+    allergic: "—", agreement: "—", feeType: "职工医保", amount: 18.60,
+    temp: "", pulse: "—", resp: "", height: "—", weight: "—", bp: "—",
+    remark: "—",
+    prepared: true, prepareUser: "赵敏", prepareTime: "2026-11-05 08:55:12",
+    narcotic: false, auditUser: "", auditTime: "",
+    dispensed: false,
+    items: [
+      { drugCode: "311013920101", name: "布洛芬缓释胶囊", category: "西药", qty: "1盒", route: "口服", dose: "0.3g", freq: "bid",
+        days: 5, spec: "0.3g*20粒/盒", amount: 18.60, price: 18.60, insLevel: "甲类", essential: "是",
+        vendor: "中美天津史克制药有限公司", loc: "", batch: "D251028", stock: "56.0000盒",
+        insCode: "", insName: "", dispUnit: "盒", factor: 1, dispQty: "", goodsName: "", bulk: "",
+        wholeNeed: 1, splitNeed: 0, splitAllowed: false }
+    ]
+  },
+  {
+    id: "dp6", rxNo: "M202611000015A", rxType: "西药处方", decoct: "否",
+    name: "刘晓梅", py: "LXM", idNo: "370102198310220019",
+    gender: "女性", age: "43岁", medicalNo: "260430000000046", outpatientNo: "202611050006",
+    insNo: "2604300000000046", dept: "疼痛门诊", doctor: "周敏", pharmacy: "中药房", diagnose: "神经病理性疼痛",
+    rxTime: "2026-11-05 08:58:30", chargeTime: "2026-11-05 09:06:44", phone: "13864015678",
+    allergic: "磺胺类抗菌药", agreement: "—", feeType: "职工医保", amount: 22.80,
+    temp: "", pulse: "—", resp: "", height: "—", weight: "—", bp: "—",
+    remark: "精神类药品，凭处方发药",
+    prepared: true, prepareUser: "赵敏", prepareTime: "2026-11-05 09:18:47",
+    narcotic: true, auditUser: "孙浩", auditTime: "2026-11-05 09:10:05",
+    auditStatus: "approved",
+    dispensed: false,
+    items: [
+      { drugCode: "311014100101", name: "盐酸曲马多缓释片", category: "西药", qty: "1盒", route: "口服", dose: "100mg", freq: "q12h",
+        days: 3, spec: "100mg*6片/盒", amount: 22.80, price: 22.80, insLevel: "自费", essential: "否",
+        vendor: "北京萌蒂制药有限公司", loc: "", batch: "C251002", stock: "9.0000盒",
+        insCode: "", insName: "", dispUnit: "盒", factor: 1, dispQty: "", goodsName: "", bulk: "",
+        wholeNeed: 1, splitNeed: 0, splitAllowed: false }
+    ]
+  }
+];
+
+/* ==========================================================================
+   处方管理 · 毒麻精发药审核（narcotic-audit.html）
+   rxAudit：涉及毒麻精类药品的处方，须药房专人审核通过后方可摆药、发药
+     auditStatus  pending=待审核 / approved=审核通过 / rejected=审核拒绝
+     auditUser / auditTime       审核人 / 审核时间
+     auditOpinion                审核意见（拒绝时必填，通过时可为空）
+   ========================================================================== */
+MOCK.rxAudit = [
+  {
+    id: "na1", rxNo: "M202611000017A", rxType: "西药处方", decoct: "否",
+    name: "赵国栋", py: "ZGD", idNo: "370102196209120041",
+    gender: "男性", age: "64岁", medicalNo: "260430000000052", outpatientNo: "202611050012",
+    insNo: "2604300000000052", dept: "急诊内科", doctor: "林落落", pharmacy: "中药房", diagnose: "剧烈疼痛",
+    rxTime: "2026-11-05 10:12:40", chargeTime: "2026-11-05 10:20:18", phone: "13791126543",
+    allergic: "—", agreement: "—", feeType: "职工医保", amount: 34.00,
+    temp: "36.5", pulse: "82", resp: "18", height: "—", weight: "—", bp: "138/86",
+    remark: "麻醉药品，凭麻醉处方笺发药",
+    narcotic: true,
+    auditStatus: "pending", auditUser: "", auditTime: "", auditOpinion: "",
+    items: [
+      { drugCode: "311014200101", name: "盐酸哌替啶注射液", category: "西药", qty: "2支", route: "注射", dose: "100mg", freq: "st",
+        days: 1, spec: "50mg*1ml/支", amount: 34.00, price: 17.00, insLevel: "自费", essential: "否",
+        vendor: "东北制药集团股份有限公司", loc: "", batch: "A251020", stock: "24.0000支",
+        insCode: "", insName: "", dispUnit: "支", factor: 1, dispQty: "", goodsName: "", bulk: "",
+        wholeNeed: 2, splitNeed: 0, splitAllowed: false }
+    ]
+  },
+  {
+    id: "na2", rxNo: "M202611000015A", rxType: "西药处方", decoct: "否",
+    name: "刘晓梅", py: "LXM", idNo: "370102198310220019",
+    gender: "女性", age: "43岁", medicalNo: "260430000000046", outpatientNo: "202611050006",
+    insNo: "2604300000000046", dept: "疼痛门诊", doctor: "周敏", pharmacy: "中药房", diagnose: "神经病理性疼痛",
+    rxTime: "2026-11-05 08:58:30", chargeTime: "2026-11-05 09:06:44", phone: "13864015678",
+    allergic: "磺胺类抗菌药", agreement: "—", feeType: "职工医保", amount: 22.80,
+    temp: "", pulse: "—", resp: "", height: "—", weight: "—", bp: "—",
+    remark: "精神类药品，凭处方发药",
+    narcotic: true,
+    auditStatus: "approved", auditUser: "孙浩", auditTime: "2026-11-05 09:10:05", auditOpinion: "",
+    items: [
+      { drugCode: "311014100101", name: "盐酸曲马多缓释片", category: "西药", qty: "1盒", route: "口服", dose: "100mg", freq: "q12h",
+        days: 3, spec: "100mg*6片/盒", amount: 22.80, price: 22.80, insLevel: "自费", essential: "否",
+        vendor: "北京萌蒂制药有限公司", loc: "", batch: "C251002", stock: "9.0000盒",
+        insCode: "", insName: "", dispUnit: "盒", factor: 1, dispQty: "", goodsName: "", bulk: "",
+        wholeNeed: 1, splitNeed: 0, splitAllowed: false }
+    ]
+  },
+  {
+    id: "na3", rxNo: "M202611000019A", rxType: "西药处方", decoct: "否",
+    name: "孙丽", py: "SL", idNo: "370102197812250044",
+    gender: "女性", age: "48岁", medicalNo: "260430000000055", outpatientNo: "202611050015",
+    insNo: "2604300000000055", dept: "神经内科", doctor: "陈涛", pharmacy: "中药房", diagnose: "癫痫",
+    rxTime: "2026-11-05 10:35:22", chargeTime: "2026-11-05 10:44:09", phone: "13905319876",
+    allergic: "—", agreement: "—", feeType: "居民医保", amount: 15.60,
+    temp: "", pulse: "—", resp: "", height: "—", weight: "—", bp: "—",
+    remark: "—",
+    narcotic: true,
+    auditStatus: "rejected", auditUser: "赵敏", auditTime: "2026-11-05 11:02:36",
+    auditOpinion: "单次剂量超说明书上限，退回医师修订后重新提交",
+    items: [
+      { drugCode: "311014210101", name: "苯巴比妥片", category: "西药", qty: "1盒", route: "口服", dose: "90mg", freq: "qn",
+        days: 7, spec: "30mg*100片/瓶", amount: 15.60, price: 15.60, insLevel: "甲类", essential: "否",
+        vendor: "上海上药信谊药厂有限公司", loc: "", batch: "B250918", stock: "31.0000瓶",
+        insCode: "", insName: "", dispUnit: "瓶", factor: 1, dispQty: "", goodsName: "", bulk: "",
+        wholeNeed: 1, splitNeed: 0, splitAllowed: false }
     ]
   }
 ];

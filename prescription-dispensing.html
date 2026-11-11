@@ -84,7 +84,7 @@
 .disp-x:hover { background: rgba(0, 0, 0, .05); color: var(--text-secondary); }
 .disp-x svg { width: 12px; height: 12px; }
 
-/* 已收费 / 未收费 */
+/* 未摆药 / 已摆药 */
 .disp-tabs { flex: none; display: flex; padding: 8px 12px 0; border-bottom: 1px solid var(--border); }
 .disp-tab {
   height: 30px; padding: 0 16px;
@@ -165,6 +165,8 @@
 .disp-ltable .c-no { width: 118px; }
 .disp-ltable .c-name { width: 56px; }
 .disp-ltable .c-outp { width: auto; }
+.disp-ltable .c-user { width: 56px; }
+.disp-ltable .c-time { width: 130px; }
 .disp-l-empty { padding: 40px 0; text-align: center; color: var(--text-placeholder); font-size: 12px; }
 
 /* 已选处方条 */
@@ -240,6 +242,7 @@
 .disp-link.is-reject { color: var(--danger); cursor: default; text-decoration: none; }
 .disp-link svg { width: 13px; height: 13px; }
 .disp-collapse {
+  margin-left: auto;
   display: inline-flex; align-items: center; gap: 2px;
   font-size: 12px; color: var(--text-tertiary);
   cursor: pointer; white-space: nowrap;
@@ -341,21 +344,6 @@
 .disp-dlg-title { padding: 18px 20px 8px; font-size: 15px; font-weight: 500; color: var(--text-primary); }
 .disp-dlg-body { padding: 0 20px 22px; font-size: 13px; line-height: 1.7; color: var(--text-secondary); }
 .disp-dlg-foot { padding: 12px 20px; display: flex; justify-content: flex-end; gap: 8px; border-top: 1px solid var(--border); }
-
-/* 审核弹窗 */
-.audit-dlg { width: 480px; background: #fff; border-radius: var(--radius-lg); box-shadow: var(--shadow-2); overflow: hidden; }
-.audit-body { padding: 4px 20px 20px; }
-.audit-rxno { font-size: 12px; color: var(--text-tertiary); margin-bottom: 14px; }
-.audit-radios { display: flex; align-items: center; gap: 28px; margin-bottom: 14px; font-size: 13px; color: var(--text-primary); }
-.audit-radios label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
-.audit-opinion {
-  width: 100%; height: 82px; resize: vertical;
-  padding: 8px 10px; font-size: 13px; line-height: 1.5;
-  border: 1px solid var(--border-input); border-radius: var(--radius);
-  color: var(--text-primary); outline: none;
-}
-.audit-opinion:focus { border-color: var(--primary); }
-.audit-opinion.is-invalid { border-color: var(--danger); background: #FFF1F0; }
 
 /* 追溯码录入弹窗 */
 .trace-mask {
@@ -550,7 +538,7 @@
 
     <div class="disp-wrap">
 
-      <!-- ========== 顶部标题行：标题 + 库位 + 发药按钮 ========== -->
+      <!-- ========== 顶部标题行：标题 + 库位 + 操作按钮（按 tab 切换） ========== -->
       <div class="disp-page-head">
         <div style="display:flex;align-items:center;gap:14px;">
           <span class="disp-page-title" id="sideTitle">门诊处方发药（中药房）</span>
@@ -563,8 +551,11 @@
             <option>西药房-2号架</option>
           </select>
         </div>
-        <div>
-          <button class="dbtn dbtn-primary" id="btnDispense" title="">发药(<span class="k">S</span>)</button>
+        <div style="display:flex;gap:8px;">
+          <button class="dbtn" id="btn360">360视图</button>
+          <button class="dbtn" id="btnPrintOral">打印口服单</button>
+          <button class="dbtn dbtn-primary" id="btnPrepare">摆药(<span class="k">S</span>)</button>
+          <button class="dbtn dbtn-primary" id="btnDispense" style="display:none;">发药(<span class="k">S</span>)</button>
         </div>
       </div>
 
@@ -573,8 +564,8 @@
       <!-- ========== 左侧：门诊处方发药列表 ========== -->
       <aside class="disp-side">
         <div class="disp-tabs" id="dispTabs">
-          <button class="disp-tab active" data-tab="paid">已收费</button>
-          <button class="disp-tab" data-tab="unpaid">未收费</button>
+          <button class="disp-tab active" data-tab="unprepared">未摆药</button>
+          <button class="disp-tab" data-tab="prepared">已摆药</button>
         </div>
 
         <div class="disp-filter" id="dispFilter">
@@ -603,15 +594,8 @@
 
         <div class="disp-listwrap">
           <table class="disp-ltable">
-            <thead>
-              <tr>
-                <th class="c-chk"><input type="checkbox" id="chkAllList" title="全选"></th>
-                <th class="c-no">处方号</th>
-                <th class="c-name">姓名</th>
-                <th class="c-outp">门诊号</th>
-              </tr>
-            </thead>
-            <tbody id="dispListBody"><tr data-id="dp1" class="is-checked is-current"><td class="c-chk"><input type="checkbox" data-chk="dp1" checked=""></td><td title="M202611000005A">M202611000005A</td><td title="冯小容">冯小容</td><td title="202611040002">202611040002</td></tr><tr data-id="dp2" class="is-checked"><td class="c-chk"><input type="checkbox" data-chk="dp2" checked=""></td><td title="M202611000007A">M202611000007A</td><td title="冯小容">冯小容</td><td title="202611040003">202611040003</td></tr><tr data-id="dp3" class="is-checked"><td class="c-chk"><input type="checkbox" data-chk="dp3" checked=""></td><td title="M202611000009A">M202611000009A</td><td title="王秀兰">王秀兰</td><td title="202611040006">202611040006</td></tr></tbody>
+            <thead id="dispListHead"></thead>
+            <tbody id="dispListBody"></tbody>
           </table>
         </div>
 
@@ -642,12 +626,6 @@
         <div class="disp-dhead">
           <span class="disp-dtitle">处方详情</span>
           <span class="disp-type" id="dispType">中成药处方</span>
-          <div class="disp-links">
-            <span class="disp-link" id="lnk360">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"></path><circle cx="12" cy="12" r="2.6"></circle></svg>
-              360视图
-            </span>
-          </div>
           <span class="disp-collapse" id="btnCollapse">
             <span id="collapseText">收起</span>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 15l6-6 6 6"></path></svg>
@@ -705,30 +683,11 @@
   </div>
 </div>
 
-<!-- 审核弹窗 -->
-<div class="disp-mask" id="auditMask">
-  <div class="audit-dlg">
-    <div class="disp-dlg-title">处方审核</div>
-    <div class="audit-body">
-      <div class="audit-rxno" id="auditRxNo">处方号：—</div>
-      <div class="audit-radios">
-        <label><input type="radio" name="auditResult" value="pass" checked=""> 通过</label>
-        <label><input type="radio" name="auditResult" value="reject"> 拒绝</label>
-      </div>
-      <textarea class="audit-opinion" id="auditOpinion" placeholder="请输入审核意见（拒绝时必填）"></textarea>
-    </div>
-    <div class="disp-dlg-foot">
-      <button class="btn" id="auditCancel">取消</button>
-      <button class="btn btn-primary" id="auditSubmit">提交</button>
-    </div>
-  </div>
-</div>
-
 <!-- 追溯码录入弹窗 -->
 <div class="trace-mask" id="traceMask">
   <div class="trace-dlg">
     <div class="trace-head">
-      追溯码录入
+      摆药 · 追溯码录入
       <button class="trace-x" id="traceClose" title="关闭">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 6l12 12M18 6L6 18"></path></svg>
       </button>
@@ -814,7 +773,7 @@
   function money(n){ return (Math.round((Number(n) || 0) * 100) / 100).toFixed(2); }
   function intVal(v){ var n = parseInt(v, 10); return isNaN(n) ? 0 : n; }
 
-  var KEY = "RX_DISP_DATA_V2";
+  var KEY = "RX_DISP_DATA_V4";
 
   function loadData(){
     try {
@@ -831,7 +790,7 @@
   }
 
   var ST = {
-    tab: "paid",
+    tab: "unprepared",
     data: loadData(),
     checked: {},
     currentId: null,
@@ -847,7 +806,10 @@
     var idq = ST.idq.trim().toLowerCase();
     return ST.data.filter(function(p){
       if (p.dispensed) return false;
-      if (p.feeStatus !== ST.tab) return false;
+      /* 毒麻精处方须在「毒麻精发药审核」页审核通过后，才能进入摆药/发药流程 */
+      if (p.narcotic && p.auditStatus !== "approved") return false;
+      if (ST.tab === "unprepared" && p.prepared) return false;
+      if (ST.tab === "prepared" && !p.prepared) return false;
       if (q){
         var hay = (p.rxNo + " " + p.name + " " + p.py + " " + p.outpatientNo).toLowerCase();
         if (hay.indexOf(q) < 0) return false;
@@ -868,22 +830,54 @@
   }
 
   /* ---------------- 左侧列表 ---------------- */
+  /* 列定义按 tab 区分：未摆药增加审核人/审核时间；已摆药增加摆药人/摆药时间/审核人/审核时间 */
+  function listColumns(){
+    var cols = [
+      { cls: "c-chk", chk: true },
+      { cls: "c-no", label: "处方号", key: "rxNo" },
+      { cls: "c-name", label: "姓名", key: "name" },
+      { cls: "c-outp", label: "门诊号", key: "outpatientNo" }
+    ];
+    if (ST.tab === "unprepared"){
+      cols.push({ cls: "c-user", label: "审核人", key: "auditUser" });
+      cols.push({ cls: "c-time", label: "审核时间", key: "auditTime" });
+    } else {
+      cols.push({ cls: "c-user", label: "摆药人", key: "prepareUser" });
+      cols.push({ cls: "c-time", label: "摆药时间", key: "prepareTime" });
+      cols.push({ cls: "c-user", label: "审核人", key: "auditUser" });
+      cols.push({ cls: "c-time", label: "审核时间", key: "auditTime" });
+    }
+    return cols;
+  }
+
   function renderList(){
     var list = visibleList();
+    var cols = listColumns();
     var body = $("dispListBody");
 
+    $("dispListHead").innerHTML = '<tr>'
+      + cols.map(function(c){
+          if (c.chk) return '<th class="' + c.cls + '"><input type="checkbox" id="chkAllList" title="全选"></th>';
+          return '<th class="' + c.cls + '">' + c.label + '</th>';
+        }).join("")
+      + '</tr>';
+
     if (!list.length){
-      body.innerHTML = '<tr><td colspan="4" class="disp-l-empty">暂无处方</td></tr>';
+      body.innerHTML = '<tr><td colspan="' + cols.length + '" class="disp-l-empty">暂无处方</td></tr>';
     } else {
       body.innerHTML = list.map(function(p){
         var checked = !!ST.checked[p.id];
         var cls = checked ? " is-checked" : "";
         if (p.id === ST.currentId) cls += " is-current";
+        var narcoticTag = p.narcotic
+          ? ' <span style="color:var(--danger);font-weight:500;" title="涉及毒麻精类药品，需审核">麻</span>' : "";
         return '<tr data-id="' + p.id + '" class="' + cls.trim() + '">'
-          + '<td class="c-chk"><input type="checkbox" data-chk="' + p.id + '"' + (checked ? " checked" : "") + '></td>'
-          + '<td title="' + esc(p.rxNo) + '">' + esc(p.rxNo) + '</td>'
-          + '<td title="' + esc(p.name) + '">' + esc(p.name) + '</td>'
-          + '<td title="' + esc(p.outpatientNo) + '">' + esc(p.outpatientNo) + '</td>'
+          + cols.map(function(c){
+              if (c.chk) return '<td class="' + c.cls + '"><input type="checkbox" data-chk="' + p.id + '"' + (checked ? " checked" : "") + '></td>';
+              var val = p[c.key] || "—";
+              var label = c.key === "name" ? esc(p.name) + narcoticTag : esc(val);
+              return '<td title="' + esc(val) + '">' + label + '</td>';
+            }).join("")
           + '</tr>';
       }).join("");
     }
@@ -891,8 +885,11 @@
     var ids = list.map(function(p){ return p.id; });
     var n = 0;
     ids.forEach(function(id){ if (ST.checked[id]) n++; });
-    $("chkAllList").checked = ids.length > 0 && n === ids.length;
-    $("chkAllList").indeterminate = n > 0 && n < ids.length;
+    var chkAll = $("chkAllList");
+    if (chkAll){
+      chkAll.checked = ids.length > 0 && n === ids.length;
+      chkAll.indeterminate = n > 0 && n < ids.length;
+    }
 
     $("dispTotalText").textContent = "共 " + list.length + " 条";
     $("dispSelText").textContent = "共选择 " + checkedCount() + " 张处方";
@@ -911,7 +908,9 @@
         ["诊断", p.diagnose], ["处方时间", p.rxTime], ["收费时间", p.chargeTime],
         ["体温/呼吸", p.temp], ["脉搏", p.pulse], ["血压", p.bp],
         ["过敏药物", p.allergic], ["联系电话", p.phone], ["协定处方", p.agreement],
-        ["身高", p.height], ["体重", p.weight]
+        ["身高", p.height], ["体重", p.weight],
+        ["审核人", p.auditUser], ["审核时间", p.auditTime],
+        ["摆药人", p.prepareUser], ["摆药时间", p.prepareTime]
       ];
       if (p.rxType === "中药饮片处方"){
         rows.push(["剂数", p.doses]);
@@ -921,7 +920,8 @@
     } else {
       ["姓名","性别","年龄","处方号","门诊号","医疗号","医保号","科室","医师","划价药房",
        "收费种类","应收金额","诊断","处方时间","收费时间","体温/呼吸","脉搏","血压",
-       "过敏药物","联系电话","协定处方","身高","体重"].forEach(function(k){ rows.push([k, "—"]); });
+       "过敏药物","联系电话","协定处方","身高","体重",
+       "审核人","审核时间","摆药人","摆药时间"].forEach(function(k){ rows.push([k, "—"]); });
       rows.push(["备注", "—"]);
     }
 
@@ -973,11 +973,15 @@
     }).join("");
   }
 
-  function renderLinks(){ /* 审核入口已移除 */ }
-
   function renderButtons(){
-    $("btnDispense").disabled = ST.tab === "unpaid" || checkedCount() === 0;
-    $("btnDispense").title = ST.tab === "unpaid" ? "处方未收费，不能发药" : "";
+    var unprepared = ST.tab === "unprepared";
+    $("btnPrintOral").style.display = unprepared ? "" : "none";
+    $("btnPrepare").style.display = unprepared ? "" : "none";
+    $("btnDispense").style.display = unprepared ? "none" : "";
+    var n = checkedCount();
+    $("btnPrintOral").disabled = n === 0;
+    $("btnPrepare").disabled = n === 0;
+    $("btnDispense").disabled = n === 0;
   }
 
   function renderAll(){
@@ -985,7 +989,6 @@
     renderInfo();
     renderType();
     renderDetail();
-    renderLinks();
     renderButtons();
   }
 
@@ -1054,19 +1057,55 @@
     toast(msg);
   }
 
+  /* 摆药完成：回填摆药人/摆药时间，处方移入「已摆药」tab */
+  function markPrepared(ids, msg){
+    ST.data.forEach(function(p){
+      if (ids.indexOf(p.id) >= 0){
+        p.prepared = true;
+        p.prepareUser = "赵敏";
+        p.prepareTime = nowStr();
+      }
+    });
+    ST.checked = {};
+    ST.currentId = firstOrNull();
+    persist();
+    renderAll();
+    toast(msg);
+  }
+
+  /* 摆药：追溯码在摆药环节录入（西药/中成药），中药饮片无需追溯码直接摆药 */
+  function doPrepare(){
+    if (ST.tab !== "unprepared"){ toast("请切换到「未摆药」tab 后再摆药"); return; }
+    var list = visibleList().filter(function(p){ return ST.checked[p.id]; });
+    if (!list.length){ toast("请先勾选需要摆药的处方"); return; }
+    openTrace(list);
+  }
+
+  /* 打印口服单：仅口服药品；西药/中成药按药品明细逐张打印，中药饮片按处方打印 */
+  function doPrintOral(){
+    if (ST.tab !== "unprepared"){ toast("请切换到「未摆药」tab 后再打印口服单"); return; }
+    var list = visibleList().filter(function(p){ return ST.checked[p.id]; });
+    if (!list.length){ toast("请先勾选需要打印口服单的处方"); return; }
+    var detailCount = 0, tcmCount = 0;
+    list.forEach(function(p){
+      if (p.rxType === "中药饮片处方"){ tcmCount++; return; }
+      p.items.forEach(function(it){
+        if ((it.route || "").indexOf("口服") >= 0) detailCount++;
+      });
+    });
+    if (detailCount + tcmCount === 0){ toast("所选处方无口服药品，无需打印口服单"); return; }
+    toast("已提交打印：口服单 " + (detailCount + tcmCount) + " 张（药品明细 " + detailCount + " 张、饮片处方 " + tcmCount + " 张）");
+  }
+
+  /* 发药：已摆药处方，批量发药前轻确认 */
   function doDispense(){
-    if (ST.tab === "unpaid"){ toast("未收费处方不能发药"); return; }
+    if (ST.tab !== "prepared"){ toast("请切换到「已摆药」tab 后再发药"); return; }
     var list = visibleList().filter(function(p){ return ST.checked[p.id]; });
     if (!list.length){ toast("请先勾选需要发药的处方"); return; }
-
     var ids = list.map(function(p){ return p.id; });
-    var allTcm = list.every(function(p){ return p.rxType === "中药饮片处方"; });
-
-    if (allTcm){
-      finishDispense(ids, "中药饮片处方无需追溯码，已直接发药 " + ids.length + " 张");
-      return;
-    }
-    openTrace(list);
+    confirmDialog("发药确认", "确认对已选择的 " + ids.length + " 张已摆药处方发药？", "确认发药", function(){
+      finishDispense(ids, "已发药 " + ids.length + " 张处方");
+    });
   }
 
   function doQuery(){
@@ -1075,45 +1114,6 @@
     ST.currentId = firstOrNull();
     ST.checked = {};
     renderAll();
-  }
-
-  /* ---------------- 审核 ---------------- */
-  function openAudit(){
-    var p = current();
-    if (!p){ toast("请先选择一张处方"); return; }
-    if (p.audited){
-      toast(p.auditResult === "reject" ? "该处方已被拒绝" : "该处方已审核");
-      return;
-    }
-    $("auditRxNo").textContent = "处方号：" + p.rxNo;
-    document.querySelector('input[name="auditResult"][value="pass"]').checked = true;
-    var op = $("auditOpinion");
-    op.value = "";
-    op.classList.remove("is-invalid");
-    $("auditMask").classList.add("show");
-  }
-  function closeAudit(){
-    $("auditMask").classList.remove("show");
-    $("auditOpinion").classList.remove("is-invalid");
-  }
-  function submitAudit(){
-    var p = current();
-    if (!p) return;
-    var result = (document.querySelector('input[name="auditResult"]:checked') || {}).value || "pass";
-    var opinion = $("auditOpinion").value.trim();
-    if (result === "reject" && !opinion){
-      $("auditOpinion").classList.add("is-invalid");
-      toast("拒绝时必须填写审核意见");
-      return;
-    }
-    p.audited = true;
-    p.auditResult = result;
-    p.auditOpinion = opinion;
-    p.auditTime = nowStr();
-    persist();
-    closeAudit();
-    renderAll();
-    toast(result === "reject" ? "处方已拒绝" : "处方审核通过");
   }
 
   function nowStr(){
@@ -1175,7 +1175,7 @@
     $("traceSearch").value = "";
     $("traceInput").value = "";
     if (!TRACE.rows.length){
-      finishDispense(TRACE.rxIds, "所选处方无需追溯码，已直接发药 " + TRACE.rxIds.length + " 张");
+      markPrepared(TRACE.rxIds, "所选处方无需追溯码，已直接摆药 " + TRACE.rxIds.length + " 张");
       return;
     }
     $("traceMask").classList.add("show");
@@ -1289,7 +1289,7 @@
     }
     var ids = TRACE.rxIds.slice();
     $("traceMask").classList.remove("show");
-    finishDispense(ids, "已发药 " + ids.length + " 张处方");
+    markPrepared(ids, "摆药完成 " + ids.length + " 张处方，已移入「已摆药」");
   }
 
   /* ---------------- 事件绑定 ---------------- */
@@ -1310,7 +1310,9 @@
       renderAll();
     });
 
-    $("chkAllList").addEventListener("change", function(){ toggleAll(this.checked); });
+    $("dispListHead").addEventListener("change", function(e){
+      if (e.target && e.target.id === "chkAllList") toggleAll(e.target.checked);
+    });
 
     $("btnQuery").onclick = doQuery;
     $("dispQ").addEventListener("keydown", function(e){ if (e.key === "Enter") doQuery(); });
@@ -1333,8 +1335,12 @@
     $("dispRange").addEventListener("click", function(){ toast("时间范围选择（演示）"); });
 
     $("btnDispense").onclick = doDispense;
-
-    $("lnk360").onclick = function(){ toast("正在打开患者 360 视图（演示）"); };
+    $("btnPrepare").onclick = doPrepare;
+    $("btnPrintOral").onclick = doPrintOral;
+    $("btn360").onclick = function(){
+      if (!current()){ toast("请先选择一张处方"); return; }
+      toast("正在打开患者 360 视图（演示）");
+    };
 
     $("btnCollapse").onclick = function(){
       ST.infoOpen = !ST.infoOpen;
@@ -1342,12 +1348,6 @@
       $("collapseText").textContent = ST.infoOpen ? "收起" : "展开";
       this.classList.toggle("is-folded", !ST.infoOpen);
     };
-
-    // 审核弹窗
-    $("auditCancel").onclick = closeAudit;
-    $("auditSubmit").onclick = submitAudit;
-    $("auditOpinion").addEventListener("input", function(){ this.classList.remove("is-invalid"); });
-    $("auditMask").addEventListener("click", function(e){ if (e.target === this) closeAudit(); });
 
     // 追溯码弹窗
     $("traceAdd").onclick = addTraceCode;
@@ -1422,8 +1422,6 @@
     });
     document.addEventListener("click", function(){ $("pharmMenu").classList.remove("show"); });
 
-    $("btnSideClose").onclick = function(){ location.href = "drug-catalog.html"; };
-
     $("dispDlgCancel").onclick = closeDialog;
     $("dispDlgOk").onclick = function(){
       var fn = dlgOk;
@@ -1438,11 +1436,10 @@
       if (e.altKey && !e.ctrlKey && !e.metaKey && (e.key || "").toLowerCase() === "s"){
         e.preventDefault();
         if ($("traceMask").classList.contains("show")){ submitTrace(); return; }
-        doDispense();
+        if (ST.tab === "unprepared") doPrepare(); else doDispense();
       }
       if (e.key === "Escape"){
         if ($("traceMask").classList.contains("show")) $("traceMask").classList.remove("show");
-        else if ($("auditMask").classList.contains("show")) closeAudit();
         else if ($("dispMask").classList.contains("show")) closeDialog();
       }
     });

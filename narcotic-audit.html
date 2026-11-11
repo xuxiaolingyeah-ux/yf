@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>毒麻精发药审核 · 中心药房</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+/* ===== 处方管理 · 毒麻精发药审核 ===== */
+.disp-wrap {
+  flex: 1; min-height: 0;
+  display: flex; flex-direction: column; gap: 0;
+  background: var(--bg-page);
+}
+
+/* ===== 顶部页面标题行 ===== */
+.disp-page-head {
+  flex: none; height: 52px;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 20px;
+  background: #fff;
+  border-bottom: 1px solid var(--border);
+}
+.disp-page-title { font-size: 15px; font-weight: 500; color: var(--text-primary); }
+.disp-page-hlbl { font-size: 13px; color: var(--text-tertiary); }
+.disp-page-sel { width: 180px; }
+
+/* ===== 主体容器（左侧列表 + 右侧详情） ===== */
+.disp-body {
+  flex: 1; min-height: 0;
+  display: flex; gap: 12px; padding: 12px;
+}
+
+/* 顶部系统栏：药房切换 */
+.header-pharmacy {
+  position: relative;
+  display: flex; align-items: center;
+  margin-left: 4px; padding-left: 12px;
+  border-left: 1px solid rgba(255, 255, 255, .24);
+}
+.header-pharm-btn {
+  display: flex; align-items: center; gap: 6px;
+  height: 28px; padding: 0 8px;
+  background: none; border: none; border-radius: var(--radius);
+  color: #fff; font-size: 13px; cursor: pointer;
+}
+.header-pharm-btn:hover { background: rgba(255, 255, 255, .14); }
+.header-pharm-btn svg { width: 10px; height: 10px; opacity: .8; }
+.header-pharm-menu {
+  display: none; position: absolute; top: 36px; left: 12px; z-index: 300;
+  min-width: 148px; padding: 4px 0;
+  background: #fff; border-radius: 6px; box-shadow: var(--shadow-2);
+}
+.header-pharm-menu.show { display: block; }
+.header-pharm-item {
+  height: 34px; display: flex; align-items: center;
+  padding: 0 12px; font-size: 13px; color: var(--text-secondary); cursor: pointer;
+}
+.header-pharm-item:hover { background: var(--primary-lighter); color: var(--primary-dark); }
+.header-pharm-item.active { color: var(--primary-dark); font-weight: 500; }
+.header-pharm-item .chk { margin-left: auto; font-size: 12px; }
+
+/* 左侧处方列表卡片 */
+.disp-side {
+  flex: none; width: 316px; min-height: 0;
+  display: flex; flex-direction: column;
+  background: var(--bg-white);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .04);
+  overflow: hidden;
+}
+.disp-side-head {
+  flex: none; height: 44px;
+  display: flex; align-items: center;
+  padding: 0 6px 0 12px;
+  border-bottom: 1px solid var(--border);
+}
+.disp-side-title { font-size: 14px; font-weight: 500; color: var(--text-primary); }
+.disp-x {
+  margin-left: auto; width: 26px; height: 26px;
+  border: none; background: none; border-radius: var(--radius);
+  display: grid; place-items: center;
+  color: var(--text-tertiary); cursor: pointer;
+}
+.disp-x:hover { background: rgba(0, 0, 0, .05); color: var(--text-secondary); }
+.disp-x svg { width: 12px; height: 12px; }
+
+/* 未审核 / 已审核 */
+.disp-tabs { flex: none; display: flex; padding: 8px 12px 0; border-bottom: 1px solid var(--border); }
+.disp-tab {
+  height: 30px; padding: 0 16px;
+  border: 1px solid var(--border-input); border-bottom: none;
+  border-radius: 4px 4px 0 0;
+  background: var(--bg-white);
+  color: var(--text-secondary);
+  font-size: 13px; cursor: pointer;
+  margin-right: -1px;
+}
+.disp-tab:hover { color: var(--primary-dark); }
+.disp-tab.active {
+  background: var(--primary-lighter);
+  color: var(--primary-dark);
+  border-color: #BEDAFF;
+  font-weight: 500;
+  position: relative; z-index: 1;
+}
+
+/* 筛选区 */
+.disp-filter {
+  flex: none; padding: 10px 12px 8px;
+  display: flex; flex-direction: column; gap: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.disp-filter.is-hidden { display: none; }
+.disp-frow { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.disp-flbl { flex: none; font-size: 12px; color: var(--text-secondary); white-space: nowrap; }
+.disp-frow .input { height: 30px; font-size: 12px; min-width: 0; }
+.disp-range { position: relative; flex: 1; min-width: 0; }
+.disp-range .input { padding-right: 26px; cursor: pointer; font-size: 11px; }
+.disp-range svg {
+  position: absolute; right: 8px; top: 8px;
+  width: 14px; height: 14px; color: var(--text-tertiary);
+  pointer-events: none;
+}
+.disp-facts { display: flex; justify-content: flex-end; gap: 8px; }
+.disp-facts .btn { height: 28px; padding: 0 14px; font-size: 12px; }
+
+.disp-fold {
+  flex: none; height: 24px;
+  display: flex; align-items: center; justify-content: center;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-tertiary); cursor: pointer;
+}
+.disp-fold:hover { color: var(--primary-dark); }
+.disp-fold svg { width: 16px; height: 16px; transition: transform .2s; }
+.disp-fold.is-folded svg { transform: rotate(180deg); }
+
+/* 左侧列表 */
+.disp-listwrap { flex: 1; min-height: 0; overflow: auto; }
+.disp-ltable {
+  width: 100%; border-collapse: separate; border-spacing: 0;
+  table-layout: fixed; font-size: 12px;
+}
+.disp-ltable thead th {
+  position: sticky; top: 0; z-index: 2;
+  height: 32px; padding: 0 6px;
+  background: var(--table-head);
+  color: var(--text-secondary); font-weight: 500; text-align: left;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+}
+.disp-ltable tbody td {
+  height: 32px; padding: 0 6px;
+  border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  color: var(--text-primary);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.disp-ltable th:last-child, .disp-ltable td:last-child { border-right: none; }
+.disp-ltable tbody tr { cursor: pointer; }
+.disp-ltable tbody tr:hover { background: var(--table-hover); }
+.disp-ltable tbody tr.is-checked { background: var(--primary-light); }
+.disp-ltable tbody tr.is-current { background: #D6E9FF; }
+.disp-ltable .c-chk { width: 38px; text-align: center; padding: 0; }
+.disp-ltable .c-no { width: 118px; }
+.disp-ltable .c-name { width: 56px; }
+.disp-ltable .c-outp { width: auto; }
+.disp-ltable .c-user { width: 56px; }
+.disp-ltable .c-time { width: 130px; }
+.disp-ltable .c-result { width: 62px; }
+.disp-l-empty { padding: 40px 0; text-align: center; color: var(--text-placeholder); font-size: 12px; }
+
+/* 已选处方条 */
+.disp-selbar {
+  flex: none; height: 32px;
+  display: flex; align-items: center; gap: 6px;
+  padding: 0 10px;
+  background: #EAF3FF;
+  border-top: 1px solid #D3E5FF;
+  color: var(--primary-dark); font-size: 12px;
+}
+.disp-selbar svg { width: 14px; height: 14px; flex: none; }
+.disp-pagefoot {
+  flex: none; height: 40px;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 10px;
+  border-top: 1px solid var(--border);
+  font-size: 12px; color: var(--text-secondary);
+}
+.disp-pagefoot .pager-ctrl { display: flex; align-items: center; gap: 4px; }
+.disp-pagefoot .select { height: 24px; width: 86px; font-size: 12px; }
+
+/* 右侧主区 */
+.disp-main {
+  flex: 1; min-width: 0; min-height: 0;
+  display: flex; flex-direction: column;
+  background: var(--bg-white);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .04);
+  overflow: hidden;
+}
+.disp-toolbar {
+  flex: none; height: 46px;
+  display: flex; align-items: center; justify-content: flex-end; gap: 8px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--border);
+}
+.dbtn {
+  height: 30px; padding: 0 12px;
+  border: 1px solid var(--border-btn); border-radius: var(--radius);
+  background: var(--bg-white); color: var(--primary-dark);
+  font-size: 13px;
+  display: inline-flex; align-items: center; gap: 4px;
+  white-space: nowrap;
+}
+.dbtn:hover:not(:disabled) { border-color: var(--primary); background: var(--primary-lighter); }
+.dbtn:disabled { color: var(--text-placeholder); border-color: var(--border); background: var(--bg-disabled); cursor: not-allowed; }
+.dbtn-primary { background: var(--primary); border-color: var(--primary); color: #fff; }
+.dbtn-primary:hover:not(:disabled) { background: var(--primary-dark); border-color: var(--primary-dark); color: #fff; }
+.dbtn .k { font-size: 12px; opacity: .82; }
+
+/* 处方详情头部 */
+.disp-dhead {
+  flex: none;
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 12px 4px;
+}
+.disp-dtitle { font-size: 14px; font-weight: 500; color: var(--text-primary); }
+.disp-type {
+  height: 20px; padding: 0 8px;
+  display: inline-flex; align-items: center;
+  border-radius: 10px; font-size: 12px;
+  background: var(--primary-lighter); color: var(--primary-dark);
+}
+.disp-type.is-tcm { background: #EAF7EE; color: #2E8B57; }
+.disp-links { margin-left: auto; display: flex; align-items: center; gap: 16px; }
+.disp-link {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 12px; color: var(--primary-dark); cursor: pointer;
+}
+.disp-link:hover { color: var(--primary); text-decoration: underline; }
+.disp-link.is-mute { color: var(--text-tertiary); cursor: default; text-decoration: none; }
+.disp-link.is-reject { color: var(--danger); cursor: default; text-decoration: none; }
+.disp-link svg { width: 13px; height: 13px; }
+.disp-collapse {
+  margin-left: auto;
+  display: inline-flex; align-items: center; gap: 2px;
+  font-size: 12px; color: var(--text-tertiary);
+  cursor: pointer; white-space: nowrap;
+}
+.disp-collapse:hover { color: var(--primary-dark); }
+.disp-collapse svg { width: 12px; height: 12px; transition: transform .2s; }
+.disp-collapse.is-folded svg { transform: rotate(180deg); }
+
+/* 处方信息 */
+.disp-info { flex: none; padding: 2px 12px 10px; border-bottom: 1px solid var(--border); transition: height .18s ease; overflow: hidden; }
+/* 收起时仅展示前两行（约 2*24px + 上下 padding ≈ 52px） */
+.disp-info.is-folded { height: 52px; overflow: hidden; }
+.disp-grid {
+  display: grid;
+  grid-template-columns: 1.05fr 1.08fr 1.1fr 0.97fr 0.85fr 1fr;
+  column-gap: 10px; row-gap: 6px;
+}
+/* 窗口变窄时减少列数，保证字段值完整展示 */
+@media (max-width: 1646px) {
+  .disp-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+}
+@media (max-width: 1580px) {
+  .disp-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+@media (max-width: 1390px) {
+  .disp-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+.disp-field { display: flex; gap: 4px; min-width: 0; font-size: 12px; line-height: 18px; }
+.disp-field .k { flex: none; color: var(--text-tertiary); }
+.disp-field .v {
+  color: var(--text-primary);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* 处方明细表 */
+.disp-dwrap { flex: 1; min-height: 0; overflow: auto; }
+.disp-dtable {
+  width: 100%; min-width: 1542px;
+  border-collapse: separate; border-spacing: 0;
+  table-layout: fixed; font-size: 12px;
+}
+.disp-dtable thead th {
+  position: sticky; top: 0; z-index: 3;
+  height: 34px; padding: 0 8px;
+  background: var(--table-head);
+  border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  text-align: left; font-weight: 500; color: var(--text-secondary);
+  white-space: nowrap;
+}
+.disp-dtable tbody tr { background: var(--bg-white); }
+.disp-dtable tbody tr:nth-child(even) { background: var(--table-even); }
+.disp-dtable tbody tr:hover { background: var(--table-hover); }
+.disp-dtable tbody td {
+  height: 34px; padding: 0 8px;
+  background: inherit;
+  border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  color: var(--text-primary);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.disp-dtable th:last-child, .disp-dtable td:last-child { border-right: none; }
+.disp-dtable .num { text-align: right; font-variant-numeric: tabular-nums; }
+.disp-dtable .c-idx { width: 44px; text-align: center; }
+.disp-dtable .c-code { width: 118px; }
+.disp-dtable .c-drug { width: 96px; }
+.disp-dtable .c-qty { width: 58px; }
+.disp-dtable .c-route { width: 56px; }
+.disp-dtable .c-dose { width: 72px; }
+.disp-dtable .c-freq { width: 44px; }
+.disp-dtable .c-days { width: 60px; }
+.disp-dtable .c-spec { width: 108px; }
+.disp-dtable .c-amt { width: 72px; }
+.disp-dtable .c-price { width: 72px; }
+.disp-dtable .c-ins { width: 60px; }
+.disp-dtable .c-ess { width: 58px; }
+.disp-dtable .c-vendor { width: 128px; }
+.disp-dtable .c-batch { width: 82px; }
+.disp-dtable .c-inscode { width: 118px; }
+.disp-dtable .c-insname { width: 96px; }
+.disp-dtable .c-unit { width: 60px; }
+.disp-dtable .c-factor { width: 76px; }
+.disp-dtable .c-dqty { width: 64px; }
+.disp-d-empty td { text-align: center; color: var(--text-placeholder); padding: 40px 0; }
+
+/* 通用弹窗 */
+.disp-mask {
+  display: none; position: fixed; inset: 0; z-index: 400;
+  background: rgba(0, 0, 0, .35);
+  align-items: center; justify-content: center;
+}
+.disp-mask.show { display: flex; }
+.disp-dlg {
+  width: 420px; background: #fff;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-2);
+  overflow: hidden;
+}
+.disp-dlg-title { padding: 18px 20px 8px; font-size: 15px; font-weight: 500; color: var(--text-primary); }
+.disp-dlg-body { padding: 0 20px 22px; font-size: 13px; line-height: 1.7; color: var(--text-secondary); }
+.disp-dlg-foot { padding: 12px 20px; display: flex; justify-content: flex-end; gap: 8px; border-top: 1px solid var(--border); }
+
+/* 审核意见弹窗 */
+.audit-dlg { width: 480px; background: #fff; border-radius: var(--radius-lg); box-shadow: var(--shadow-2); overflow: hidden; }
+.audit-body { padding: 4px 20px 20px; }
+.audit-rxno { font-size: 12px; color: var(--text-tertiary); margin-bottom: 14px; }
+.audit-radios { display: flex; align-items: center; gap: 28px; margin-bottom: 14px; font-size: 13px; color: var(--text-primary); }
+.audit-radios label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.audit-opinion {
+  width: 100%; height: 82px; resize: vertical;
+  padding: 8px 10px; font-size: 13px; line-height: 1.5;
+  border: 1px solid var(--border-input); border-radius: var(--radius);
+  color: var(--text-primary); outline: none;
+}
+.audit-opinion:focus { border-color: var(--primary); }
+.audit-opinion.is-invalid { border-color: var(--danger); background: #FFF1F0; }
+
+/* 审核详情弹窗 */
+.detail-rows { display: flex; flex-direction: column; gap: 8px; font-size: 13px; color: var(--text-primary); }
+.detail-rows .dr { display: flex; gap: 6px; }
+.detail-rows .dr .k { flex: none; color: var(--text-tertiary); }
+.detail-rows .dr .v { flex: 1; min-width: 0; word-break: break-all; }
+.detail-status-pass { color: var(--success); font-weight: 500; }
+.detail-status-reject { color: var(--danger); font-weight: 500; }
+</style>
+</head>
+<body>
+
+<!-- ========== 顶部导航 ========== -->
+<header class="app-header">
+  <div class="header-left">
+    <div class="header-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z"></path></svg>
+    </div>
+    <div class="header-title">区域药房协同管理系统</div>
+    <div class="header-pharmacy">
+      <button class="header-pharm-btn" id="btnPharmacy">
+        <span id="curPharmacy">中药房</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"></path></svg>
+      </button>
+      <div class="header-pharm-menu" id="pharmMenu">
+        <div class="header-pharm-item active" data-ph="中药房">中药房<span class="chk">✓</span></div>
+        <div class="header-pharm-item" data-ph="西药房">西药房<span class="chk"></span></div>
+        <div class="header-pharm-item" data-ph="住院药房">住院药房<span class="chk"></span></div>
+      </div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="header-user">
+      <div class="header-avatar">赵</div>
+      <div class="header-user-name">赵敏 · 中心药房</div>
+    </div>
+  </div>
+</header>
+
+<div class="app-body">
+
+  <!-- 左侧导航 -->
+  <aside class="app-side" id="appSide"></aside>
+<!-- 主区 -->
+  <main class="app-main">
+    <div class="tabbar">
+      <div class="tab" onclick="location.href='drug-catalog.html'">首页</div>
+      <div class="tab active">
+        毒麻精发药审核
+        <button class="tab-close" title="关闭" onclick="location.href='drug-catalog.html'">
+          <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 5l14 14M19 5L5 19"></path></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="disp-wrap">
+
+      <!-- ========== 顶部标题行：标题 + 操作按钮（按 tab 切换） ========== -->
+      <div class="disp-page-head">
+        <div style="display:flex;align-items:center;gap:14px;">
+          <span class="disp-page-title" id="sideTitle">毒麻精发药审核（中药房）</span>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="dbtn" id="btn360">360视图</button>
+          <button class="dbtn dbtn-primary" id="btnAudit">审核(<span class="k">S</span>)</button>
+          <button class="dbtn" id="btnDetail" style="display:none;">审核详情</button>
+        </div>
+      </div>
+
+      <!-- ========== 主体：左列表 + 右详情 ========== -->
+      <div class="disp-body">
+      <!-- ========== 左侧：毒麻精处方审核列表 ========== -->
+      <aside class="disp-side">
+        <div class="disp-tabs" id="dispTabs">
+          <button class="disp-tab active" data-tab="pending">未审核</button>
+          <button class="disp-tab" data-tab="audited">已审核</button>
+        </div>
+
+        <div class="disp-filter" id="dispFilter">
+          <div class="disp-frow">
+            <span class="disp-flbl">时间范围：</span>
+            <div class="disp-range">
+              <input class="input" id="dispRange" readonly="" value="2026-11-03 00:00:00 - 2026-11-04 23:59:59">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>
+            </div>
+          </div>
+          <div class="disp-frow">
+            <span class="disp-flbl">检索：</span>
+            <input class="input" id="dispQ" placeholder="门诊号/姓名/拼音码">
+            <span class="disp-flbl">证件号码：</span>
+            <input class="input" id="dispIdq" placeholder="请输入证件号码">
+          </div>
+          <div class="disp-facts">
+            <button class="btn" id="btnReset">重置</button>
+            <button class="btn btn-primary" id="btnQuery">查询</button>
+          </div>
+        </div>
+
+        <div class="disp-fold" id="btnFoldFilter" title="收起筛选">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"></path></svg>
+        </div>
+
+        <div class="disp-listwrap">
+          <table class="disp-ltable">
+            <thead id="dispListHead"></thead>
+            <tbody id="dispListBody"></tbody>
+          </table>
+        </div>
+
+        <div class="disp-selbar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v6M12 16v.5"></path></svg>
+          <span id="dispSelText">共选择 3 张处方</span>
+        </div>
+
+        <div class="disp-pagefoot">
+          <span id="dispTotalText">共 3 条</span>
+          <div class="pager-ctrl">
+            <select class="select" id="dispPageSize">
+              <option>100 条/页</option>
+            </select>
+            <button class="pager-btn" disabled="">
+              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"></path></svg>
+            </button>
+            <button class="pager-num">1</button>
+            <button class="pager-btn" disabled="">
+              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg>
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      <!-- ========== 右侧：处方详情 ========== -->
+      <section class="disp-main">
+        <div class="disp-dhead">
+          <span class="disp-dtitle">处方详情</span>
+          <span class="disp-type" id="dispType">中成药处方</span>
+          <span class="disp-collapse" id="btnCollapse">
+            <span id="collapseText">收起</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 15l6-6 6 6"></path></svg>
+          </span>
+        </div>
+
+        <div class="disp-info" id="dispInfo">
+          <div class="disp-grid" id="dispGrid"><div class="disp-field"><span class="k">姓名：</span><span class="v" title="冯小容">冯小容</span></div><div class="disp-field"><span class="k">性别：</span><span class="v" title="女性">女性</span></div><div class="disp-field"><span class="k">年龄：</span><span class="v" title="44岁">44岁</span></div><div class="disp-field"><span class="k">处方号：</span><span class="v" title="M202611000005A">M202611000005A</span></div><div class="disp-field"><span class="k">门诊号：</span><span class="v" title="202611040002">202611040002</span></div><div class="disp-field"><span class="k">医疗号：</span><span class="v" title="260430000000001">260430000000001</span></div><div class="disp-field"><span class="k">医保号：</span><span class="v" title="2604300000000001">2604300000000001</span></div><div class="disp-field"><span class="k">科室：</span><span class="v" title="内科门诊">内科门诊</span></div><div class="disp-field"><span class="k">医师：</span><span class="v" title="林落落">林落落</span></div><div class="disp-field"><span class="k">划价药房：</span><span class="v" title="中药房">中药房</span></div><div class="disp-field"><span class="k">收费种类：</span><span class="v" title="自费">自费</span></div><div class="disp-field"><span class="k">应收金额：</span><span class="v" title="26.45">26.45</span></div><div class="disp-field"><span class="k">诊断：</span><span class="v" title="痤疮; 虚证; 痤疮">痤疮; 虚证; 痤疮</span></div><div class="disp-field"><span class="k">处方时间：</span><span class="v" title="2026-11-04 19:40:21">2026-11-04 19:40:21</span></div><div class="disp-field"><span class="k">收费时间：</span><span class="v" title="2026-11-04 19:59:57">2026-11-04 19:59:57</span></div><div class="disp-field"><span class="k">体温/呼吸：</span><span class="v" title=""></span></div><div class="disp-field"><span class="k">脉搏：</span><span class="v" title="—">—</span></div><div class="disp-field"><span class="k">血压：</span><span class="v" title="—">—</span></div><div class="disp-field"><span class="k">过敏药物：</span><span class="v" title="青霉素类抗生素">青霉素类抗生素</span></div><div class="disp-field"><span class="k">联系电话：</span><span class="v" title="13309608869">13309608869</span></div><div class="disp-field"><span class="k">协定处方：</span><span class="v" title="—">—</span></div><div class="disp-field"><span class="k">身高：</span><span class="v" title="—">—</span></div><div class="disp-field"><span class="k">体重：</span><span class="v" title="—">—</span></div><div class="disp-field"><span class="k">备注：</span><span class="v" title="—">—</span></div></div>
+        </div>
+
+        <div class="disp-dwrap" style="position: relative;">
+          <table class="disp-dtable" style="">
+            <thead>
+              <tr>
+                <th class="c-idx">序号</th>
+                <th class="c-code">药品编码</th>
+                <th class="c-drug">药品名称</th>
+                <th class="c-qty">数量</th>
+                <th class="c-route">用法</th>
+                <th class="c-dose">单次剂量</th>
+                <th class="c-freq">用次</th>
+                <th class="c-days">用药天数</th>
+                <th class="c-spec">药品规格</th>
+                <th class="c-amt num">应收金额</th>
+                <th class="c-price num">药品单价</th>
+                <th class="c-ins">医保等级</th>
+                <th class="c-ess">国家基药</th>
+                <th class="c-vendor">生产企业</th>
+                <th class="c-batch">批号</th>
+                <th class="c-inscode">国家医保编码</th>
+                <th class="c-insname">国家医保名称</th>
+                <th class="c-unit">发药单位</th>
+                <th class="c-factor">发药换算系数</th>
+                <th class="c-dqty">发药数量</th>
+              </tr>
+            </thead>
+            <tbody id="dispDetailBody"></tbody>
+          </table>
+        </div>
+      </section>
+      </div><!-- /.disp-body -->
+    </div><!-- /.disp-wrap -->
+  </main>
+</div>
+
+<!-- 通用确认弹窗 -->
+<div class="disp-mask" id="dispMask">
+  <div class="disp-dlg">
+    <div class="disp-dlg-title" id="dispDlgTitle">提示</div>
+    <div class="disp-dlg-body" id="dispDlgBody"></div>
+    <div class="disp-dlg-foot">
+      <button class="btn" id="dispDlgCancel">取消</button>
+      <button class="btn btn-primary" id="dispDlgOk">确定</button>
+    </div>
+  </div>
+</div>
+
+<!-- 处方审核弹窗（通过/拒绝，拒绝时审核意见必填） -->
+<div class="disp-mask" id="auditMask">
+  <div class="audit-dlg">
+    <div class="disp-dlg-title">处方审核</div>
+    <div class="audit-body">
+      <div class="audit-rxno" id="auditRxNo">处方号：—</div>
+      <div class="audit-radios">
+        <label><input type="radio" name="auditResult" value="pass" checked=""> 通过</label>
+        <label><input type="radio" name="auditResult" value="reject"> 拒绝</label>
+      </div>
+      <textarea class="audit-opinion" id="auditOpinion" placeholder="请输入审核意见（拒绝时必填）"></textarea>
+    </div>
+    <div class="disp-dlg-foot">
+      <button class="btn" id="auditCancel">取消</button>
+      <button class="btn btn-primary" id="auditSubmit">提交</button>
+    </div>
+  </div>
+</div>
+
+<!-- 审核详情弹窗 -->
+<div class="disp-mask" id="detailMask">
+  <div class="audit-dlg">
+    <div class="disp-dlg-title">审核详情</div>
+    <div class="audit-body">
+      <div class="audit-rxno" id="detailRxNo">处方号：—</div>
+      <div class="detail-rows" id="detailRows"></div>
+    </div>
+    <div class="disp-dlg-foot">
+      <button class="btn btn-primary" id="detailClose">关闭</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="dispToast"></div>
+
+<script src="mock.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  function $(id){ return document.getElementById(id); }
+  function raw(v){
+    return String(v === null || v === undefined ? "" : v).replace(/[&<>"']/g, function(c){
+      return { "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c];
+    });
+  }
+  function esc(v){
+    if (v === null || v === undefined || v === "") return "—";
+    return raw(v);
+  }
+  function cell(v){ return raw(v); }
+  function money(n){ return (Math.round((Number(n) || 0) * 100) / 100).toFixed(2); }
+  function intVal(v){ var n = parseInt(v, 10); return isNaN(n) ? 0 : n; }
+
+  var KEY = "RX_AUDIT_DATA_V1";
+
+  function loadData(){
+    try {
+      var rawData = sessionStorage.getItem(KEY);
+      if (rawData){
+        var data = JSON.parse(rawData);
+        if (Array.isArray(data) && data.length) return data;
+      }
+    } catch(e){}
+    return JSON.parse(JSON.stringify(MOCK.rxAudit));
+  }
+  function persist(){
+    try { sessionStorage.setItem(KEY, JSON.stringify(ST.data)); } catch(e){}
+  }
+
+  var ST = {
+    tab: "pending",
+    data: loadData(),
+    checked: {},
+    currentId: null,
+    q: "",
+    idq: "",
+    infoOpen: true,
+    filterOpen: true,
+    pharmacy: "中药房"
+  };
+
+  function visibleList(){
+    var q = ST.q.trim().toLowerCase();
+    var idq = ST.idq.trim().toLowerCase();
+    return ST.data.filter(function(p){
+      if (ST.tab === "pending" && p.auditStatus !== "pending") return false;
+      if (ST.tab === "audited" && p.auditStatus === "pending") return false;
+      if (q){
+        var hay = (p.rxNo + " " + p.name + " " + p.py + " " + p.outpatientNo).toLowerCase();
+        if (hay.indexOf(q) < 0) return false;
+      }
+      if (idq && String(p.idNo || "").toLowerCase().indexOf(idq) < 0) return false;
+      return true;
+    });
+  }
+  function current(){
+    var list = visibleList();
+    for (var i = 0; i < list.length; i++) if (list[i].id === ST.currentId) return list[i];
+    return null;
+  }
+  function checkedCount(){
+    var n = 0;
+    Object.keys(ST.checked).forEach(function(k){ if (ST.checked[k]) n++; });
+    return n;
+  }
+
+  /* ---------------- 左侧列表 ---------------- */
+  /* 列定义按 tab 区分：未审核仅基础列；已审核增加审核结果/审核人/审核时间 */
+  function listColumns(){
+    var cols = [
+      { cls: "c-chk", chk: true },
+      { cls: "c-no", label: "处方号", key: "rxNo" },
+      { cls: "c-name", label: "姓名", key: "name" },
+      { cls: "c-outp", label: "门诊号", key: "outpatientNo" }
+    ];
+    if (ST.tab === "audited"){
+      cols.push({ cls: "c-result", label: "审核结果", key: "auditStatus" });
+      cols.push({ cls: "c-user", label: "审核人", key: "auditUser" });
+      cols.push({ cls: "c-time", label: "审核时间", key: "auditTime" });
+    }
+    return cols;
+  }
+
+  function renderList(){
+    var list = visibleList();
+    var cols = listColumns();
+    var body = $("dispListBody");
+
+    $("dispListHead").innerHTML = '<tr>'
+      + cols.map(function(c){
+          if (c.chk) return '<th class="' + c.cls + '"><input type="checkbox" id="chkAllList" title="全选"></th>';
+          return '<th class="' + c.cls + '">' + c.label + '</th>';
+        }).join("")
+      + '</tr>';
+
+    if (!list.length){
+      body.innerHTML = '<tr><td colspan="' + cols.length + '" class="disp-l-empty">暂无处方</td></tr>';
+    } else {
+      body.innerHTML = list.map(function(p){
+        var checked = !!ST.checked[p.id];
+        var cls = checked ? " is-checked" : "";
+        if (p.id === ST.currentId) cls += " is-current";
+        var narcoticTag = p.narcotic
+          ? ' <span style="color:var(--danger);font-weight:500;" title="涉及毒麻精类药品">麻</span>' : "";
+        return '<tr data-id="' + p.id + '" class="' + cls.trim() + '">'
+          + cols.map(function(c){
+              if (c.chk) return '<td class="' + c.cls + '"><input type="checkbox" data-chk="' + p.id + '"' + (checked ? " checked" : "") + '></td>';
+              var val = p[c.key] || "—";
+              var label;
+              if (c.key === "name") label = esc(p.name) + narcoticTag;
+              else if (c.key === "auditStatus") label = p.auditStatus === "approved"
+                ? '<span class="detail-status-pass">通过</span>'
+                : '<span class="detail-status-reject">拒绝</span>';
+              else label = esc(val);
+              return '<td title="' + esc(val) + '">' + label + '</td>';
+            }).join("")
+          + '</tr>';
+      }).join("");
+    }
+
+    var ids = list.map(function(p){ return p.id; });
+    var n = 0;
+    ids.forEach(function(id){ if (ST.checked[id]) n++; });
+    var chkAll = $("chkAllList");
+    if (chkAll){
+      chkAll.checked = ids.length > 0 && n === ids.length;
+      chkAll.indeterminate = n > 0 && n < ids.length;
+    }
+
+    $("dispTotalText").textContent = "共 " + list.length + " 条";
+    $("dispSelText").textContent = "共选择 " + checkedCount() + " 张处方";
+  }
+
+  /* ---------------- 右侧详情 ---------------- */
+  function renderInfo(){
+    var p = current();
+    var rows = [];
+    if (p){
+      rows = [
+        ["姓名", p.name], ["性别", p.gender], ["年龄", p.age],
+        ["处方号", p.rxNo], ["门诊号", p.outpatientNo], ["医疗号", p.medicalNo],
+        ["医保号", p.insNo], ["科室", p.dept], ["医师", p.doctor],
+        ["划价药房", p.pharmacy], ["收费种类", p.feeType], ["应收金额", money(p.amount)],
+        ["诊断", p.diagnose], ["处方时间", p.rxTime], ["收费时间", p.chargeTime],
+        ["体温/呼吸", p.temp], ["脉搏", p.pulse], ["血压", p.bp],
+        ["过敏药物", p.allergic], ["联系电话", p.phone], ["协定处方", p.agreement],
+        ["身高", p.height], ["体重", p.weight],
+        ["审核结果", p.auditStatus === "pending" ? "待审核" : (p.auditStatus === "approved" ? "审核通过" : "审核拒绝")],
+        ["审核人", p.auditUser], ["审核时间", p.auditTime], ["审核意见", p.auditOpinion]
+      ];
+      if (p.rxType === "中药饮片处方"){
+        rows.push(["剂数", p.doses]);
+        rows.push(["用法", p.usage]);
+      }
+      rows.push(["备注", p.remark]);
+    } else {
+      ["姓名","性别","年龄","处方号","门诊号","医疗号","医保号","科室","医师","划价药房",
+       "收费种类","应收金额","诊断","处方时间","收费时间","体温/呼吸","脉搏","血压",
+       "过敏药物","联系电话","协定处方","身高","体重",
+       "审核结果","审核人","审核时间","审核意见"].forEach(function(k){ rows.push([k, "—"]); });
+      rows.push(["备注", "—"]);
+    }
+
+    $("dispGrid").innerHTML = rows.map(function(r){
+      var text = r[1] === null || r[1] === undefined ? "" : String(r[1]);
+      return '<div class="disp-field"><span class="k">' + r[0] + '：</span>'
+        + '<span class="v" title="' + raw(text) + '">' + raw(text) + '</span></div>';
+    }).join("");
+  }
+
+  function renderType(){
+    var p = current();
+    var el = $("dispType");
+    if (!p){ el.textContent = "—"; el.className = "disp-type"; return; }
+    el.textContent = p.rxType || "中成药处方";
+    el.className = "disp-type" + (p.rxType === "中药饮片处方" ? " is-tcm" : "");
+  }
+
+  function renderDetail(){
+    var p = current();
+    var body = $("dispDetailBody");
+    if (!p || !p.items.length){
+      body.innerHTML = '<tr class="disp-d-empty"><td colspan="20">' + (p ? "该处方暂无药品明细" : "请从左侧选择一张处方") + '</td></tr>';
+      return;
+    }
+    body.innerHTML = p.items.map(function(it, i){
+      return '<tr>'
+        + '<td class="c-idx">' + (i + 1) + '</td>'
+        + '<td title="' + esc(it.drugCode) + '">' + esc(it.drugCode) + '</td>'
+        + '<td title="' + esc(it.name) + '">' + esc(it.name) + '</td>'
+        + '<td>' + esc(it.qty) + '</td>'
+        + '<td>' + esc(it.route) + '</td>'
+        + '<td>' + esc(it.dose) + '</td>'
+        + '<td>' + esc(it.freq) + '</td>'
+        + '<td class="num">' + esc(it.days) + '</td>'
+        + '<td title="' + esc(it.spec) + '">' + esc(it.spec) + '</td>'
+        + '<td class="num">' + money(it.amount) + '</td>'
+        + '<td class="num">' + money(it.price) + '</td>'
+        + '<td>' + cell(it.insLevel) + '</td>'
+        + '<td>' + cell(it.essential) + '</td>'
+        + '<td title="' + esc(it.vendor) + '">' + esc(it.vendor) + '</td>'
+        + '<td>' + cell(it.batch) + '</td>'
+        + '<td>' + cell(it.insCode) + '</td>'
+        + '<td>' + cell(it.insName) + '</td>'
+        + '<td>' + cell(it.dispUnit) + '</td>'
+        + '<td class="num">' + cell(it.factor) + '</td>'
+        + '<td class="num">' + cell(it.dispQty) + '</td>'
+        + '</tr>';
+    }).join("");
+  }
+
+  function renderButtons(){
+    var pending = ST.tab === "pending";
+    $("btnAudit").style.display = pending ? "" : "none";
+    $("btnDetail").style.display = pending ? "none" : "";
+    var n = checkedCount();
+    $("btnAudit").disabled = n === 0;
+    $("btnDetail").disabled = n === 0;
+  }
+
+  function renderAll(){
+    renderList();
+    renderInfo();
+    renderType();
+    renderDetail();
+    renderButtons();
+  }
+
+  function setCurrent(id){
+    ST.currentId = id;
+    renderAll();
+  }
+  function firstOrNull(){
+    var list = visibleList();
+    return list.length ? list[0].id : null;
+  }
+
+  /* ---------------- 弹窗 / toast ---------------- */
+  var dlgOk = null;
+  function confirmDialog(title, body, okText, onOk){
+    $("dispDlgTitle").textContent = title;
+    $("dispDlgBody").textContent = body;
+    $("dispDlgOk").textContent = okText || "确定";
+    dlgOk = onOk;
+    $("dispMask").classList.add("show");
+  }
+  function closeDialog(){
+    $("dispMask").classList.remove("show");
+    dlgOk = null;
+  }
+  var toastTimer = null;
+  function toast(msg){
+    var el = $("dispToast");
+    el.textContent = msg;
+    el.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ el.classList.remove("show"); }, 2200);
+  }
+
+  /* ---------------- 审核操作 ---------------- */
+  var AUDIT = { ids: [] };
+
+  function checkedList(){
+    return visibleList().filter(function(p){ return ST.checked[p.id]; });
+  }
+
+  /* 审核：弹窗内选择 通过 / 拒绝（拒绝时审核意见必填），提交后回填审核人/审核时间 */
+  function doAudit(){
+    if (ST.tab !== "pending"){ toast("请切换到「未审核」tab 后再审核"); return; }
+    var list = checkedList();
+    if (!list.length){ toast("请先勾选需要审核的处方"); return; }
+    AUDIT.ids = list.map(function(p){ return p.id; });
+    $("auditRxNo").textContent = "处方号：" + (list.length === 1
+      ? list[0].rxNo
+      : list[0].rxNo + " 等 " + list.length + " 张");
+    document.querySelector('input[name="auditResult"][value="pass"]').checked = true;
+    var op = $("auditOpinion");
+    op.value = "";
+    op.classList.remove("is-invalid");
+    $("auditMask").classList.add("show");
+    setTimeout(function(){ op.focus(); }, 50);
+  }
+  function closeAudit(){
+    $("auditMask").classList.remove("show");
+    $("auditOpinion").classList.remove("is-invalid");
+  }
+  function submitAudit(){
+    var result = (document.querySelector('input[name="auditResult"]:checked') || {}).value || "pass";
+    var opinion = $("auditOpinion").value.trim();
+    if (result === "reject" && !opinion){
+      $("auditOpinion").classList.add("is-invalid");
+      toast("拒绝时必须填写审核意见");
+      return;
+    }
+    ST.data.forEach(function(p){
+      if (AUDIT.ids.indexOf(p.id) >= 0){
+        p.auditStatus = result === "pass" ? "approved" : "rejected";
+        p.auditUser = "赵敏";
+        p.auditTime = nowStr();
+        p.auditOpinion = opinion;
+      }
+    });
+    var n = AUDIT.ids.length;
+    ST.checked = {};
+    ST.currentId = firstOrNull();
+    persist();
+    closeAudit();
+    renderAll();
+    toast(result === "pass"
+      ? "审核通过 " + n + " 张处方，已进入门诊处方发药流程"
+      : "已拒绝 " + n + " 张处方");
+  }
+
+  /* 审核详情：展示审核是否通过、审核人/时间及审核意见 */
+  function openDetail(){
+    var p = current();
+    if (!p){ toast("请先选择一张处方"); return; }
+    if (p.auditStatus === "pending"){ toast("该处方尚未审核"); return; }
+    var pass = p.auditStatus === "approved";
+    $("detailRxNo").textContent = "处方号：" + p.rxNo;
+    $("detailRows").innerHTML =
+      '<div class="dr"><span class="k">审核结果：</span><span class="v '
+        + (pass ? "detail-status-pass" : "detail-status-reject") + '">'
+        + (pass ? "审核通过" : "审核拒绝") + '</span></div>'
+      + '<div class="dr"><span class="k">审核人：</span><span class="v">' + esc(p.auditUser) + '</span></div>'
+      + '<div class="dr"><span class="k">审核时间：</span><span class="v">' + esc(p.auditTime) + '</span></div>'
+      + '<div class="dr"><span class="k">审核意见：</span><span class="v">' + esc(p.auditOpinion) + '</span></div>';
+    $("detailMask").classList.add("show");
+  }
+  function switchTab(tab){
+    if (ST.tab === tab) return;
+    ST.tab = tab;
+    ST.checked = {};
+    Array.prototype.forEach.call($("dispTabs").children, function(el){
+      el.classList.toggle("active", el.getAttribute("data-tab") === tab);
+    });
+    ST.currentId = firstOrNull();
+    renderAll();
+  }
+
+  function toggleCheck(id, val){
+    ST.checked[id] = val;
+    if (val) ST.currentId = id;
+    else if (ST.currentId === id) ST.currentId = firstOrNull();
+    renderAll();
+  }
+
+  function toggleAll(val){
+    visibleList().forEach(function(p){ ST.checked[p.id] = val; });
+    if (val) ST.currentId = firstOrNull();
+    renderAll();
+  }
+
+  function doQuery(){
+    ST.q = $("dispQ").value;
+    ST.idq = $("dispIdq").value;
+    ST.currentId = firstOrNull();
+    ST.checked = {};
+    renderAll();
+  }
+
+  function nowStr(){
+    var d = new Date();
+    function pad(n){ return n < 10 ? "0" + n : "" + n; }
+    return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) + " "
+      + pad(d.getHours()) + ":" + pad(d.getMinutes()) + ":" + pad(d.getSeconds());
+  }
+
+  /* ---------------- 事件绑定 ---------------- */
+  function bind(){
+    $("dispTabs").addEventListener("click", function(e){
+      var t = e.target.closest(".disp-tab");
+      if (t) switchTab(t.getAttribute("data-tab"));
+    });
+
+    $("dispListBody").addEventListener("click", function(e){
+      var ck = e.target.closest("input[data-chk]");
+      if (ck){ toggleCheck(ck.getAttribute("data-chk"), ck.checked); return; }
+      var tr = e.target.closest("tr[data-id]");
+      if (!tr) return;
+      var id = tr.getAttribute("data-id");
+      ST.checked[id] = true;
+      ST.currentId = id;
+      renderAll();
+    });
+
+    $("dispListHead").addEventListener("change", function(e){
+      if (e.target && e.target.id === "chkAllList") toggleAll(e.target.checked);
+    });
+
+    $("btnQuery").onclick = doQuery;
+    $("dispQ").addEventListener("keydown", function(e){ if (e.key === "Enter") doQuery(); });
+    $("dispIdq").addEventListener("keydown", function(e){ if (e.key === "Enter") doQuery(); });
+    $("btnReset").onclick = function(){
+      $("dispQ").value = "";
+      $("dispIdq").value = "";
+      ST.q = ""; ST.idq = ""; ST.checked = {};
+      ST.currentId = firstOrNull();
+      renderAll();
+    };
+
+    $("btnFoldFilter").onclick = function(){
+      ST.filterOpen = !ST.filterOpen;
+      $("dispFilter").classList.toggle("is-hidden", !ST.filterOpen);
+      this.classList.toggle("is-folded", !ST.filterOpen);
+      this.title = ST.filterOpen ? "收起筛选" : "展开筛选";
+    };
+
+    $("dispRange").addEventListener("click", function(){ toast("时间范围选择（演示）"); });
+
+    $("btnAudit").onclick = doAudit;
+    $("btnDetail").onclick = openDetail;
+    $("btn360").onclick = function(){
+      if (!current()){ toast("请先选择一张处方"); return; }
+      toast("正在打开患者 360 视图（演示）");
+    };
+
+    // 审核弹窗
+    $("auditCancel").onclick = closeAudit;
+    $("auditSubmit").onclick = submitAudit;
+    $("auditOpinion").addEventListener("input", function(){ this.classList.remove("is-invalid"); });
+    $("auditMask").addEventListener("click", function(e){ if (e.target === this) closeAudit(); });
+
+    // 审核详情弹窗
+    $("detailClose").onclick = function(){ $("detailMask").classList.remove("show"); };
+    $("detailMask").addEventListener("click", function(e){ if (e.target === this) $("detailMask").classList.remove("show"); });
+
+    $("btnCollapse").onclick = function(){
+      ST.infoOpen = !ST.infoOpen;
+      $("dispInfo").classList.toggle("is-folded", !ST.infoOpen);
+      $("collapseText").textContent = ST.infoOpen ? "收起" : "展开";
+      this.classList.toggle("is-folded", !ST.infoOpen);
+    };
+
+    // 系统栏药房切换
+    $("btnPharmacy").onclick = function(e){
+      e.stopPropagation();
+      $("pharmMenu").classList.toggle("show");
+    };
+    $("pharmMenu").addEventListener("click", function(e){
+      e.stopPropagation();
+      var item = e.target.closest(".header-pharm-item");
+      if (!item) return;
+      var ph = item.getAttribute("data-ph");
+      ST.pharmacy = ph;
+      $("curPharmacy").textContent = ph;
+      $("sideTitle").textContent = "毒麻精发药审核（" + ph + "）";
+      Array.prototype.forEach.call(this.children, function(el){
+        el.classList.toggle("active", el === item);
+        var chk = el.querySelector(".chk");
+        if (chk) chk.textContent = el === item ? "✓" : "";
+      });
+      this.classList.remove("show");
+      toast("已切换至 " + ph);
+    });
+    document.addEventListener("click", function(){ $("pharmMenu").classList.remove("show"); });
+
+    $("dispDlgCancel").onclick = closeDialog;
+    $("dispDlgOk").onclick = function(){
+      var fn = dlgOk;
+      closeDialog();
+      if (fn) fn();
+    };
+    $("dispMask").addEventListener("click", function(e){
+      if (e.target === this) closeDialog();
+    });
+
+    document.addEventListener("keydown", function(e){
+      if (e.altKey && !e.ctrlKey && !e.metaKey && (e.key || "").toLowerCase() === "s"){
+        e.preventDefault();
+        if ($("auditMask").classList.contains("show")){ submitAudit(); return; }
+        if (ST.tab === "pending") doAudit();
+      }
+      if (e.key === "Escape"){
+        if ($("auditMask").classList.contains("show")) closeAudit();
+        else if ($("detailMask").classList.contains("show")) $("detailMask").classList.remove("show");
+        else if ($("dispMask").classList.contains("show")) closeDialog();
+      }
+    });
+  }
+
+  /* ---------------- 初始化 ---------------- */
+  ST.currentId = firstOrNull();
+  if (ST.currentId) ST.checked[ST.currentId] = true;
+  bind();
+  renderAll();
+})();
+</script>
+
+
+  <script src="nav.js"></script>
+</body></html>

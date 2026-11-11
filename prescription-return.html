@@ -97,11 +97,22 @@
 .rt-dwrap { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .rt-info {
   flex: none;
+  position: relative;
   display: flex; flex-direction: column; gap: 7px;
-  padding: 12px 16px;
+  padding: 12px 92px 12px 16px;
   border-bottom: 1px solid var(--border-light);
 }
 .rt-irow { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 6px 28px; }
+/* 处方详情收起 / 展开：按钮固定在详情信息区右上角，不占整行 */
+.rt-coll-hide { display: none; }
+.rt-foldwrap { position: absolute; top: 12px; right: 16px; }
+.rt-fold {
+  border: none; background: transparent;
+  color: var(--primary); font-size: 12px;
+  font-family: inherit; cursor: pointer;
+  padding: 0;
+}
+.rt-fold:hover { filter: brightness(.88); }
 .rt-cell { display: flex; min-width: 0; flex: none; font-size: 12px; line-height: 18px; }
 .rt-cell.wide { flex: 0 1 260px; max-width: 320px; }
 .rt-k { flex: none; color: var(--text-tertiary); white-space: nowrap; }
@@ -201,6 +212,51 @@
 .rt-dempty { flex: 1; display: grid; place-items: center; color: var(--text-placeholder); font-size: 13px; }
 .rt-dlg-text { font-size: 13px; line-height: 1.9; color: var(--text-secondary); }
 .rt-dlg-text b { color: var(--primary-dark); font-weight: 500; }
+.rt-dlg-reason {
+  width: 100%; box-sizing: border-box; margin-top: 12px; padding: 6px 8px;
+  border: 1px solid var(--border-input); border-radius: 4px; font-size: 12px;
+  color: var(--text-primary); resize: vertical; font-family: inherit; line-height: 1.6;
+}
+.rt-dlg-reason:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 2px rgba(43,127,255,.12); }
+
+/* ---------- 页内 Tab（标题栏下方）：退药申请 / 执行退药 ---------- */
+.rt-tabbar {
+  flex: none; height: 44px;
+  display: flex; align-items: center; gap: 4px;
+  padding: 0 16px;
+  margin: 8px 12px 0;
+  background: var(--bg-white);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 1px 2px rgba(0,0,0,.04);
+}
+.rt-tab {
+  height: 44px; padding: 0 14px;
+  border: none; background: transparent;
+  color: var(--text-secondary); font-size: 14px; cursor: pointer;
+  position: relative; white-space: nowrap;
+}
+.rt-tab:hover { color: var(--primary); }
+.rt-tab.active { color: var(--primary); font-weight: 500; }
+.rt-tab.active::after {
+  content: ""; position: absolute; left: 10px; right: 10px; bottom: 0;
+  height: 2px; border-radius: 1px; background: var(--primary);
+}
+
+/* ---------- 处方退药状态角标 ---------- */
+.rt-badge {
+  display: inline-block; margin-left: 4px; padding: 0 4px;
+  border-radius: 2px; font-size: 10px; line-height: 15px;
+  vertical-align: 1px;
+}
+.rt-badge.b-pend { background: #FFF7E8; color: #D48806; }
+.rt-badge.b-appr { background: #E6F4FF; color: var(--primary-dark); }
+.rt-badge.b-rej  { background: #FFF1F0; color: var(--danger); }
+.rt-badge.b-ret  { background: #E8F7E9; color: var(--success); }
+
+/* ---------- 头部状态文字配色 ---------- */
+.rt-state.is-pend { color: #D48806; }
+.rt-state.is-appr { color: var(--primary-dark); }
+.rt-state.is-rej  { color: var(--danger); }
 
 /* ---------- 顶栏药房下拉 ---------- */
 .app-header { position: relative; z-index: 50; }
@@ -315,19 +371,17 @@
       <div class="page-head">
         <div style="display:flex;align-items:center;gap:12px;">
           <h1 class="page-title">门诊处方退药（中药房）</h1>
-          <span style="font-size:13px;color:var(--text-tertiary);">库位：</span>
-          <select class="select" style="width:180px;" id="rtLocation">
-            <option>中药房-1号架</option>
-            <option>中药房-2号架</option>
-            <option>中药房-3号架</option>
-            <option>西药房-1号架</option>
-            <option>西药房-2号架</option>
+          <span style="font-size:13px;color:var(--text-tertiary);">药房：</span>
+          <select class="select" style="width:120px;" id="rtLocation">
+            <option>中药房</option>
+            <option>西药房</option>
           </select>
         </div>
-        <div class="rt-dacts">
-          <span class="rt-state" id="rxState" style="display:none;">已退药</span>
-          <button class="btn btn-sm btn-primary" id="btnReturn" disabled>退药</button>
-        </div>
+      </div>
+
+      <div class="rt-tabbar" id="rtTabs">
+        <button type="button" class="rt-tab active" data-tab="apply">退药申请</button>
+        <button type="button" class="rt-tab" data-tab="exec">执行退药</button>
       </div>
 
       <div class="rt-body">
@@ -344,11 +398,18 @@
             <div class="rt-frow">
               <label class="rt-flbl" for="fRxNo">处方号</label>
               <input class="input rt-inp" id="fRxNo" placeholder="请输入处方号" autocomplete="off">
+              <label class="rt-flbl" for="fStatus" id="fStatusLbl" style="width:auto;">退药状态</label>
+              <select class="select" id="fStatus" style="width:92px;flex:none;">
+                <option value="">全部</option>
+                <option value="returnPending">待审核</option>
+                <option value="approved">待执行退药</option>
+                <option value="returned">已退药</option>
+                <option value="rejected">已拒绝</option>
+              </select>
             </div>
             <div class="rt-frow">
               <label class="rt-flbl" for="fKw">检索</label>
               <input class="input rt-inp" id="fKw" placeholder="门诊号/姓名/医保卡号" autocomplete="off">
-              <label class="rt-scope" title="查询已退药"><input type="checkbox" id="scReturned">查询已退药</label>
             </div>
             <div class="rt-acts">
               <button class="btn btn-sm" id="btnReset">重置</button>
@@ -360,10 +421,9 @@
             <table class="rt-list">
               <thead>
                 <tr>
-                  <th style="width:38%">处方号</th>
+                  <th style="width:42%">处方号</th>
                   <th style="width:16%">姓名</th>
                   <th>门诊号</th>
-                  <th class="num c-dose">剂数</th>
                 </tr>
               </thead>
               <tbody id="listBody"><tr data-id="rt1" class="active"><td title="M20261100000A">M20261100000A</td><td title="冯小容">冯小容</td><td title="202611040002">202611040002</td><td class="num">1</td></tr><tr data-id="rt2"><td title="M202611000007A">M202611000007A</td><td title="冯小容">冯小容</td><td title="202611040003">202611040003</td><td class="num">2</td></tr><tr data-id="rt3"><td title="M202611000009A">M202611000009A</td><td title="王秀兰">王秀兰</td><td title="202611040006">202611040006</td><td class="num">3</td></tr><tr data-id="rt4"><td title="M202611000011A">M202611000011A</td><td title="李建国">李建国</td><td title="202611040008">202611040008</td><td class="num">2</td></tr><tr data-id="rt5"><td title="M202611030056A">M202611030056A</td><td title="陈志远">陈志远</td><td title="202611030056">202611030056</td><td class="num">2</td></tr></tbody>
@@ -385,10 +445,19 @@
         <section class="rt-right">
           <div class="rt-dhead">
             <span class="rt-sec">处方详情</span>
+            <div class="rt-dacts">
+              <span class="rt-state" id="rxState" style="display:none;">已退药</span>
+              <button class="btn btn-sm" id="btnAuditInfo" style="display:none;" disabled>审核详情</button>
+              <button class="btn btn-sm btn-primary" id="btnReturn" disabled>申请退药</button>
+            </div>
           </div>
 
           <div class="rt-dwrap" id="detailWrap" style="display: flex;">
-            <div class="rt-info" id="infoGrid"><div class="rt-irow"><div class="rt-cell"><span class="rt-k">姓名：</span><span class="rt-v" title="冯小容">冯小容</span></div><div class="rt-cell"><span class="rt-k">性别：</span><span class="rt-v" title="女性">女性</span></div><div class="rt-cell"><span class="rt-k">年龄：</span><span class="rt-v" title="44岁">44岁</span></div><div class="rt-cell"><span class="rt-k">处方号：</span><span class="rt-v" title="M20261100000A">M20261100000A</span></div><div class="rt-cell"><span class="rt-k">门诊号：</span><span class="rt-v" title="202611040002">202611040002</span></div><div class="rt-cell"><span class="rt-k">医疗号：</span><span class="rt-v" title="26043000000001">26043000000001</span></div></div><div class="rt-irow"><div class="rt-cell"><span class="rt-k">医保号：</span><span class="rt-v" title="—">—</span></div><div class="rt-cell"><span class="rt-k">科室：</span><span class="rt-v" title="内科门诊">内科门诊</span></div><div class="rt-cell"><span class="rt-k">医师：</span><span class="rt-v" title="林落落">林落落</span></div><div class="rt-cell"><span class="rt-k">划价药房：</span><span class="rt-v" title="中药房">中药房</span></div><div class="rt-cell"><span class="rt-k">收费种类：</span><span class="rt-v" title="自费">自费</span></div><div class="rt-cell"><span class="rt-k">处方类别：</span><span class="rt-v" title="中成药处方">中成药处方</span></div><div class="rt-cell"><span class="rt-k">应收金额：</span><span class="rt-v" title="26.4492">26.4492</span></div></div><div class="rt-irow"><div class="rt-cell wide"><span class="rt-k">诊断：</span><span class="rt-v" title="痤疮；虚证：痤疮">痤疮；虚证：痤疮</span></div><div class="rt-cell"><span class="rt-k">处方时间：</span><span class="rt-v" title="2026-11-04 19:40:21">2026-11-04 19:40:21</span></div><div class="rt-cell"><span class="rt-k">体温：</span><span class="rt-v" title="—">—</span></div><div class="rt-cell"><span class="rt-k">呼吸：</span><span class="rt-v" title="—">—</span></div><div class="rt-cell"><span class="rt-k">脉搏：</span><span class="rt-v" title="—">—</span></div><div class="rt-cell"><span class="rt-k">血压：</span><span class="rt-v" title="—">—</span></div></div><div class="rt-irow"><div class="rt-cell wide"><span class="rt-k">过敏药物：</span><span class="rt-v" title="青霉素类抗生素">青霉素类抗生素</span></div></div></div>
+            <div class="rt-info">
+              <div id="infoGrid"></div>
+              <div class="rt-foldwrap" id="foldWrap" style="display:none;">
+                <button type="button" class="rt-fold" id="btnFold">展开全部 ▾</button>
+              </div>
             <div class="rt-drughead"><span class="rt-sec">药品信息</span></div>
             <div class="rt-tablewrap">
               <table class="rt-table">
@@ -413,7 +482,10 @@
 <div class="modal-mask" id="dlgMask">
   <div class="modal" style="width:420px;">
     <div class="modal-head"><span class="modal-title" id="dlgTitle">退药确认</span></div>
-    <div class="modal-body"><div class="rt-dlg-text" id="dlgBody"></div></div>
+    <div class="modal-body">
+      <div class="rt-dlg-text" id="dlgBody"></div>
+      <textarea class="rt-dlg-reason" id="applyReason" rows="3" placeholder="请输入退药申请原因（必填）" style="display:none;"></textarea>
+    </div>
     <div class="modal-foot">
       <button class="btn" id="dlgCancel">取消</button>
       <button class="btn btn-primary" id="dlgOk">确认退药</button>
@@ -453,6 +525,17 @@
   </div>
 </div>
 
+<!-- 审核详情弹窗 -->
+<div class="modal-mask" id="audInfoMask">
+  <div class="modal" style="width:460px;">
+    <div class="modal-head"><span class="modal-title">审核详情</span></div>
+    <div class="modal-body"><div class="rt-dlg-text" id="audInfoBody"></div></div>
+    <div class="modal-foot">
+      <button class="btn btn-primary" id="audInfoClose">关闭</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script src="mock.js"></script>
@@ -475,20 +558,20 @@
       + pad(d.getHours()) + ":" + pad(d.getMinutes()) + ":" + pad(d.getSeconds());
   }
 
-  var KEY = "RX_RETURN_DATA_V1";
+  var KEY = "RX_RETURN_DATA_V2";
   function clone(o){ return JSON.parse(JSON.stringify(o)); }
   function loadRows(){
     try {
       var raw = sessionStorage.getItem(KEY);
       if (raw){
         var data = JSON.parse(raw);
-        if (data && data.v === 1 && Array.isArray(data.rows) && data.rows.length) return data.rows;
+        if (data && data.v === 2 && Array.isArray(data.rows) && data.rows.length) return data.rows;
       }
     } catch(e){}
     return clone(MOCK.rxReturns);
   }
   function persist(){
-    try { sessionStorage.setItem(KEY, JSON.stringify({ v: 1, rows: ST.rows })); } catch(e){}
+    try { sessionStorage.setItem(KEY, JSON.stringify({ v: 2, rows: ST.rows })); } catch(e){}
   }
 
   var ST = {
@@ -497,8 +580,17 @@
     activeId: null,
     page: 1,
     pageSize: 10,
-    filters: { from: "", to: "", rxNo: "", kw: "", returned: false }
+    tab: "apply",
+    detailExpanded: false,
+    filters: { from: "", to: "", rxNo: "", kw: "", status: "" }
   };
+
+  /* 退药流程状态：文案 / 角标 / 配色 */
+  var STATUS_TEXT = { returnPending: "待审核", approved: "待执行退药", rejected: "已拒绝", returned: "已退药" };
+  var STATUS_CLS  = { returnPending: "is-pend", approved: "is-appr", rejected: "is-rej", returned: "" };
+  var BADGE = { returnPending: ["待审", "b-pend"], approved: ["待退", "b-appr"], rejected: ["已拒", "b-rej"], returned: ["已退", "b-ret"] };
+  var AUDITOR = "赵敏"; /* 申请人 / 审核人 = 当前登录用户（演示） */
+  function isEditable(p){ return p.status === "pending" || p.status === "rejected"; }
 
   ST.rows.forEach(function(p){
     p.items.forEach(function(it){
@@ -542,13 +634,15 @@
       to: ($("fTo").value || "").replace("T", " "),
       rxNo: $("fRxNo").value.trim(),
       kw: $("fKw").value.trim(),
-      returned: $("scReturned").checked
+      status: $("fStatus").value
     };
   }
 
   function filtered(){
     var f = ST.filters;
     return ST.rows.filter(function(p){
+      /* 执行退药页签：仅展示审核通过、待执行退药的处方 */
+      if (ST.tab === "exec") return p.status === "approved";
       var t = p.dispenseTime || "";
       if (f.from && t < f.from) return false;
       if (f.to && t > f.to) return false;
@@ -558,7 +652,7 @@
         var hay = [p.name, p.outpatientNo, p.medicalNo, p.insNo].join(" ").toLowerCase();
         if (hay.indexOf(k) < 0) return false;
       }
-      if (f.returned && p.status !== "returned") return false;
+      if (f.status && p.status !== f.status) return false;
       return true;
     });
   }
@@ -594,11 +688,13 @@
     $("listEmpty").style.display = "none";
     var html = "";
     rows.forEach(function(p){
+      var badge = BADGE[p.status];
       html += '<tr data-id="' + p.id + '"' + (p.id === ST.activeId ? ' class="active"' : "") + '>'
-        + '<td title="' + esc(p.rxNo) + '">' + esc(p.rxNo) + '</td>'
+        + '<td title="' + esc(p.rxNo) + '">' + esc(p.rxNo)
+        + (badge ? '<span class="rt-badge ' + badge[1] + '">' + badge[0] + '</span>' : "")
+        + '</td>'
         + '<td title="' + esc(p.name) + '">' + esc(p.name) + '</td>'
         + '<td title="' + esc(p.outpatientNo) + '">' + esc(p.outpatientNo) + '</td>'
-        + '<td class="num">' + p.doses + '</td>'
         + '</tr>';
     });
     body.innerHTML = html;
@@ -619,19 +715,34 @@
     return '<div class="rt-irow">' + cells.join("") + '</div>';
   }
 
+  /* 处方详情收起 / 展开：收起时仅展示前两行 */
+  function wrapCollapsible(rowsHtml){
+    $("foldWrap").style.display = rowsHtml.length > 2 ? "flex" : "none";
+    $("btnFold").textContent = ST.detailExpanded ? "收起 ▴" : "展开全部 ▾";
+    return rowsHtml.map(function(h, i){
+      if (i < 2) return h;
+      return '<div class="rt-coll' + (ST.detailExpanded ? "" : " rt-coll-hide") + '">' + h + '</div>';
+    }).join("");
+  }
+
   function renderDetail(){
     var p = activeRow();
+    var isExec = ST.tab === "exec";
     if (!p){
       $("detailWrap").style.display = "none";
       $("detailEmpty").style.display = "grid";
       $("rxState").style.display = "none";
+      $("btnReturn").style.display = "";
       $("btnReturn").disabled = true;
+      $("btnReturn").textContent = isExec ? "执行退药" : "申请退药";
+      $("btnAuditInfo").style.display = "";
+      $("btnAuditInfo").disabled = true;
       return;
     }
     $("detailWrap").style.display = "flex";
     $("detailEmpty").style.display = "none";
 
-    $("infoGrid").innerHTML = [
+    $("infoGrid").innerHTML = wrapCollapsible([
       row([infoCell("姓名", p.name), infoCell("性别", p.gender), infoCell("年龄", p.age),
         infoCell("处方号", p.rxNo), infoCell("门诊号", p.outpatientNo), infoCell("医疗号", p.medicalNo)]),
       row([infoCell("医保号", p.insNo), infoCell("科室", p.dept), infoCell("医师", p.doctor),
@@ -640,17 +751,51 @@
       row([infoCell("诊断", p.diagnose, true), infoCell("处方时间", p.rxTime), infoCell("体温", p.temp),
         infoCell("呼吸", p.resp), infoCell("脉搏", p.pulse), infoCell("血压", p.bp)]),
       row([infoCell("过敏药物", p.allergic, true)])
-    ].join("");
+    ]);
 
-    if (p.status === "returned"){
-      $("rxState").style.display = "inline";
-      $("btnReturn").disabled = true;
-      $("btnReturn").title = "该处方已完成退药";
+    /* 头部状态 + 按钮（申请 / 执行两个页签联动，两个页签均可查看审核详情） */
+    $("btnReturn").style.display = "";
+    $("btnAuditInfo").style.display = "";
+
+    /* 执行退药页签无需展示状态小字（列表内均为待执行退药） */
+    if (!isExec && STATUS_TEXT[p.status]){
+      var st = $("rxState");
+      st.textContent = STATUS_TEXT[p.status];
+      st.className = "rt-state" + (STATUS_CLS[p.status] ? " " + STATUS_CLS[p.status] : "");
+      st.style.display = "inline";
     } else {
       $("rxState").style.display = "none";
+    }
+
+    if (isExec){
+      $("btnReturn").textContent = "执行退药";
       $("btnReturn").disabled = false;
       $("btnReturn").title = "";
+    } else if (p.status === "pending"){
+      $("btnReturn").disabled = false;
+      $("btnReturn").textContent = "申请退药";
+      $("btnReturn").title = "";
+    } else if (p.status === "rejected"){
+      $("btnReturn").disabled = false;
+      $("btnReturn").textContent = "重新发起申请";
+      $("btnReturn").title = "申请已被拒绝，可调整后重新发起";
+    } else if (p.status === "returnPending"){
+      $("btnReturn").disabled = true;
+      $("btnReturn").textContent = "申请退药";
+      $("btnReturn").title = "退药申请等待审核，审核通过后方可执行退药";
+    } else if (p.status === "approved"){
+      $("btnReturn").disabled = true;
+      $("btnReturn").textContent = "申请退药";
+      $("btnReturn").title = "审核已通过，请到「执行退药」页签执行退药";
+    } else {
+      $("btnReturn").disabled = true;
+      $("btnReturn").textContent = "申请退药";
+      $("btnReturn").title = "该处方已完成退药";
     }
+
+    /* 审核详情：已发起申请的处方可查看审核记录 */
+    $("btnAuditInfo").disabled = !p.applyBy;
+    $("btnAuditInfo").title = p.applyBy ? "" : "该处方尚未发起退药申请";
 
     renderDrugs(p);
     updateSum();
@@ -674,7 +819,8 @@
   }
 
   function renderDrugs(p){
-    var returned = p.status === "returned";
+    /* locked：待审核 / 待退药 / 已退药阶段，勾选与数量均锁定 */
+    var locked = (p.status === "returnPending" || p.status === "approved" || p.status === "returned");
     var showTrace = !isHerbal(p);
 
     var head = '<th class="c-chk"><input type="checkbox" id="chkAll" title="全选"></th>'
@@ -705,7 +851,7 @@
       var rCodes = it.returnCodes || [];
       html += '<tr data-i="' + i + '">'
         + '<td class="c-chk"><input type="checkbox" data-sel="' + i + '"' + (it.sel ? " checked" : "")
-          + (returned ? " disabled" : "") + '></td>'
+          + (locked ? " disabled" : "") + '></td>'
         + '<td title="' + esc(it.drugCode) + '">' + esc(it.drugCode) + '</td>'
         + '<td title="' + esc(it.name) + '">' + esc(it.name) + '</td>'
         + '<td title="' + esc(it.spec) + '">' + esc(it.spec) + '</td>'
@@ -715,7 +861,7 @@
         + '<td class="num">' + it.qty + '</td>'
         + '<td class="c-rqty"><input class="rt-qty" type="number" min="0" max="' + it.qty + '" step="1"'
           + ' data-qty="' + i + '" value="' + it.returnQty + '"'
-          + ((returned || !it.sel) ? " disabled" : "") + '></td>'
+          + ((locked || !it.sel) ? " disabled" : "") + '></td>'
         + '<td class="num" data-amt="' + i + '">' + money(it.returnAmount) + '</td>'
         + '<td class="num" data-rq="' + i + '">' + money(it.remainQty) + '</td>'
         + '<td class="num" data-ra="' + i + '">' + money(it.remainAmount) + '</td>'
@@ -743,9 +889,12 @@
       all.disabled = true;
       return;
     }
-    if (p.status === "returned"){
-      all.checked = true;
+    if (!isEditable(p)){
+      /* 锁定状态：仅展示勾选结果，不允许操作 */
+      var selCnt = 0;
+      p.items.forEach(function(it){ if (it.sel) selCnt++; });
       all.disabled = true;
+      all.checked = selCnt === p.items.length;
       all.indeterminate = false;
       return;
     }
@@ -805,7 +954,7 @@
   $("btnReset").addEventListener("click", function(){
     $("fRxNo").value = "";
     $("fKw").value = "";
-    $("scReturned").checked = false;
+    $("fStatus").value = "";
     initRange();
     applyQuery();
   });
@@ -819,7 +968,7 @@
 
     var chk = e.target.closest("[data-sel]");
     if (chk){
-      if (p.status === "returned") return;
+      if (!isEditable(p)) return;
       var i = Number(chk.getAttribute("data-sel"));
       var it = p.items[i];
       it.sel = chk.checked;
@@ -859,7 +1008,7 @@
     var qty = e.target.closest(".rt-qty");
     if (!qty) return;
     var p = activeRow();
-    if (!p || p.status === "returned") return;
+    if (!p || !isEditable(p)) return;
     var i = Number(qty.getAttribute("data-qty"));
     var it = p.items[i];
     it.returnQty = qty.value;
@@ -876,7 +1025,7 @@
   $("drugHead").addEventListener("change", function(e){
     if (e.target.id !== "chkAll") return;
     var p = activeRow();
-    if (!p || p.status === "returned") return;
+    if (!p || !isEditable(p)) return;
     var val = e.target.checked;
     p.items.forEach(function(it){
       it.sel = val;
@@ -901,7 +1050,12 @@
 
   $("btnReturn").addEventListener("click", function(){
     var p = activeRow();
-    if (!p || p.status === "returned") return;
+    if (!p) return;
+    /* 申请页签：仅未申请 / 已拒绝可发起；执行页签：仅审核通过可执行 */
+    var canApply = p.status === "pending" || p.status === "rejected";
+    var canExec = p.status === "approved";
+    if (ST.tab === "apply" && !canApply) return;
+    if (ST.tab === "exec" && !canExec) return;
 
     var picked = pickedItems(p);
     if (!picked.length){ showToast("请选择需要退药的药品"); return; }
@@ -919,17 +1073,35 @@
     var total = 0;
     picked.forEach(function(x){ total += Number(x.it.returnAmount) || 0; });
 
-    /* 中药饮片处方：直接确认退药；中成药 / 西药处方：先录入退药追溯码 */
-    if (isHerbal(p)){
-      DLG = { p: p, picked: picked, total: total };
-      $("dlgBody").innerHTML = '处方号：<b>' + esc(p.rxNo) + '</b>（' + esc(p.rxCat) + '）<br>'
-        + '患者：' + esc(p.name) + '　退药药品：' + picked.length + ' 种<br>'
-        + '退药总金额：<b>' + money(total) + '</b> 元<br><br>'
-        + '中药饮片处方无需录入追溯码，退药后该处方将标记为「已退药」，确认继续吗？';
-      openModal("dlgMask");
-    } else {
-      openScan(p, picked, total);
+    /* 执行退药（审核已通过，执行退药页签）：中药饮片直接确认；中成药 / 西药先录追溯码 */
+    if (p.status === "approved"){
+      $("applyReason").style.display = "none";
+      if (isHerbal(p)){
+        DLG = { p: p, picked: picked, total: total };
+        $("dlgTitle").textContent = "执行退药确认";
+        $("dlgOk").textContent = "确认退药";
+        $("dlgBody").innerHTML = '处方号：<b>' + esc(p.rxNo) + '</b>（' + esc(p.rxCat) + '）<br>'
+          + '患者：' + esc(p.name) + '　退药药品：' + picked.length + ' 种<br>'
+          + '退药总金额：<b>' + money(total) + '</b> 元<br><br>'
+          + '中药饮片处方无需录入追溯码，退药后该处方将标记为「已退药」，确认继续吗？';
+        openModal("dlgMask");
+      } else {
+        openScan(p, picked, total);
+      }
+      return;
     }
+
+    /* 发起退药申请（未申请 / 被拒绝后重新发起）：录入申请原因，提交后进入审核 */
+    DLG = { p: p, picked: picked, total: total, apply: true };
+    $("dlgTitle").textContent = p.status === "rejected" ? "重新发起退药申请" : "发起退药申请";
+    $("dlgOk").textContent = "提交申请";
+    $("dlgBody").innerHTML = '处方号：<b>' + esc(p.rxNo) + '</b>（' + esc(p.rxCat) + '）<br>'
+      + '患者：' + esc(p.name) + '　退药药品：' + picked.length + ' 种<br>'
+      + '退药总金额：<b>' + money(total) + '</b> 元<br><br>'
+      + '提交后将进入退药审核，审核通过后方可执行退药，确认提交吗？';
+    $("applyReason").style.display = "";
+    $("applyReason").value = p.applyReason || "";
+    openModal("dlgMask");
   });
 
   $("dlgCancel").addEventListener("click", function(){ DLG = null; closeModal("dlgMask"); });
@@ -937,10 +1109,32 @@
 
   $("dlgOk").addEventListener("click", function(){
     if (!DLG) return;
-    doReturn(DLG.p, DLG.total);
+    if (DLG.apply){
+      var reason = $("applyReason").value.trim();
+      if (!reason){ showToast("请填写退药申请原因"); $("applyReason").focus(); return; }
+      doApply(DLG.p, reason);
+    } else {
+      doReturn(DLG.p, DLG.total);
+    }
     DLG = null;
     closeModal("dlgMask");
   });
+
+  /* 发起退药申请：记录申请人 / 申请时间 / 申请原因，状态进入待审核 */
+  function doApply(p, reason){
+    var now = nowStr();
+    p.status = "returnPending";
+    p.applyBy = AUDITOR;
+    p.applyTime = now;
+    p.applyReason = reason;
+    p.auditBy = "";
+    p.auditTime = "";
+    p.auditResult = "";
+    p.auditOpinion = "";
+    persist();
+    renderAll();
+    showToast("退药申请已提交，等待审核");
+  }
 
   function doReturn(p, total){
     var now = nowStr();
@@ -1069,6 +1263,48 @@
   });
   $("tvClose").addEventListener("click", function(){ closeModal("tvMask"); });
   $("tvMask").addEventListener("click", function(e){ if (e.target === this) closeModal("tvMask"); });
+
+  /* ---------------- 页内 Tab：退药申请 / 执行退药 ---------------- */
+  $("rtTabs").addEventListener("click", function(e){
+    var btn = e.target.closest(".rt-tab");
+    if (!btn || btn.classList.contains("active")) return;
+    ST.tab = btn.getAttribute("data-tab");
+    Array.prototype.forEach.call(this.querySelectorAll(".rt-tab"), function(el){
+      el.classList.toggle("active", el === btn);
+    });
+    /* 执行退药页签全部为「待执行退药」，无需状态筛选 */
+    var showStatus = ST.tab === "apply";
+    $("fStatusLbl").style.display = showStatus ? "" : "none";
+    $("fStatus").style.display = showStatus ? "" : "none";
+    ST.page = 1;
+    ST.activeId = null;
+    renderAll();
+  });
+
+  /* ---------------- 审核详情 ---------------- */
+  $("btnFold").addEventListener("click", function(){
+    ST.detailExpanded = !ST.detailExpanded;
+    renderDetail();
+  });
+
+  $("btnAuditInfo").addEventListener("click", function(){
+    var p = activeRow();
+    if (!p || !p.applyBy){ showToast("该处方尚未发起退药申请"); return; }
+    $("audInfoBody").innerHTML = '处方号：<b>' + esc(p.rxNo) + '</b>（' + esc(p.rxCat) + '）<br>'
+      + '患者：' + esc(p.name) + '<br><br>'
+      + '退药状态：<b>' + esc(STATUS_TEXT[p.status] || "—") + '</b><br>'
+      + '申请人：' + esc(p.applyBy) + '<br>'
+      + '申请时间：' + esc(p.applyTime) + '<br>'
+      + '申请原因：' + esc(p.applyReason || "—") + '<br>'
+      + (p.auditBy
+          ? '审核人：' + esc(p.auditBy) + '<br>'
+            + '审核时间：' + esc(p.auditTime) + '<br>'
+            + '审核意见：' + esc(p.auditOpinion || "—")
+          : '');
+    openModal("audInfoMask");
+  });
+  $("audInfoClose").addEventListener("click", function(){ closeModal("audInfoMask"); });
+  $("audInfoMask").addEventListener("click", function(e){ if (e.target === this) closeModal("audInfoMask"); });
 
   /* ---------------- 顶栏药房下拉 ---------------- */
   $("hpBtn").addEventListener("click", function(e){

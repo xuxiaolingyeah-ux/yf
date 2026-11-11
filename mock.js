@@ -1936,7 +1936,13 @@ MOCK.rxAudit = [
 /* ==========================================================================
    处方管理 · 处方退药（门诊处方退药 · 中药房）
    rxReturns：已发药的处方，可申请退药
-     status       pending=已发药待退药 / returned=已退药
+     status       pending=已发药未申请 / returnPending=退药申请待审核
+                  approved=审核通过待退药 / rejected=审核已拒绝 / returned=已退药
+     applyBy / applyTime     退药申请人 / 申请时间（发起申请时记录）
+     applyReason             退药申请原因（发起申请时必填）
+     auditBy / auditTime     审核人 / 审核时间（审核时记录）
+     auditResult             approved=同意 / rejected=拒绝
+     auditOpinion            审核意见（拒绝时必填）
      rxCat        处方类别：中药饮片处方 / 中成药处方 / 西药处方
                   中药饮片处方不展示追溯码列、退药无需录码
      dispenseTime 发药时间（左侧「发药时间」区间过滤依据）
@@ -1969,7 +1975,10 @@ MOCK.rxReturns = [
     rxCat: "中成药处方",
     amount: "38.30", diagnose: "风热感冒；咳嗽", rxTime: "2026-11-04 19:52:18",
     temp: "", resp: "", pulse: "—", allergic: "青霉素类抗生素", bp: "—",
-    doses: 2, observation: false, status: "pending", dispenseTime: "2026-11-04 20:05:36",
+    doses: 2, observation: false, status: "approved", dispenseTime: "2026-11-04 20:05:36",
+    applyBy: "陈静", applyTime: "2026-11-04 21:02:10", applyReason: "患者对青霉素类药物过敏，医师调整用药方案后换药",
+    auditBy: "赵敏", auditTime: "2026-11-04 21:30:45", auditResult: "approved",
+    auditOpinion: "核对发药记录无误，同意退药",
     items: [
       { drugCode: "311013830601", name: "连花清瘟胶囊", spec: "0.35g*24粒/盒",
         vendor: "石家庄以岭药业股份有限公司", loc: "", unit: "盒", price: 21.50, qty: 1,
@@ -1991,6 +2000,9 @@ MOCK.rxReturns = [
     amount: "42.94", diagnose: "月经不调；气血两虚", rxTime: "2026-11-04 20:12:05",
     temp: "", resp: "", pulse: "—", allergic: "—", bp: "—",
     doses: 3, observation: false, status: "returned",
+    applyBy: "陈静", applyTime: "2026-11-04 20:33:12", applyReason: "患者用药后出现不适，医师要求停用并退药",
+    auditBy: "赵敏", auditTime: "2026-11-04 20:35:20", auditResult: "approved",
+    auditOpinion: "同意退药",
     dispenseTime: "2026-11-04 20:20:15", returnTime: "2026-11-04 20:36:40",
     items: [
       { drugCode: "311013831202", name: "阿胶片", spec: "复方*20片/袋",
@@ -2020,7 +2032,10 @@ MOCK.rxReturns = [
     rxCat: "中成药处方",
     amount: "90.95", diagnose: "感冒；咽喉肿痛", rxTime: "2026-11-04 20:25:44",
     temp: "", resp: "", pulse: "—", allergic: "—", bp: "—",
-    doses: 2, observation: true, status: "pending", dispenseTime: "2026-11-04 20:36:05",
+    doses: 2, observation: true, status: "rejected", dispenseTime: "2026-11-04 20:36:05",
+    applyBy: "陈静", applyTime: "2026-11-04 21:10:33", applyReason: "收费项目重复，实际需退部分药品",
+    auditBy: "赵敏", auditTime: "2026-11-04 21:35:12", auditResult: "rejected",
+    auditOpinion: "退药数量与收费记录不符，请核对后重新申请",
     items: [
       { drugCode: "304032060201", name: "六神丸", spec: "10粒*12支/盒",
         vendor: "雷允上药业集团有限公司", loc: "", unit: "盒", price: 26.45, qty: 1,
@@ -2041,7 +2056,8 @@ MOCK.rxReturns = [
     rxCat: "中药饮片处方",
     amount: "19.60", diagnose: "暑湿感冒", rxTime: "2026-11-03 20:55:10",
     temp: "", resp: "", pulse: "—", allergic: "—", bp: "—",
-    doses: 2, observation: false, status: "pending", dispenseTime: "2026-11-03 21:10:20",
+    doses: 2, observation: false, status: "returnPending", dispenseTime: "2026-11-03 21:10:20",
+    applyBy: "陈静", applyTime: "2026-11-04 21:18:02", applyReason: "患者因故离院，剩余饮片不再服用",
     items: [
       { drugCode: "3105100011", name: "当归", spec: "统片 0.3cm 以上",
         vendor: "亳州市京皖中药饮片有限公司", loc: "", unit: "g", price: 0.12, qty: 45,

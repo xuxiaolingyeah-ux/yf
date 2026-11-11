@@ -65,6 +65,7 @@
       { name: "毒麻精发药审核", href: "narcotic-audit.html", files: ["narcotic-audit.html"], roles: ["narcoticAuditor"] },
       { name: "门诊处方送药", href: "prescription-delivery.html", files: ["prescription-delivery.html"], roles: ["his"] },
       { name: "门诊处方退药", href: "prescription-return.html", files: ["prescription-return.html"], roles: ["his"] },
+      { name: "门诊处方退药审核", href: "prescription-return-audit.html", files: ["prescription-return-audit.html"], roles: ["his"] },
       { name: "预减管理", href: "pre-deduction.html", files: ["pre-deduction.html"], roles: ["his"] }
     ], roles: ["his", "narcoticAuditor"] },
     { name: "统计查询", icon: "stat", items: [

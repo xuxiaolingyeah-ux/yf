@@ -23,11 +23,8 @@
   height: 48px; padding: 0 16px;
   border-bottom: 1px solid var(--border);
 }
-/* 标题行：标题旁跟「药房选择」 */
+/* 标题行 */
 .rs-title-row { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; }
-.rs-pharmacy { display: flex; align-items: center; gap: 6px; flex: none; }
-.rs-pharmacy .select { height: 30px; width: 200px; }
-.rs-pharmacy-label { font-size: 13px; color: var(--text-tertiary); white-space: nowrap; }
 
 /* 页内 Tab */
 .rs-tabs { display: flex; gap: 8px; padding: 10px 16px 0; background: var(--bg-white); }
@@ -262,14 +259,10 @@
 
     <div class="page rs-page">
       <div class="rs-card">
-        <!-- 标题行：标题 + 药房选择 -->
+        <!-- 标题行 -->
         <div class="page-head">
           <div class="rs-title-row">
             <h1 class="page-title">限制医生使用管理</h1>
-            <div class="rs-pharmacy">
-              <span class="rs-pharmacy-label">药房：</span>
-              <select class="select" id="f-pharmacy"></select>
-            </div>
           </div>
         </div>
 
@@ -1201,21 +1194,6 @@
 
   /* ---------- 初始化 ---------- */
   function init() {
-    /* 药房选择 */
-    var pharms = (window.MOCK && MOCK.pharmacyFacilities || []).map(function (p) { return p.name; });
-    if (!pharms.length) pharms = ["中心药房", "门诊药房", "成员机构药房"];
-    var sel = $("f-pharmacy");
-    pharms.forEach(function (n, i) {
-      var o = document.createElement("option");
-      o.value = n; o.textContent = n;
-      if (i === 0) o.selected = true;
-      sel.appendChild(o);
-    });
-    sel.addEventListener("change", function () {
-      RS.docSearch(); RS.deptSearch();
-      RS.toast("已切换药房：" + sel.value);
-    });
-
     RS.docSearch();
     RS.deptSearch();
 

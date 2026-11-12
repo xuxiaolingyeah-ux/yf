@@ -1,0 +1,1179 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>采购商品对码 · 中心药房</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+  /* ===== 采购商品对码页（province-drug-mapping）===== */
+  .pm-body { flex-direction: column; min-height: 0; }
+  .pm-sec { display: flex; flex-direction: column; min-height: 0; }
+  .pm-sec-main { flex: 1 1 0; }
+  .pm-sec-sub { flex: 1 1 0; min-height: 214px; border-top: 2px solid var(--border); }
+  .pm-tw { flex: 1; min-height: 0; overflow: auto; }
+
+  .pm-table { border-collapse: separate; border-spacing: 0; table-layout: fixed; width: 100%; font-size: 12px; }
+  .pm-table thead th {
+    position: sticky; top: 0; z-index: 2; background: var(--table-head);
+    font-size: 12px; font-weight: 500; color: var(--text-primary); text-align: left;
+    padding: 6px 8px; border-bottom: 1px solid var(--border); white-space: nowrap;
+  }
+  .pm-table tbody td {
+    height: 34px; padding: 0 8px; border-bottom: 1px solid var(--border);
+    color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .pm-table tbody tr { cursor: pointer; }
+  .pm-table tbody tr:nth-child(even) td { background: var(--table-even); }
+  .pm-table tbody tr:hover td { background: var(--table-hover); }
+  .pm-table tbody tr.is-sel td { background: #E3EEFF; }
+  .pm-table tbody tr.is-sel:hover td { background: #DBE9FE; }
+  .pm-table .mono { font-family: var(--font-mono); font-size: 12px; }
+  .pm-table .sub { color: var(--text-tertiary); }
+  .pm-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+  .pm-main { min-width: 2380px; }
+  .pm-proc { min-width: 2010px; }
+
+  /* 左侧冻结：勾选(40) / 药品编码(120) / 药品名称(150) */
+  .pm-f1, .pm-f2, .pm-f3 { position: sticky; z-index: 3; background: var(--bg-white); }
+  .pm-f1 { left: 0; text-align: center; }
+  .pm-f2 { left: 40px; }
+  .pm-f3 { left: 160px; box-shadow: 1px 0 0 var(--border); }
+  .pm-table thead th.pm-f1, .pm-table thead th.pm-f2, .pm-table thead th.pm-f3 {
+    background: var(--table-head); z-index: 5;
+  }
+
+  .pm-tag {
+    display: inline-block; height: 18px; line-height: 18px; padding: 0 6px;
+    border-radius: 9px; font-size: 11px; margin-right: 4px; vertical-align: middle;
+  }
+  .pm-tag.t0 { background: #EEF2F7; color: #5B6B7F; }
+  .pm-tag.t1 { background: #E6F0FF; color: #1B63C7; }
+  .pm-tag.t2 { background: #FFF3E4; color: #B76B00; }
+  .pm-tag.t3 { background: #F0ECFF; color: #5B46C8; }
+  .pm-diff { color: #B76B00; border-bottom: 1px dashed #E0A24A; cursor: help; }
+  .pm-main-title { display: flex; align-items: center; gap: 8px; padding: 10px 16px 6px; flex: none; }
+  .pm-meta { font-size: 12px; color: var(--text-tertiary); }
+  .pm-steps { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .pm-steps .step { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-tertiary); }
+  .pm-steps .step-idx {
+    width: 20px; height: 20px; border-radius: 50%; background: #EEF2F7; color: var(--text-secondary);
+    display: inline-flex; align-items: center; justify-content: center; font-size: 11px;
+  }
+  .pm-steps .step.is-active { color: var(--primary-dark); }
+  .pm-steps .step.is-active .step-idx { background: var(--primary); color: #fff; }
+  .pm-steps .step.is-done .step-idx { background: #E6F0FF; color: var(--primary-dark); }
+  .pm-steps .step-line { flex: 1; height: 1px; background: var(--border); }
+  .pm-modal { width: 1020px; max-width: calc(100vw - 48px); }
+  .pm-modal .modal-body { max-height: calc(100vh - 240px); overflow: auto; }
+  .pm-pair-note { font-size: 11px; color: var(--text-tertiary); }
+  .pm-table tbody tr.is-dead td { color: var(--text-tertiary); }
+  .pm-modal .mi-res-filter-btn {
+    display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px;
+    margin-left: 6px; padding: 0; border: 1px solid var(--border); background: var(--bg-white);
+    border-radius: 4px; color: var(--text-secondary); cursor: pointer; vertical-align: middle;
+  }
+  .pm-modal .mi-res-filter-btn:hover, .pm-modal .mi-res-filter-btn.is-on { border-color: var(--primary); color: var(--primary); }
+  .pm-modal .mi-res-item {
+    display: block; width: 100%; text-align: left; padding: 5px 8px; border: none;
+    background: none; font-size: 12px; color: var(--text-secondary); border-radius: 4px; cursor: pointer;
+  }
+  .pm-modal .mi-res-item:hover { background: var(--primary-lighter); }
+  .pm-modal .mi-res-item.is-on { color: var(--primary-dark); background: var(--primary-lighter); }
+</style>
+</head>
+<body>
+
+<!-- ========== 顶部导航 ========== -->
+<header class="app-header">
+  <div class="header-left">
+    <div class="header-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3.2" y="9.4" width="17.6" height="5.2" rx="2.6" transform="rotate(-45 12 12)"></rect>
+        <path d="M8.4 15.6L15.6 8.4"></path>
+      </svg>
+    </div>
+    <div class="header-title">区域药房协同管理系统</div>
+  </div>
+  <div class="header-right">
+    <div class="header-user">
+      <div class="header-avatar">张</div>
+      <span class="header-user-name">张明远</span>
+    </div>
+  </div>
+</header>
+
+<div class="app-body">
+  <!-- ========== 左侧导航 ========== -->
+  <aside class="app-side" id="appSide"></aside>
+
+  <!-- ========== 主区域 ========== -->
+  <main class="app-main">
+    <div class="tabbar">
+      <div class="tab" data-nav="首页">首页</div>
+      <div class="tab active">
+        采购商品对码
+        <button class="tab-close" title="关闭">
+          <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+            <path d="M5 5l14 14M19 5L5 19"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="page">
+      <div class="page-head">
+        <div class="page-head-left">
+          <label class="ph-label">目录类别</label>
+          <select class="select mi-sel" id="catType">
+            <option value="">全部</option>
+            <option value="西成药">西成药</option>
+            <option value="中成药">中成药</option>
+            <option value="中药饮片">中药饮片</option>
+          </select>
+          <span class="pm-meta" id="syncMeta"></span>
+        </div>
+        <div class="page-acts">
+          <button class="btn btn-primary" id="btnQuick">快捷对照</button>
+        </div>
+      </div>
+
+      <div class="page-body pm-body">
+        <!-- ===== 上区：医院目录 ===== -->
+        <div class="pm-sec pm-sec-main">
+          <div class="pm-main-title">
+            <span class="mi-sec-bar"></span>
+            <span class="mi-sec-title">医院目录</span>
+            <span class="mi-tip" tabindex="0" data-tip="行粒度 = 药品规格 × 生产企业。一个院内 SKU 只能对应一个招采商品编号，需要换码时用「变更对照」。">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 8h.01M12 11v5"></path></svg>
+            </span>
+          </div>
+
+          <div class="mi-toolbar">
+            <input class="input mi-kw" id="kw" placeholder="药品名称 / 拼音码 / 药品编码 / 生产企业" autocomplete="off">
+            <select class="select mi-sel" id="mapStatus">
+              <option value="">全部对照状态</option>
+              <option value="none">未对照</option>
+              <option value="mapped">已对照</option>
+              <option value="exception">异常</option>
+            </select>
+            <label class="mi-switch" title="开启后仅展示启用的药品规格">
+              <span class="switch">
+                <input type="checkbox" id="onlyOn">
+                <span class="track"></span>
+              </span>
+              <span class="mi-switch-txt">仅看启用</span>
+            </label>
+            <div class="mi-toolbar-right">
+              <span class="mi-picked" id="pickedTxt"></span>
+              <button class="btn btn-sm" id="btnReset">重置</button>
+              <button class="btn btn-sm" id="btnBatchCancel" disabled>批量取消对照</button>
+            </div>
+          </div>
+
+          <div class="pm-tw">
+            <table class="pm-table pm-main">
+              <colgroup>
+                <col style="width:40px"><col style="width:120px"><col style="width:150px">
+                <col style="width:140px"><col style="width:90px"><col style="width:90px">
+                <col style="width:60px"><col style="width:190px"><col style="width:110px">
+                <col style="width:110px"><col style="width:140px"><col style="width:120px">
+                <col style="width:90px"><col style="width:140px"><col style="width:70px">
+                <col style="width:180px"><col style="width:180px"><col style="width:90px">
+                <col style="width:80px"><col style="width:80px"><col style="width:110px">
+              </colgroup>
+              <thead>
+                <tr>
+                  <th class="pm-f1">
+                    <label class="check"><input type="checkbox" id="pickAll"><span class="check-box"></span></label>
+                  </th>
+                  <th class="pm-f2">药品编码</th>
+                  <th class="pm-f3">药品名称</th>
+                  <th>药品规格</th>
+                  <th>剂型</th>
+                  <th>最小包装单位</th>
+                  <th>转换比</th>
+                  <th>生产企业</th>
+                  <th>批准文号</th>
+                  <th>招采商品编号</th>
+                  <th>招采通用名</th>
+                  <th>招采商品名</th>
+                  <th>招采剂型</th>
+                  <th>招采规格</th>
+                  <th>招采转换比</th>
+                  <th>招采生产企业名称</th>
+                  <th>招采配送企业名称</th>
+                  <th>采购类别</th>
+                  <th>对照状态</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody id="rows"></tbody>
+            </table>
+          </div>
+          <div class="mi-pager" id="mainPager"></div>
+        </div>
+
+        <!-- ===== 下区：招采目录 ===== -->
+        <div class="pm-sec pm-sec-sub">
+          <div class="mi-ins-head">
+            <div class="mi-ins-titlebar">
+              <span class="mi-sec-bar"></span>
+              <span class="mi-sec-title">招采目录</span>
+              <span class="mi-tip" tabindex="0" data-tip="省平台 H003「获取商品信息（医院常用目录）」返回的商品池。选中上方药品后按匹配规则过滤，勾选多个字段时需全部相等（仅去首尾空格）才显示。">
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 8h.01M12 11v5"></path></svg>
+              </span>
+              <span class="pm-meta" id="procMeta"></span>
+              <label class="mi-switch" title="省平台已撤销挂网的商品（isUsing=0）。默认隐藏；开启后可查看并核对其历史对码关系，但不可新对码，也不可用于采购下单。">
+                <span class="switch">
+                  <input type="checkbox" id="showDead">
+                  <span class="track"></span>
+                </span>
+                <span class="mi-switch-txt">含已撤废</span>
+              </label>
+              <button class="btn btn-primary" id="btnMap" disabled>对照</button>
+            </div>
+            <div class="mi-ins-rules" id="procRules">
+              <span class="mi-rule-label">匹配规则</span>
+              <label class="check mi-rule is-check"><input type="checkbox" data-rfield="name" checked><span class="check-box"></span><span class="mi-rule-txt">通用名</span></label>
+              <label class="check mi-rule"><input type="checkbox" data-rfield="form"><span class="check-box"></span><span class="mi-rule-txt">剂型</span></label>
+              <label class="check mi-rule is-check"><input type="checkbox" data-rfield="spec" checked><span class="check-box"></span><span class="mi-rule-txt">规格</span></label>
+              <label class="check mi-rule is-check"><input type="checkbox" data-rfield="vendor" checked><span class="check-box"></span><span class="mi-rule-txt">生产企业</span></label>
+              <label class="check mi-rule"><input type="checkbox" data-rfield="unit"><span class="check-box"></span><span class="mi-rule-txt">最小包装单位</span></label>
+              <label class="check mi-rule"><input type="checkbox" data-rfield="factor"><span class="check-box"></span><span class="mi-rule-txt">转换比</span></label>
+            </div>
+          </div>
+
+          <div class="pm-tw">
+            <table class="pm-table pm-proc">
+              <colgroup>
+                <col style="width:110px"><col style="width:150px"><col style="width:120px">
+                <col style="width:90px"><col style="width:140px"><col style="width:70px">
+                <col style="width:110px"><col style="width:90px"><col style="width:70px">
+                <col style="width:70px"><col style="width:180px"><col style="width:180px">
+                <col style="width:120px"><col style="width:90px">
+                <col style="width:110px"><col style="width:150px">
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>商品编号</th>
+                  <th>通用名</th>
+                  <th>商品名</th>
+                  <th>剂型</th>
+                  <th>规格</th>
+                  <th>转换比</th>
+                  <th>包装材质</th>
+                  <th>最小包装单位</th>
+                  <th>中包装</th>
+                  <th>大包装</th>
+                  <th>生产企业</th>
+                  <th>配送企业</th>
+                  <th>省标代码</th>
+                  <th>采购类别</th>
+                  <th>备案申请编号</th>
+                  <th>变更时间</th>
+                </tr>
+              </thead>
+              <tbody id="procBody"></tbody>
+            </table>
+          </div>
+          <div class="mi-pager mi-ins-pager" id="procPager"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ========== 通用弹窗容器 ========== -->
+<div class="modal-mask" id="modalMask"></div>
+
+<!-- ========== Toast ========== -->
+<div class="toast" id="toast">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M20 6L9 17l-5-5"></path>
+  </svg>
+  <span id="toastText"></span>
+</div>
+
+<script src="mock.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function esc(s) {
+    return String(s === null || s === undefined ? "" : s)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+  function norm(v) { return String(v === null || v === undefined ? "" : v).trim(); }
+  function pad(n) { return n < 10 ? "0" + n : "" + n; }
+
+  var KIND_CAT = { "西药": "西成药", "中成药": "中成药", "中药饮片": "中药饮片" };
+
+  /* ---------------- 院内 SKU：规格 × 生产企业 ---------------- */
+  function vendorCode(v) {
+    if (v.drugCode) return v.drugCode;
+    var dg = (v.approval || "").replace(/\D/g, "");
+    if (!dg) return "—";
+    return "8690" + ("00000000" + dg).slice(-8);
+  }
+
+  var BASE = [];
+  MOCK.drugs.forEach(function (d) {
+    d.specs.forEach(function (s, si) {
+      s.vendors.forEach(function (v, vi) {
+        BASE.push({
+          key: MOCK.vkey(d.id, si, vi),
+          drug: d, spec: s, vendor: v, si: si, vi: vi,
+          vcode: vendorCode(v), cat: KIND_CAT[d.kind] || ""
+        });
+      });
+    });
+  });
+
+  function rowOf(key) {
+    for (var i = 0; i < BASE.length; i++) if (BASE[i].key === key) return BASE[i];
+    return null;
+  }
+
+  /* ---------------- 招采目录（H003 医院常用目录，演示数据）---------------- */
+  var PS = [
+    { id: "PS320100001", name: "国药控股江苏有限公司" },
+    { id: "PS320100002", name: "华润江苏医药有限公司" },
+    { id: "PS320100003", name: "上药控股江苏股份有限公司" },
+    { id: "PS320100004", name: "南京医药股份有限公司" },
+    { id: "PS320100005", name: "九州通医药集团江苏有限公司" }
+  ];
+  var PT_NAME = ["限价挂网", "带量采购", "备案药品", "备选药品"];
+  var BRAND = { "阿莫西林胶囊": "阿莫仙", "布洛芬缓释胶囊": "芬必得", "连花清瘟胶囊": "连花清瘟" };
+
+  var PROC = [];
+  var PROC_BY_ID = {};
+
+  function priceOf(i) { return (1.5 + ((i * 137) % 880) / 100).toFixed(2); }
+  function dateOf(i) {
+    var d = new Date(2026, 10, 12);
+    d.setDate(d.getDate() - ((i * 3) % 38));
+    return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) + " " + pad(8 + (i % 9)) + ":" + pad((i * 7) % 60);
+  }
+
+  function addItem(o) { PROC.push(o); PROC_BY_ID[o.id] = o; return o; }
+
+  BASE.forEach(function (r, i) {
+    var pt = i % 4, ps = PS[i % PS.length];
+    var outlook = r.spec.title;
+    if (i % 7 === 3) outlook = outlook.replace("*", "×");                        /* 规格写法差异 → 严格比对未命中 */
+    var comp = r.vendor.name;
+    if (i % 9 === 5) comp = comp.replace(/(股份有限公司|有限公司|制药总厂|集团)/g, ""); /* 厂家名写法差异 */
+    addItem({
+      id: 320000 + i,
+      goodsId: 510000 + i,
+      productName: r.drug.name,
+      goodsName: BRAND[r.drug.name] || r.drug.name,
+      medicinemodel: r.drug.form,
+      outlook: outlook,
+      factor: String(r.spec.pkgFactor || ""),
+      materialName: r.spec.pkgMaterial || "",
+      unit: r.spec.pkgUnit || "",
+      middlePack: String(5 + (i % 5) * 5),
+      maxPack: String(50 + (i % 4) * 50),
+      companyIdSc: "SC" + (880000 + i),
+      companyNameSc: comp,
+      companyIdPs: ps.id,
+      companyNamePs: ps.name,
+      provinceId: "JSPN" + ("00000000" + (1234567 + i * 37)).slice(-8),
+      purchaseType: pt,
+      purchasePrice: priceOf(i),
+      price: (parseFloat(priceOf(i)) * 1.05).toFixed(2),
+      filingApplyId: pt === 2 ? 9000 + i : null,
+      isUsing: 1,
+      lastUpDateTime: dateOf(i),
+      owner: r.key
+    });
+  });
+
+  /* 同产品多个商品编号（不同配送企业 / 采购类别），用于演示「多条候选」与「一码一用」 */
+  var DUP_IDX = [4, 9, 14, 19, 22];
+  var DUP_OF = {};
+  DUP_IDX.forEach(function (i, k) {
+    var b = PROC[i], ps = PS[(i + 2) % PS.length];
+    var outlook = b.outlook;
+    if (i === 9) {
+      outlook = b.outlook.replace(/(\d+)(粒|片|袋|支)/, function (m, n, u) { return (parseInt(n, 10) + 12) + u; });
+    }
+    var it = addItem({
+      id: 330000 + k,
+      goodsId: b.goodsId,
+      productName: b.productName,
+      goodsName: b.goodsName,
+      medicinemodel: b.medicinemodel,
+      outlook: outlook,
+      factor: b.factor,
+      materialName: b.materialName,
+      unit: b.unit,
+      middlePack: b.middlePack,
+      maxPack: b.maxPack,
+      companyIdSc: b.companyIdSc,
+      companyNameSc: b.companyNameSc,
+      companyIdPs: ps.id,
+      companyNamePs: ps.name,
+      provinceId: b.provinceId,
+      purchaseType: (b.purchaseType + 1) % 4,
+      purchasePrice: (parseFloat(b.purchasePrice) * 1.02).toFixed(2),
+      price: (parseFloat(b.price) * 1.02).toFixed(2),
+      filingApplyId: null,
+      isUsing: i === 4 ? 0 : 1,          /* 4 号：已撤废 → 已对码的 SKU 判为异常 */
+      lastUpDateTime: dateOf(i + 5),
+      owner: b.owner
+    });
+    DUP_OF[i] = it;
+  });
+
+  /* 平台有、院内没有的商品（候选池噪声，验证「一码不能被多药占用」） */
+  [["注射用头孢曲松钠", "注射用无菌粉末", "1.0g * 10支/盒", "罗氏制药（上海）有限公司"],
+   ["盐酸二甲双胍片", "片剂", "0.5g * 48片/盒", "中美上海施贵宝制药有限公司"],
+   ["复方甘草片", "片剂", "100片/瓶", "江苏亚邦药业有限公司"],
+   ["银杏叶片", "片剂", "9.6mg * 24片/盒", "扬子江药业集团有限公司"]].forEach(function (a, k) {
+    var ps = PS[(k + 1) % PS.length];
+    addItem({
+      id: 340000 + k, goodsId: 540000 + k,
+      productName: a[0], goodsName: a[0], medicinemodel: a[1],
+      outlook: a[2], factor: a[2].match(/(\d+)\s*(粒|片|袋|支|瓶)/) ? RegExp.$1 : "",
+      materialName: "铝塑", unit: a[2].slice(-1), middlePack: "5", maxPack: "100",
+      companyIdSc: "SC" + (990000 + k), companyNameSc: a[3],
+      companyIdPs: ps.id, companyNamePs: ps.name,
+      provinceId: "JSPN" + ("00000000" + (7654321 + k * 91)).slice(-8),
+      purchaseType: k % 4,
+      purchasePrice: priceOf(k + 40), price: (parseFloat(priceOf(k + 40)) * 1.08).toFixed(2),
+      filingApplyId: null, isUsing: 1, lastUpDateTime: dateOf(k + 11), owner: ""
+    });
+  });
+
+  /* ---------------- 对码关系（一对一：SKU → catalogId）---------------- */
+  var MAP = {};
+
+  function nowStr() {
+    var d = new Date();
+    return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) + " " + pad(d.getHours()) + ":" + pad(d.getMinutes());
+  }
+
+  BASE.forEach(function (r, i) {
+    if (i % 2 !== 0) return;                       /* 偶数索引先对上，奇数留未对照 */
+    var target = (i === 4) ? DUP_OF[4] : (i === 9) ? DUP_OF[9] : (PROC_BY_ID[320000 + i] || null);
+    if (!target) return;
+    MAP[r.key] = {
+      catalogId: target.id,
+      matchType: i % 4 === 0 ? "auto" : "manual",
+      operator: i % 4 === 0 ? "系统（快捷对照）" : "赵敏",
+      time: "2026-11-" + pad(5 + (i % 7)) + " 10:" + pad((i * 11) % 60)
+    };
+  });
+
+  function usedBy(catalogId) {
+    for (var k in MAP) if (MAP[k].catalogId === catalogId) return k;
+    return "";
+  }
+
+  /* ---------------- 字段口径 ---------------- */
+  var FIELD_DEF = {
+    name: { label: "通用名", sysTxt: "药品名称", procTxt: "通用名" },
+    goods: { label: "商品名", sysTxt: "药品名称", procTxt: "商品名" },
+    form: { label: "剂型", sysTxt: "剂型", procTxt: "剂型" },
+    spec: { label: "规格", sysTxt: "药品规格", procTxt: "规格" },
+    vendor: { label: "生产企业", sysTxt: "生产企业", procTxt: "生产企业" },
+    factor: { label: "转换比", sysTxt: "转换比", procTxt: "转换比" },
+    material: { label: "包装材质", sysTxt: "包装材质", procTxt: "包装材质" },
+    unit: { label: "最小包装单位", sysTxt: "最小包装单位", procTxt: "最小包装单位" }
+  };
+  var QUICK_FIELDS = ["name", "goods", "form", "spec", "vendor", "factor", "material", "unit"];
+  var RULE_FIELDS = ["name", "form", "spec", "vendor", "unit", "factor"];
+
+  function sysVal(fid, r) {
+    if (fid === "name" || fid === "goods") return r.drug.name;
+    if (fid === "form") return r.drug.form;
+    if (fid === "spec") return r.spec.title;
+    if (fid === "vendor") return r.vendor.name;
+    if (fid === "factor") return r.spec.pkgFactor;
+    if (fid === "material") return r.spec.pkgMaterial;
+    if (fid === "unit") return r.spec.pkgUnit;
+    return "";
+  }
+  function procVal(fid, x) {
+    if (fid === "name") return x.productName;
+    if (fid === "goods") return x.goodsName;
+    if (fid === "form") return x.medicinemodel;
+    if (fid === "spec") return x.outlook;
+    if (fid === "vendor") return x.companyNameSc;
+    if (fid === "factor") return x.factor;
+    if (fid === "material") return x.materialName;
+    if (fid === "unit") return x.unit;
+    return "";
+  }
+  /* ok / no / skip（任一侧为空 → 该字段不参与比对，仅去首尾空格后严格相等） */
+  function cmp(fid, r, x) {
+    var a = norm(sysVal(fid, r)), b = norm(procVal(fid, x));
+    if (!a || !b) return "skip";
+    return a === b ? "ok" : "no";
+  }
+
+  /* ---------------- 状态 ---------------- */
+  function statusOf(r) {
+    var m = MAP[r.key];
+    if (!m) return { code: "none" };
+    var x = PROC_BY_ID[m.catalogId];
+    if (!x) return { code: "exception", reason: "招采目录中不存在该商品编号（可能已下架）" };
+    if (x.isUsing === 0) return { code: "exception", reason: "平台商品已撤废（isUsing=0），需重新对码" };
+    var diff = [];
+    if (norm(x.outlook) !== norm(r.spec.title)) diff.push("规格");
+    if (norm(x.companyNameSc) !== norm(r.vendor.name)) diff.push("生产企业");
+    if (norm(x.factor) !== norm(r.spec.pkgFactor)) diff.push("转换比");
+    if (diff.length) return { code: "exception", reason: "平台" + diff.join(" / ") + "与院内不一致，需人工确认" };
+    return { code: "mapped" };
+  }
+
+  /* ---------------- 状态 ---------------- */
+  var state = {
+    cat: "", kw: "", mapStatus: "", onlyOn: false,
+    page: 1, size: 10, picked: {},
+    selKey: "", catId: "",
+    procPage: 1, procSize: 10,
+    showDead: false,
+    rule: { name: true, form: false, spec: true, vendor: true, unit: false, factor: false },
+    quick: null
+  };
+
+  /* ---------------- 上区渲染 ---------------- */
+  function filteredRows() {
+    var kw = state.kw.trim().toLowerCase();
+    return BASE.filter(function (r) {
+      if (state.cat && r.cat !== state.cat) return false;
+      if (state.onlyOn && r.spec.status === "off") return false;
+      if (state.mapStatus && statusOf(r).code !== state.mapStatus) return false;
+      if (kw) {
+        var hit = r.drug.name.toLowerCase().indexOf(kw) > -1 ||
+          (r.drug.py || "").toLowerCase().indexOf(kw) > -1 ||
+          r.vcode.toLowerCase().indexOf(kw) > -1 ||
+          r.vendor.name.toLowerCase().indexOf(kw) > -1;
+        if (!hit) return false;
+      }
+      return true;
+    });
+  }
+
+  function statusHtml(r) {
+    var st = statusOf(r);
+    if (st.code === "mapped") return '<span class="mi-st"><i class="dot on"></i>已对照</span>';
+    if (st.code === "exception") return '<span class="mi-st" title="' + esc(st.reason) + '"><i class="dot warn"></i>异常</span>';
+    return '<span class="mi-st"><i class="dot off"></i>未对照</span>';
+  }
+
+  function resCells(r) {
+    var m = MAP[r.key];
+    var x = m ? PROC_BY_ID[m.catalogId] : null;
+    var dash = '<span class="sub">—</span>';
+    if (!x) {
+      var blank = "";
+      for (var i = 0; i < 9; i++) blank += '<td>' + dash + '</td>';
+      return blank;
+    }
+    function mark(v, own, cls) {
+      var diff = norm(v) !== norm(own);
+      return '<td class="' + (cls || "") + (diff ? " pm-diff" : "") + '" title="' + esc(diff ? "平台：" + v + "｜院内：" + own : v) + '">' + esc(v || "—") + "</td>";
+    }
+    return '<td class="mono">' + esc(x.id) + '</td>' +
+      '<td title="' + esc(x.productName) + '">' + esc(x.productName) + '</td>' +
+      '<td' + (norm(x.goodsName) === norm(x.productName) ? ' class="sub"' : '') + ' title="' + esc(x.goodsName) + '">' + esc(x.goodsName) + '</td>' +
+      '<td>' + esc(x.medicinemodel) + '</td>' +
+      mark(x.outlook, r.spec.title) +
+      mark(x.factor, r.spec.pkgFactor) +
+      mark(x.companyNameSc, r.vendor.name) +
+      '<td title="' + esc(x.companyNamePs) + '">' + esc(x.companyNamePs) + '</td>' +
+      '<td><span class="pm-tag t' + x.purchaseType + '">' + esc(PT_NAME[x.purchaseType]) + '</span></td>';
+  }
+
+  function rowHtml(r) {
+    var st = statusOf(r);
+    var checked = state.picked[r.key] ? " checked" : "";
+    var ops = "";
+    if (st.code === "mapped" || st.code === "exception") {
+      ops = '<button class="link-btn" data-act="change" data-key="' + r.key + '">变更对照</button>' +
+        '<button class="link-btn" data-act="cancel" data-key="' + r.key + '">取消对照</button>';
+    }
+    return '<tr class="' + (state.picked[r.key] ? "is-picked" : "") + (state.selKey === r.key ? " is-sel" : "") + '" data-row="' + r.key + '">' +
+      '<td class="pm-f1"><label class="check"><input type="checkbox" data-pick="' + r.key + '"' + checked + '><span class="check-box"></span></label></td>' +
+      '<td class="pm-f2 mono">' + esc(r.vcode) + '</td>' +
+      '<td class="pm-f3" title="' + esc(r.drug.name) + '">' + esc(r.drug.name) + '</td>' +
+      '<td title="' + esc(r.spec.title) + '">' + esc(r.spec.title) + '</td>' +
+      '<td>' + esc(r.drug.form) + '</td>' +
+      '<td>' + esc(r.spec.pkgUnit || "—") + '</td>' +
+      '<td>' + esc(r.spec.pkgFactor || "—") + '</td>' +
+      '<td title="' + esc(r.vendor.name) + '">' + esc(r.vendor.name) + '</td>' +
+      '<td class="mono">' + esc(r.vendor.approval || "—") + '</td>' +
+      resCells(r) +
+      '<td>' + statusHtml(r) + '</td>' +
+      '<td><div class="mi-ops">' + ops + '</div></td>' +
+      '</tr>';
+  }
+
+  /* ---------------- 分页 ---------------- */
+  function pageSeq(cur, tp) {
+    if (tp <= 7) { var a = []; for (var i = 1; i <= tp; i++) a.push(i); return a; }
+    var out = [1];
+    var lo = Math.max(2, cur - 1), hi = Math.min(tp - 1, cur + 1);
+    if (lo > 2) out.push("…");
+    for (var j = lo; j <= hi; j++) out.push(j);
+    if (hi < tp - 1) out.push("…");
+    out.push(tp);
+    return out;
+  }
+  function pagerHtml(total, cur, size) {
+    var tp = Math.max(1, Math.ceil(total / size));
+    var html = '<span class="mi-pager-total">共 ' + total + ' 条</span>' +
+      '<button class="mi-page-btn" data-pg="prev" title="上一页"' + (cur <= 1 ? " disabled" : "") + '>‹</button>';
+    pageSeq(cur, tp).forEach(function (p) {
+      html += p === "…" ? '<span class="mi-page-ellipsis">…</span>'
+        : '<button class="mi-page-btn' + (p === cur ? " is-active" : "") + '" data-pg="' + p + '">' + p + '</button>';
+    });
+    html += '<button class="mi-page-btn" data-pg="next" title="下一页"' + (cur >= tp ? " disabled" : "") + '>›</button>' +
+      '<select class="select mi-page-size" data-size>' +
+      [5, 10, 20, 50].map(function (n) { return '<option value="' + n + '"' + (n === size ? " selected" : "") + '>' + n + " 条/页</option>"; }).join("") +
+      '</select><span class="mi-page-jump">跳至第 <input class="input mi-page-input" data-jump value="' + cur + '"> 页</span>';
+    return html;
+  }
+  function bindPager(el, get, set) {
+    function jump(inp) {
+      var s = get(), tp = Math.max(1, Math.ceil(s.total / s.size));
+      var p = parseInt(inp.value, 10);
+      if (isNaN(p)) { inp.value = s.page; return; }
+      p = Math.min(tp, Math.max(1, p));
+      if (p === s.page) { inp.value = s.page; return; }
+      set({ page: p }); render();
+    }
+    el.addEventListener("click", function (e) {
+      var btn = e.target.closest("[data-pg]");
+      if (!btn || btn.disabled) return;
+      var s = get(), tp = Math.max(1, Math.ceil(s.total / s.size));
+      var v = btn.getAttribute("data-pg");
+      var p = v === "prev" ? s.page - 1 : v === "next" ? s.page + 1 : parseInt(v, 10);
+      if (p < 1 || p > tp || p === s.page) return;
+      set({ page: p }); render();
+    });
+    el.addEventListener("change", function (e) {
+      var sel = e.target.closest("[data-size]");
+      if (sel) { set({ page: 1, size: parseInt(sel.value, 10) }); render(); return; }
+      var inp = e.target.closest("[data-jump]");
+      if (inp) jump(inp);
+    });
+    el.addEventListener("keydown", function (e) {
+      var inp = e.target.closest("[data-jump]");
+      if (inp && e.key === "Enter") jump(inp);
+    });
+  }
+
+  /* ---------------- 下区渲染 ---------------- */
+  function ruleFields() {
+    return RULE_FIELDS.filter(function (f) { return state.rule[f]; });
+  }
+  function procPool() {
+    return PROC.filter(function (x) { return state.showDead || x.isUsing === 1; });
+  }
+  function procFiltered() {
+    var pool = procPool();
+    var r = state.selKey ? rowOf(state.selKey) : null;
+    if (!r) return pool;
+    var fids = ruleFields();
+    if (!fids.length) return pool;
+    var own = MAP[r.key] ? MAP[r.key].catalogId : 0;
+    return pool.filter(function (x) {
+      if (x.id === own) return true;                 /* 已对码商品始终可见，便于核对 */
+      var hit = false;
+      for (var i = 0; i < fids.length; i++) {
+        var v = cmp(fids[i], r, x);
+        if (v === "no") return false;
+        if (v === "ok") hit = true;
+      }
+      return hit;
+    });
+  }
+
+  function procRowHtml(x) {
+    var owner = usedBy(x.id);
+    var tag = "";
+    if (owner) {
+      var or = rowOf(owner);
+      tag = '<span class="pm-tag t1" title="已对码：' + esc(or ? or.drug.name + " · " + or.spec.title : "") + '">' +
+        (owner === state.selKey ? "已对照" : "已对码") + '</span>';
+    }
+    if (x.isUsing === 0) tag += '<span class="pm-tag t2">已撤废</span>';
+    return '<tr class="' + (state.catId === x.id ? "is-sel" : "") + (x.isUsing === 0 ? " is-dead" : "") + '" data-proc="' + x.id + '">' +
+      '<td class="mono">' + tag + esc(x.id) + '</td>' +
+      '<td title="' + esc(x.productName) + '">' + esc(x.productName) + '</td>' +
+      '<td title="' + esc(x.goodsName) + '">' + esc(x.goodsName) + '</td>' +
+      '<td>' + esc(x.medicinemodel) + '</td>' +
+      '<td title="' + esc(x.outlook) + '">' + esc(x.outlook) + '</td>' +
+      '<td>' + esc(x.factor || "—") + '</td>' +
+      '<td title="' + esc(x.materialName) + '">' + esc(x.materialName || "—") + '</td>' +
+      '<td>' + esc(x.unit || "—") + '</td>' +
+      '<td>' + esc(x.middlePack || "—") + '</td>' +
+      '<td>' + esc(x.maxPack || "—") + '</td>' +
+      '<td title="' + esc(x.companyNameSc) + '">' + esc(x.companyNameSc) + '</td>' +
+      '<td title="' + esc(x.companyNamePs) + '">' + esc(x.companyNamePs) + '</td>' +
+      '<td class="mono">' + esc(x.provinceId) + '</td>' +
+      '<td><span class="pm-tag t' + x.purchaseType + '">' + esc(PT_NAME[x.purchaseType]) + '</span></td>' +
+      '<td class="mono">' + (x.filingApplyId ? esc(x.filingApplyId) : '<span class="sub">—</span>') + '</td>' +
+      '<td class="sub">' + esc(x.lastUpDateTime) + '</td>' +
+      '</tr>';
+  }
+
+  function renderProc() {
+    var list = procFiltered();
+    if (state.catId && !list.some(function (x) { return x.id === state.catId; })) state.catId = "";
+
+    var tp = Math.max(1, Math.ceil(list.length / state.procSize));
+    if (state.procPage > tp) state.procPage = tp;
+    var start = (state.procPage - 1) * state.procSize;
+    var pageList = list.slice(start, start + state.procSize);
+
+    $("procBody").innerHTML = pageList.length
+      ? pageList.map(procRowHtml).join("")
+      : '<tr><td colspan="16" class="empty-cell">没有符合匹配规则的招采商品，可调整匹配规则后重试</td></tr>';
+
+    $("procPager").innerHTML = pagerHtml(list.length, state.procPage, state.procSize);
+    $("procMeta").textContent = "候选 " + list.length + " 条";
+    syncMapBtn();
+  }
+
+  function syncMapBtn() {
+    var r = state.selKey ? rowOf(state.selKey) : null;
+    var has = !!(r && MAP[r.key]);
+    $("btnMap").textContent = has ? "变更对照" : "对照";
+    $("btnMap").disabled = !(r && state.catId);
+  }
+
+  function render() {
+    var list = filteredRows();
+    var pages = Math.max(1, Math.ceil(list.length / state.size));
+    if (state.page > pages) state.page = pages;
+    var start = (state.page - 1) * state.size;
+    var rows = list.slice(start, start + state.size);
+
+    $("rows").innerHTML = rows.length
+      ? rows.map(rowHtml).join("")
+      : '<tr><td colspan="21" class="empty-cell">没有符合条件的数据</td></tr>';
+
+    $("mainPager").innerHTML = pagerHtml(list.length, state.page, state.size);
+
+    var allPicked = rows.length > 0 && rows.every(function (r) { return !!state.picked[r.key]; });
+    $("pickAll").checked = allPicked;
+    $("pickAll").disabled = rows.length === 0;
+    renderPicked();
+    renderProc();
+  }
+
+  function pickedKeys() { return Object.keys(state.picked).filter(function (k) { return !!state.picked[k]; }); }
+  function renderPicked() {
+    var n = pickedKeys().length;
+    $("pickedTxt").innerHTML = n ? "已选中 <b>" + n + "</b> 条" : "";
+    $("btnBatchCancel").disabled = n === 0;
+  }
+
+  /* ---------------- 弹窗 / Toast ---------------- */
+  function openModal(html, cls) {
+    var mask = $("modalMask");
+    mask.className = "modal-mask";
+    mask.innerHTML = '<div class="modal ' + (cls || "") + '">' + html + '</div>';
+    mask.classList.add("show");
+  }
+  function closeModal() {
+    var mask = $("modalMask");
+    mask.classList.remove("show");
+    mask.className = "modal-mask";
+    mask.innerHTML = "";
+    state.quick = null;
+  }
+  var toastTimer = null;
+  function toast(msg) {
+    $("toastText").textContent = msg;
+    $("toast").classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { $("toast").classList.remove("show"); }, 2600);
+  }
+  function confirmDialog(opt) {
+    openModal(
+      '<div class="modal-head"><span class="modal-title">' + esc(opt.title) + '</span>' +
+        '<button class="drawer-close" data-close="1"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg></button></div>' +
+      '<div class="modal-body"><p class="mi-result-line">' + opt.text + '</p></div>' +
+      '<div class="modal-foot"><button class="btn" data-close="1">取消</button>' +
+        '<button class="btn btn-primary" data-confirm="1">' + esc(opt.okText || "确定") + '</button></div>',
+      "pm-modal"
+    );
+    $("modalMask").querySelector("[data-confirm]").addEventListener("click", function () {
+      closeModal();
+      if (opt.onOk) opt.onOk();
+    });
+  }
+
+  /* ---------------- 单个对照 ---------------- */
+  function selectRow(key) {
+    if (!rowOf(key)) return;
+    state.selKey = key;
+    var m = MAP[key];
+    state.catId = m ? m.catalogId : "";
+    state.procPage = 1;
+    render();
+  }
+
+  function writeMap(r, x, type) {
+    MAP[r.key] = { catalogId: x.id, matchType: type, operator: "赵敏", time: nowStr() };
+    render();
+  }
+
+  function doMap() {
+    var r = rowOf(state.selKey);
+    var x = PROC_BY_ID[state.catId];
+    if (!r || !x) return;
+    if (x.isUsing === 0) { toast("该商品已撤废，不能对码"); return; }
+    var own = MAP[r.key];
+    if (own && own.catalogId === x.id) { toast("该药品已对码当前商品"); return; }
+    var owner = usedBy(x.id);
+    if (owner && owner !== r.key) {
+      var or = rowOf(owner);
+      toast("商品 " + x.id + " 已对码「" + (or ? or.drug.name : "其他药品") + "」，一个商品编号只能对应一个院内药品");
+      return;
+    }
+    if (own && own.catalogId !== x.id) {
+      confirmDialog({
+        title: "变更对照",
+        text: "「" + esc(r.drug.name) + "（" + esc(r.spec.title) + "）· " + esc(r.vendor.name) + "」已对码 " + own.catalogId +
+          "，确认变更为 <b>" + x.id + "</b>（" + esc(x.productName) + " · " + esc(x.outlook) + "）？<br>变更后原对照关系被覆盖，下单将取新商品编号。",
+        okText: "确认变更",
+        onOk: function () { writeMap(r, x, "manual"); toast("已变更为 " + x.id); }
+      });
+      return;
+    }
+    writeMap(r, x, "manual");
+    toast("已对码 " + x.id);
+  }
+
+  function cancelMapping(key) {
+    var r = rowOf(key);
+    if (!r || !MAP[key]) return;
+    var id = MAP[key].catalogId;
+    confirmDialog({
+      title: "取消对照",
+      text: "确认取消「" + esc(r.drug.name) + "（" + esc(r.spec.title) + "）· " + esc(r.vendor.name) + "」与商品编号 <b>" + id + "</b> 的对应关系？取消后该药品回到未对照，采购计划将无法下单。",
+      okText: "取消对照",
+      onOk: function () { delete MAP[key]; render(); toast("已取消对照"); }
+    });
+  }
+
+  /* ---------------- 快捷对照 ---------------- */
+  function quickScope() {
+    return BASE.filter(function (r) {
+      var st = statusOf(r).code;
+      return st === "none" || st === "exception";
+    });
+  }
+
+  function openQuick() {
+    state.quick = {
+      step: 1,
+      fields: { name: true, goods: false, form: false, spec: true, vendor: true, factor: false, material: false, unit: false },
+      fieldsUsed: [], list: null, counts: null
+    };
+    renderQuick();
+  }
+
+  function stepBar(step) {
+    function cls(n) { return n < step ? "step is-done" : n === step ? "step is-active" : "step"; }
+    return '<div class="pm-steps">' +
+      '<div class="' + cls(1) + '"><span class="step-idx">' + (step > 1 ? "✓" : "1") + '</span><span>选择比对字段</span></div>' +
+      '<span class="step-line"></span>' +
+      '<div class="' + cls(2) + '"><span class="step-idx">2</span><span>匹配预览</span></div>' +
+      '</div>';
+  }
+
+  function renderQuick() {
+    var q = state.quick;
+    var panel = "";
+
+    if (q.step === 1) {
+      var scopeN = quickScope().length;
+      panel = '<div class="mi-step-panel">' +
+        '<div class="mi-sec-title">选择参与比对的字段 <span class="sub">（右侧为省招采平台对应字段）</span></div>' +
+        '<div class="mi-pairs">' +
+          QUICK_FIELDS.map(function (f) {
+            var d = FIELD_DEF[f];
+            return '<div class="mi-pair' + (q.fields[f] ? " is-check" : "") + '">' +
+              '<label class="check"><input type="checkbox" data-field="' + f + '"' + (q.fields[f] ? " checked" : "") + '><span class="check-box"></span></label>' +
+              '<span class="mi-pair-field">' + d.sysTxt + '</span>' +
+              '<span class="mi-pair-arrow">↔</span>' +
+              '<span class="mi-pair-ins">招采 · ' + d.procTxt + '</span>' +
+              (f === "goods" ? '<span class="pm-pair-note">院内无独立商品名字段，取药品名称比对</span>' : "") +
+              '</div>';
+          }).join("") +
+        '</div>' +
+        '<p class="mi-note">匹配口径：所选字段<b>全部完全相等</b>（仅去除首尾空格，不做 ×/*、全半角、单位大小写归一化）才命中；任一侧字段为空时该字段跳过，不参与比对。</p>' +
+        '<p class="mi-note">处理范围：仅处理「未对照」与「异常」记录，共 <b>' + scopeN + '</b> 条；「已对照」不参与，避免覆盖人工确认结果。</p>' +
+        '</div>';
+    } else {
+      var fids = q.fieldsUsed;
+      var flt = q.resFilter || "";
+      var heads = fids.map(function (fid) {
+        var d = FIELD_DEF[fid];
+        return '<th>院内 · ' + d.sysTxt + '</th><th>招采 · ' + d.procTxt + '</th>';
+      }).join("");
+      var vlist = q.list.filter(function (it) {
+        var t = it.cands.length === 1 ? "ok" : (it.cands.length > 1 ? "multi" : "none");
+        return !flt || t === flt;
+      });
+      var body = vlist.map(function (it) {
+        var c = it.cands[0] || null;
+        var cells = fids.map(function (fid) {
+          var sk = cmp(fid, it.row, c || {});
+          return '<td title="' + esc(sysVal(fid, it.row)) + '">' + esc(sysVal(fid, it.row) || "—") + '</td>' +
+            '<td title="' + esc(c ? procVal(fid, c) : "") + '">' + (c ? esc(procVal(fid, c) || "—") : '<span class="sub">—</span>') + '</td>';
+        }).join("");
+        var res;
+        if (it.cands.length === 1) res = '<span class="mi-result-txt is-ok">唯一命中</span>';
+        else if (it.cands.length > 1) res = '<span class="mi-result-txt is-warn">多条候选（' + it.cands.length + '）</span>';
+        else res = '<span class="mi-result-txt is-none">未命中</span>';
+        if (it.skips) res += '<span class="sub"> · 缺' + it.skips + '</span>';
+        return '<tr><td class="mi-sticky">' + res + '</td><td>' + esc(it.row.drug.name) + '</td>' + cells + '</tr>';
+      }).join("");
+      if (!vlist.length) body = '<tr><td colspan="' + (fids.length * 2 + 2) + '" class="empty-cell">没有该匹配结果的数据</td></tr>';
+
+      panel = '<div class="mi-step-panel">' +
+        '<div class="mi-stats">' +
+          '<div class="mi-stat is-ok"><div class="mi-stat-label">唯一命中（可自动对照）</div><div class="mi-stat-val">' + q.counts.ok + '</div></div>' +
+          '<div class="mi-stat is-warn"><div class="mi-stat-label">多条候选（保持未对照）</div><div class="mi-stat-val">' + q.counts.multi + '</div></div>' +
+          '<div class="mi-stat is-none"><div class="mi-stat-label">未命中（保持未对照）</div><div class="mi-stat-val">' + q.counts.none + '</div></div>' +
+        '</div>' +
+        '<div class="mi-preview-wrap"><table class="mi-table">' +
+          '<thead><tr><th class="mi-sticky mi-c-res">匹配结果' +
+            '<button type="button" class="mi-res-filter-btn' + (flt ? " is-on" : "") + '" data-rf="toggle" title="筛选匹配结果">' +
+              '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h18l-7 8v6l-4 2v-8L3 4z"/></svg>' +
+            '</button>' +
+            (q.resMenu ? '<div class="mi-res-menu">' +
+              '<button type="button" class="mi-res-item' + (!flt ? " is-on" : "") + '" data-rf="">全部</button>' +
+              '<button type="button" class="mi-res-item' + (flt === "ok" ? " is-on" : "") + '" data-rf="ok">唯一命中</button>' +
+              '<button type="button" class="mi-res-item' + (flt === "multi" ? " is-on" : "") + '" data-rf="multi">多条候选</button>' +
+              '<button type="button" class="mi-res-item' + (flt === "none" ? " is-on" : "") + '" data-rf="none">未命中</button>' +
+            '</div>' : "") +
+          '</th><th class="mi-c-name">药品名称</th>' + heads + '</tr></thead>' +
+          '<tbody>' + body + '</tbody>' +
+        '</table></div>' +
+        '<p class="mi-note">确认后按唯一命中结果统一对码；多条候选与未命中不做改动，回到列表后可单条处理。</p>' +
+        '</div>';
+    }
+
+    var foot = q.step === 1
+      ? '<button class="btn" data-qact="close">取消</button><button class="btn btn-primary" data-qact="next">下一步</button>'
+      : '<button class="btn" data-qact="close">取消</button><button class="btn" data-qact="prev">上一步</button><button class="btn btn-primary" data-qact="exec">开始对照</button>';
+
+    openModal(
+      '<div class="modal-head"><span class="modal-title">快捷对照</span>' +
+        '<button class="drawer-close" data-qact="close"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg></button></div>' +
+      '<div class="modal-body">' + stepBar(q.step) + panel + '</div>' +
+      '<div class="modal-foot">' + foot + '</div>',
+      "pm-modal"
+    );
+  }
+
+  function quickMatch() {
+    var fids = QUICK_FIELDS.filter(function (f) { return state.quick.fields[f]; });
+    if (!fids.length) { toast("请至少选择一个比对字段"); return false; }
+    var pool = procPool().filter(function (x) { return x.isUsing === 1; });
+
+    var list = quickScope().map(function (r) {
+      var skips = 0, cands = [];
+      pool.forEach(function (x) {
+        var owner = usedBy(x.id);
+        if (owner && owner !== r.key) return;          /* 一码一用：已被其它 SKU 占用的不参与自动匹配 */
+        var hit = false, skip = 0;
+        for (var i = 0; i < fids.length; i++) {
+          var v = cmp(fids[i], r, x);
+          if (v === "no") return;
+          if (v === "skip") skip++;
+          else hit = true;
+        }
+        if (!hit) return;
+        skips = Math.max(skips, skip);
+        cands.push(x);
+      });
+      return { row: r, cands: cands, skips: skips };
+    });
+
+    var counts = { ok: 0, multi: 0, none: 0 };
+    list.forEach(function (it) {
+      if (it.cands.length === 1) counts.ok++;
+      else if (it.cands.length > 1) counts.multi++;
+      else counts.none++;
+    });
+    state.quick.fieldsUsed = fids;
+    state.quick.list = list;
+    state.quick.counts = counts;
+    return true;
+  }
+
+  function quickExecute() {
+    var q = state.quick, done = 0;
+    q.list.forEach(function (it) {
+      if (it.cands.length === 1) { writeMap(it.row, it.cands[0], "auto"); done++; }
+    });
+    closeModal();
+    state.page = 1;
+    render();
+    toast("已自动对码 " + done + " 条；多条候选 " + q.counts.multi + " 条、未命中 " + q.counts.none + " 条待人工处理");
+  }
+
+  /* ---------------- 事件 ---------------- */
+  function bindEvents() {
+    $("catType").addEventListener("change", function () {
+      state.cat = this.value; state.picked = {}; state.selKey = ""; state.catId = "";
+      state.page = 1; state.procPage = 1; render();
+    });
+    $("kw").addEventListener("input", function () { state.kw = this.value; state.page = 1; render(); });
+    $("mapStatus").addEventListener("change", function () { state.mapStatus = this.value; state.page = 1; render(); });
+    $("onlyOn").addEventListener("change", function () { state.onlyOn = this.checked; state.page = 1; render(); });
+    $("showDead").addEventListener("change", function () { state.showDead = this.checked; state.procPage = 1; renderProc(); });
+    $("btnReset").addEventListener("click", function () {
+      state.kw = ""; state.mapStatus = ""; state.onlyOn = false; state.page = 1; state.picked = {};
+      $("kw").value = ""; $("mapStatus").value = ""; $("onlyOn").checked = false;
+      render();
+    });
+
+    $("pickAll").addEventListener("change", function () {
+      var checked = this.checked;
+      var start = (state.page - 1) * state.size;
+      filteredRows().slice(start, start + state.size).forEach(function (r) {
+        if (checked) state.picked[r.key] = true; else delete state.picked[r.key];
+      });
+      render();
+    });
+
+    $("rows").addEventListener("change", function (e) {
+      var cb = e.target.closest("[data-pick]");
+      if (!cb) return;
+      var key = cb.getAttribute("data-pick");
+      if (cb.checked) state.picked[key] = true; else delete state.picked[key];
+      render();
+    });
+
+    $("rows").addEventListener("click", function (e) {
+      var btn = e.target.closest("[data-act]");
+      if (btn) {
+        var key = btn.getAttribute("data-key");
+        if (btn.getAttribute("data-act") === "cancel") { cancelMapping(key); return; }
+        selectRow(key);
+        toast("已选中该药品，请在下方招采目录选择新的商品后点「变更对照」");
+        return;
+      }
+      if (e.target.closest(".check")) return;
+      var tr = e.target.closest("tr[data-row]");
+      if (tr) selectRow(tr.getAttribute("data-row"));
+    });
+
+    bindPager($("mainPager"),
+      function () { return { total: filteredRows().length, page: state.page, size: state.size }; },
+      function (o) { if (o.page != null) state.page = o.page; if (o.size != null) state.size = o.size; });
+    bindPager($("procPager"),
+      function () { return { total: procFiltered().length, page: state.procPage, size: state.procSize }; },
+      function (o) { if (o.page != null) state.procPage = o.page; if (o.size != null) state.procSize = o.size; });
+
+    $("procRules").addEventListener("change", function (e) {
+      var cb = e.target.closest("[data-rfield]");
+      if (!cb) return;
+      state.rule[cb.getAttribute("data-rfield")] = cb.checked;
+      cb.closest(".mi-rule").classList.toggle("is-check", cb.checked);
+      state.procPage = 1;
+      renderProc();
+    });
+
+    $("procBody").addEventListener("click", function (e) {
+      var tr = e.target.closest("[data-proc]");
+      if (!tr) return;
+      var id = parseInt(tr.getAttribute("data-proc"), 10);
+      if (PROC_BY_ID[id] && PROC_BY_ID[id].isUsing === 0) { toast("该商品已撤废（isUsing=0），不能对码"); return; }
+      state.catId = state.catId === id ? "" : id;
+      renderProc();
+    });
+
+    $("btnMap").addEventListener("click", doMap);
+    $("btnQuick").addEventListener("click", openQuick);
+    $("btnBatchCancel").addEventListener("click", function () {
+      var keys = pickedKeys().filter(function (k) { return !!MAP[k]; });
+      if (!keys.length) { toast("所选记录暂无可取消的对码关系"); return; }
+      confirmDialog({
+        title: "批量取消对照",
+        text: "确认取消所选 <b>" + keys.length + "</b> 条对码关系？取消后对应的采购计划将无法下单。",
+        okText: "取消对照",
+        onOk: function () {
+          keys.forEach(function (k) { delete MAP[k]; });
+          state.picked = {};
+          render();
+          toast("已取消 " + keys.length + " 条对照关系");
+        }
+      });
+    });
+
+    $("modalMask").addEventListener("click", function (e) {
+      if (e.target === $("modalMask")) { closeModal(); return; }
+      if (e.target.closest("[data-close]")) { closeModal(); return; }
+
+      var rf = e.target.closest("[data-rf]");
+      if (rf && state.quick) {
+        var v = rf.getAttribute("data-rf");
+        if (v === "toggle") state.quick.resMenu = !state.quick.resMenu;
+        else { state.quick.resFilter = v; state.quick.resMenu = false; }
+        renderQuick();
+        return;
+      }
+      if (state.quick && state.quick.resMenu) { state.quick.resMenu = false; renderQuick(); return; }
+
+      var qbtn = e.target.closest("[data-qact]");
+      if (qbtn && state.quick) {
+        var qa = qbtn.getAttribute("data-qact");
+        if (qa === "close") { closeModal(); return; }
+        if (qa === "prev") { state.quick.step = 1; renderQuick(); return; }
+        if (qa === "next") { if (!quickMatch()) return; state.quick.step = 2; renderQuick(); return; }
+        if (qa === "exec") { quickExecute(); return; }
+        return;
+      }
+
+      var fcb = e.target.closest("[data-field]");
+      if (fcb && state.quick) {
+        state.quick.fields[fcb.getAttribute("data-field")] = fcb.checked;
+        renderQuick();
+        return;
+      }
+    });
+
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && $("modalMask").classList.contains("show")) closeModal();
+    });
+
+    document.querySelectorAll("[data-nav]").forEach(function (el) {
+      el.addEventListener("click", function () {
+        var name = el.getAttribute("data-nav");
+        if (name === "首页") location.href = "home.html";
+        else toast("「" + name + "」页面待开发");
+      });
+    });
+    document.querySelector(".tab-close").addEventListener("click", function (e) {
+      e.stopPropagation();
+      location.href = "purchase-plan.html";
+    });
+  }
+
+  function init() {
+    $("syncMeta").textContent = "招采目录来源：H003 医院常用目录 · 最近同步 2026-11-12 08:00";
+    bindEvents();
+    render();
+  }
+  init();
+})();
+</script>
+<script src="nav.js?v=20261112a"></script>
+</body></html>

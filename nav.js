@@ -37,7 +37,8 @@
     { name: "采购管理", icon: "cart", items: [
       { name: "采购需求", href: "purchase-need.html", files: ["purchase-need.html", "purchase-need-create.html", "purchase-need-detail.html"], roles: C3 },
       { name: "采购计划", href: "purchase-plan.html", files: ["purchase-plan.html", "purchase-plan-create.html", "purchase-plan-detail.html"], roles: ["center", "member"] },
-      { name: "采购订单", href: "purchase-order.html", files: ["purchase-order.html"], roles: ["center"] }
+      { name: "采购订单", href: "purchase-order.html", files: ["purchase-order.html"], roles: ["center"] },
+      { name: "采购商品对码", href: "province-drug-mapping.html", files: ["province-drug-mapping.html"], roles: ["center"] }
     ] },
     { name: "库存管理", icon: "stock", items: [
       { name: "药品期初管理", href: "init-stock.html", files: ["init-stock.html"], roles: C3 },

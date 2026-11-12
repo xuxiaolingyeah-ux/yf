@@ -69,7 +69,7 @@
 .batch-pop-pager .bp-page { min-width: 20px; height: 20px; line-height: 20px; text-align: center; padding: 0 3px; border: none; background: none; color: var(--primary-dark); font-size: 12px; cursor: pointer; border-radius: var(--radius); }
 .batch-pop-pager .bp-page.on { background: var(--primary); color: #fff; } .si-items .w-qty { width: 80px; } .si-items .w-price { width: 90px; }
 .si-items .w-date { width: 120px; } .si-items .w-reason { width: 150px; } .si-items .w-amt { width: 100px; }
-.si-items .w-inv { width: 130px; } .si-items .w-acts { width: 150px; min-width: 150px; }
+.si-items .w-inv { width: 130px; } .si-items .w-acts { width: 196px; min-width: 196px; }
 /* 操作列右固定 */
 .si-items .col-acts { position: sticky; right: 0; z-index: 3; background: var(--bg-white); }
 .si-items th.col-acts { background: var(--table-head); z-index: 4; }
@@ -106,15 +106,47 @@
 .si-pick-table .num { text-align: right; font-variant-numeric: tabular-nums; }
 .si-pick-table input[type="checkbox"] { width: 14px; height: 14px; cursor: pointer; }
 .si-pick-empty { padding: 40px 0; text-align: center; color: var(--text-placeholder); font-size: 13px; }
-/* 追溯码弹窗 */
-.si-trace .modal { width: 720px; max-width: 92vw; }
-.si-trace-input { display: flex; gap: 8px; margin-bottom: 12px; }
-.si-trace-input .input { flex: 1; }
-.si-trace-tip { font-size: 12px; color: var(--text-tertiary); margin-bottom: 8px; }
-.si-trace-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-.si-trace-table th { background: var(--table-head); height: 36px; padding: 0 10px; text-align: left; font-weight: 500; color: var(--text-secondary); white-space: nowrap; border-bottom: 1px solid var(--border); }
-.si-trace-table td { padding: 7px 10px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+/* 追溯码右侧抽屉（推开式：打开时主区域左移，明细行仍可点击切换） */
+.si-tx-drawer { position: fixed; top: 0; right: 0; bottom: 0; width: 520px; max-width: 92vw; background: var(--bg-white); border-left: 1px solid var(--border); box-shadow: -4px 0 16px rgba(0,0,0,.08); transform: translateX(100%); transition: transform .25s; z-index: 60; display: flex; flex-direction: column; }
+.si-tx-drawer.open { transform: translateX(0); }
+.si-tx-head { flex: none; height: 50px; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; border-bottom: 1px solid var(--border); }
+.si-tx-head .modal-title { font-size: 15px; }
+.si-tx-body { flex: 1; min-height: 0; overflow-y: auto; padding: 14px 20px; }
+.si-tx-foot { flex: none; height: 54px; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; border-top: 1px solid var(--border); background: var(--bg-white); }
+.si-tx-drug { display: flex; flex-wrap: wrap; gap: 2px 18px; font-size: 12.5px; background: var(--bg-page); border: 1px solid var(--border); border-radius: var(--radius); padding: 7px 12px; margin-bottom: 12px; }
+.si-tx-drug span { white-space: nowrap; }
+.si-tx-drug .k { color: var(--text-tertiary); }
+.si-tx-ctl { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 10px; }
+.si-tx-ctl .ct { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-tertiary); }
+.si-tx-seg { display: inline-flex; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.si-tx-seg span { padding: 2px 10px; font-size: 12px; line-height: 20px; color: var(--text-secondary); cursor: pointer; user-select: none; }
+.si-tx-seg span + span { border-left: 1px solid var(--border); }
+.si-tx-seg span.on { background: var(--primary); color: #fff; }
+.si-tx-scan { display: flex; gap: 8px; margin-bottom: 12px; }
+.si-tx-scan .input { flex: 1; font-family: ui-monospace, Menlo, Consolas, monospace; }
+.si-tx-meta { font-size: 12px; color: var(--text-tertiary); margin-bottom: 8px; }
+.si-tx-meta b { color: var(--text-primary); font-weight: 500; }
+.si-tx-list { border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+.si-tx-list .si-trace-table { table-layout: fixed; width: 100%; }
+.si-tx-list .si-trace-table th { padding: 0 10px; }
+.si-tx-list .si-trace-table td { padding: 7px 10px; font-size: 12px; vertical-align: top; }
+.si-tx-list .si-trace-table .c-code { word-break: break-all; font-family: ui-monospace, Menlo, Consolas, monospace; }
+.si-tx-list .si-trace-table .c-lv, .si-tx-list .si-trace-table .c-op { text-align: center; }
+.si-tx-sub { font-size: 11px; color: var(--text-tertiary); }
+.si-tx-sub.is-fail { color: var(--danger); }
 .si-trace-empty { padding: 32px 0; text-align: center; color: var(--text-placeholder); font-size: 13px; }
+/* 查看抽屉：全层级分组 */
+.si-tx-vg { margin-bottom: 4px; }
+.si-tx-vg-head { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500; padding: 9px 2px 7px; border-bottom: 1px solid var(--border); }
+.si-tx-vg-head .n { font-size: 12px; font-weight: 400; color: var(--text-tertiary); }
+.si-tx-vrow { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 10px; padding: 7px 2px; border-bottom: 1px dashed var(--border); font-size: 12px; }
+.si-tx-vrow:last-child { border-bottom: none; }
+.si-tx-vrow .code { flex: 1; min-width: 0; word-break: break-all; font-family: ui-monospace, Menlo, Consolas, monospace; }
+.si-tx-kids { padding: 2px 2px 10px 22px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 0 10px; border-bottom: 1px dashed var(--border); }
+.si-tx-kids .kid { font-size: 11px; color: var(--text-secondary); font-family: ui-monospace, Menlo, Consolas, monospace; line-height: 1.9; overflow-wrap: anywhere; }
+/* 明细行当前选中高亮 */
+.si-items tr.row-cur > td { background: var(--primary-lighter) !important; }
+.si-items tr.row-cur td.col-acts { background: var(--primary-lighter); }
 /* 确认弹窗 */
 .si-confirm .modal { width: 400px; }
 .si-confirm-desc { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
@@ -263,35 +295,72 @@
   </div>
 </div>
 
-<!-- ========== 弹窗：录入追溯码 ========== -->
-<div class="modal-mask si-trace" id="traceMask">
-  <div class="modal">
-    <div class="modal-head">
-      <div class="modal-title" id="traceTitle">录入追溯码</div>
-      <button class="drawer-close" id="traceClose" title="关闭">
-        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
-      </button>
-    </div>
-    <div class="modal-body">
-      <div class="si-trace-input">
-        <input class="input" id="traceInput" placeholder="扫码或手工输入药品追溯码，回车追加" autocomplete="off">
-        <button class="btn" id="traceScan">模拟扫码</button>
+<!-- ========== 右侧抽屉：录入追溯码（推开式） ========== -->
+<aside class="si-tx-drawer" id="traceDrawer">
+  <div class="si-tx-head">
+    <div class="modal-title">录入追溯码</div>
+    <button class="drawer-close" id="traceClose" title="关闭">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+    </button>
+  </div>
+  <div class="si-tx-body">
+    <div class="si-tx-drug" id="txDrugInfo"></div>
+    <div class="si-tx-ctl">
+      <div class="ct">类型
+        <div class="si-tx-seg" id="txLevelSeg">
+          <span class="on" data-lv="small">小包装</span>
+          <span data-lv="mid">中包装</span>
+          <span data-lv="large">大包装</span>
+        </div>
       </div>
-      <div class="si-trace-tip" id="traceTip">已录入 0 条</div>
+      <div class="ct">操作
+        <div class="si-tx-seg" id="txModeSeg">
+          <span class="on" data-mode="add">添加扫码</span>
+          <span data-mode="remove">移除扫码</span>
+        </div>
+      </div>
+    </div>
+    <div class="si-tx-scan">
+      <input class="input" id="traceInput" placeholder="扫码或手输追溯码，回车添加" autocomplete="off">
+      <button class="btn" id="traceScan">模拟扫码</button>
+    </div>
+    <div class="si-tx-meta">已录入 <b id="txCnt">0</b> 条<span id="txCntDetail"></span></div>
+    <div class="si-tx-list" id="txListWrap" style="display:none">
       <table class="si-trace-table">
         <thead>
-          <tr><th>药品追溯码</th><th>药品名称</th><th>药品规格</th><th>厂商批准文号</th><th style="width:70px">操作</th></tr>
+          <tr><th style="width:33.34%">追溯码</th><th class="c-lv" style="width:33.33%">类型</th><th class="c-op" style="width:33.33%">操作</th></tr>
         </thead>
         <tbody id="traceBody"></tbody>
       </table>
-      <div class="si-trace-empty" id="traceEmpty">暂无追溯码，请扫码录入</div>
     </div>
-    <div class="modal-foot">
+    <div class="si-trace-empty" id="traceEmpty">暂无追溯码，扫码或手输后回车录入</div>
+  </div>
+  <div class="si-tx-foot">
+    <span class="si-tx-meta" id="txFootStat" style="margin:0"></span>
+    <div style="display:flex;gap:8px">
       <button class="btn" id="traceCancel">取消</button>
       <button class="btn btn-primary" id="traceOk">确定</button>
     </div>
   </div>
-</div>
+</aside>
+
+<!-- ========== 右侧抽屉：查看追溯码（全层级分组） ========== -->
+<aside class="si-tx-drawer" id="viewDrawer">
+  <div class="si-tx-head">
+    <div class="modal-title">追溯码清单</div>
+    <button class="drawer-close" id="viewClose" title="关闭">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+    </button>
+  </div>
+  <div class="si-tx-body">
+    <div class="si-tx-drug" id="viewDrugInfo"></div>
+    <div id="viewBody"></div>
+  </div>
+  <div class="si-tx-foot">
+    <span class="si-tx-meta" id="viewStat" style="margin:0"></span>
+    <button class="btn" id="viewOk">关闭</button>
+  </div>
+</aside>
 
 <!-- ========== 确认弹窗 ========== -->
 <div class="modal-mask si-confirm" id="cfMask">
@@ -360,7 +429,7 @@
     items: []
   };
 
-  function blankItem(){ return { name:"", code:"", spec:"", packSpec:"", vendor:"", approval:"", factor:"", packUnit:"", insCode:"", insName:"", batch:"", batchSource:"", priceFrom:"", expiry:"", purchase:"", retail:"", qty:"", unq:0, reason:"", invoiceNo:"", traces:[] }; }
+  function blankItem(){ return { name:"", code:"", spec:"", packSpec:"", vendor:"", approval:"", factor:"", packUnit:"", insCode:"", insName:"", batch:"", batchSource:"", priceFrom:"", expiry:"", purchase:"", retail:"", qty:"", unq:0, reason:"", invoiceNo:"", traces:[], traceResolved:{} }; }
 
   /* ===== 初始化下拉 ===== */
   /* 入库机构：只读，显示当前登录机构名称 */
@@ -420,9 +489,10 @@
   function renderItems(){
     renderHead();
     $("#itemsBody").innerHTML = ST.items.map(function(it, i){
-      var qualified = it.qty!=="" ? SI.qualified(it) : "";
       var hasDrug = !!it.code;
-      var h = '<tr data-idx="'+i+'">';
+      var qualified = it.qty!=="" ? SI.qualified(it) : "";
+      var curRow = (traceDrawerOpen() && i===traceIdx) || (viewDrawerOpen() && i===viewIdx);
+      var h = '<tr data-idx="'+i+'"'+(curRow?' class="row-cur"':'')+'>';
       h += '<td class="w-drug"><button class="si-drug-btn'+(hasDrug?' has-drug':'')+'" data-act="pick" data-idx="'+i+'"><span class="cell-ellipsis" title="'+SI.esc(it.name)+'">'+(hasDrug?SI.esc(it.name):'请选择药品')+'</span><svg viewBox="0 0 10 6" width="8" height="5" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M1 1l4 4 4-4"/></svg></button></td>';
       h += '<td class="w-code">'+SI.esc(it.code)+'</td>';
       h += '<td class="w-spec">'+SI.esc(it.spec)+'</td>';
@@ -458,7 +528,7 @@
       h += '<td class="w-amt num" data-c="pamt">'+SI.num2(SI.purchaseAmt(it))+'</td>';
       h += '<td class="w-amt num" data-c="ramt">'+SI.num2(SI.retailAmt(it))+'</td>';
       if(detailMode()) h += '<td class="w-inv"><input class="cell-input" data-f="invoiceNo" data-idx="'+i+'" value="'+SI.esc(it.invoiceNo)+'" placeholder="发票号"></td>';
-      h += '<td class="w-acts col-acts"><a class="link-btn" data-act="trace" data-idx="'+i+'">录入追溯码</a><a class="link-btn is-danger" data-act="del" data-idx="'+i+'">删除</a></td>';
+      h += '<td class="w-acts col-acts"><a class="link-btn" data-act="trace" data-idx="'+i+'">录入追溯码</a><a class="link-btn" data-act="traceview" data-idx="'+i+'">查看追溯码</a><a class="link-btn is-danger" data-act="del" data-idx="'+i+'">删除</a></td>';
       h += '</tr>';
       return h;
     }).join("");
@@ -528,23 +598,41 @@
   });
   $("#itemsBody").addEventListener("click", function(e){
     var a = e.target.closest("[data-act]");
-    if(!a) return;
-    var act = a.getAttribute("data-act"), i = parseInt(a.getAttribute("data-idx"),10);
-    if(act==="pick"){ openPicker(i); return; }
-    if(act==="trace"){ openTrace(i); return; }
-    if(act==="batchClear"){
-      closeBatchPop();
-      var it = ST.items[i];
-      it.batch=""; it.batchSource=""; it.priceFrom="";
-      it.purchase=""; it.retail=""; it.expiry="";
-      renderItems();
-      return;
+    if(a){
+      var act = a.getAttribute("data-act"), i = parseInt(a.getAttribute("data-idx"),10);
+      if(act==="pick"){
+        /* 抽屉打开时，点药品名称即切换当前行，不弹选药框 */
+        if(traceDrawerOpen()){ switchTrace(i); return; }
+        if(viewDrawerOpen()){ switchViewTrace(i); return; }
+        openPicker(i); return;
+      }
+      if(act==="trace"){ switchTrace(i); return; }
+      if(act==="traceview"){ switchViewTrace(i); return; }
+      if(act==="batchClear"){
+        closeBatchPop();
+        var it = ST.items[i];
+        it.batch=""; it.batchSource=""; it.priceFrom="";
+        it.purchase=""; it.retail=""; it.expiry="";
+        renderItems();
+        return;
+      }
+      if(act==="del"){
+        confirmDlg("删除药品明细", "确认删除该药品明细行？", "删除", true, function(){
+          ST.items.splice(i,1);
+          if(traceIdx===i) closeTraceDrawer(true);
+          if(viewIdx===i) closeViewTrace(true);
+          traceIdx=-1; viewIdx=-1;
+          renderItems(); toast("已删除");
+        });
+        return;
+      }
     }
-    if(act==="del"){
-      confirmDlg("删除药品明细", "确认删除该药品明细行？", "删除", true, function(){
-        ST.items.splice(i,1); renderItems(); toast("已删除");
-      });
-    }
+    /* 抽屉打开时，点击明细行空白处直接切换抽屉内容 */
+    var tr = e.target.closest("tr[data-idx]");
+    if(!tr || e.target.closest("input,select,button,a")) return;
+    var ri = parseInt(tr.getAttribute("data-idx"),10);
+    if(traceDrawerOpen()) switchTrace(ri);
+    else if(viewDrawerOpen()) switchViewTrace(ri);
   });
   $("#btnAddRow").addEventListener("click", function(){ openPicker(-1); });
 
@@ -759,7 +847,8 @@
       if(pickIdx>=0 && j===0){
         /* 替换当前行，保留已录入的数量/追溯码等 */
         var old = ST.items[pickIdx];
-        it.qty=old.qty; it.unq=old.unq; it.reason=old.reason; it.invoiceNo=old.invoiceNo; it.traces=old.traces;
+        it.qty=old.qty; it.unq=old.unq; it.reason=old.reason; it.invoiceNo=old.invoiceNo;
+        it.traces=old.traces; it.traceResolved=old.traceResolved||{};
         ST.items[pickIdx] = it;
       } else {
         ST.items.push(it);
@@ -770,53 +859,234 @@
     toast("已添加 "+sel.length+" 条药品明细");
   });
 
-  /* ===== 追溯码弹窗 ===== */
-  var traceIdx = -1, traceDraft = [];
-  function renderTrace(){
-    var it = ST.items[traceIdx];
-    $("#traceTip").textContent = "已录入 "+traceDraft.length+" 条" + (it.qty ? " / 入库量 "+it.qty : "");
-    $("#traceEmpty").style.display = traceDraft.length ? "none" : "block";
-    $("#traceBody").innerHTML = traceDraft.map(function(t, i){
-      return '<tr><td>'+SI.esc(t.code)+'</td><td>'+SI.esc(t.name)+'</td><td>'+SI.esc(t.spec)+'</td><td>'+SI.esc(t.approval)+'</td>'
-        +'<td><a class="link-btn is-danger" data-ti="'+i+'">删除</a></td></tr>';
-    }).join("");
-    $$("#traceBody [data-ti]").forEach(function(a){
-      a.addEventListener("click",function(){ traceDraft.splice(parseInt(a.getAttribute("data-ti"),10),1); renderTrace(); });
-    });
+  /* ===== 追溯码右侧抽屉（录入 + 查看互斥，推开式） ===== */
+  var traceIdx = -1, viewIdx = -1, traceDraft = [];
+  var txMode = "add", txLevel = "small", txExpanded = {};
+
+  function traceDrawerOpen(){ return $("#traceDrawer").classList.contains("open"); }
+  function viewDrawerOpen(){ return $("#viewDrawer").classList.contains("open"); }
+  function txDrugHtml(it){
+    return '<span><span class="k">药品名称：</span>'+SI.esc(it.name)+'</span>'
+      +'<span><span class="k">规格：</span>'+SI.esc(it.spec)+'</span>'
+      +'<span><span class="k">生产企业：</span>'+SI.esc(it.vendor)+'</span>';
   }
+  function resolvedSmallCount(it){
+    var n = 0, rs = it.traceResolved || {};
+    for(var k in rs) n += rs[k].length;
+    return n;
+  }
+  function traceDraftDirty(){
+    if(traceIdx < 0) return false;
+    var saved = ST.items[traceIdx].traces || [];
+    if(saved.length !== traceDraft.length) return true;
+    for(var i=0;i<traceDraft.length;i++){
+      if(!saved[i] || saved[i].code!==traceDraft[i].code || SI.traceLevel(saved[i])!==SI.traceLevel(traceDraft[i])) return true;
+    }
+    return false;
+  }
+  function setTxSeg(){
+    $$("#txLevelSeg span").forEach(function(s){ s.classList.toggle("on", s.getAttribute("data-lv")===txLevel); });
+    $$("#txModeSeg span").forEach(function(s){ s.classList.toggle("on", s.getAttribute("data-mode")===txMode); });
+    $("#traceInput").placeholder = txMode==="add" ? "扫码或手输追溯码，回车添加" : "扫码或手输已录入的追溯码，回车移除";
+  }
+
+  /* ---------- 录入抽屉 ---------- */
   function openTrace(i){
     var it = ST.items[i];
     if(!it.code){ toast("请先选择药品"); return; }
     traceIdx = i;
     traceDraft = (it.traces||[]).slice();
-    $("#traceTitle").textContent = "录入追溯码 — " + it.name + " " + it.spec;
+    txMode = "add"; txLevel = "small";
+    setTxSeg();
+    $("#txDrugInfo").innerHTML = txDrugHtml(it);
     $("#traceInput").value = "";
     renderTrace();
-    $("#traceMask").classList.add("show");
-    setTimeout(function(){ $("#traceInput").focus(); }, 50);
+    $("#traceDrawer").classList.add("open");
+    renderItems();
+    setTimeout(function(){ $("#traceInput").focus(); }, 260);
   }
-  function closeTrace(){ $("#traceMask").classList.remove("show"); traceIdx=-1; traceDraft=[]; }
-  function appendTrace(code){
+  function switchTrace(i){
+    if(i === traceIdx && traceDrawerOpen()) return;
+    if(traceDrawerOpen() && traceDraftDirty()){
+      if(!confirm("当前行有未确定的修改，切换后将丢弃，是否继续？")) return;
+    }
+    if(viewDrawerOpen()) closeViewTrace(true);
+    openTrace(i);
+  }
+  function closeTraceDrawer(silent){
+    $("#traceDrawer").classList.remove("open");
+    traceIdx = -1; traceDraft = [];
+    
+    if(silent){ renderItems(); } else { renderItems(); }
+  }
+  function setTxMeta(){
+    $("#txCnt").textContent = traceDraft.length;
+    var c = { small:0, mid:0, large:0 };
+    traceDraft.forEach(function(t){ c[SI.traceLevel(t)]++; });
+    var parts = [];
+    if(c.small) parts.push("小包装 "+c.small);
+    if(c.mid) parts.push("中包装 "+c.mid);
+    if(c.large) parts.push("大包装 "+c.large);
+    $("#txCntDetail").textContent = parts.length ? "（"+parts.join(" / ")+"）" : "";
+    $("#txListWrap").style.display = traceDraft.length ? "" : "none";
+    $("#traceEmpty").style.display = traceDraft.length ? "none" : "";
+    var sm = traceIdx>=0 ? resolvedSmallCount(ST.items[traceIdx]) : 0;
+    $("#txFootStat").textContent = sm ? "已解析 "+sm+" 个小码" : "";
+  }
+  function renderTrace(){
+    setTxMeta();
     var it = ST.items[traceIdx];
-    code = (code||"").trim();
+    $("#traceBody").innerHTML = traceDraft.map(function(t, i){
+      var res = (it.traceResolved||{})[t.code];
+      var sub = "";
+      if(res) sub = '<div class="si-tx-sub">已拆出 '+res.length+' 个小码</div>';
+      else if(SI.traceLevel(t)!=="small" && t._failed){
+        sub = '<div class="si-tx-sub is-fail">解析失败，请改扫小码</div>';
+      }
+      return '<tr><td class="c-code">'+SI.esc(t.code)+sub+'</td><td class="c-lv">'+SI.TRACE_LABELS[SI.traceLevel(t)]+'</td>'
+        +'<td class="c-op"><a class="link-btn is-danger" data-ti="'+i+'">删除</a></td></tr>';
+    }).join("");
+  }
+  function submitTxCode(raw){
+    var code = (raw||"").trim();
     if(!code) return;
-    if(traceDraft.some(function(t){return t.code===code;})){ toast("该追溯码已录入，请勿重复"); return; }
-    if(it.qty && traceDraft.length >= Number(it.qty)){ toast("追溯码数量不能超过入库量"); return; }
-    traceDraft.push({ code: code, name: it.name, spec: it.spec, approval: it.approval });
+    if(txMode==="remove"){
+      var idx = -1;
+      for(var i=0;i<traceDraft.length;i++){ if(traceDraft[i].code===code){ idx=i; break; } }
+      if(idx<0){ toast("未找到该追溯码，无法移除"); return; }
+      var t = traceDraft[idx];
+      if(SI.traceLevel(t)!=="small" && (ST.items[traceIdx].traceResolved||{})[t.code]){
+        toast("已移除 "+SI.TRACE_LABELS[SI.traceLevel(t)]+"码及其解析出的 "+ST.items[traceIdx].traceResolved[t.code].length+" 个小码");
+        delete ST.items[traceIdx].traceResolved[t.code];
+      } else {
+        toast("已移除 1 条追溯码");
+      }
+      traceDraft.splice(idx, 1);
+    } else {
+      if(traceDraft.some(function(t){ return t.code===code; })){ toast("该追溯码已录入，请勿重复"); return; }
+      traceDraft.push({ code: code, level: txLevel });
+    }
     $("#traceInput").value = "";
     renderTrace();
+    $("#traceInput").focus();
   }
-  $("#traceInput").addEventListener("keydown", function(e){ if(e.key==="Enter"){ appendTrace(this.value); } });
+  $("#traceInput").addEventListener("keydown", function(e){ if(e.key==="Enter"){ submitTxCode(this.value); } });
   $("#traceScan").addEventListener("click", function(){
-    var code = "81" + String(Math.floor(Math.random()*1e14)).padStart(14,"0");
-    appendTrace(code);
+    var pre = { small:"81", mid:"86", large:"88" }[txLevel];
+    submitTxCode(pre + String(Math.floor(Math.random()*1e14)).padStart(14,"0"));
   });
-  $("#traceClose").addEventListener("click", closeTrace);
-  $("#traceCancel").addEventListener("click", closeTrace);
+  $("#txLevelSeg").addEventListener("click", function(e){
+    var s = e.target.closest("span"); if(!s) return;
+    txLevel = s.getAttribute("data-lv"); setTxSeg();
+  });
+  $("#txModeSeg").addEventListener("click", function(e){
+    var s = e.target.closest("span"); if(!s) return;
+    txMode = s.getAttribute("data-mode"); setTxSeg();
+    $("#traceInput").focus();
+  });
+  $("#traceBody").addEventListener("click", function(e){
+    var a = e.target.closest("[data-ti]");
+    if(!a) return;
+    traceDraft.splice(parseInt(a.getAttribute("data-ti"),10), 1);
+    renderTrace();
+  });
+  $("#traceClose").addEventListener("click", function(){ closeTraceDrawer(); });
+  $("#traceCancel").addEventListener("click", function(){ closeTraceDrawer(); });
   $("#traceOk").addEventListener("click", function(){
-    if(traceIdx>=0) ST.items[traceIdx].traces = traceDraft.slice();
-    closeTrace(); toast("追溯码已保存");
+    if(traceIdx < 0) return;
+    var it = ST.items[traceIdx];
+    var pending = traceDraft.filter(function(t){
+      var lv = SI.traceLevel(t);
+      return (lv==="large" || lv==="mid") && !(it.traceResolved||{})[t.code];
+    });
+    function finish(){
+      it.traces = traceDraft.slice();
+      closeTraceDrawer(); renderItems();
+    }
+    if(!pending.length){
+      finish();
+      toast(traceDraft.length ? "已保存追溯码 "+traceDraft.length+" 条" : "未录入追溯码");
+      return;
+    }
+    /* 确定时才调级联映射接口，把大/中码解析成小码 */
+    var btn = this;
+    btn.disabled = true; btn.textContent = "解析中…";
+    Promise.all(pending.map(function(t){ return SI.unpackTrace(t.code, SI.traceLevel(t)); })).then(function(results){
+      it.traceResolved = it.traceResolved || {};
+      var okCnt = 0, smallCnt = 0, failed = 0;
+      results.forEach(function(r){
+        if(r.ok){ it.traceResolved[r.code] = r.codes; okCnt++; smallCnt += r.codes.length; }
+        else { failed++; pending.some(function(t){ if(t.code===r.code) t._failed = true; }); }
+      });
+      btn.disabled = false; btn.textContent = "确定";
+      finish();
+      toast("解析完成："+okCnt+" 个箱码拆出 "+smallCnt+" 个小码"+(failed ? "；"+failed+" 个箱码解析失败，请改扫小码" : ""));
+    });
   });
+
+  /* ---------- 查看抽屉（全层级分组） ---------- */
+  function openViewTrace(i){
+    var it = ST.items[i];
+    if(!it.code){ toast("请先选择药品"); return; }
+    viewIdx = i;
+    txExpanded = {};
+    $("#viewDrugInfo").innerHTML = txDrugHtml(it);
+    renderViewTrace(it);
+    $("#viewDrawer").classList.add("open");
+    renderItems();
+  }
+  function switchViewTrace(i){
+    if(i === viewIdx && viewDrawerOpen()) return;
+    if(traceDrawerOpen()){
+      if(traceDraftDirty() && !confirm("录入抽屉中该行有未确定的修改，切换到查看将丢弃，是否继续？")) return;
+      closeTraceDrawer(true);
+    }
+    openViewTrace(i);
+  }
+  function closeViewTrace(silent){
+    $("#viewDrawer").classList.remove("open");
+    viewIdx = -1;
+    
+    renderItems();
+  }
+  function renderViewTrace(it){
+    var groups = { large:[], mid:[], small:[] };
+    (it.traces||[]).forEach(function(t){ groups[SI.traceLevel(t)].push(t); });
+    var html = "";
+    ["large","mid","small"].forEach(function(lv){
+      if(!groups[lv].length) return;
+      html += '<div class="si-tx-vg"><div class="si-tx-vg-head">'+SI.TRACE_LABELS[lv]
+        +'<span class="n">（'+groups[lv].length+' 个）</span></div>';
+      groups[lv].forEach(function(t){
+        var res = (it.traceResolved||{})[t.code];
+        var extra = "", kids = "";
+        if(res){
+          var open = !!txExpanded[t.code];
+          extra = '<span class="si-tx-sub">已拆出 '+res.length+' 个小码</span>'
+            +'<a class="link-btn" data-exp="'+SI.esc(t.code)+'">'+(open?"收起":"展开")+'</a>';
+          if(open){
+            kids = '<div class="si-tx-kids">'+res.map(function(k){ return '<div class="kid">'+SI.esc(k)+'</div>'; }).join("")+'</div>';
+          }
+        } else if(lv!=="small" && t._failed){
+          extra = '<span class="si-tx-sub is-fail">解析失败</span>';
+        }
+        html += '<div class="si-tx-vrow"><span class="code">'+SI.esc(t.code)+'</span>'+extra+'</div>'+kids;
+      });
+      html += '</div>';
+    });
+    $("#viewBody").innerHTML = html || '<div class="si-trace-empty">该药品暂未录入追溯码</div>';
+    var sm = resolvedSmallCount(it);
+    $("#viewStat").textContent = "共 "+(it.traces||[]).length+" 条" + (sm ? " · 已解析 "+sm+" 个小码" : "");
+  }
+  $("#viewBody").addEventListener("click", function(e){
+    var a = e.target.closest("[data-exp]");
+    if(!a) return;
+    var code = a.getAttribute("data-exp");
+    txExpanded[code] = !txExpanded[code];
+    renderViewTrace(ST.items[viewIdx]);
+  });
+  $("#viewClose").addEventListener("click", function(){ closeViewTrace(); });
+  $("#viewOk").addEventListener("click", function(){ closeViewTrace(); });
 
   /* ===== 确认弹窗 ===== */
   var cfCb = null;
@@ -899,8 +1169,7 @@
         if(it.unq==="" || !/^\d+$/.test(String(it.unq))) errs.push(n+"不合格数量");
         else if(Number(it.unq) > Number(it.qty||0)) errs.push(n+"不合格数量不能超过入库量");
         if(Number(it.unq)>0 && !it.reason) errs.push(n+"不合格原因");
-        var needTrace = SI.qualified(it);
-        if((it.traces||[]).length !== needTrace) errs.push(n+"追溯码数量（已录 "+(it.traces||[]).length+" / 应录 "+needTrace+"）");
+        /* 追溯码不做数量强制校验（进度列仅展示） */
         if(detailMode() && !it.invoiceNo) errs.push(n+"发票号");
       }
     });

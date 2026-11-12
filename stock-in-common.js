@@ -161,16 +161,43 @@
     };
   }
   function trace(n, d) {
+    /* 新模型：{ code, level }；旧数据无 level 视为 small */
     var arr = [];
-    for (var i = 0; i < n; i++) arr.push({ code: "8100" + String(Math.floor(Math.random() * 1e15)).padStart(15, "0"), name: d.name, spec: d.spec, approval: d.approval });
+    for (var i = 0; i < n; i++) arr.push({ code: "8100" + String(Math.floor(Math.random() * 1e15)).padStart(15, "0"), level: "small" });
     return arr;
   }
+  /* 大 / 中包装整码（演示用，后缀 7777 模拟解析失败） */
+  function boxTrace(level, suffix) {
+    var pre = level === "large" ? "88" : "86";
+    return { code: pre + "00" + String(suffix || Math.floor(Math.random() * 1e15)).padStart(16, "0"), level: level };
+  }
+
+  /* ---------- 追溯码：模拟级联映射接口（大/中码 → 小码） ----------
+   * 将来对接医保平台 / 码上放心时，仅替换本函数实现。
+   * 约定：后缀 7777 的箱码模拟"平台无级联关系"，返回 ok:false。
+   */
+  var TRACE_PACK = { large: 20, mid: 10 };
+  function unpackTrace(code, level) {
+    return new Promise(function (resolve) {
+      setTimeout(function () {
+        if (String(code).slice(-4) === "7777") { resolve({ ok: false, code: code }); return; }
+        var n = TRACE_PACK[level] || 0;
+        var codes = [];
+        for (var i = 1; i <= n; i++) {
+          codes.push("8100" + String(i).padStart(4, "0") + String(code).slice(-12));
+        }
+        resolve({ ok: true, code: code, codes: codes });
+      }, 500);
+    });
+  }
+  var TRACE_LABELS = { small: "小包装", mid: "中包装", large: "大包装" };
+  function traceLevel(t) { return (t && t.level) ? t.level : "small"; }
 
   function seed() {
     var d1 = DRUGS[0], d3 = DRUGS[2], d5 = DRUGS[4], d7 = DRUGS[6];
     return [
       { id: "b1", code: "RK20261028001", orgId: "o1", pharmacyId: "p11", location: "A 区药柜", method: "购货入库", supplier: "山东医药集团", accept: "外包装完好，数量核对无误", invoiceMode: "sum", invoiceNo: "INV20261028001", invoiceAmount: "2580.00", invoiceDate: "2026-10-28", creatorId: "u1", creatorName: "王芳", submitTime: "2026-10-28 09:12:30", status: "draft", auditorRole: "member", uploadStatus: "none",
-        items: [ item("1210500301", 0, 100, 0, "", "", trace(2, d1)), item("1210500501", 0, 60, 0) ],
+        items: [ item("1210500301", 0, 100, 0, "", "", [boxTrace("large", 3101201), boxTrace("mid", 450201)].concat(trace(2, d1))), item("1210500501", 0, 60, 0) ],
         records: [] },
       { id: "b2", code: "RK20261029002", orgId: "o1", pharmacyId: "p11", location: "B 区药柜", method: "购货入库", supplier: "济南医药供应站", accept: "", invoiceMode: "detail", invoiceNo: "", invoiceAmount: "4428.00", invoiceDate: "2026-10-29", creatorId: "u1", creatorName: "王芳", submitTime: "2026-10-29 14:05:11", status: "pending", auditorRole: "member", uploadStatus: "none",
         items: [ item("1210500501", 0, 180, 4, "包装不合格", "INV20261029011", trace(3, d3)) ],
@@ -185,7 +212,15 @@
         items: [ item("1210500901", 0, 120, 0, "", "", trace(2, d5)), item("1210501201", 0, 90, 0) ],
         records: [ { node: "提交", person: "李强", org: "城东社区卫生服务中心", time: "2026-10-30 11:18:55", result: "已提交", opinion: "" } ] },
       { id: "b5", code: "RK20261031005", orgId: "o3", pharmacyId: "p31", location: "A 区库房", method: "购货入库", supplier: "辉瑞制药", accept: "抽检合格", invoiceMode: "detail", invoiceNo: "", invoiceAmount: "13615.00", invoiceDate: "2026-10-31", creatorId: "u3", creatorName: "陈静", submitTime: "2026-10-31 15:30:20", status: "approved", auditorRole: "center", uploadStatus: "wait",
-        items: [ item("1210501601", 0, 350, 0, "", "INV20261031021", trace(2, DRUGS[9])), item("1210501201", 0, 210, 0, "", "INV20261031022") ],
+        items: [ (function () {
+            var it = item("1210501601", 0, 350, 0, "", "INV20261031021", [boxTrace("large", 16012101)].concat(trace(1, DRUGS[9])));
+            /* 已提交入库单：大码已通过级联映射接口解析出小码（演示全层级查看） */
+            var kids = [];
+            for (var k = 1; k <= 20; k++) kids.push("8100" + String(k).padStart(4, "0") + "16012101");
+            it.traceResolved = {};
+            it.traceResolved[it.traces[0].code] = kids;
+            return it;
+          })(), item("1210501201", 0, 210, 0, "", "INV20261031022") ],
         records: [
           { node: "提交", person: "陈静", org: "区域中心药房", time: "2026-10-31 09:02:14", result: "已提交", opinion: "" },
           { node: "审核", person: "赵敏", org: "区域中心药房", time: "2026-10-31 15:30:20", result: "通过", opinion: "单据齐全，同意入库" }
@@ -322,6 +357,7 @@
     currentUser: currentUser, setUser: setUser, orgOf: orgOf,
     load: load, save: save, billOf: billOf, newCode: newCode, addBatchExtra: addBatchExtra,
     canAudit: canAudit, opsFor: opsFor, createInnerInBill: createInnerInBill,
-    qualified: qualified, purchaseAmt: purchaseAmt, retailAmt: retailAmt, sums: sums
+    qualified: qualified, purchaseAmt: purchaseAmt, retailAmt: retailAmt, sums: sums,
+    unpackTrace: unpackTrace, traceLevel: traceLevel, TRACE_LABELS: TRACE_LABELS, TRACE_PACK: TRACE_PACK
   };
 })();

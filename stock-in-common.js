@@ -196,22 +196,22 @@
   function seed() {
     var d1 = DRUGS[0], d3 = DRUGS[2], d5 = DRUGS[4], d7 = DRUGS[6];
     return [
-      { id: "b1", code: "RK20261028001", orgId: "o1", pharmacyId: "p11", location: "A 区药柜", method: "购货入库", supplier: "山东医药集团", accept: "外包装完好，数量核对无误", invoiceMode: "sum", invoiceNo: "INV20261028001", invoiceAmount: "2580.00", invoiceDate: "2026-10-28", creatorId: "u1", creatorName: "王芳", submitTime: "2026-10-28 09:12:30", status: "draft", auditorRole: "member", uploadStatus: "none",
+      { id: "b1", code: "RK20261028001", orgId: "o1", pharmacyId: "p11", location: "A 区药柜", method: "购货入库", supplier: "山东医药集团", accept: "外包装完好，数量核对无误", invoiceMode: "sum", invoiceNo: "INV20261028001", invoiceAmount: "2580.00", invoiceDate: "2026-10-28", creatorId: "u1", creatorName: "王芳", submitTime: "2026-10-28 09:12:30", status: "draft", auditorRole: "member",
         items: [ item("1210500301", 0, 100, 0, "", "", [boxTrace("large", 3101201), boxTrace("mid", 450201)].concat(trace(2, d1))), item("1210500501", 0, 60, 0) ],
         records: [] },
-      { id: "b2", code: "RK20261029002", orgId: "o1", pharmacyId: "p11", location: "B 区药柜", method: "购货入库", supplier: "济南医药供应站", accept: "", invoiceMode: "detail", invoiceNo: "", invoiceAmount: "4428.00", invoiceDate: "2026-10-29", creatorId: "u1", creatorName: "王芳", submitTime: "2026-10-29 14:05:11", status: "pending", auditorRole: "member", uploadStatus: "none",
+      { id: "b2", code: "RK20261029002", orgId: "o1", pharmacyId: "p11", location: "B 区药柜", method: "购货入库", supplier: "济南医药供应站", accept: "", invoiceMode: "detail", invoiceNo: "", invoiceAmount: "4428.00", invoiceDate: "2026-10-29", creatorId: "u1", creatorName: "王芳", submitTime: "2026-10-29 14:05:11", status: "pending", auditorRole: "member",
         items: [ item("1210500501", 0, 180, 4, "包装不合格", "INV20261029011", trace(3, d3)) ],
         records: [ { node: "提交", person: "王芳", org: "幸福村卫生室", time: "2026-10-29 14:05:11", result: "已提交", opinion: "" } ] },
-      { id: "b3", code: "RK20261025003", orgId: "o1", pharmacyId: "p11", location: "A 区药柜", method: "捐赠入库", supplier: "", accept: "捐赠物资清单已核对", invoiceMode: "sum", invoiceNo: "", invoiceAmount: "", invoiceDate: "", creatorId: "u1", creatorName: "王芳", submitTime: "2026-10-27 10:22:40", status: "rejected", auditorRole: "member", uploadStatus: "none",
+      { id: "b3", code: "RK20261025003", orgId: "o1", pharmacyId: "p11", location: "A 区药柜", method: "捐赠入库", supplier: "", accept: "捐赠物资清单已核对", invoiceMode: "sum", invoiceNo: "", invoiceAmount: "", invoiceDate: "", creatorId: "u1", creatorName: "王芳", submitTime: "2026-10-27 10:22:40", status: "rejected", auditorRole: "member",
         items: [ item("1210500601", 0, 50, 0) ],
         records: [
           { node: "提交", person: "王芳", org: "幸福村卫生室", time: "2026-10-25 16:40:02", result: "已提交", opinion: "" },
           { node: "审核", person: "李强", org: "城东社区卫生服务中心", time: "2026-10-27 10:22:40", result: "拒绝", opinion: "批号与随货同行单不一致，请核对后重新提交" }
         ] },
-      { id: "b4", code: "RK20261030004", orgId: "o2", pharmacyId: "p21", location: "货架一区", method: "调拨入库", supplier: "", accept: "冷链运输，温度记录完整", invoiceMode: "sum", invoiceNo: "", invoiceAmount: "", invoiceDate: "", creatorId: "u2", creatorName: "李强", submitTime: "2026-10-30 11:18:55", status: "pending", auditorRole: "center", uploadStatus: "none",
+      { id: "b4", code: "RK20261030004", orgId: "o2", pharmacyId: "p21", location: "货架一区", method: "调拨入库", supplier: "", accept: "冷链运输，温度记录完整", invoiceMode: "sum", invoiceNo: "", invoiceAmount: "", invoiceDate: "", creatorId: "u2", creatorName: "李强", submitTime: "2026-10-30 11:18:55", status: "pending", auditorRole: "center",
         items: [ item("1210500901", 0, 120, 0, "", "", trace(2, d5)), item("1210501201", 0, 90, 0) ],
         records: [ { node: "提交", person: "李强", org: "城东社区卫生服务中心", time: "2026-10-30 11:18:55", result: "已提交", opinion: "" } ] },
-      { id: "b5", code: "RK20261031005", orgId: "o3", pharmacyId: "p31", location: "A 区库房", method: "购货入库", supplier: "辉瑞制药", accept: "抽检合格", invoiceMode: "detail", invoiceNo: "", invoiceAmount: "13615.00", invoiceDate: "2026-10-31", creatorId: "u3", creatorName: "陈静", submitTime: "2026-10-31 15:30:20", status: "approved", auditorRole: "center", uploadStatus: "wait",
+      { id: "b5", code: "RK20261031005", orgId: "o3", pharmacyId: "p31", location: "A 区库房", method: "购货入库", supplier: "辉瑞制药", accept: "抽检合格", invoiceMode: "detail", invoiceNo: "", invoiceAmount: "13615.00", invoiceDate: "2026-10-31", creatorId: "u3", creatorName: "陈静", submitTime: "2026-10-31 15:30:20", status: "approved", auditorRole: "center",
         items: [ (function () {
             var it = item("1210501601", 0, 350, 0, "", "INV20261031021", [boxTrace("large", 16012101)].concat(trace(1, DRUGS[9])));
             /* 已提交入库单：大码已通过级联映射接口解析出小码（演示全层级查看） */
@@ -225,13 +225,13 @@
           { node: "提交", person: "陈静", org: "区域中心药房", time: "2026-10-31 09:02:14", result: "已提交", opinion: "" },
           { node: "审核", person: "赵敏", org: "区域中心药房", time: "2026-10-31 15:30:20", result: "通过", opinion: "单据齐全，同意入库" }
         ] },
-      { id: "b6", code: "RK20261026006", orgId: "o2", pharmacyId: "p22", location: "病房药柜", method: "退库入库", supplier: "", accept: "退回药品外观完好", invoiceMode: "sum", invoiceNo: "", invoiceAmount: "", invoiceDate: "", creatorId: "u2", creatorName: "李强", submitTime: "2026-10-26 10:02:33", status: "approved", auditorRole: "center", uploadStatus: "success",
+      { id: "b6", code: "RK20261026006", orgId: "o2", pharmacyId: "p22", location: "病房药柜", method: "退库入库", supplier: "", accept: "退回药品外观完好", invoiceMode: "sum", invoiceNo: "", invoiceAmount: "", invoiceDate: "", creatorId: "u2", creatorName: "李强", submitTime: "2026-10-26 10:02:33", status: "approved", auditorRole: "center",
         items: [ item("1210501301", 0, 60, 0) ],
         records: [
           { node: "提交", person: "李强", org: "城东社区卫生服务中心", time: "2026-10-26 09:12:00", result: "已提交", opinion: "" },
           { node: "审核", person: "赵敏", org: "区域中心药房", time: "2026-10-26 10:02:33", result: "通过", opinion: "" }
         ] },
-      { id: "b7", code: "RK20261024007", orgId: "o3", pharmacyId: "p31", location: "冷链柜", method: "购货入库", supplier: "上海医药分销", accept: "冷链药品验收合格", invoiceMode: "sum", invoiceNo: "INV20261024007", invoiceAmount: "10024.00", invoiceDate: "2026-10-24", creatorId: "u3", creatorName: "陈静", submitTime: "2026-10-24 17:20:10", status: "approved", auditorRole: "center", uploadStatus: "fail",
+      { id: "b7", code: "RK20261024007", orgId: "o3", pharmacyId: "p31", location: "冷链柜", method: "购货入库", supplier: "上海医药分销", accept: "冷链药品验收合格", invoiceMode: "sum", invoiceNo: "INV20261024007", invoiceAmount: "10024.00", invoiceDate: "2026-10-24", creatorId: "u3", creatorName: "陈静", submitTime: "2026-10-24 17:20:10", status: "approved", auditorRole: "center",
         items: [ item("1210500901", 0, 280, 0, "", "", trace(2, d5)) ],
         records: [
           { node: "提交", person: "陈静", org: "区域中心药房", time: "2026-10-24 16:08:45", result: "已提交", opinion: "" },
@@ -268,7 +268,6 @@
 
   /* ---------- 文案映射 ---------- */
   var STATUS = { draft: "草稿", pending: "待审核", approved: "审核通过", rejected: "已驳回" };
-  var UPLOAD = { none: "—", wait: "未上传", success: "上传成功", fail: "上传失败" };
 
   /* ---------- 权限与操作矩阵 ---------- */
   function canAudit(bill, user) {
@@ -284,7 +283,7 @@
       if (canAudit(bill, user)) ops.push({ key: "audit", label: "审批" });
       else if (mine) ops.push({ key: "withdraw", label: "撤回" });
     } else if (bill.status === "approved") {
-      if (bill.uploadStatus !== "success") ops.push({ key: "upload", label: "上传" });
+      /* 上传医保/监管平台为后续对接功能，原型阶段不提供入口 */
     }
     return ops;
   }
@@ -304,8 +303,8 @@
       purchase: it.purchase || 0, retail: it.retail || 0,
       qty: Number(it.qty || 0), unq: 0, reason: "", invoiceNo: "",
       traces: (it.traces || []).map(function (t) {
-        if (typeof t === "object") return t;
-        return { code: t, name: it.name || d.name || "", spec: it.spec || d.spec || "", approval: d.approval || "" };
+        if (typeof t === "object" && t && t.code) return t;
+        return { code: t, level: "small" };
       })
     };
   }
@@ -326,7 +325,7 @@
       invoiceMode: "", invoiceNo: "", invoiceAmount: "", invoiceDate: "",
       srcCode: ob.code || "", srcId: ob.id,
       creatorId: "", creatorName: "系统自动生成",
-      submitTime: now, status: "approved", auditorRole: "center", uploadStatus: "none",
+      submitTime: now, status: "approved", auditorRole: "center",
       items: (ob.items || []).map(siItemFromOut),
       records: [
         { node: "提交", person: "系统自动生成", org: org ? org.name : "", time: now, result: "已提交", opinion: "院内调拨出库单 " + (ob.code || "") + " 审核通过，自动生成" },
@@ -352,7 +351,7 @@
     USERS: USERS, ORGS: ORGS, SUPPLIERS: SUPPLIERS, METHODS: METHODS, REASONS: REASONS,
     CREATE_METHODS: CREATE_METHODS, FILTER_METHODS: FILTER_METHODS,
     DRUGS: DRUGS, BATCHES: BATCHES,
-    STATUS: STATUS, UPLOAD: UPLOAD,
+    STATUS: STATUS,
     qs: qs, esc: esc, raw: raw, fmtNow: fmtNow, money: money, num2: num2,
     currentUser: currentUser, setUser: setUser, orgOf: orgOf,
     load: load, save: save, billOf: billOf, newCode: newCode, addBatchExtra: addBatchExtra,

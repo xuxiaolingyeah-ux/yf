@@ -129,7 +129,7 @@
 .si-tx-list { border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
 .si-tx-list .si-trace-table { table-layout: fixed; width: 100%; }
 .si-tx-list .si-trace-table th { padding: 0 10px; }
-.si-tx-list .si-trace-table td { padding: 7px 10px; font-size: 12px; vertical-align: top; }
+.si-tx-list .si-trace-table td { padding: 7px 8px; font-size: 11.5px; vertical-align: top; }
 .si-tx-list .si-trace-table .c-code { word-break: break-all; font-family: ui-monospace, Menlo, Consolas, monospace; }
 .si-tx-list .si-trace-table .c-lv, .si-tx-list .si-trace-table .c-op { text-align: center; }
 .si-tx-sub { font-size: 11px; color: var(--text-tertiary); }
@@ -144,6 +144,14 @@
 .si-tx-vrow .code { flex: 1; min-width: 0; word-break: break-all; font-family: ui-monospace, Menlo, Consolas, monospace; }
 .si-tx-kids { padding: 2px 2px 10px 22px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 0 10px; border-bottom: 1px dashed var(--border); }
 .si-tx-kids .kid { font-size: 11px; color: var(--text-secondary); font-family: ui-monospace, Menlo, Consolas, monospace; line-height: 1.9; overflow-wrap: anywhere; }
+/* 查看抽屉：搜索框 + 小码折叠摘要/网格 */
+.si-tx-search { margin-bottom: 10px; }
+.si-tx-search .input { height: 30px; font-size: 12px; font-family: ui-monospace, Menlo, Consolas, monospace; }
+.si-tx-vg-head .link-btn { font-size: 12px; margin-left: auto; }
+.si-tx-grid { padding: 6px 2px 8px 2px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 0 10px; }
+.si-tx-grid .kid { font-size: 11px; color: var(--text-secondary); font-family: ui-monospace, Menlo, Consolas, monospace; line-height: 2; overflow-wrap: anywhere; }
+.si-tx-more { display: block; width: 100%; text-align: center; padding: 6px 0; font-size: 12px; color: var(--primary); cursor: pointer; user-select: none; }
+.si-tx-more:hover { background: var(--primary-lighter); }
 /* 明细行当前选中高亮 */
 .si-items tr.row-cur > td { background: var(--primary-lighter) !important; }
 .si-items tr.row-cur td.col-acts { background: var(--primary-lighter); }
@@ -354,6 +362,7 @@
   </div>
   <div class="si-tx-body">
     <div class="si-tx-drug" id="viewDrugInfo"></div>
+    <div class="si-tx-search"><input class="input" id="viewSearch" placeholder="输入追溯码或尾号定位，如 0001" autocomplete="off"></div>
     <div id="viewBody"></div>
   </div>
   <div class="si-tx-foot">
@@ -861,7 +870,7 @@
 
   /* ===== 追溯码右侧抽屉（录入 + 查看互斥，推开式） ===== */
   var traceIdx = -1, viewIdx = -1, traceDraft = [];
-  var txMode = "add", txLevel = "small", txExpanded = {};
+  var txMode = "add", txLevel = "small", txExpanded = {}, txViewOpen = {}, txViewMore = {};
 
   function traceDrawerOpen(){ return $("#traceDrawer").classList.contains("open"); }
   function viewDrawerOpen(){ return $("#viewDrawer").classList.contains("open"); }
@@ -1029,8 +1038,9 @@
     var it = ST.items[i];
     if(!it.code){ toast("请先选择药品"); return; }
     viewIdx = i;
-    txExpanded = {};
+    txExpanded = {}; txViewOpen = {}; txViewMore = {};
     $("#viewDrugInfo").innerHTML = txDrugHtml(it);
+    $("#viewSearch").value = "";
     renderViewTrace(it);
     $("#viewDrawer").classList.add("open");
     renderItems();
@@ -1049,42 +1059,71 @@
     
     renderItems();
   }
+  var TX_GRID_LIMIT = 30;   /* 小码网格首屏条数 */
   function renderViewTrace(it){
+    var kw = ($("#viewSearch").value || "").trim();
     var groups = { large:[], mid:[], small:[] };
     (it.traces||[]).forEach(function(t){ groups[SI.traceLevel(t)].push(t); });
+    var total = (it.traces||[]).length;
+    function hit(code){ return !kw || code.indexOf(kw) >= 0; }
+    function groupHit(t){ return hit(t.code) || ((it.traceResolved||{})[t.code]||[]).some(hit); }
     var html = "";
     ["large","mid","small"].forEach(function(lv){
-      if(!groups[lv].length) return;
-      html += '<div class="si-tx-vg"><div class="si-tx-vg-head">'+SI.TRACE_LABELS[lv]
-        +'<span class="n">（'+groups[lv].length+' 个）</span></div>';
-      groups[lv].forEach(function(t){
-        var res = (it.traceResolved||{})[t.code];
-        var extra = "", kids = "";
-        if(res){
-          var open = !!txExpanded[t.code];
-          extra = '<span class="si-tx-sub">已拆出 '+res.length+' 个小码</span>'
-            +'<a class="link-btn" data-exp="'+SI.esc(t.code)+'">'+(open?"收起":"展开")+'</a>';
-          if(open){
-            kids = '<div class="si-tx-kids">'+res.map(function(k){ return '<div class="kid">'+SI.esc(k)+'</div>'; }).join("")+'</div>';
-          }
-        } else if(lv!=="small" && t._failed){
-          extra = '<span class="si-tx-sub is-fail">解析失败</span>';
+      var list = groups[lv].filter(groupHit);
+      if(!list.length) return;
+      var res = it.traceResolved || {};
+      if(lv === "small"){
+        /* 小包装组：默认折叠摘要，展开后 3 列网格（首屏限量） */
+        var open = !!txViewOpen.small || !!kw;
+        html += '<div class="si-tx-vg"><div class="si-tx-vg-head">'+SI.TRACE_LABELS[lv]
+          +'<span class="n">（'+list.length+' 个）</span>'
+          +(kw ? '' : '<a class="link-btn" data-vexp="small">'+(open?'收起':'展开')+'</a>')
+          +'</div>';
+        if(open){
+          var showAll = !!txViewMore.small || !!kw;
+          var shown = showAll ? list : list.slice(0, TX_GRID_LIMIT);
+          html += '<div class="si-tx-grid">'+shown.map(function(t){ return '<div class="kid">'+SI.esc(t.code)+'</div>'; }).join("")+'</div>';
+          if(!showAll && list.length > TX_GRID_LIMIT)
+            html += '<a class="si-tx-more" data-vmore="small">展开全部 '+list.length+' 个</a>';
         }
-        html += '<div class="si-tx-vrow"><span class="code">'+SI.esc(t.code)+'</span>'+extra+'</div>'+kids;
-      });
-      html += '</div>';
+        html += '</div>';
+      } else {
+        html += '<div class="si-tx-vg"><div class="si-tx-vg-head">'+SI.TRACE_LABELS[lv]
+          +'<span class="n">（'+list.length+' 个）</span></div>';
+        list.forEach(function(t){
+          var r = res[t.code];
+          var extra = "", kids = "";
+          if(r){
+            var open = !!txExpanded[t.code] || !!kw;
+            extra = '<span class="si-tx-sub">已拆出 '+r.length+' 个小码</span>'
+              +(kw ? '' : '<a class="link-btn" data-exp="'+SI.esc(t.code)+'">'+(open?"收起":"展开")+'</a>');
+            if(open){
+              kids = '<div class="si-tx-grid">'+r.filter(hit).map(function(k){ return '<div class="kid">'+SI.esc(k)+'</div>'; }).join("")+'</div>';
+            }
+          } else if(t._failed){
+            extra = '<span class="si-tx-sub is-fail">解析失败</span>';
+          }
+          html += '<div class="si-tx-vrow"><span class="code">'+SI.esc(t.code)+'</span>'+extra+'</div>'+kids;
+        });
+        html += '</div>';
+      }
     });
-    $("#viewBody").innerHTML = html || '<div class="si-trace-empty">该药品暂未录入追溯码</div>';
+    $("#viewBody").innerHTML = html || '<div class="si-trace-empty">'+(kw ? '没有匹配“'+SI.esc(kw)+'”的追溯码' : '该药品暂未录入追溯码')+'</div>';
     var sm = resolvedSmallCount(it);
-    $("#viewStat").textContent = "共 "+(it.traces||[]).length+" 条" + (sm ? " · 已解析 "+sm+" 个小码" : "");
+    $("#viewStat").textContent = "共 "+total+" 条" + (sm ? " · 已解析 "+sm+" 个小码" : "");
   }
   $("#viewBody").addEventListener("click", function(e){
+    var g = e.target.closest("[data-vexp]");
+    if(g){ txViewOpen[g.getAttribute("data-vexp")] = !txViewOpen[g.getAttribute("data-vexp")]; renderViewTrace(ST.items[viewIdx]); return; }
+    var m = e.target.closest("[data-vmore]");
+    if(m){ txViewMore[m.getAttribute("data-vmore")] = true; renderViewTrace(ST.items[viewIdx]); return; }
     var a = e.target.closest("[data-exp]");
     if(!a) return;
     var code = a.getAttribute("data-exp");
     txExpanded[code] = !txExpanded[code];
     renderViewTrace(ST.items[viewIdx]);
   });
+  $("#viewSearch").addEventListener("input", function(){ renderViewTrace(ST.items[viewIdx]); });
   $("#viewClose").addEventListener("click", function(){ closeViewTrace(); });
   $("#viewOk").addEventListener("click", function(){ closeViewTrace(); });
 
@@ -1183,7 +1222,7 @@
       id: "b" + Date.now(), code: SI.newCode(list),
       creatorId: user.id, creatorName: user.name,
       auditorRole: user.role==="village" ? "member" : "center",
-      uploadStatus: "none", records: []
+      records: []
     };
     b.orgId = ST.orgId; b.location = ST.location;
     b.method = ST.method; b.supplier = ST.supplier; b.accept = ST.accept;

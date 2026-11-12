@@ -74,6 +74,13 @@
 .si-tx-sub.is-fail { color: var(--danger); }
 .si-tx-kids { padding: 2px 2px 10px 22px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 0 10px; border-bottom: 1px dashed var(--border); }
 .si-tx-kids .kid { font-size: 11px; color: var(--text-secondary); font-family: ui-monospace, Menlo, Consolas, monospace; line-height: 1.9; overflow-wrap: anywhere; }
+.si-tx-search { margin-bottom: 10px; }
+.si-tx-search .input { height: 30px; font-size: 12px; font-family: ui-monospace, Menlo, Consolas, monospace; }
+.si-tx-vg-head .link-btn { font-size: 12px; margin-left: auto; }
+.si-tx-grid { padding: 6px 2px 8px 2px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 0 10px; }
+.si-tx-grid .kid { font-size: 11px; color: var(--text-secondary); font-family: ui-monospace, Menlo, Consolas, monospace; line-height: 2; overflow-wrap: anywhere; }
+.si-tx-more { display: block; width: 100%; text-align: center; padding: 6px 0; font-size: 12px; color: var(--primary); cursor: pointer; user-select: none; }
+.si-tx-more:hover { background: var(--primary-lighter); }
 /* 明细行当前选中高亮 */
 .si-items tbody tr.row-cur > td { background: var(--primary-lighter) !important; }
 </style>
@@ -206,6 +213,7 @@
   </div>
   <div class="si-tx-body">
     <div class="si-tx-drug" id="txDrugInfo"></div>
+    <div class="si-tx-search"><input class="input" id="txSearch" placeholder="输入追溯码或尾号定位，如 0001" autocomplete="off"></div>
     <div id="traceBody"></div>
   </div>
   <div class="si-tx-foot">
@@ -293,7 +301,8 @@
   }
 
   /* ===== 追溯码右侧抽屉（只读，全层级分组，推开式） ===== */
-  var traceIdx = -1, txExpanded = {};
+  var traceIdx = -1, txExpanded = {}, txViewOpen = {}, txViewMore = {};
+  var TX_GRID_LIMIT = 30;
   function traceDrawerOpen(){ return $("#traceDrawer").classList.contains("open"); }
   function txDrugHtml(it){
     return '<span><span class="k">药品名称：</span>'+SI.esc(it.name)+'</span>'
@@ -306,9 +315,10 @@
     return n;
   }
   function openTrace(i){
-    traceIdx = i; txExpanded = {};
+    traceIdx = i; txExpanded = {}; txViewOpen = {}; txViewMore = {};
     var it = bill.items[i];
     $("#txDrugInfo").innerHTML = txDrugHtml(it);
+    $("#txSearch").value = "";
     renderTrace(it);
     $("#traceDrawer").classList.add("open");
     renderItems();
@@ -319,41 +329,68 @@
     renderItems();
   }
   function renderTrace(it){
+    var kw = ($("#txSearch").value || "").trim();
+    function hit(code){ return !kw || code.indexOf(kw) >= 0; }
+    function groupHit(t){ return hit(t.code) || ((it.traceResolved||{})[t.code]||[]).some(hit); }
     var groups = { large:[], mid:[], small:[] };
     (it.traces||[]).forEach(function(t){ groups[SI.traceLevel(t)].push(t); });
+    var res = it.traceResolved || {};
     var html = "";
     ["large","mid","small"].forEach(function(lv){
-      if(!groups[lv].length) return;
+      var list = groups[lv].filter(groupHit);
+      if(!list.length) return;
+      if(lv === "small"){
+        /* 小包装组：默认折叠摘要，展开后 3 列网格（首屏限量） */
+        var open = !!txViewOpen.small || !!kw;
+        html += '<div class="si-tx-vg"><div class="si-tx-vg-head">'+SI.TRACE_LABELS[lv]
+          +'<span class="n">（'+list.length+' 个）</span>'
+          +(kw ? '' : '<a class="link-btn" data-vexp="small">'+(open?'收起':'展开')+'</a>')
+          +'</div>';
+        if(open){
+          var showAll = !!txViewMore.small || !!kw;
+          var shown = showAll ? list : list.slice(0, TX_GRID_LIMIT);
+          html += '<div class="si-tx-grid">'+shown.map(function(t){ return '<div class="kid">'+SI.esc(t.code)+'</div>'; }).join("")+'</div>';
+          if(!showAll && list.length > TX_GRID_LIMIT)
+            html += '<a class="si-tx-more" data-vmore="small">展开全部 '+list.length+' 个</a>';
+        }
+        html += '</div>';
+        return;
+      }
       html += '<div class="si-tx-vg"><div class="si-tx-vg-head">'+SI.TRACE_LABELS[lv]
-        +'<span class="n">（'+groups[lv].length+' 个）</span></div>';
-      groups[lv].forEach(function(t){
-        var res = (it.traceResolved||{})[t.code];
+        +'<span class="n">（'+list.length+' 个）</span></div>';
+      list.forEach(function(t){
+        var r = res[t.code];
         var extra = "", kids = "";
-        if(res){
-          var open = !!txExpanded[t.code];
-          extra = '<span class="si-tx-sub">已拆出 '+res.length+' 个小码</span>'
-            +'<a class="link-btn" data-exp="'+SI.esc(t.code)+'">'+(open?"收起":"展开")+'</a>';
+        if(r){
+          var open = !!txExpanded[t.code] || !!kw;
+          extra = '<span class="si-tx-sub">已拆出 '+r.length+' 个小码</span>'
+            +(kw ? '' : '<a class="link-btn" data-exp="'+SI.esc(t.code)+'">'+(open?"收起":"展开")+'</a>');
           if(open){
-            kids = '<div class="si-tx-kids">'+res.map(function(k){ return '<div class="kid">'+SI.esc(k)+'</div>'; }).join("")+'</div>';
+            kids = '<div class="si-tx-grid">'+r.filter(hit).map(function(k){ return '<div class="kid">'+SI.esc(k)+'</div>'; }).join("")+'</div>';
           }
-        } else if(lv!=="small" && t._failed){
+        } else if(t._failed){
           extra = '<span class="si-tx-sub is-fail">解析失败</span>';
         }
         html += '<div class="si-tx-vrow"><span class="code">'+SI.esc(t.code)+'</span>'+extra+'</div>'+kids;
       });
       html += '</div>';
     });
-    $("#traceBody").innerHTML = html || '<div class="si-empty" style="margin-top:12px">该药品暂未录入追溯码</div>';
+    $("#traceBody").innerHTML = html || '<div class="si-empty" style="margin-top:12px">'+(kw ? '没有匹配“'+SI.esc(kw)+'”的追溯码' : '该药品暂未录入追溯码')+'</div>';
     var sm = resolvedSmallCount(it);
     $("#txStat").textContent = "共 "+(it.traces||[]).length+" 条" + (sm ? " · 已解析 "+sm+" 个小码" : "");
   }
   $("#traceBody").addEventListener("click", function(e){
+    var g = e.target.closest("[data-vexp]");
+    if(g){ txViewOpen[g.getAttribute("data-vexp")] = !txViewOpen[g.getAttribute("data-vexp")]; renderTrace(bill.items[traceIdx]); return; }
+    var m = e.target.closest("[data-vmore]");
+    if(m){ txViewMore[m.getAttribute("data-vmore")] = true; renderTrace(bill.items[traceIdx]); return; }
     var a = e.target.closest("[data-exp]");
     if(!a) return;
     var code = a.getAttribute("data-exp");
     txExpanded[code] = !txExpanded[code];
     renderTrace(bill.items[traceIdx]);
   });
+  $("#txSearch").addEventListener("input", function(){ renderTrace(bill.items[traceIdx]); });
   /* 抽屉打开时，点击其他明细行直接切换 */
   $("#itemsBody").addEventListener("click", function(e){
     if(e.target.closest("a")) return;
@@ -402,7 +439,6 @@
         return;
       }
       bill.status = result==="通过" ? "approved" : "rejected";
-      if(result==="通过") bill.uploadStatus = "wait";
       bill.records.push({ node:"审核", person:user.name, org:orgName(), time:SI.fmtNow(), result:result, opinion:opinion });
       SI.save(list);
       toast(result==="通过" ? "已通过" : "已驳回");

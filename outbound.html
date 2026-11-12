@@ -259,9 +259,7 @@
       var av = OB.availableOf(list, it.code, it.batch);
       if(!(Number(it.qty) > 0)) errs.push(n + "出库数量");
       else if(Number(it.qty) > av) errs.push(n + "出库数量超过可用库存量（" + av + "）");
-      if((it.traces||[]).length !== Number(it.qty)){
-        errs.push(n + "追溯码（已录 " + (it.traces||[]).length + " / 出库 " + it.qty + "）");
-      }
+      /* 追溯码不做数量强制校验，仅明细列展示进度 */
     });
     return errs;
   }

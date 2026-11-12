@@ -50,18 +50,17 @@
 .si-table tbody tr:nth-child(even) td { background: var(--table-even); }
 .si-table tbody tr:hover td { background: var(--table-hover); }
 .si-table .col-code { position: sticky; left: 0; z-index: 3; }
-/* 右侧三段冻结：审核状态 / 上传状态 / 操作 */
-.si-table .col-status, .si-table .col-upload, .si-table .col-acts { position: sticky; z-index: 3; }
-.si-table .col-status { right: 260px; box-shadow: -2px 0 4px rgba(0,0,0,.04); }
-.si-table .col-upload { right: 170px; }
+/* 右侧两段冻结：审核状态 / 操作 */
+.si-table .col-status, .si-table .col-acts { position: sticky; z-index: 3; }
+.si-table .col-status { right: 170px; box-shadow: -2px 0 4px rgba(0,0,0,.04); }
 .si-table .col-acts { right: 0; }
-.si-table th.col-code, .si-table th.col-status, .si-table th.col-upload, .si-table th.col-acts { background: var(--table-head); z-index: 4; }
-.si-table td.col-code, .si-table td.col-status, .si-table td.col-upload, .si-table td.col-acts { background: var(--bg-white); }
+.si-table th.col-code, .si-table th.col-status, .si-table th.col-acts { background: var(--table-head); z-index: 4; }
+.si-table td.col-code, .si-table td.col-status, .si-table td.col-acts { background: var(--bg-white); }
 .si-table tbody tr:nth-child(even) td.col-code, .si-table tbody tr:nth-child(even) td.col-status,
-.si-table tbody tr:nth-child(even) td.col-upload, .si-table tbody tr:nth-child(even) td.col-acts { background: var(--table-even); }
+.si-table tbody tr:nth-child(even) td.col-acts { background: var(--table-even); }
 .si-table tbody tr:hover td.col-code, .si-table tbody tr:hover td.col-status,
-.si-table tbody tr:hover td.col-upload, .si-table tbody tr:hover td.col-acts { background: var(--table-hover); }
-.si-table .col-status, .si-table .col-upload { width: 90px; min-width: 90px; }
+.si-table tbody tr:hover td.col-acts { background: var(--table-hover); }
+.si-table .col-status { width: 90px; min-width: 90px; }
 .si-table .col-acts { width: 170px; min-width: 170px; }
 .si-table th.col-code, .si-table td.col-code { padding-left: 16px; }
 .si-table th.col-acts, .si-table td.col-acts { padding-right: 16px; }
@@ -155,7 +154,6 @@
             <div class="si-fi"><span class="lbl">入库库位：</span><div class="ctrl"><select class="select" id="fLocation"></select></div></div>
             <div class="si-fi"><span class="lbl">入库方式：</span><div class="ctrl"><select class="select" id="fMethod"><option value="">全部</option></select></div></div>
             <div class="si-fi"><span class="lbl">审核状态：</span><div class="ctrl"><select class="select" id="fStatus"><option value="">全部</option><option value="draft">草稿</option><option value="pending">待审核</option><option value="approved">审核通过</option><option value="rejected">已驳回</option></select></div></div>
-            <div class="si-fi"><span class="lbl">上传状态：</span><div class="ctrl"><select class="select" id="fUpload"><option value="">全部</option><option value="wait">未上传</option><option value="success">上传成功</option><option value="fail">上传失败</option></select></div></div>
             <div class="si-fi"><span class="lbl">供应商：</span><div class="ctrl"><select class="select" id="fSupplier"><option value="">全部</option></select></div></div>
             <div class="si-fi"><span class="lbl">发票号：</span><div class="ctrl"><input class="input" id="fInvoice" placeholder="请输入发票号" autocomplete="off"></div></div>
           </div>
@@ -183,7 +181,6 @@
                 <th style="width:140px">验收情况</th>
                 <th style="width:80px">提交人</th>
                 <th class="col-status">审核状态</th>
-                <th class="col-upload">上传状态</th>
                 <th class="col-acts" style="width:170px">操作</th>
               </tr>
             </thead>
@@ -282,7 +279,7 @@
   function applyFilter(){
     var code = $("#fCode").value.trim(), t1 = $("#fT1").value, t2 = $("#fT2").value;
     var org = $("#fOrg").value, loc = $("#fLocation").value;
-    var m = $("#fMethod").value, st = $("#fStatus").value, up = $("#fUpload").value;
+    var m = $("#fMethod").value, st = $("#fStatus").value;
     var sup = $("#fSupplier").value, inv = $("#fInvoice").value.trim();
     ST.filtered = list.filter(function(b){
       if(code && b.code.indexOf(code)<0) return false;
@@ -293,7 +290,6 @@
       if(loc && b.location!==loc) return false;
       if(m && b.method!==m) return false;
       if(st && b.status!==st) return false;
-      if(up && b.uploadStatus!==up) return false;
       if(sup && b.supplier!==sup) return false;
       if(inv){
         var hit = (b.invoiceNo||"").indexOf(inv)>=0;
@@ -309,7 +305,7 @@
   $("#btnReset").addEventListener("click", function(){
     $("#fCode").value=""; $("#fT1").value=""; $("#fT2").value="";
     $("#fOrg").value = user.orgId; fillLocations(user.orgId); $("#fLocation").value="";
-    $("#fMethod").value=""; $("#fStatus").value=""; $("#fUpload").value="";
+    $("#fMethod").value=""; $("#fStatus").value="";
     $("#fSupplier").value=""; $("#fInvoice").value="";
     applyFilter();
   });
@@ -349,7 +345,6 @@
         +'<td title="'+SI.esc(b.accept)+'">'+SI.esc(b.accept)+'</td>'
         +'<td>'+SI.esc(b.creatorName)+'</td>'
         +'<td class="col-status">'+SI.esc(SI.STATUS[b.status])+'</td>'
-        +'<td class="col-upload">'+SI.esc(SI.UPLOAD[b.uploadStatus])+'</td>'
         +'<td class="col-acts">'+ops+'</td>'
         +'</tr>';
     }).join("");
@@ -416,13 +411,6 @@
         SI.save(list);
         ST.filtered = ST.filtered.filter(function(x){return x.id!==id;});
         renderTable(); toast("已删除");
-      });
-      return;
-    }
-    if(op==="upload"){
-      confirmDlg("上传入库单", "确认将入库单 "+b.code+" 上传至医保/监管平台？", "上传", false, function(){
-        b.uploadStatus = "success";
-        persist(); renderTable(); toast("上传成功");
       });
       return;
     }

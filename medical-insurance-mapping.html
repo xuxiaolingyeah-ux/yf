@@ -44,7 +44,7 @@
     </div>
 
     <div class="page">
-      <!-- 标题行：收费种类 + 目录类别（左），快捷对照 / 药品对照上传（右） -->
+      <!-- 标题行：收费种类 + 目录类别（左），快捷对照 / 一键上传（右） -->
       <div class="page-head">
         <div class="page-head-left">
           <label class="ph-label">收费种类</label>
@@ -62,7 +62,7 @@
         </div>
         <div class="page-acts">
           <button class="btn btn-primary" id="btnQuick">快捷对照</button>
-          
+          <button class="btn" id="btnUploadAll">一键上传</button>
         </div>
       </div>
 
@@ -1005,6 +1005,22 @@
     });
 
     $("btnQuick").addEventListener("click", openQuick);
+    $("btnUploadAll").addEventListener("click", function () {
+      /* 一键上传：上传当前收费种类下全部「已对照且未上传/失败」的对码关系，不受当前筛选与勾选影响 */
+      var target = pendingUploadKeys(BASE.map(function (r) { return r.key; }));
+      if (!target.length) { toast("暂无待上传的对码关系"); return; }
+      confirmDialog({
+        title: "一键上传",
+        text: "将把当前收费种类（" + esc(state.fee) + "）下全部已对照且未上传 / 上传失败的对码关系上传至医保平台，共 <b>" + target.length + "</b> 条（不受当前筛选与勾选影响，已上传记录不参与）。是否继续？",
+        okText: "一键上传",
+        onOk: function () {
+          var res = uploadKeys(target);
+          render();
+          if (res.fails.length) showUploadResult(res);
+          else toast("上传成功 " + res.ok + " 条");
+        }
+      });
+    });
     $("btnBatchUpload").addEventListener("click", function () {
       doUpload(pickedKeys());
     });

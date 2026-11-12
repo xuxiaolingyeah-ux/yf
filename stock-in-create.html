@@ -18,6 +18,8 @@
 .si-body { flex: 1; min-height: 0; overflow: auto; padding: 16px 20px; }
 .si-sec + .si-sec { margin-top: 20px; }
 .si-sec-title { font-size: 13px; font-weight: 500; color: var(--text-primary); padding-left: 8px; margin-bottom: 12px; border-left: 3px solid var(--primary); }
+.si-sec-title.has-acts { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.si-sec-title .sec-acts { display: flex; align-items: center; gap: 18px; font-weight: 400; }
 .si-sec-title .req { color: var(--danger); margin-right: 2px; }
 /* 表单（4 列栅格，label 在左 104px） */
 .si-form { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px 16px; max-width: 1280px; }
@@ -81,9 +83,14 @@
 .si-items tfoot td { background: var(--table-even); font-weight: 500; }
 .si-add-row { border: none; background: none; color: var(--primary-dark); font-size: 13px; cursor: pointer; padding: 4px 0; }
 .si-add-row:hover { color: var(--primary); }
+.si-add-row + .si-add-row { margin-left: 16px; }
+/* 从采购需求批量添加弹窗：汇总预览 */
+.pn-agg-title { font-size: 12px; color: var(--text-secondary); margin: 14px 0 8px; font-weight: 500; }
+.pn-agg-wrap { max-height: 200px; overflow: auto; border: 1px solid var(--border); border-radius: var(--radius-lg); }
+.pn-agg-wrap .si-pick-table td.num { font-weight: 500; color: var(--text-primary); }
 .si-items .link-btn + .link-btn { margin-left: 8px; }
 /* 表格下方合计条 */
-.si-summary { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 10px 4px 0; font-size: 13px; color: var(--text-secondary); }
+.si-summary { display: flex; align-items: center; justify-content: flex-end; gap: 16px; padding: 10px 4px 0; font-size: 13px; color: var(--text-secondary); }
 .si-summary .amts b { font-weight: 500; color: var(--text-primary); margin-left: 6px; font-variant-numeric: tabular-nums; }
 .si-summary .amts .sep { margin: 0 14px; color: var(--text-placeholder); }
 /* 底部固定操作条（按钮居中） */
@@ -223,6 +230,7 @@
               <div class="fi"><span class="lbl">提交人：</span><div class="ctrl"><input class="input is-readonly" id="fCreator" readonly></div></div>
               <div class="fi"><span class="lbl">提交时间：</span><div class="ctrl"><input class="input is-readonly" id="fTime" readonly></div></div>
               <div class="fi" style="grid-column: span 2"><span class="lbl">验收情况：</span><div class="ctrl"><input class="input" id="fAccept" placeholder="选填，如：外包装完好，数量核对无误" autocomplete="off"></div></div>
+              <div class="fi fi-full" id="fiNeeds" style="display:none"><span class="lbl">关联采购需求：</span><div class="ctrl"><input class="input is-readonly" id="fNeeds" readonly title=""></div></div>
             </div>
           </div>
 
@@ -244,7 +252,13 @@
 
           <!-- 药品明细 -->
           <div class="si-sec">
-            <div class="si-sec-title"><span class="req">*</span>药品明细</div>
+            <div class="si-sec-title has-acts">
+              <span><span class="req">*</span>药品明细</span>
+              <span class="sec-acts">
+                <button class="si-add-row" id="btnAddRow">+ 新增药品</button>
+                <button class="si-add-row" id="btnFromNeed">+ 从采购需求添加</button>
+              </span>
+            </div>
             <div class="si-items-wrap">
               <table class="si-items" id="itemsTable">
                 <thead id="itemsHead"></thead>
@@ -252,7 +266,6 @@
               </table>
             </div>
             <div class="si-summary">
-              <button class="si-add-row" id="btnAddRow">+ 新增药品明细</button>
               <div class="amts">进货价金额总计<b id="sumPurchase">0.00</b><span class="sep">｜</span>零售价金额总计<b id="sumRetail">0.00</b></div>
             </div>
           </div>
@@ -299,6 +312,56 @@
     <div class="modal-foot">
       <button class="btn" id="pkCancel">取消</button>
       <button class="btn btn-primary" id="pkOk" disabled>确定</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== 弹窗：从采购需求批量添加（多选需求，重复药品取和） ========== -->
+<div class="modal-mask si-pick" id="pnMask">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">从采购需求添加</div>
+      <button class="drawer-close" id="pnClose" title="关闭">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="si-pick-search">
+        <div class="fi"><span class="lbl">需求单号：</span><input class="input" id="pnKey" autocomplete="off"></div>
+        <div class="fi"><span class="lbl">审核状态：</span>
+          <select class="select" id="pnStatus" style="width:130px;height:30px;">
+            <option value="approved">审核通过</option>
+            <option value="audit">待审核</option>
+            <option value="">全部状态</option>
+          </select>
+        </div>
+        <button class="btn btn-sm" id="pnReset">重置</button>
+        <button class="btn btn-sm btn-primary" id="pnSearch">查询</button>
+      </div>
+      <table class="si-pick-table">
+        <thead>
+          <tr>
+            <th style="width:40px"></th>
+            <th>需求单号</th><th>提交人</th><th>提交时间</th><th>审核状态</th><th>药品笔数</th>
+          </tr>
+        </thead>
+        <tbody id="pnBody"></tbody>
+      </table>
+      <div class="si-pick-empty" id="pnEmpty" style="display:none">未找到符合条件的采购需求</div>
+      <div class="pn-agg-title">药品汇总预览<span style="font-weight:400;color:var(--text-tertiary);margin-left:8px">（重复药品自动归并，入库量取和）</span></div>
+      <div class="pn-agg-wrap">
+        <table class="si-pick-table">
+          <thead>
+            <tr><th>药品名称</th><th>药品编码</th><th>规格</th><th>生产企业</th><th>入库量（合计）</th></tr>
+          </thead>
+          <tbody id="pnAggBody"></tbody>
+        </table>
+        <div class="si-pick-empty" id="pnAggEmpty" style="display:none">请先勾选采购需求</div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" id="pnCancel">取消</button>
+      <button class="btn btn-primary" id="pnOk" disabled>批量添加</button>
     </div>
   </div>
 </div>
@@ -413,6 +476,7 @@
 <div id="toast" style="position:fixed;top:70px;left:50%;transform:translateX(-50%);padding:8px 16px;background:rgba(0,0,0,.78);color:#fff;border-radius:4px;font-size:13px;z-index:9999;display:none"></div>
 
 <script src="identity.js"></script>
+  <script src="purchase-mgmt-common.js"></script>
   <script src="stock-in-common.js"></script>
 <script>
 (function(){
@@ -435,7 +499,8 @@
     orgId: user.orgId, location: "",
     method: "", supplier: "", accept: "",
     invoiceMode: "sum", invoiceNo: "", invoiceAmt: "", invoiceDate: "",
-    items: []
+    items: [],
+    linkedNeeds: []   /* 关联的采购需求 [{id, code}]，由「从采购需求批量添加」写入 */
   };
 
   function blankItem(){ return { name:"", code:"", spec:"", packSpec:"", vendor:"", approval:"", factor:"", packUnit:"", insCode:"", insName:"", batch:"", batchSource:"", priceFrom:"", expiry:"", purchase:"", retail:"", qty:"", unq:0, reason:"", invoiceNo:"", traces:[], traceResolved:{} }; }
@@ -868,6 +933,154 @@
     toast("已添加 "+sel.length+" 条药品明细");
   });
 
+  /* ===== 从采购需求批量添加（可多选需求；重复药品入库量取和；添加前提示清空已录入明细） ===== */
+  var pnRows = [];    /* 弹窗内过滤出的采购需求列表 */
+  var pnSel = {};     /* needId -> true */
+
+  function pnStatusLabel(r){
+    if(r.status==="member" || r.status==="center") return "待审核";
+    return PC.STATUS[r.status] || "—";
+  }
+  function pnFiltered(){
+    var kw = $("#pnKey").value.trim().toLowerCase();
+    var st = $("#pnStatus").value;
+    return PC.load("need").filter(function(r){
+      if(st){
+        if(st==="audit"){ if(r.status!=="member" && r.status!=="center") return false; }
+        else if(r.status!==st) return false;
+      }
+      if(kw && String(r.code).toLowerCase().indexOf(kw)<0) return false;
+      return true;
+    }).sort(function(a,b){ return a.createdAt < b.createdAt ? 1 : -1; });
+  }
+  function renderPn(){
+    pnRows = pnFiltered();
+    $("#pnEmpty").style.display = pnRows.length ? "none" : "block";
+    $("#pnBody").innerHTML = pnRows.map(function(r, i){
+      var on = !!pnSel[r.id];
+      return '<tr data-i="'+i+'"'+(on?' style="background:rgba(22,119,255,.06);"':'')+'>'
+        +'<td><input type="checkbox" data-pn="'+i+'"'+(on?' checked':'')+'></td>'
+        +'<td>'+SI.esc(r.code)+'</td><td>'+SI.esc(r.creator)+'</td><td>'+SI.esc(r.createdAt)+'</td>'
+        +'<td>'+SI.esc(pnStatusLabel(r))+'</td><td class="num">'+((r.items||[]).length)+'</td></tr>';
+    }).join("");
+    $$('#pnBody input[type="checkbox"]').forEach(function(cb){
+      cb.addEventListener("change", function(){
+        var r = pnRows[parseInt(cb.getAttribute("data-pn"),10)];
+        if(!r) return;
+        if(cb.checked) pnSel[r.id]=true; else delete pnSel[r.id];
+        renderPn();
+      });
+    });
+    $$('#pnBody tr').forEach(function(tr){
+      tr.addEventListener("click", function(e){
+        if(e.target.type==="checkbox") return;
+        var cb = tr.querySelector('input[type="checkbox"]');
+        if(!cb) return;
+        cb.checked = !cb.checked;
+        cb.dispatchEvent(new Event("change"));
+      });
+    });
+    renderPnAgg();
+  }
+
+  /* 采购需求药品 → 入库药品库（SI.DRUGS）匹配：先按名称，多个候选时按规格首段剂量（如 0.25g）择优 */
+  function specFirstToken(s){
+    var m = String(s||"").match(/\d+(?:\.\d+)?\s*(?:mg|g|ml|μg)/i);
+    return m ? m[0].replace(/\s+/g,"").toLowerCase() : "";
+  }
+  function matchSiDrug(it){
+    var cands = SI.DRUGS.filter(function(d){ return d.name === it.drugName; });
+    if(!cands.length) return null;
+    if(cands.length===1) return cands[0];
+    var t = specFirstToken(it.spec);
+    return cands.filter(function(d){ return t && specFirstToken(d.spec)===t; })[0] || cands[0];
+  }
+
+  /* 按药品归并：同一药品（可匹配时按入库药品编码，否则按需求药品编码）入库量取和 */
+  function pnAggItems(){
+    var map = {};
+    pnRows.filter(function(r){ return pnSel[r.id]; }).forEach(function(r){
+      (r.items||[]).forEach(function(it){
+        var d = matchSiDrug(it);
+        var key = d ? d.code : ("raw:" + it.drugCode);
+        if(!map[key]) map[key] = {
+          drug: d || null,
+          name: d ? d.name : it.drugName,
+          code: d ? d.code : it.drugCode,
+          spec: d ? d.spec : it.spec,
+          vendor: d ? d.vendor : it.vendor,
+          unit: it.unit || "",
+          qty: 0
+        };
+        map[key].qty += Number(it.qty)||0;
+      });
+    });
+    return Object.keys(map).map(function(k){ return map[k]; });
+  }
+  function renderPnAgg(){
+    var agg = pnAggItems();
+    $("#pnAggEmpty").style.display = agg.length ? "none" : "block";
+    $("#pnAggBody").innerHTML = agg.map(function(a){
+      return '<tr><td>'+SI.esc(a.name)+'</td><td>'+SI.esc(a.code)+'</td><td>'+SI.esc(a.spec)+'</td>'
+        +'<td class="cell-ellipsis" title="'+SI.esc(a.vendor)+'">'+SI.esc(a.vendor)+'</td>'
+        +'<td class="num">'+a.qty+(a.unit?(" "+SI.esc(a.unit)):"")+'</td></tr>';
+    }).join("");
+    $("#pnOk").disabled = !agg.length;
+  }
+  function pnBuildItem(a){
+    if(a.drug){
+      var it = itemFromPick(a.drug);
+      it.qty = a.qty;
+      return it;
+    }
+    /* 需求药品在入库药品库中无匹配：保留需求侧基础信息，批号/价格/有效期仍由明细行手工录入 */
+    var it = blankItem();
+    it.name=a.name; it.code=a.code; it.spec=a.spec; it.vendor=a.vendor;
+    it.packUnit=a.unit; it.qty=a.qty;
+    return it;
+  }
+  function renderLinkedNeeds(){
+    var wrap = $("#fiNeeds");
+    if(!ST.linkedNeeds.length){ wrap.style.display="none"; return; }
+    wrap.style.display="";
+    var codes = ST.linkedNeeds.map(function(n){ return n.code; });
+    $("#fNeeds").value = codes.join("、");
+    $("#fNeeds").title = codes.join("、");
+  }
+  function openPn(){
+    pnSel = {};
+    $("#pnKey").value=""; $("#pnStatus").value="approved";
+    renderPn();
+    $("#pnMask").classList.add("show");
+  }
+  function closePn(){ $("#pnMask").classList.remove("show"); pnSel={}; pnRows=[]; }
+  $("#btnFromNeed").addEventListener("click", openPn);
+  $("#pnClose").addEventListener("click", closePn);
+  $("#pnCancel").addEventListener("click", closePn);
+  $("#pnSearch").addEventListener("click", renderPn);
+  $("#pnReset").addEventListener("click", function(){ $("#pnKey").value=""; $("#pnStatus").value="approved"; renderPn(); });
+  $("#pnKey").addEventListener("keydown", function(e){ if(e.key==="Enter") renderPn(); });
+  $("#pnOk").addEventListener("click", function(){
+    var agg = pnAggItems();
+    if(!agg.length) return;
+    var selNeeds = pnRows.filter(function(r){ return pnSel[r.id]; });
+    function apply(){
+      ST.items = agg.map(pnBuildItem);
+      ST.linkedNeeds = selNeeds.map(function(r){ return { id:r.id, code:r.code }; });
+      renderLinkedNeeds();
+      renderItems();
+      closePn();
+      toast("已按 "+selNeeds.length+" 个采购需求添加 "+agg.length+" 条药品明细");
+    }
+    if(ST.items.length){
+      confirmDlg("从采购需求批量添加",
+        "当前已录入 "+ST.items.length+" 条药品明细，批量添加将清空这些明细，并替换为所选采购需求的药品（重复药品入库量取和）。是否继续？",
+        "清空并添加", true, apply);
+    } else {
+      apply();
+    }
+  });
+
   /* ===== 追溯码右侧抽屉（录入 + 查看互斥，推开式） ===== */
   var traceIdx = -1, viewIdx = -1, traceDraft = [];
   var txMode = "add", txLevel = "small", txExpanded = {}, txViewOpen = {}, txViewMore = {};
@@ -1176,6 +1389,7 @@
     $$('input[name="invMode"]').forEach(function(r){ r.checked = (r.value===ST.invoiceMode); });
     $("#fInvNo").value = ST.invoiceNo; $("#fInvNo").disabled = detailMode();
     $("#fInvAmt").value = ST.invoiceAmt; $("#fInvDate").value = ST.invoiceDate;
+    ST.linkedNeeds = (editBill.linkedNeeds || []).slice();
     $("#fCreator").value = editBill.creatorName;
     $("#fTime").value = editBill.submitTime;
   } else {
@@ -1183,6 +1397,7 @@
     $("#fTime").value = SI.fmtNow();
   }
   renderItems();
+  renderLinkedNeeds();
 
   /* ===== 校验 ===== */
   var NUM_RE = /^\d+(\.\d{1,2})?$/;
@@ -1228,6 +1443,7 @@
     b.method = ST.method; b.supplier = ST.supplier; b.accept = ST.accept;
     b.invoiceMode = ST.invoiceMode; b.invoiceNo = ST.invoiceNo;
     b.invoiceAmount = ST.invoiceAmt; b.invoiceDate = ST.invoiceDate;
+    b.linkedNeeds = ST.linkedNeeds.slice();   /* 关联采购需求（从采购需求批量添加时记录） */
     b.items = ST.items;
     if(submit){
       b.status = "pending"; b.submitTime = now;

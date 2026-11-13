@@ -2883,6 +2883,7 @@ input, select { font-family: inherit; font-size: inherit; }
   content: "└"; color: var(--text-placeholder); margin-right: 6px;
 }
 .tr-code-progress { font-variant-numeric: tabular-nums; }
+.tr-code-progress.is-none { color: var(--text-placeholder); }
 .tr-code-progress.is-bad { color: var(--danger); }
 .tr-code-progress.is-ok { color: var(--success); }
 

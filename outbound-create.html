@@ -28,6 +28,7 @@
 }
 .oc-sec-title .req { color: var(--danger); margin-right: 2px; }
 .oc-sec-title .add-link { margin-left: auto; }
+.oc-sec-title .oc-trace-tip { margin-left: 10px; font-size: 12px; font-weight: 400; color: var(--text-tertiary); }
 /* 表单：4 列栅格，label 在左 104px */
 .oc-form { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px 16px; max-width: 1280px; }
 .oc-form .fi { display: flex; align-items: center; gap: 6px; min-width: 0; }
@@ -219,6 +220,7 @@
           <div class="oc-sec">
             <div class="oc-sec-title">
               <span><span class="req">*</span>药品明细</span>
+              <span class="oc-trace-tip" id="traceTip" style="display:none">院内调拨出库无需录入追溯码</span>
               <a class="link-btn add-link" id="btnPick">+ 选择药品</a>
             </div>
             <div class="oc-items-wrap">
@@ -455,7 +457,9 @@
 
   /* ===== 出库方式切换：院内调拨出库 / 调外出库 ===== */
   function isOuterMethod(){ return ST.method === "调外出库"; }
-  function applyMethodUI(){
+  /* 追溯码：仅调外出库需要采集；院内调拨出库（本院库位间调拨）无需追溯码 */
+  function traceRequired(){ return isOuterMethod(); }
+  function applyMethodUI(silent){
     var outer = isOuterMethod();
     /* 接收机构：仅调外出库展示；院内调拨整行隐藏（数据仍取当前机构） */
     $("#fiInOrg").style.display = outer ? "" : "none";
@@ -468,6 +472,24 @@
       ST.inOrgId = user.orgId;
       markInvalid($("#fInOrgSel"), false);
     }
+    applyTraceUI(silent);
+  }
+  /* 追溯码入口按出库方式联动：院内调拨出库隐藏录入/查看，进度列显示「无需录入」 */
+  function applyTraceUI(silent){
+    var need = traceRequired();
+    $("#traceTip").style.display = need ? "none" : "";
+    if(!need){
+      var cleared = 0;
+      ST.items.forEach(function(it){
+        cleared += (it.traces || []).length;
+        it.traces = [];
+        it.traceResolved = {};
+      });
+      if(traceDrawerOpen()) closeTraceDrawer(true);
+      if(viewDrawerOpen()) closeViewTrace(true);
+      if(cleared && !silent) toast("院内调拨出库无需录入追溯码，已清空已录入的 " + cleared + " 条追溯码");
+    }
+    renderItems();
   }
   $("#fMethod").addEventListener("change", function(){
     ST.method = this.value;
@@ -477,7 +499,7 @@
     ST.inOrgId = this.value;
     this.classList.remove("is-invalid");
   });
-  applyMethodUI();
+  applyMethodUI(true);
 
   $("#fLocation").addEventListener("change", function(){ ST.location = this.value; this.classList.remove("is-invalid"); });
   $("#fInLocation").addEventListener("change", function(){ ST.inLocation = this.value; this.classList.remove("is-invalid"); });
@@ -509,8 +531,14 @@
         h += '<td class="num" data-c="pamt">'+OB.num2(OB.purchaseAmt(it))+'</td>';
         h += '<td class="num" data-c="ramt">'+OB.num2(OB.retailAmt(it))+'</td>';
         h += '<td>'+OB.esc(it.expiry)+'</td>';
-        h += '<td class="w-trace"><span class="tr-code-progress" title="已录入 '+tp+' 条追溯码">'+tp+'/'+it.qty+(it.minUnit?' '+OB.esc(it.minUnit):'')+'</span></td>';
-        h += '<td class="w-acts"><a class="link-btn" data-act="trace" data-idx="'+i+'">录入追溯码</a><a class="link-btn" data-act="traceview" data-idx="'+i+'">查看追溯码</a><a class="link-btn is-danger" data-act="del" data-idx="'+i+'">删除</a></td>';
+        if(traceRequired()){
+          h += '<td class="w-trace"><span class="tr-code-progress" title="已录入 '+tp+' 条追溯码">'+tp+'/'+it.qty+(it.minUnit?' '+OB.esc(it.minUnit):'')+'</span></td>';
+          h += '<td class="w-acts"><a class="link-btn" data-act="trace" data-idx="'+i+'">录入追溯码</a><a class="link-btn" data-act="traceview" data-idx="'+i+'">查看追溯码</a><a class="link-btn is-danger" data-act="del" data-idx="'+i+'">删除</a></td>';
+        } else {
+          /* 院内调拨出库：无需录入追溯码 */
+          h += '<td class="w-trace"><span class="tr-code-progress is-none">无需录入</span></td>';
+          h += '<td class="w-acts"><a class="link-btn is-danger" data-act="del" data-idx="'+i+'">删除</a></td>';
+        }
         h += '</tr>';
         return h;
       }).join("");
@@ -526,7 +554,7 @@
     var ra = tr.querySelector('[data-c="ramt"]'); if(ra) ra.textContent = OB.num2(OB.retailAmt(it));
     var avEl = tr.querySelector('[data-c="avail"]'); if(avEl) avEl.textContent = av;
     var prog = tr.querySelector('.tr-code-progress');
-    if(prog){
+    if(prog && traceRequired()){
       var tp = (it.traces||[]).length;
       prog.textContent = tp + "/" + it.qty + (it.minUnit ? " " + it.minUnit : "");
       prog.className = "tr-code-progress";
@@ -571,8 +599,14 @@
     if(a){
       var i = parseInt(a.getAttribute("data-idx"), 10);
       var act = a.getAttribute("data-act");
-      if(act === "trace"){ switchTrace(i); return; }
-      if(act === "traceview"){ switchViewTrace(i); return; }
+      if(act === "trace"){
+        if(!traceRequired()){ toast("院内调拨出库无需录入追溯码"); return; }
+        switchTrace(i); return;
+      }
+      if(act === "traceview"){
+        if(!traceRequired()){ toast("院内调拨出库无需追溯码"); return; }
+        switchViewTrace(i); return;
+      }
       if(act === "del"){
         confirmDlg("删除药品明细", "确认删除该药品明细行？", "删除", function(){
           ST.items.splice(i, 1);
@@ -1008,7 +1042,7 @@
     ST.inLocation = editBill.inLocation || "";
     ST.remark = editBill.remark || "";
     ST.items = (editBill.items || []).map(function(it){ return Object.assign(blankItem(), it, { traces: (it.traces || []).slice(), traceResolved: it.traceResolved || {} }); });
-    applyMethodUI();
+    applyMethodUI(true);
     if (ST.method === "调外出库") $("#fInOrgSel").value = ST.inOrgId;
     $("#fLocation").value = ST.location;
     $("#fInLocation").value = ST.inLocation;
@@ -1065,14 +1099,15 @@
     b.creatorId = b.creatorId || user.id;
     b.creatorName = b.creatorName || user.name;
     b.submitTime = isSubmit ? now : "";
-    b.traceRequired = true;
+    /* 追溯码：院内调拨出库无需采集，调外出库需采集 */
+    b.traceRequired = traceRequired();
     b.items = ST.items.map(function(it){
       return {
         code: it.code, name: it.name, spec: it.spec, packSpec: it.packSpec, minFactor: it.minFactor,
         vendor: it.vendor, batch: it.batch, expiry: it.expiry,
         purchase: it.purchase, retail: it.retail, qty: Number(it.qty),
-        traces: (it.traces || []).slice(),
-        traceResolved: it.traceResolved || {}
+        traces: b.traceRequired ? (it.traces || []).slice() : [],
+        traceResolved: b.traceRequired ? (it.traceResolved || {}) : {}
       };
     });
     if(isSubmit){

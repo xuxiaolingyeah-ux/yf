@@ -255,7 +255,6 @@
         '<th style="width:80px;" class="num">调拨数量</th>' +
         '<th style="width:80px;" class="num">入库数量</th>' +
         '<th style="width:84px;" class="num">不合格数量</th>' +
-        '<th style="width:120px;">不合格原因</th>' +
         '<th style="width:120px;" class="num">进货价金额合计</th>' +
         '<th style="width:120px;" class="num">零售价金额合计</th></tr>';
       body.innerHTML = (bill.batches || []).map(function (g, idx) {
@@ -274,12 +273,11 @@
           '<td class="num">' + TR.allocated(g) + (unit ? ' <span class="qty-unit">' + esc(unit) + "</span>" : "") + "</td>" +
           '<td class="num">' + (inN || "—") + (inN && unit ? ' <span class="qty-unit">' + esc(unit) + "</span>" : "") + "</td>" +
           '<td class="num' + (badN ? " is-bad-num" : "") + '">' + badN + (badN && unit ? ' <span class="qty-unit">' + esc(unit) + "</span>" : "") + "</td>" +
-          "<td>" + esc(g.badReason || "—") + "</td>" +
           '<td class="num">' + m.purchase + "</td>" +
           '<td class="num">' + m.retail + "</td>" +
         "</tr>";
         if (open) {
-          html += '<tr class="tr-child-wrap"><td></td><td colspan="10"><table class="tr-child-table"><thead><tr>' +
+          html += '<tr class="tr-child-wrap"><td></td><td colspan="9"><table class="tr-child-table"><thead><tr>' +
             '<th style="width:120px;">批次号</th>' +
             '<th style="width:150px;">生产企业</th>' +
             '<th style="width:95px;">有效期</th>' +
@@ -287,6 +285,7 @@
             '<th style="width:90px;" class="num">零售价</th>' +
             '<th style="width:90px;" class="num">入库数量</th>' +
             '<th style="width:90px;" class="num">不合格数量</th>' +
+            '<th style="width:130px;">不合格原因</th>' +
           "</tr></thead><tbody>" +
           (rows.length ? rows.map(function (r) {
             return "<tr>" +
@@ -297,8 +296,10 @@
               '<td class="num">' + TR.money(r.retail) + "</td>" +
               '<td class="num">' + (Number(r.inQty) || 0) + "</td>" +
               '<td class="num">' + (Number(r.badQty) || 0) + "</td>" +
+              /* 不合格原因按批次子行展示：与录入页一致 */
+              "<td>" + (Number(r.badQty) > 0 ? esc(r.badReason || "—") : "—") + "</td>" +
             "</tr>";
-          }).join("") : '<tr class="tr-child-empty"><td colspan="7">暂无批次明细</td></tr>') +
+          }).join("") : '<tr class="tr-child-empty"><td colspan="8">暂无批次明细</td></tr>') +
           "</tbody></table></td></tr>";
         }
         return html;
@@ -313,7 +314,7 @@
     }
 
     if (!body.innerHTML) {
-      var emptyCols = stage === "apply" ? 5 : (stage === "out" ? 6 : 11);
+      var emptyCols = stage === "apply" ? 5 : (stage === "out" ? 6 : 10);
       body.innerHTML = '<tr><td colspan="' + emptyCols + '" class="tr-empty-cell">暂无明细</td></tr>';
     }
   }

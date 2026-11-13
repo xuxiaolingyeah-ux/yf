@@ -4315,3 +4315,95 @@ MOCK.users.push({
     ]
   }
 ]);
+/* ==========================================================================
+   处方管理 · 毒麻精药品审核（narcotic-order-audit.html）
+   narcOrders：含毒麻精药品的门诊医嘱，由毒麻精审药医生在独立页面审核
+     status      pending=待审核 / approved=审核通过 / rejected=审核拒绝
+     auditUser / auditTime       审核人 / 审核时间
+     auditOpinion                审核意见（拒绝时必填，通过时可为空）
+   ========================================================================== */
+MOCK.narcOrders = [
+  {
+    id: "no1", patientName: "赵国栋", gender: "男", age: "64岁",
+    outpatientNo: "202611050012", medicalNo: "260430000000052",
+    itemName: "盐酸哌替啶注射液", itemContent: "盐酸哌替啶注射液（2ml:100mg*10支/盒）100mg 肌肉注射 q12h",
+    qty: "2支", price: "18.50", amount: "37.00", freq: "q12h（每12小时一次）",
+    remark: "右股骨粗隆间骨折，转运途中剧痛，临时镇痛", doctor: "陈志远", dept: "骨科门诊",
+    createTime: "2026-11-10 09:12:36", status: "pending",
+    auditUser: "", auditTime: "", auditOpinion: ""
+  },
+  {
+    id: "no2", patientName: "钱秀英", gender: "女", age: "71岁",
+    outpatientNo: "202611050018", medicalNo: "260430000000053",
+    itemName: "盐酸吗啡注射液", itemContent: "盐酸吗啡注射液（1ml:10mg*10支/盒）10mg 皮下注射 prn",
+    qty: "1盒", price: "42.80", amount: "42.80", freq: "prn（必要时）",
+    remark: "肺癌骨转移晚期癌痛，已办麻卡", doctor: "王海涛", dept: "肿瘤科门诊",
+    createTime: "2026-11-10 10:05:22", status: "pending",
+    auditUser: "", auditTime: "", auditOpinion: ""
+  },
+  {
+    id: "no3", patientName: "孙建国", gender: "男", age: "45岁",
+    outpatientNo: "202611060021", medicalNo: "260430000000054",
+    itemName: "枸橼酸芬太尼注射液", itemContent: "枸橼酸芬太尼注射液（2ml:0.1mg*10支/盒）0.1mg 静脉输液 术前30分钟",
+    qty: "2支", price: "16.00", amount: "32.00", freq: "st（即刻）",
+    remark: "清创缝合术术前镇痛，手术间使用", doctor: "苏婉", dept: "急诊外科",
+    createTime: "2026-11-10 14:40:09", status: "pending",
+    auditUser: "", auditTime: "", auditOpinion: ""
+  },
+  {
+    id: "no4", patientName: "李凤英", gender: "女", age: "58岁",
+    outpatientNo: "202611060033", medicalNo: "260430000000055",
+    itemName: "地西泮注射液", itemContent: "地西泮注射液（2ml:10mg*10支/盒）10mg 静脉输液 st",
+    qty: "2支", price: "8.60", amount: "17.20", freq: "st（即刻）",
+    remark: "癫痫持续状态急诊控制", doctor: "林落落", dept: "神经内科门诊",
+    createTime: "2026-11-10 16:22:47", status: "pending",
+    auditUser: "", auditTime: "", auditOpinion: ""
+  },
+  {
+    id: "no5", patientName: "周德华", gender: "男", age: "37岁",
+    outpatientNo: "202611070009", medicalNo: "260430000000056",
+    itemName: "复方磷酸可待因口服溶液", itemContent: "复方磷酸可待因口服溶液（100ml/瓶）10ml 口服 tid",
+    qty: "2瓶", price: "23.40", amount: "46.80", freq: "tid（每日三次）",
+    remark: "干咳影响睡眠，已告知成瘾风险", doctor: "李国庆", dept: "呼吸内科门诊",
+    createTime: "2026-11-10 19:31:15", status: "pending",
+    auditUser: "", auditTime: "", auditOpinion: ""
+  },
+  {
+    id: "no6", patientName: "吴桂香", gender: "女", age: "66岁",
+    outpatientNo: "202611040027", medicalNo: "260430000000048",
+    itemName: "盐酸羟考酮缓释片", itemContent: "盐酸羟考酮缓释片（5mg*10片/盒）5mg 口服 q12h",
+    qty: "1盒", price: "96.00", amount: "96.00", freq: "q12h（每12小时一次）",
+    remark: "胰腺癌癌痛规范化滴定", doctor: "王海涛", dept: "肿瘤科门诊",
+    createTime: "2026-11-09 08:47:30", status: "approved",
+    auditUser: "林伟", auditTime: "2026-11-09 09:02:11", auditOpinion: ""
+  },
+  {
+    id: "no7", patientName: "郑永强", gender: "男", age: "52岁",
+    outpatientNo: "202611040035", medicalNo: "260430000000049",
+    itemName: "盐酸氯胺酮注射液", itemContent: "盐酸氯胺酮注射液（2ml:100mg*10支/盒）100mg 静脉输液 st",
+    qty: "3支", price: "21.00", amount: "63.00", freq: "st（即刻）",
+    remark: "烧伤换药镇痛", doctor: "苏婉", dept: "烧伤整形门诊",
+    createTime: "2026-11-09 10:15:58", status: "approved",
+    auditUser: "林伟", auditTime: "2026-11-09 10:40:26", auditOpinion: ""
+  },
+  {
+    id: "no8", patientName: "冯春梅", gender: "女", age: "29岁",
+    outpatientNo: "202611030014", medicalNo: "260430000000043",
+    itemName: "三唑仑片", itemContent: "三唑仑片（0.25mg*10片/盒）0.25mg 口服 qn",
+    qty: "2盒", price: "15.60", amount: "31.20", freq: "qn（每晚一次）",
+    remark: "失眠", doctor: "李国庆", dept: "神经内科门诊",
+    createTime: "2026-11-08 15:08:41", status: "rejected",
+    auditUser: "林伟", auditTime: "2026-11-08 15:52:09",
+    auditOpinion: "三唑仑属第一类精神药品，门诊单次开药量超规定；请调整剂量并补充诊断依据后重新开具。"
+  },
+  {
+    id: "no9", patientName: "何德海", gender: "男", age: "74岁",
+    outpatientNo: "202611030022", medicalNo: "260430000000044",
+    itemName: "盐酸布桂嗪注射液", itemContent: "盐酸布桂嗪注射液（2ml:100mg*10支/盒）100mg 肌肉注射 prn",
+    qty: "2盒", price: "13.20", amount: "26.40", freq: "prn（必要时）",
+    remark: "带状疱疹后遗神经痛", doctor: "陈志远", dept: "疼痛科门诊",
+    createTime: "2026-11-08 09:26:03", status: "rejected",
+    auditUser: "林伟", auditTime: "2026-11-08 10:05:37",
+    auditOpinion: "病历未记录疼痛评分及既往用药史，麻醉药品处方信息不完整，退回补全后重新提交。"
+  }
+];

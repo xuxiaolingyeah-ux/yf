@@ -21,7 +21,7 @@
      ["his"] 仅 HIS 对接人员可见；
      ["narcotics"] 仅毒麻精审药医生可见；
      ["narcoticAuditor"] 仅毒麻精药房审核专员可见。
-     subRole = "narcotics"（毒麻精审药医生，HIS 角色下的子角色）：仅可见「门诊处方管理 → 门诊医嘱开具」。
+     subRole = "narcotics"（毒麻精审药医生，HIS 角色下的子角色）：仅可见「门诊处方管理 → 毒麻精药品审核」，无门诊医嘱开具权限。
      hideFor = 账号例外名单：命中账号（如 zhaomin/chenjing）即使角色匹配也隐藏该项。 */
   var C3 = ["center", "member", "village"];
   var NAV = [
@@ -66,6 +66,8 @@
     { name: "门诊处方管理", icon: "rx", items: [
       { name: "中药医嘱开具", href: "prescription-tcm.html", files: ["prescription-tcm.html"], roles: ["his"] },
       { name: "门诊医嘱开具", href: "prescription-western.html", files: ["prescription-western.html"], roles: ["his"] },
+      /* 毒麻精药品审核：仅毒麻精审药医生（subRole=narcotics）可见，在下方 isNarc 过滤中放行 */
+      { name: "毒麻精药品审核", href: "narcotic-order-audit.html", files: ["narcotic-order-audit.html"], roles: ["narcotics"] },
       { name: "门诊处方发药", href: "prescription-dispensing.html", files: ["prescription-dispensing.html"], roles: ["his"] },
       { name: "毒麻精发药审核", href: "narcotic-audit.html", files: ["narcotic-audit.html"], roles: ["narcoticAuditor"] },
       { name: "门诊处方送药", href: "prescription-delivery.html", files: ["prescription-delivery.html"], roles: ["his"] },
@@ -127,7 +129,7 @@
     if (!side) return;
     var me = currentUser();
     var role = me.role || "center";
-    /* 毒麻精审药医生（his 子角色）：仅可见门诊处方管理 → 门诊医嘱开具 */
+    /* 毒麻精审药医生（his 子角色）：仅可见门诊处方管理 → 毒麻精药品审核 */
     var isNarc = me.subRole === "narcotics" || role === "narcotics";
     var g = activeGroup();
     var html = "";
@@ -144,9 +146,9 @@
           '<span class="nav-label">' + group.name + "</span></div></div>";
         return;
       }
-      /* 过滤二级子项 */
+      /* 过滤二级子项。毒麻精审药医生：仅可见毒麻精药品审核 */
       var visibleItems = (group.items || []).filter(function (item) {
-        if (isNarc && item.name !== "门诊医嘱开具") return false;
+        if (isNarc) return item.name === "毒麻精药品审核";
         return hasRole(item.roles, role) && !hiddenFor(item, me);
       });
       if (!visibleItems.length) return;

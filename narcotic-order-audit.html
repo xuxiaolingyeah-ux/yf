@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>毒麻精药品审核 · 门诊处方管理</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+/* ===== 处方管理 · 毒麻精药品审核 局部样式（独立审核页，不复用门诊医嘱开具） ===== */
+.nao-page { background: var(--bg-page); }
+.nao-page > .page-head { background: var(--bg-white); }
+
+.nao-body {
+  flex: 1; min-height: 0;
+  display: flex; flex-direction: column; gap: 12px;
+  padding: 12px;
+}
+
+/* ---------- 筛选卡片 ---------- */
+.nao-filter {
+  flex: none;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px;
+  padding: 12px 16px;
+  background: var(--bg-white);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 1px 2px rgba(0,0,0,.04);
+}
+.nao-fitem { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.nao-flbl { flex: none; font-size: 12px; color: var(--text-secondary); white-space: nowrap; }
+.nao-filter .input, .nao-filter .select { height: 30px; font-size: 12px; }
+.nao-q { width: 220px; }
+.nao-doctor { width: 120px; }
+.nao-dept { width: 140px; }
+.nao-dt { width: 172px; height: 30px; padding: 0 4px; font-size: 11px; }
+.nao-dash { flex: none; font-size: 12px; color: var(--text-tertiary); }
+.nao-status { width: 110px; }
+.nao-facts { margin-left: auto; display: flex; gap: 8px; }
+.nao-facts .btn { height: 30px; padding: 0 16px; font-size: 12px; }
+
+/* ---------- 列表卡片 ---------- */
+.nao-card {
+  flex: 1; min-height: 0;
+  display: flex; flex-direction: column;
+  background: var(--bg-white);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 1px 2px rgba(0,0,0,.04);
+  overflow: hidden;
+}
+.nao-toolbar {
+  flex: none; height: 48px;
+  display: flex; align-items: center; gap: 8px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--border);
+}
+.nao-toolbar-title {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 14px; font-weight: 500; color: var(--text-primary);
+}
+.nao-toolbar-title::before { content: ""; width: 3px; height: 14px; border-radius: 1px; background: var(--primary); }
+.nao-hint { font-size: 12px; color: var(--text-tertiary); }
+.nao-toolbar-acts { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+.nao-toolbar-acts .btn:disabled { color: var(--text-placeholder); border-color: var(--border); background: var(--bg-disabled); cursor: not-allowed; }
+
+.nao-tablewrap { flex: 1; min-height: 0; overflow: auto; }
+.nao-table {
+  width: 100%; min-width: 1780px;
+  border-collapse: separate; border-spacing: 0;
+  table-layout: fixed; font-size: 12px;
+}
+.nao-table thead th {
+  position: sticky; top: 0; z-index: 3;
+  height: 36px; padding: 0 8px;
+  background: var(--table-head);
+  font-weight: 500; color: var(--text-secondary);
+  text-align: left; white-space: nowrap;
+  border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+}
+.nao-table thead th:last-child { border-right: none; }
+.nao-table tbody td {
+  height: 38px; padding: 0 8px;
+  border-bottom: 1px solid var(--border-light);
+  border-right: 1px solid var(--border-light);
+  color: var(--text-primary);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  vertical-align: middle;
+}
+.nao-table tbody td:last-child { border-right: none; }
+.nao-table tbody tr:nth-child(even) { background: var(--table-even); }
+.nao-table tbody tr:hover { background: var(--table-hover); }
+.nao-table tbody tr.is-checked { background: var(--primary-light); }
+.nao-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+/* 固定列：左侧（勾选 + 患者姓名）、右侧（医嘱状态 + 操作）。
+   注意：单元格自带 overflow:hidden 会使 position:sticky 失效，固定列必须恢复 overflow:visible */
+.nao-table th.c-chk, .nao-table td.c-chk { position: sticky; left: 0; z-index: 2; }
+.nao-table th.c-name, .nao-table td.c-name { position: sticky; left: 38px; z-index: 2; box-shadow: inset -1px 0 0 var(--border); }
+.nao-table th.c-status, .nao-table td.c-status { position: sticky; right: 96px; z-index: 2; box-shadow: inset 1px 0 0 var(--border); }
+.nao-table th.c-act, .nao-table td.c-act { position: sticky; right: 0; z-index: 2; }
+.nao-table td.c-chk, .nao-table td.c-name,
+.nao-table td.c-status, .nao-table td.c-act { overflow: visible; text-overflow: clip; }
+.nao-table thead th.c-chk, .nao-table thead th.c-name,
+.nao-table thead th.c-status, .nao-table thead th.c-act { z-index: 5; }
+/* 固定列需要不透明背景，覆盖斑马纹 / 悬浮 / 勾选态 */
+.nao-table tbody td.c-chk, .nao-table tbody td.c-name,
+.nao-table tbody td.c-status, .nao-table tbody td.c-act { background: var(--bg-white); }
+.nao-table tbody tr:nth-child(even) td.c-chk, .nao-table tbody tr:nth-child(even) td.c-name,
+.nao-table tbody tr:nth-child(even) td.c-status, .nao-table tbody tr:nth-child(even) td.c-act { background: var(--table-even); }
+.nao-table tbody tr:hover td.c-chk, .nao-table tbody tr:hover td.c-name,
+.nao-table tbody tr:hover td.c-status, .nao-table tbody tr:hover td.c-act { background: var(--table-hover); }
+.nao-table tbody tr.is-checked td.c-chk, .nao-table tbody tr.is-checked td.c-name,
+.nao-table tbody tr.is-checked td.c-status, .nao-table tbody tr.is-checked td.c-act { background: var(--primary-light); }
+.nao-table .c-chk { width: 38px; text-align: center; padding: 0; }
+.nao-table .c-name { width: 68px; }
+.nao-table .c-gender { width: 48px; }
+.nao-table .c-age { width: 56px; }
+.nao-table .c-outp { width: 112px; }
+.nao-table .c-item { width: 156px; }
+.nao-table .c-content { width: 250px; }
+.nao-table .c-qty { width: 64px; }
+.nao-table .c-price { width: 66px; }
+.nao-table .c-amt { width: 72px; }
+.nao-table .c-freq { width: 130px; }
+.nao-table .c-remark { width: 170px; }
+.nao-table .c-doctor { width: 70px; }
+.nao-table .c-dept { width: 104px; }
+.nao-table .c-time { width: 146px; }
+.nao-table .c-status { width: 82px; }
+.nao-table .c-act { width: 96px; }
+.nao-empty { padding: 56px 0; text-align: center; color: var(--text-placeholder); font-size: 12px; }
+.nao-table input[type="checkbox"] { width: 13px; height: 13px; margin: 0; accent-color: var(--primary); vertical-align: middle; cursor: pointer; }
+
+/* 状态标识 */
+.nao-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 5px; vertical-align: 1px; }
+.nao-dot.is-warn { background: var(--warning); }
+.nao-dot.is-ok { background: var(--success); }
+.nao-dot.is-danger { background: var(--danger); }
+.nao-status-txt.is-warn { color: #D48806; }
+.nao-status-txt.is-ok { color: var(--success); }
+.nao-status-txt.is-danger { color: var(--danger); }
+
+/* 行内操作链接 */
+.nao-act a { color: var(--primary); font-size: 12px; cursor: pointer; margin-right: 10px; }
+.nao-act a:last-child { margin-right: 0; }
+.nao-act a:hover { text-decoration: underline; }
+
+/* 分页脚 */
+.nao-pager {
+  flex: none; height: 42px;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 16px;
+  border-top: 1px solid var(--border);
+  font-size: 12px; color: var(--text-secondary);
+}
+.nao-pager .pager-ctrl { display: flex; align-items: center; gap: 4px; }
+
+/* ---------- 审核弹窗 ---------- */
+.nao-mask {
+  display: none; position: fixed; inset: 0; z-index: 400;
+  background: rgba(0, 0, 0, .35);
+  align-items: center; justify-content: center;
+}
+.nao-mask.show { display: flex; }
+.nao-dlg {
+  width: 480px; background: #fff;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-2);
+  overflow: hidden;
+}
+.nao-dlg-title { padding: 18px 20px 8px; font-size: 15px; font-weight: 500; color: var(--text-primary); }
+.nao-dlg-body { padding: 0 20px 20px; font-size: 13px; color: var(--text-secondary); }
+.nao-dlg-foot { padding: 12px 20px; display: flex; justify-content: flex-end; gap: 8px; border-top: 1px solid var(--border); }
+
+.nao-aud-range { font-size: 12px; color: var(--text-tertiary); margin-bottom: 12px; }
+.nao-aud-radios { display: flex; align-items: center; gap: 28px; margin-bottom: 12px; font-size: 13px; color: var(--text-primary); }
+.nao-aud-radios label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.nao-aud-radios input { width: 14px; height: 14px; margin: 0; accent-color: var(--primary); cursor: pointer; }
+.nao-aud-op {
+  width: 100%; box-sizing: border-box; height: 82px; resize: vertical;
+  padding: 8px 10px; font-size: 13px; line-height: 1.5;
+  border: 1px solid var(--border-input); border-radius: var(--radius);
+  color: var(--text-primary); outline: none; font-family: inherit;
+}
+.nao-aud-op:focus { border-color: var(--primary); }
+.nao-aud-op.is-invalid { border-color: var(--danger); background: #FFF1F0; }
+.nao-aud-tip { margin-top: 6px; font-size: 11px; color: var(--text-placeholder); }
+
+/* ---------- 审核详情弹窗 ---------- */
+.nao-det-rows { display: flex; flex-direction: column; gap: 7px; font-size: 13px; color: var(--text-primary); }
+.nao-det-rows .dr { display: flex; gap: 6px; }
+.nao-det-rows .dr .k { flex: none; color: var(--text-tertiary); }
+.nao-det-rows .dr .v { flex: 1; min-width: 0; word-break: break-all; }
+.nao-det-status-pass { color: var(--success); font-weight: 500; }
+.nao-det-status-reject { color: var(--danger); font-weight: 500; }
+.nao-det-sub {
+  margin: 10px 0 6px; padding-top: 10px;
+  border-top: 1px dashed var(--border);
+  font-size: 12px; color: var(--text-tertiary);
+}
+</style>
+</head>
+<body>
+
+<!-- ========== 顶部导航 ========== -->
+<header class="app-header">
+  <div class="header-left">
+    <div class="header-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z"></path></svg>
+    </div>
+    <div class="header-title">区域药房协同管理系统</div>
+  </div>
+  <div class="header-right">
+    <div class="header-user">
+      <div class="header-avatar">林</div>
+      <div class="header-user-name">林伟 · 区域中心药房</div>
+    </div>
+  </div>
+</header>
+
+<div class="app-body">
+
+  <!-- 左侧导航 -->
+  <aside class="app-side" id="appSide"></aside>
+
+  <!-- 主区 -->
+  <main class="app-main nao-page">
+    <div class="tabbar">
+      <div class="tab" onclick="location.href='home.html'">首页</div>
+      <div class="tab active">
+        毒麻精药品审核
+        <button class="tab-close" title="关闭" onclick="location.href='home.html'">
+          <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 5l14 14M19 5L5 19"></path></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="nao-body">
+
+      <!-- ========== 筛选区 ========== -->
+      <div class="nao-filter">
+        <div class="nao-fitem">
+          <span class="nao-flbl">患者检索：</span>
+          <input class="input nao-q" id="fPatient" placeholder="姓名 / 门诊号 / 医疗号">
+        </div>
+        <div class="nao-fitem">
+          <span class="nao-flbl">医嘱开立人：</span>
+          <input class="input nao-doctor" id="fDoctor" placeholder="请输入开立人">
+        </div>
+        <div class="nao-fitem">
+          <span class="nao-flbl">开立科室：</span>
+          <select class="select nao-dept" id="fDept">
+            <option value="">全部科室</option>
+          </select>
+        </div>
+        <div class="nao-fitem">
+          <span class="nao-flbl">开立日期时间：</span>
+          <input class="nao-dt" id="fStart" type="datetime-local">
+          <span class="nao-dash">-</span>
+          <input class="nao-dt" id="fEnd" type="datetime-local">
+        </div>
+        <div class="nao-fitem">
+          <span class="nao-flbl">医嘱状态：</span>
+          <select class="select nao-status" id="fStatus">
+            <option value="all">全部状态</option>
+            <option value="pending" selected>待审核</option>
+            <option value="approved">审核通过</option>
+            <option value="rejected">审核拒绝</option>
+          </select>
+        </div>
+        <div class="nao-facts">
+          <button class="btn" id="btnReset">重置</button>
+          <button class="btn btn-primary" id="btnQuery">查询</button>
+        </div>
+      </div>
+
+      <!-- ========== 列表卡片 ========== -->
+      <div class="nao-card">
+        <div class="nao-toolbar">
+          <span class="nao-toolbar-title">毒麻精医嘱列表</span>
+          <span class="nao-hint">仅展示含毒麻精药品的医嘱，审核通过后方可进入发送 / 发药流程</span>
+          <div class="nao-toolbar-acts">
+            <button class="btn btn-primary" id="btnBatchAudit" disabled>批量审核</button>
+          </div>
+        </div>
+
+        <div class="nao-tablewrap">
+          <table class="nao-table">
+            <thead>
+              <tr>
+                <th class="c-chk"><input type="checkbox" id="chkAll" title="全选待审核"></th>
+                <th class="c-name">患者姓名</th>
+                <th class="c-gender">性别</th>
+                <th class="c-age">年龄</th>
+                <th class="c-outp">门诊号</th>
+                <th class="c-item">医嘱项目名称</th>
+                <th class="c-content">医嘱项目内容</th>
+                <th class="c-qty num">数量</th>
+                <th class="c-price num">单价(元)</th>
+                <th class="c-amt num">金额(元)</th>
+                <th class="c-freq">执行频率</th>
+                <th class="c-remark">备注信息</th>
+                <th class="c-doctor">开立人</th>
+                <th class="c-dept">开立科室</th>
+                <th class="c-time">开立日期时间</th>
+                <th class="c-status">医嘱状态</th>
+                <th class="c-act">操作</th>
+              </tr>
+            </thead>
+            <tbody id="naoBody"></tbody>
+          </table>
+        </div>
+
+        <div class="nao-pager">
+          <span id="naoTotal">共 0 条</span>
+          <div class="pager-ctrl">
+            <select class="select" style="height:26px;width:90px;font-size:12px;">
+              <option>100 条/页</option>
+            </select>
+            <button class="pager-btn" disabled>
+              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"></path></svg>
+            </button>
+            <button class="pager-num">1</button>
+            <button class="pager-btn" disabled>
+              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /.nao-body -->
+  </main>
+</div>
+
+<!-- 审核弹窗（支持单条 / 批量；拒绝时原因必填） -->
+<div class="nao-mask" id="auditMask">
+  <div class="nao-dlg">
+    <div class="nao-dlg-title">毒麻精医嘱审核</div>
+    <div class="nao-dlg-body">
+      <div class="nao-aud-radios">
+        <label><input type="radio" name="audResult" value="pass" checked> 通过</label>
+        <label><input type="radio" name="audResult" value="reject"> 拒绝</label>
+      </div>
+      <textarea class="nao-aud-op" id="audOpinion" placeholder="请输入审核原因（拒绝时必填）"></textarea>
+      <div class="nao-aud-tip">通过后医嘱回到「未发送」，由开立医生发送后进入发药流程；拒绝后医嘱状态变为「审核拒绝」。</div>
+    </div>
+    <div class="nao-dlg-foot">
+      <button class="btn" id="audCancel">取消</button>
+      <button class="btn btn-primary" id="audSubmit">提交</button>
+    </div>
+  </div>
+</div>
+
+<!-- 审核详情弹窗 -->
+<div class="nao-mask" id="detailMask">
+  <div class="nao-dlg">
+    <div class="nao-dlg-title">审核详情</div>
+    <div class="nao-dlg-body">
+      <div class="nao-aud-range" id="detRange">医嘱：—</div>
+      <div class="nao-det-rows" id="detRows"></div>
+    </div>
+    <div class="nao-dlg-foot">
+      <button class="btn btn-primary" id="detClose">关闭</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="naoToast"></div>
+
+<script src="mock.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  function $(id){ return document.getElementById(id); }
+  function raw(v){
+    return String(v === null || v === undefined ? "" : v).replace(/[&<>"']/g, function(c){
+      return { "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c];
+    });
+  }
+  function esc(v){
+    if (v === null || v === undefined || v === "") return "—";
+    return raw(v);
+  }
+  function money(n){ return (Math.round((Number(n) || 0) * 100) / 100).toFixed(2); }
+
+  var KEY = "NARC_ORDER_AUDIT_DATA_V1";
+  function loadData(){
+    try {
+      var raw = sessionStorage.getItem(KEY);
+      if (raw){
+        var data = JSON.parse(raw);
+        if (Array.isArray(data) && data.length) return data;
+      }
+    } catch(e){}
+    return JSON.parse(JSON.stringify(MOCK.narcOrders));
+  }
+  function persist(){
+    try { sessionStorage.setItem(KEY, JSON.stringify(ST.data)); } catch(e){}
+  }
+
+  var DEPTS = ["骨科门诊", "肿瘤科门诊", "急诊外科", "神经内科门诊", "呼吸内科门诊", "烧伤整形门诊", "疼痛科门诊"];
+
+  var ST = {
+    data: loadData(),
+    checked: {},
+    q: "", doctor: "", dept: "", start: "", end: "", status: "pending"
+  };
+
+  var STATUS = {
+    pending:  { t: "待审核",   dot: "is-warn",   cls: "is-warn" },
+    approved: { t: "审核通过", dot: "is-ok",     cls: "is-ok" },
+    rejected: { t: "审核拒绝", dot: "is-danger", cls: "is-danger" }
+  };
+
+  function visibleList(){
+    var q = ST.q.trim().toLowerCase();
+    var doctor = ST.doctor.trim().toLowerCase();
+    return ST.data.filter(function(r){
+      if (ST.status !== "all" && r.status !== ST.status) return false;
+      if (ST.dept && r.dept !== ST.dept) return false;
+      if (doctor && String(r.doctor || "").toLowerCase().indexOf(doctor) < 0) return false;
+      if (q){
+        var hay = (r.patientName + " " + r.outpatientNo + " " + r.medicalNo).toLowerCase();
+        if (hay.indexOf(q) < 0) return false;
+      }
+      if (ST.start && r.createTime < normTime(ST.start, false)) return false;
+      if (ST.end && r.createTime > normTime(ST.end, true)) return false;
+      return true;
+    });
+  }
+  /* datetime-local 值（YYYY-MM-DDTHH:mm）转换为可比较的时间字符串 */
+  function normTime(v, endOfDay){
+    var s = String(v || "").replace("T", " ");
+    if (s.length === 16) s += endOfDay ? ":59" : ":00";
+    return s;
+  }
+  function auditableChecked(){
+    return visibleList().filter(function(r){ return ST.checked[r.id] && r.status === "pending"; });
+  }
+
+  /* ---------------- 表格渲染 ---------------- */
+  function renderTable(){
+    var list = visibleList();
+    var body = $("naoBody");
+
+    if (!list.length){
+      body.innerHTML = '<tr><td colspan="17" class="nao-empty">暂无符合条件的毒麻精医嘱</td></tr>';
+    } else {
+      body.innerHTML = list.map(function(r){
+        var st = STATUS[r.status] || STATUS.pending;
+        var pending = r.status === "pending";
+        var checked = !!ST.checked[r.id];
+        var act = pending
+          ? '<a data-act="audit" data-id="' + r.id + '">审核</a>'
+          : '<a data-act="detail" data-id="' + r.id + '">审核详情</a>';
+        return '<tr data-id="' + r.id + '"' + (checked ? ' class="is-checked"' : '') + '>'
+          + '<td class="c-chk">' + (pending
+              ? '<input type="checkbox" data-chk="' + r.id + '"' + (checked ? " checked" : "") + '>'
+              : "") + '</td>'
+          + '<td class="c-name" title="' + esc(r.patientName) + '">' + esc(r.patientName) + '</td>'
+          + '<td class="c-gender">' + esc(r.gender) + '</td>'
+          + '<td class="c-age">' + esc(r.age) + '</td>'
+          + '<td class="c-outp" title="' + esc(r.outpatientNo) + '">' + esc(r.outpatientNo) + '</td>'
+          + '<td class="c-item" title="' + esc(r.itemName) + '">' + esc(r.itemName) + '</td>'
+          + '<td class="c-content" title="' + esc(r.itemContent) + '">' + esc(r.itemContent) + '</td>'
+          + '<td class="c-qty num">' + esc(r.qty) + '</td>'
+          + '<td class="c-price num">' + money(r.price) + '</td>'
+          + '<td class="c-amt num">' + money(r.amount) + '</td>'
+          + '<td class="c-freq" title="' + esc(r.freq) + '">' + esc(r.freq) + '</td>'
+          + '<td class="c-remark" title="' + esc(r.remark) + '">' + esc(r.remark) + '</td>'
+          + '<td class="c-doctor">' + esc(r.doctor) + '</td>'
+          + '<td class="c-dept">' + esc(r.dept) + '</td>'
+          + '<td class="c-time">' + esc(r.createTime) + '</td>'
+          + '<td class="c-status"><span class="nao-dot ' + st.dot + '"></span><span class="nao-status-txt ' + st.cls + '">' + st.t + '</span></td>'
+          + '<td class="c-act nao-act">' + act + '</td>'
+          + '</tr>';
+      }).join("");
+    }
+
+    /* 全选框：仅针对待审核行 */
+    var pendingIds = list.filter(function(r){ return r.status === "pending"; }).map(function(r){ return r.id; });
+    var n = 0;
+    pendingIds.forEach(function(id){ if (ST.checked[id]) n++; });
+    var chkAll = $("chkAll");
+    chkAll.checked = pendingIds.length > 0 && n === pendingIds.length;
+    chkAll.indeterminate = n > 0 && n < pendingIds.length;
+
+    $("btnBatchAudit").disabled = n === 0;
+    $("btnBatchAudit").textContent = n > 0 ? "批量审核(" + n + ")" : "批量审核";
+    $("naoTotal").textContent = "共 " + list.length + " 条";
+  }
+
+  function renderAll(){ renderTable(); }
+
+  /* ---------------- 审核（单条 / 批量） ---------------- */
+  var AUDIT = { ids: [] };
+
+  function openAudit(ids){
+    AUDIT.ids = ids.slice();
+    document.querySelector('input[name="audResult"][value="pass"]').checked = true;
+    var op = $("audOpinion");
+    op.value = "";
+    op.classList.remove("is-invalid");
+    $("auditMask").classList.add("show");
+    setTimeout(function(){ op.focus(); }, 50);
+  }
+  function closeAudit(){
+    $("auditMask").classList.remove("show");
+    $("audOpinion").classList.remove("is-invalid");
+  }
+  function submitAudit(){
+    var result = (document.querySelector('input[name="audResult"]:checked') || {}).value || "pass";
+    var opinion = $("audOpinion").value.trim();
+    if (result === "reject" && !opinion){
+      $("audOpinion").classList.add("is-invalid");
+      toast("审核不通过时必须录入原因");
+      return;
+    }
+    var auditUser = "林伟";
+    var auditTime = nowStr();
+    ST.data.forEach(function(r){
+      if (AUDIT.ids.indexOf(r.id) >= 0){
+        r.status = result === "pass" ? "approved" : "rejected";
+        r.auditUser = auditUser;
+        r.auditTime = auditTime;
+        r.auditOpinion = opinion;
+      }
+    });
+    var n = AUDIT.ids.length;
+    ST.checked = {};
+    persist();
+    closeAudit();
+    renderAll();
+    toast(result === "pass"
+      ? "已通过 " + n + " 条医嘱，开立医生发送后进入发药流程"
+      : "已拒绝 " + n + " 条医嘱");
+  }
+
+  /* ---------------- 审核详情 ---------------- */
+  function openDetail(id){
+    var r = null;
+    ST.data.forEach(function(x){ if (x.id === id) r = x; });
+    if (!r) return;
+    if (r.status === "pending"){ toast("该医嘱尚未审核"); return; }
+    var pass = r.status === "approved";
+    $("detRange").textContent = "医嘱：" + r.itemName + "（" + r.patientName + " · " + r.outpatientNo + "）";
+    $("detRows").innerHTML =
+      '<div class="dr"><span class="k">审核结果：</span><span class="v '
+        + (pass ? "nao-det-status-pass" : "nao-det-status-reject") + '">'
+        + (pass ? "审核通过" : "审核拒绝") + '</span></div>'
+      + '<div class="dr"><span class="k">审核人：</span><span class="v">' + esc(r.auditUser) + '</span></div>'
+      + '<div class="dr"><span class="k">审核时间：</span><span class="v">' + esc(r.auditTime) + '</span></div>'
+      + '<div class="dr"><span class="k">审核原因 / 意见：</span><span class="v">' + esc(r.auditOpinion) + '</span></div>'
+      + '<div class="nao-det-sub">医嘱信息</div>'
+      + '<div class="dr"><span class="k">医嘱项目：</span><span class="v">' + esc(r.itemName) + '</span></div>'
+      + '<div class="dr"><span class="k">医嘱内容：</span><span class="v">' + esc(r.itemContent) + '</span></div>'
+      + '<div class="dr"><span class="k">数量 / 金额：</span><span class="v">' + esc(r.qty) + " / " + money(r.amount) + ' 元</span></div>'
+      + '<div class="dr"><span class="k">开立人 / 科室：</span><span class="v">' + esc(r.doctor) + " / " + esc(r.dept) + '</span></div>'
+      + '<div class="dr"><span class="k">开立时间：</span><span class="v">' + esc(r.createTime) + '</span></div>'
+      + '<div class="dr"><span class="k">备注信息：</span><span class="v">' + esc(r.remark) + '</span></div>';
+    $("detailMask").classList.add("show");
+  }
+
+  /* ---------------- 查询 / 重置 ---------------- */
+  function readFilters(){
+    ST.q = $("fPatient").value;
+    ST.doctor = $("fDoctor").value;
+    ST.dept = $("fDept").value;
+    ST.start = $("fStart").value;
+    ST.end = $("fEnd").value;
+    ST.status = $("fStatus").value;
+  }
+  function doQuery(){
+    readFilters();
+    ST.checked = {};
+    renderAll();
+  }
+  function doReset(){
+    $("fPatient").value = "";
+    $("fDoctor").value = "";
+    $("fDept").value = "";
+    $("fStart").value = "";
+    $("fEnd").value = "";
+    $("fStatus").value = "pending";
+    ST.q = ""; ST.doctor = ""; ST.dept = ""; ST.start = ""; ST.end = ""; ST.status = "pending";
+    ST.checked = {};
+    renderAll();
+  }
+
+  function nowStr(){
+    var d = new Date();
+    function pad(n){ return n < 10 ? "0" + n : "" + n; }
+    return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) + " "
+      + pad(d.getHours()) + ":" + pad(d.getMinutes()) + ":" + pad(d.getSeconds());
+  }
+
+  var toastTimer = null;
+  function toast(msg){
+    var el = $("naoToast");
+    el.textContent = msg;
+    el.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ el.classList.remove("show"); }, 2200);
+  }
+
+  /* ---------------- 事件绑定 ---------------- */
+  function bind(){
+    $("btnQuery").onclick = doQuery;
+    $("btnReset").onclick = doReset;
+    $("fPatient").addEventListener("keydown", function(e){ if (e.key === "Enter") doQuery(); });
+    $("fDoctor").addEventListener("keydown", function(e){ if (e.key === "Enter") doQuery(); });
+
+    $("naoBody").addEventListener("click", function(e){
+      var ck = e.target.closest("input[data-chk]");
+      if (ck){
+        ST.checked[ck.getAttribute("data-chk")] = ck.checked;
+        renderTable();
+        return;
+      }
+      var a = e.target.closest("a[data-act]");
+      if (a){
+        var id = a.getAttribute("data-id");
+        var act = a.getAttribute("data-act");
+        if (act === "audit") openAudit([id]);
+        else if (act === "detail") openDetail(id);
+        return;
+      }
+    });
+
+    $("chkAll").onchange = function(){
+      var val = this.checked;
+      visibleList().forEach(function(r){ if (r.status === "pending") ST.checked[r.id] = val; });
+      renderTable();
+    };
+
+    $("btnBatchAudit").onclick = function(){
+      var ids = auditableChecked().map(function(r){ return r.id; });
+      if (!ids.length){ toast("请先勾选待审核的医嘱"); return; }
+      openAudit(ids);
+    };
+
+    // 审核弹窗
+    $("audCancel").onclick = closeAudit;
+    $("audSubmit").onclick = submitAudit;
+    $("audOpinion").addEventListener("input", function(){ this.classList.remove("is-invalid"); });
+    $("auditMask").addEventListener("click", function(e){ if (e.target === this) closeAudit(); });
+
+    // 审核详情弹窗
+    $("detClose").onclick = function(){ $("detailMask").classList.remove("show"); };
+    $("detailMask").addEventListener("click", function(e){ if (e.target === this) $("detailMask").classList.remove("show"); });
+
+    document.addEventListener("keydown", function(e){
+      if (e.altKey && !e.ctrlKey && !e.metaKey && (e.key || "").toLowerCase() === "s"){
+        e.preventDefault();
+        if ($("auditMask").classList.contains("show")) submitAudit();
+        else if ($("btnBatchAudit").disabled === false) $("btnBatchAudit").click();
+      }
+      if (e.key === "Escape"){
+        if ($("auditMask").classList.contains("show")) closeAudit();
+        else if ($("detailMask").classList.contains("show")) $("detailMask").classList.remove("show");
+      }
+    });
+  }
+
+  /* ---------------- 初始化 ---------------- */
+  DEPTS.forEach(function(d){
+    var opt = document.createElement("option");
+    opt.value = d; opt.textContent = d;
+    $("fDept").appendChild(opt);
+  });
+  bind();
+  renderAll();
+})();
+</script>
+
+  <script src="nav.js"></script>
+</body></html>

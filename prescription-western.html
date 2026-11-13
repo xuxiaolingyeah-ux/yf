@@ -372,10 +372,6 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-5.1-7-11a7 7 0 0 1 14 0c0 5.9-7 11-7 11z"></path><circle cx="12" cy="10" r="2.6"></path></svg>
           外送地址
         </button>
-        <button class="rx-tool" id="btnAudit" disabled="">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"></path></svg>
-          审核
-        </button>
       </div>
 
       <!-- ========== 门诊明细 ========== -->
@@ -609,7 +605,7 @@
     rejected: { t: "已拒绝", dot: "is-danger", cls: "is-danger" }
   };
 
-  /* 毒麻精审药医生（his 子角色 narcotics）：待审核的毒麻精医嘱在此页面审核 */
+  /* 毒麻精审药医生（his 子角色 narcotics）：无本页面权限，访问时跳转至「毒麻精药品审核」独立页面 */
   function myUser(){
     try {
       return JSON.parse(sessionStorage.getItem("SEL_USER") || "null") || {};
@@ -697,7 +693,6 @@
       $("chkAll").checked = false;
       $("chkAll").indeterminate = false;
       $("btnDel").disabled = true;
-      $("btnAudit").disabled = true;
       $("btnDeliver").disabled = true;
       return;
     }
@@ -711,9 +706,8 @@
       var narcBadge = r.needAudit ? '<span class="rx-mark is-narc" title="含毒麻精药品，须毒麻精审药医生审核">毒麻精</span>' : "";
       var acts = "";
       if (IS_NARC_AUDITOR){
-        // 毒麻精审药医生：仅对待审核的毒麻精医嘱提供审核入口
-        if (r.status === "pending" && r.needAudit) acts += '<a data-act="audit" data-id="' + r.id + '">审核</a>';
-        if (!acts) acts = '<span style="color:var(--text-placeholder)">—</span>';
+        // 毒麻精审药医生：只读查看，审核入口已移至「毒麻精药品审核」页面
+        acts = '<span style="color:var(--text-placeholder)">—</span>';
       } else {
         acts += '<a data-act="edit" data-id="' + r.id + '" class="' + (canEdit ? "" : "is-disabled") + '">编辑</a>'
           + '<a data-act="copy" data-id="' + r.id + '" class="' + (isTcm ? "is-disabled" : "") + '">复用</a>'
@@ -757,8 +751,6 @@
     $("chkAll").checked = ids.length > 0 && n === ids.length;
     $("chkAll").indeterminate = n > 0 && n < ids.length;
     $("btnDel").disabled = n === 0;
-    /* 批量审核按钮：勾选中存在可审核的毒麻精医嘱时可用 */
-    $("btnAudit").disabled = auditableChecked().length === 0;
     /* 外送地址按钮：勾选中存在可配置外送的医嘱（未发送/待审核）时可用 */
     $("btnDeliver").disabled = deliverableChecked().length === 0;
   }
@@ -995,58 +987,7 @@
     });
   }
 
-  /* 毒麻精医嘱审核：通过 → 医生可点击「发送」；拒绝 → 状态改为已拒绝 */
-  function auditOrder(id){
-    var row = null;
-    ST.rows.forEach(function(r){ if (r.id === id) row = r; });
-    if (!row) return;
-    auditDialog(
-      "毒麻精医嘱审核",
-      "医嘱「" + row.drugName + "（" + row.spec + "）」含毒麻精药品，请审核是否允许开具。"
-        + "审核通过后医生方可点击「发送」；拒绝后该医嘱状态变为已拒绝。",
-      function(){ // 通过
-        row.status = "unsent";
-        row.audited = true;
-        persist(); renderTable(); renderSum();
-        toast("审核通过，医嘱已回到未发送，可点击「发送」");
-      },
-      function(){ // 拒绝
-        row.status = "rejected";
-        persist(); renderTable(); renderSum();
-        toast("已拒绝该医嘱");
-      }
-    );
-  }
-  /* 批量审核：对勾选的待审核毒麻精医嘱统一通过 / 拒绝 */
-  function auditableChecked(){
-    return ST.rows.filter(function(r){ return ST.checked[r.id] && r.status === "pending" && r.needAudit; });
-  }
-  function auditChecked(){
-    var list = auditableChecked();
-    if (!list.length){
-      toast("请先勾选待审核的毒麻精医嘱");
-      return;
-    }
-    var names = list.slice(0, 3).map(function(r){ return r.drugName; }).join("、");
-    auditDialog(
-      "毒麻精医嘱批量审核",
-      "已选中 " + list.length + " 条待审核的毒麻精医嘱"
-        + (list.length > 3 ? "（" + names + " 等）" : "（" + names + "）")
-        + "，请选择批量通过或批量拒绝。通过后医生方可点击「发送」；拒绝后医嘱状态变为已拒绝。",
-      function(){ // 批量通过
-        list.forEach(function(r){ r.status = "unsent"; r.audited = true; });
-        ST.checked = {};
-        persist(); renderTable(); renderSum();
-        toast("已批量审核通过 " + list.length + " 条医嘱，均已回到未发送");
-      },
-      function(){ // 批量拒绝
-        list.forEach(function(r){ r.status = "rejected"; });
-        ST.checked = {};
-        persist(); renderTable(); renderSum();
-        toast("已批量拒绝 " + list.length + " 条医嘱");
-      }
-    );
-  }
+  /* 毒麻精医嘱审核已移至「毒麻精药品审核」独立页面（narcotic-order-audit.html），本页面不再提供审核入口 */
   /* 批量配置外送地址：对勾选的未发送/待审核医嘱统一设置收件信息 */
   function deliverableChecked(){
     return ST.rows.filter(function(r){
@@ -1224,16 +1165,7 @@
     dlgReject = null;
     $("rxMask").classList.add("show");
   }
-  /* 审核弹窗：确定=通过，拒绝按钮=拒绝 */
-  function auditDialog(title, body, onApprove, onReject){
-    $("rxDlgTitle").textContent = title;
-    $("rxDlgBody").textContent = body;
-    $("rxDlgOk").textContent = "通过";
-    $("rxDlgReject").style.display = "";
-    dlgOk = onApprove;
-    dlgReject = onReject;
-    $("rxMask").classList.add("show");
-  }
+  /* 审核弹窗（auditDialog）已随毒麻精审核入口一并移除，本页面仅保留确认弹窗 */
   function closeDialog(){
     $("rxMask").classList.remove("show");
     $("rxDlgReject").style.display = "none";
@@ -1260,7 +1192,6 @@
     };
     $("btnSend").onclick = sendOrders;
     $("btnDel").onclick = deleteChecked;
-    $("btnAudit").onclick = auditChecked;
     $("btnDeliver").onclick = openDeliver;
     $("btnAdd").onclick = addOrder;
 
@@ -1316,7 +1247,6 @@
         var act = a.getAttribute("data-act");
         if (act === "edit") startEdit(id);
         else if (act === "copy") copyOrder(id);
-        else if (act === "audit") auditOrder(id);
         else voidOrder(id);
         return;
       }
@@ -1383,7 +1313,7 @@
     $("rxPharmacy").addEventListener("change", function(){ ST.draft.pharmacy = this.value; });
     $("rxNote").addEventListener("input", function(){ ST.draft.note = this.value; });
 
-    // 快捷键 Alt+A / Alt+S / Alt+D（毒麻精审药医生为只读审核视角，不响应录入/发送快捷键）
+    // 快捷键 Alt+A / Alt+S / Alt+D（毒麻精审药医生为只读查看视角，不响应录入/发送快捷键）
     document.addEventListener("keydown", function(e){
       if (IS_NARC_AUDITOR) return;
       if (e.altKey && !e.ctrlKey && !e.metaKey){
@@ -1417,15 +1347,9 @@
 
   /* ---------------- 初始化 ---------------- */
   if (IS_NARC_AUDITOR){
-    // 毒麻精审药医生：只保留查看与审核（含批量审核），隐藏录入/发送/删除/外送工具栏及医嘱录入区
-    $("btnNew").style.display = "none";
-    $("btnSend").style.display = "none";
-    $("btnDel").style.display = "none";
-    $("btnDeliver").style.display = "none";
-    $("rxEd").classList.add("is-hidden");
-  } else {
-    // 其他角色：批量审核按钮不展示
-    $("btnAudit").style.display = "none";
+    // 毒麻精审药医生：无门诊医嘱开具权限，直接跳转「毒麻精药品审核」独立页面
+    location.replace("narcotic-order-audit.html");
+    return;
   }
   fillSelects();
   bind();

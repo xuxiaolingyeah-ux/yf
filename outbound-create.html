@@ -201,11 +201,11 @@
           <div class="oc-sec">
             <div class="oc-sec-title">出库信息</div>
             <div class="oc-form">
-              <div class="fi"><span class="lbl">出库方式：</span><div class="ctrl"><input class="input is-readonly" id="fMethod" value="院内调拨出库" readonly></div></div>
+              <div class="fi"><span class="lbl"><span class="req">*</span>出库方式：</span><div class="ctrl"><select class="select" id="fMethod"><option>院内调拨出库</option><option>调外出库</option></select></div></div>
               <div class="fi"><span class="lbl">出库机构：</span><div class="ctrl"><input class="input is-readonly" id="fOrg" readonly></div></div>
               <div class="fi"><span class="lbl"><span class="req">*</span>出库库位：</span><div class="ctrl"><select class="select" id="fLocation"></select></div></div>
-              <div class="fi"><span class="lbl">接收机构：</span><div class="ctrl"><input class="input is-readonly" id="fInOrg" readonly title="院内调拨：接收机构固定为当前机构"></div></div>
-              <div class="fi"><span class="lbl"><span class="req">*</span>接收库位：</span><div class="ctrl"><select class="select" id="fInLocation"></select></div></div>
+              <div class="fi" id="fiInOrg" style="display:none"><span class="lbl"><span class="req">*</span>接收机构：</span><div class="ctrl"><select class="select" id="fInOrgSel"></select></div></div>
+              <div class="fi" id="fiInLocation"><span class="lbl"><span class="req">*</span>接收库位：</span><div class="ctrl"><select class="select" id="fInLocation"></select></div></div>
               <div class="fi"><span class="lbl">提交人：</span><div class="ctrl"><input class="input is-readonly" id="fCreator" readonly></div></div>
               <div class="fi"><span class="lbl">提交时间：</span><div class="ctrl"><input class="input is-readonly" id="fTime" readonly></div></div>
               <div class="fi fi-full"><span class="lbl">说明：</span><div class="ctrl"><input class="input" id="fRemark" placeholder="选填，如：村室领用补充" autocomplete="off"></div></div>
@@ -417,6 +417,7 @@
   var editBill = editId ? list.filter(function(b){ return b.id === editId; })[0] : null;
 
   var ST = {
+    method: "院内调拨出库",
     location: "", inOrgId: "", inLocation: "", remark: "",
     items: []
   };
@@ -428,8 +429,7 @@
 
   /* ===== 顶部信息 ===== */
   $("#fOrg").value = OB.orgName(user.orgId);
-  /* 接收机构：院内调拨固定为当前机构，只读 */
-  $("#fInOrg").value = OB.orgName(user.orgId);
+  /* 接收机构：院内调拨不展示（数据固定为当前机构）；调外出库需选择其他机构 */
   ST.inOrgId = user.orgId;
   $("#fCreator").value = user.name;
   $("#fTime").value = OB.fmtNow();
@@ -441,8 +441,40 @@
     $("#fInLocation").innerHTML = '<option value="">请选择库位</option>' + OB.LOCATIONS.map(function(l){
       return '<option>'+OB.esc(l)+'</option>';
     }).join("");
+    /* 调外出库：接收机构 = 其他机构（排除本机构） */
+    $("#fInOrgSel").innerHTML = '<option value="">请选择接收机构</option>' + OB.ORGS.filter(function(o){
+      return o.id !== user.orgId;
+    }).map(function(o){
+      return '<option value="'+o.id+'">'+OB.esc(o.name)+'</option>';
+    }).join("");
   }
   fillOptions();
+
+  /* ===== 出库方式切换：院内调拨出库 / 调外出库 ===== */
+  function isOuterMethod(){ return ST.method === "调外出库"; }
+  function applyMethodUI(){
+    var outer = isOuterMethod();
+    /* 接收机构：仅调外出库展示；院内调拨整行隐藏（数据仍取当前机构） */
+    $("#fiInOrg").style.display = outer ? "" : "none";
+    $("#fiInLocation").style.display = outer ? "none" : "";
+    if(outer){
+      ST.inLocation = "";
+      $("#fInLocation").value = "";
+      markInvalid($("#fInLocation"), false);
+    } else {
+      ST.inOrgId = user.orgId;
+      markInvalid($("#fInOrgSel"), false);
+    }
+  }
+  $("#fMethod").addEventListener("change", function(){
+    ST.method = this.value;
+    applyMethodUI();
+  });
+  $("#fInOrgSel").addEventListener("change", function(){
+    ST.inOrgId = this.value;
+    this.classList.remove("is-invalid");
+  });
+  applyMethodUI();
 
   $("#fLocation").addEventListener("change", function(){ ST.location = this.value; this.classList.remove("is-invalid"); });
   $("#fInLocation").addEventListener("change", function(){ ST.inLocation = this.value; this.classList.remove("is-invalid"); });
@@ -965,10 +997,16 @@
     $("#headStatus").style.display = "";
     $("#headStatus").textContent = "审核状态：" + (OB.AUDIT_STATUS[editBill.auditStatus] || "—");
     ST.location = editBill.outLocation || "";
-    ST.inOrgId = user.orgId;   /* 接收机构固定当前机构 */
+    ST.method = (editBill.method === "调外出库") ? "调外出库" : "院内调拨出库";
+    $("#fMethod").value = ST.method;
+    if (ST.method === "调外出库") {
+      ST.inOrgId = editBill.inOrgId || "";   /* 调外出库：还原已选接收机构 */
+    }
     ST.inLocation = editBill.inLocation || "";
     ST.remark = editBill.remark || "";
     ST.items = (editBill.items || []).map(function(it){ return Object.assign(blankItem(), it, { traces: (it.traces || []).slice(), traceResolved: it.traceResolved || {} }); });
+    applyMethodUI();
+    if (ST.method === "调外出库") $("#fInOrgSel").value = ST.inOrgId;
     $("#fLocation").value = ST.location;
     $("#fInLocation").value = ST.inLocation;
     $("#fRemark").value = ST.remark;
@@ -984,10 +1022,15 @@
   function validate(submit){
     var errs = [];
     markInvalid($("#fLocation"), !ST.location);   if(!ST.location) errs.push("出库库位");
-    markInvalid($("#fInLocation"), !ST.inLocation); if(!ST.inLocation) errs.push("接收库位");
-    if (ST.location && ST.inLocation && ST.location === ST.inLocation) {
-      markInvalid($("#fInLocation"), true);
-      errs.push("接收库位不能与出库库位相同（院内调拨需跨库位）");
+    if (isOuterMethod()) {
+      /* 调外出库：需选择接收机构，无需接收库位 */
+      markInvalid($("#fInOrgSel"), !ST.inOrgId);  if(!ST.inOrgId) errs.push("接收机构");
+    } else {
+      markInvalid($("#fInLocation"), !ST.inLocation); if(!ST.inLocation) errs.push("接收库位");
+      if (ST.location && ST.inLocation && ST.location === ST.inLocation) {
+        markInvalid($("#fInLocation"), true);
+        errs.push("接收库位不能与出库库位相同（院内调拨需跨库位）");
+      }
     }
     if(!ST.items.length) errs.push("药品明细（至少 1 条）");
     ST.items.forEach(function(it, i){
@@ -1010,11 +1053,11 @@
       b = { id: "c" + Date.now(), code: "", records: [] };
       list.push(b);
     }
-    b.method = "院内调拨出库";
+    b.method = ST.method;
     b.outOrgId = b.outOrgId || user.orgId;
     b.outLocation = ST.location;
     b.inOrgId = ST.inOrgId;
-    b.inLocation = ST.inLocation;
+    b.inLocation = isOuterMethod() ? "" : ST.inLocation;
     b.remark = ST.remark;
     b.creatorId = b.creatorId || user.id;
     b.creatorName = b.creatorName || user.name;

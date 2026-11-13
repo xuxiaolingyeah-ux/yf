@@ -4,6 +4,7 @@
  * 数据：sessionStorage "SR_DATA" / "SR_USER"，首次从种子生成
  * 流程：草稿 → 待上级审核 →（上级==接收机构时跳过）→ 待接收机构审核 → 审核通过
  *       → 待出库 →（出库，生成 CK 单号）→ 待签收 →（入库，生成 RK 单号）→ 已完成
+ *       内部流转不录追溯码
  * ========================================================= */
 (function () {
   "use strict";
@@ -151,13 +152,6 @@
   function orgName(id) { var o = orgOf(id); return o ? o.name : "—"; }
   function upperOrgOf(orgId) { return UPPER[orgId] || "o3"; }
 
-  /* ---------- 批次追溯码：TRC + 批次号 + 4 位序号（确定性生成） ---------- */
-  function traceCodes(batch, n) {
-    var arr = [];
-    for (var i = 1; i <= n; i++) arr.push("TRC" + batch + ("000" + i).slice(-4));
-    return arr;
-  }
-
   /* ---------- 明细行构造 ---------- */
   function drugOf(code) { return DRUGS.filter(function (d) { return d.code === code; })[0] || null; }
   function batchOf(code, batchNo) {
@@ -166,7 +160,7 @@
   function blankItem() {
     return { name: "", code: "", spec: "", packSpec: "", vendor: "", approval: "",
       batch: "", expiry: "", purchase: "", retail: "", stock: 0, qty: "",
-      minUnit: "", traces: [], inQty: "", unqQty: 0, unqReason: "", badCodes: [] };
+      minUnit: "", inQty: "", unqQty: "", unqReason: "" };
   }
   function itemOf(code, batchNo, qty) {
     var d = drugOf(code), b = batchOf(code, batchNo);
@@ -230,15 +224,15 @@
           { node: "提交", person: "王芳", org: "幸福村卫生室", time: "2026-10-30 14:05:08", result: "已提交", opinion: "" },
           { node: "审核", person: "李强", org: "城东社区卫生服务中心", time: "2026-10-30 16:22:40", result: "通过", opinion: "" }
         ] },
-      /* r5 待签收（已出库，追溯码已录） */
+      /* r5 待签收（已出库） */
       { id: "r5", code: "TK20261029005", fromOrgId: "o2", fromPharmacyId: "p21", fromLocation: "货架二区",
         toOrgId: "o3", toPharmacyId: "p31", toLocation: "A 区库房",
         outCode: "CK20261030001", outTime: "2026-10-30 10:15:22", inCode: "", inTime: "",
         creatorId: "u2", creatorName: "李强", submitTime: "2026-10-29 09:30:18",
         auditStatus: "approved", receiveStatus: "sign",
         items: [
-          itm("1210501401", "20260220A", 8, { traces: traceCodes("20260220A", 8) }),
-          itm("1210501601", "20260208A", 12, { traces: traceCodes("20260208A", 12) })
+          itm("1210501401", "20260220A", 8),
+          itm("1210501601", "20260208A", 12)
         ],
         records: [
           { node: "提交", person: "李强", org: "城东社区卫生服务中心", time: "2026-10-29 09:30:18", result: "已提交", opinion: "" },
@@ -252,7 +246,7 @@
         creatorId: "u2", creatorName: "李强", submitTime: "2026-10-26 09:12:00",
         auditStatus: "approved", receiveStatus: "done",
         items: [
-          itm("1210501101", "20260215A", 10, { traces: traceCodes("20260215A", 10), inQty: 9, unqQty: 1, unqReason: "包装不合格", badCodes: traceCodes("20260215A", 1) })
+          itm("1210501101", "20260215A", 10, { inQty: 9, unqQty: 1, unqReason: "包装不合格" })
         ],
         records: [
           { node: "提交", person: "李强", org: "城东社区卫生服务中心", time: "2026-10-26 09:12:00", result: "已提交", opinion: "" },
@@ -357,7 +351,7 @@
     AUDIT_STATUS: AUDIT_STATUS, RECV: RECV,
     qs: qs, esc: esc, raw: raw, fmtNow: fmtNow, money: money, num2: num2,
     currentUser: currentUser, setUser: setUser, orgOf: orgOf, allLocationsOf: allLocationsOf, orgName: orgName, upperOrgOf: upperOrgOf,
-    traceCodes: traceCodes, drugOf: drugOf, batchOf: batchOf, blankItem: blankItem, itemOf: itemOf,
+    drugOf: drugOf, batchOf: batchOf, blankItem: blankItem, itemOf: itemOf,
     load: load, save: save, billOf: billOf, newCode: newCode,
     canAudit: canAudit, opsFor: opsFor,
     purchaseAmt: purchaseAmt, retailAmt: retailAmt, sums: sums

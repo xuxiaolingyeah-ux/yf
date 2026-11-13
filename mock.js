@@ -1369,7 +1369,7 @@ MOCK.purchaseRequests = [
 ];
 
 /* ==========================================================================
-   调拨管理：药房、库位、追溯码、调拨单
+   调拨管理：药房、库位、调拨单
    ========================================================================== */
 
 /* 机构 → 药房映射 */
@@ -1395,22 +1395,6 @@ MOCK.locations = {
   "ph-m1-1": [{ id: "loc-m1-1-A", name: "门诊区-A1" }, { id: "loc-m1-1-B", name: "门诊区-B2" }],
   "ph-m1-2": [{ id: "loc-m1-2-A", name: "公卫区-A1" }]
 };
-
-/* 追溯码：键 = drugId + "_" + 规格下标 + "_" + 批次号 */
-(function buildTraceCodes() {
-  MOCK.traceCodes = {};
-  var batches = MOCK.batches || {};
-  Object.keys(batches).forEach(function (k) {
-    batches[k].forEach(function (b) {
-      var key = k + "_" + b.batchNo;
-      var codes = [];
-      for (var i = 1; i <= Math.min(b.stock, 80); i++) {
-        codes.push("TRC" + b.batchNo + String(i).padStart(4, "0"));
-      }
-      MOCK.traceCodes[key] = codes;
-    });
-  });
-})();
 
 /*
  * 调拨单种子数据
@@ -1512,13 +1496,13 @@ MOCK.transfers = [
     batches: [
       { key: "d1_0", drugId: "d1", si: 0, drugCode: "1210500301", drugName: "阿莫西林胶囊", specCode: "1010400101", spec: "0.25g * 24粒/盒", applyQty: 80,
         rows: [
-          { batchNo: "P260301", vendor: "华北制药股份有限公司", stock: 320, purchase: 6.80, retail: 12.50, expDate: "2028-03-11", outQty: 50, traceCodes: ["TRCP2603010001","TRCP2603010002","TRCP2603010003","TRCP2603010004","TRCP2603010005","TRCP2603010006","TRCP2603010007","TRCP2603010008","TRCP2603010009","TRCP2603010010","TRCP2603010011","TRCP2603010012","TRCP2603010013","TRCP2603010014","TRCP2603010015","TRCP2603010016","TRCP2603010017","TRCP2603010018","TRCP2603010019","TRCP2603010020","TRCP2603010021","TRCP2603010022","TRCP2603010023","TRCP2603010024","TRCP2603010025","TRCP2603010026","TRCP2603010027","TRCP2603010028","TRCP2603010029","TRCP2603010030","TRCP2603010031","TRCP2603010032","TRCP2603010033","TRCP2603010034","TRCP2603010035","TRCP2603010036","TRCP2603010037","TRCP2603010038","TRCP2603010039","TRCP2603010040","TRCP2603010041","TRCP2603010042","TRCP2603010043","TRCP2603010044","TRCP2603010045","TRCP2603010046","TRCP2603010047","TRCP2603010048","TRCP2603010049","TRCP2603010050"] },
-          { batchNo: "P260502", vendor: "哈药集团制药总厂", stock: 150, purchase: 6.95, retail: 12.80, expDate: "2028-05-07", outQty: 30, traceCodes: ["TRCP2605020001","TRCP2605020002","TRCP2605020003","TRCP2605020004","TRCP2605020005","TRCP2605020006","TRCP2605020007","TRCP2605020008","TRCP2605020009","TRCP2605020010","TRCP2605020011","TRCP2605020012","TRCP2605020013","TRCP2605020014","TRCP2605020015","TRCP2605020016","TRCP2605020017","TRCP2605020018","TRCP2605020019","TRCP2605020020","TRCP2605020021","TRCP2605020022","TRCP2605020023","TRCP2605020024","TRCP2605020025","TRCP2605020026","TRCP2605020027","TRCP2605020028","TRCP2605020029","TRCP2605020030"] }
+          { batchNo: "P260301", vendor: "华北制药股份有限公司", stock: 320, purchase: 6.80, retail: 12.50, expDate: "2028-03-11", outQty: 50,  },
+          { batchNo: "P260502", vendor: "哈药集团制药总厂", stock: 150, purchase: 6.95, retail: 12.80, expDate: "2028-05-07", outQty: 30,  }
         ]
       },
       { key: "d2_0", drugId: "d2", si: 0, drugCode: "1210500302", drugName: "阿莫西林颗粒", specCode: "1010400201", spec: "0.125g * 20袋/盒", applyQty: 40,
         rows: [
-          { batchNo: "P260401", vendor: "先声药业有限公司", stock: 420, purchase: 8.20, retail: 15.60, expDate: "2028-04-09", outQty: 40, traceCodes: ["TRCP2604010001","TRCP2604010002","TRCP2604010003","TRCP2604010004","TRCP2604010005","TRCP2604010006","TRCP2604010007","TRCP2604010008","TRCP2604010009","TRCP2604010010","TRCP2604010011","TRCP2604010012","TRCP2604010013","TRCP2604010014","TRCP2604010015","TRCP2604010016","TRCP2604010017","TRCP2604010018","TRCP2604010019","TRCP2604010020","TRCP2604010021","TRCP2604010022","TRCP2604010023","TRCP2604010024","TRCP2604010025","TRCP2604010026","TRCP2604010027","TRCP2604010028","TRCP2604010029","TRCP2604010030","TRCP2604010031","TRCP2604010032","TRCP2604010033","TRCP2604010034","TRCP2604010035","TRCP2604010036","TRCP2604010037","TRCP2604010038","TRCP2604010039","TRCP2604010040"] }
+          { batchNo: "P260401", vendor: "先声药业有限公司", stock: 420, purchase: 8.20, retail: 15.60, expDate: "2028-04-09", outQty: 40,  }
         ]
       }
     ], records: [
@@ -1544,7 +1528,7 @@ MOCK.transfers = [
     batches: [
       { key: "d5_0", drugId: "d5", si: 0, drugCode: "1210500305", drugName: "头孢呋辛酯片", specCode: "1010400501", spec: "0.25g * 12片/盒", applyQty: 30,
         rows: [
-          { batchNo: "P260215", vendor: "国药集团致君（深圳）制药有限公司", stock: 260, purchase: 9.80, retail: 18.60, expDate: "2028-02-17", outQty: 30, traceCodes: ["TRCP2602150001","TRCP2602150002","TRCP2602150003","TRCP2602150004","TRCP2602150005","TRCP2602150006","TRCP2602150007","TRCP2602150008","TRCP2602150009","TRCP2602150010","TRCP2602150011","TRCP2602150012","TRCP2602150013","TRCP2602150014","TRCP2602150015","TRCP2602150016","TRCP2602150017","TRCP2602150018","TRCP2602150019","TRCP2602150020","TRCP2602150021","TRCP2602150022","TRCP2602150023","TRCP2602150024","TRCP2602150025","TRCP2602150026","TRCP2602150027","TRCP2602150028","TRCP2602150029","TRCP2602150030"], inQty: 29, badQty: 1, badReason: "包装不合格", badCodes: ["TRCP2602150015"] }
+          { batchNo: "P260215", vendor: "国药集团致君（深圳）制药有限公司", stock: 260, purchase: 9.80, retail: 18.60, expDate: "2028-02-17", outQty: 30,  inQty: 29, badQty: 1, badReason: "包装不合格" }
         ]
       }
     ], records: [

@@ -85,7 +85,7 @@
               <section class="block">
                 <div class="block-head">
                   <h2 class="block-title">药品明细</h2>
-                  <span class="tr-in-hint">展开药品后按批次录入出库数量，并扫描对应追溯码</span>
+                  <span class="tr-in-hint">展开药品后按批次录入出库数量</span>
                 </div>
                 <div class="tr-stage-table is-scroll">
                   <table class="data-table tr-tree">
@@ -97,7 +97,6 @@
                         <th style="width:90px;" class="num">调拨数量</th>
                         <th style="width:115px;" class="num">进货价金额合计</th>
                         <th style="width:115px;" class="num">零售价金额合计</th>
-                        <th style="width:125px;">追溯码</th>
                         <th style="width:150px;">操作</th>
                       </tr>
                     </thead>
@@ -149,7 +148,6 @@
 
   var outOrg = TR.orgKey(user);
   var expanded = {};
-  var scanGi = -1;
 
   /* 每个申请药品确保有对应的批次分组 */
   bill.items.forEach(function (it) {
@@ -168,11 +166,6 @@
   function isOpen(g) { return expanded[g.key] !== undefined ? expanded[g.key] : g.rows.length > 0; }
   function diffOf(g) { return g.applyQty - TR.allocated(g); }
   void diffOf;
-  function progressHtml(g) {
-    var need = TR.allocated(g), got = TR.scanned(g);
-    var cls = need === 0 ? "" : (got === need ? "is-ok" : "is-bad");
-    return '<span class="tr-code-progress ' + cls + '">已扫 ' + got + " / " + need + "</span>";
-  }
 
   function renderApplyInfo() {
     $("applyInfo").innerHTML =
@@ -225,13 +218,11 @@
           '<td class="num">' + TR.allocated(g) + (unit ? ' <span class="qty-unit">' + esc(unit) + "</span>" : "") + "</td>" +
           '<td class="num">' + m.purchase + "</td>" +
           '<td class="num">' + m.retail + "</td>" +
-          "<td>" + progressHtml(g) + "</td>" +
-          '<td><button class="link-btn" data-add="' + idx + '">添加批次</button>' +
-          '<button class="link-btn" data-scan="' + idx + '">扫码</button></td>' +
+          '<td><button class="link-btn" data-add="' + idx + '">添加批次</button></td>' +
         "</tr>";
 
       if (open) {
-        html += '<tr class="tr-child-wrap"><td colspan="8"><table class="tr-child-table"><thead><tr>' +
+        html += '<tr class="tr-child-wrap"><td colspan="7"><table class="tr-child-table"><thead><tr>' +
           '<th style="width:112px;">批次号</th>' +
           '<th style="width:210px;">生产企业</th>' +
           '<th style="width:105px;">有效期</th>' +
@@ -242,7 +233,7 @@
           '<th style="width:70px;" class="tr-act-cell">操作</th>' +
         "</tr></thead><tbody>";
         if (!rows.length) {
-          html += '<tr class="tr-child-empty"><td colspan="8">请点击「添加批次」选择出库批次</td></tr>';
+          html += '<tr class="tr-child-empty"><td colspan="7">请点击「添加批次」选择出库批次</td></tr>';
         } else {
           html += rows.map(function (r, ri) {
             var q = Number(r.outQty) || 0;
@@ -350,7 +341,7 @@
         g.rows.push({
           batchNo: b.batchNo, vendor: b.vendor, stock: b.stock,
           purchase: b.purchase, retail: b.retail, expDate: b.expDate,
-          outQty: qty, traceCodes: []
+          outQty: qty
         });
       });
       expanded[g.key] = true;
@@ -360,136 +351,24 @@
     });
   }
 
-  /* ---------------- 扫码抽屉 ---------------- */
-  function closeDrawer() {
-    document.body.classList.remove("drawer-open");
-    $("drawerMask").innerHTML = "";
-    scanGi = -1;
-  }
-
-  function openScan(idx) {
-    scanGi = idx;
-    expanded[bill.batches[idx].key] = true;
-    renderTree();
-    var mask = $("drawerMask");
-    mask.innerHTML =
-      '<div class="drawer is-pa">' +
-        '<div class="drawer-head">' +
-          '<span class="drawer-title">扫码追溯码</span>' +
-          '<button class="drawer-close" data-drawer-close="1"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg></button>' +
-        "</div>" +
-        '<div class="drawer-body tr-scan-body" id="scanBody"></div>' +
-        '<div class="drawer-foot"><button class="btn" data-drawer-close="1">关闭</button></div>' +
-      "</div>";
-    document.body.classList.add("drawer-open");
-    renderScanBody();
-  }
-
-  function renderScanBody() {
-    if (scanGi < 0) return;
-    var g = bill.batches[scanGi];
-    var body = $("scanBody");
-    body.innerHTML =
-      '<div class="tr-scan-headline">' +
-        '<span class="name">' + esc(g.drugName) + "</span>" +
-        '<span class="meta">' + esc(g.spec) + "</span>" +
-        '<span class="meta">应扫 ' + TR.allocated(g) + " 个</span>" +
-        '<span class="meta">已扫 ' + TR.scanned(g) + " 个</span>" +
-      "</div>" +
-      '<div class="tr-scan-input">' +
-        '<input class="input" id="scanCode" placeholder="扫描或输入追溯码后回车" autocomplete="off">' +
-        '<button class="btn" id="scanAdd">添加</button>' +
-        '<button class="btn" id="scanAuto">自动补齐（演示）</button>' +
-      "</div>" +
-      '<div class="tr-scan-tip">支持整行扫码后输入回车，系统按批次自动归集；重复追溯码会自动去重，不属于该药品的追溯码将被忽略。</div>' +
-      (g.rows.length ? g.rows.map(function (r, ri) {
-        var codes = r.traceCodes || [];
-        return '<div class="tr-code-group">' +
-          '<div class="tr-code-head"><b>批次 ' + esc(r.batchNo) + "</b>" +
-            '<span class="count ' + (codes.length === r.outQty ? "" : "is-bad") + '">已扫 ' + codes.length + " / " + r.outQty + "</span></div>" +
-          '<div class="tr-code-chips">' + (codes.length ? codes.map(function (c) {
-            return '<span class="tr-code-chip" data-rmcode="' + esc(c) + '" data-g="' + scanGi + '" data-ri="' + ri + '" title="点击移除">' +
-              esc(c) + "</span>";
-          }).join("") : '<span class="tr-code-empty">尚未扫描追溯码</span>') + "</div>" +
-        "</div>";
-      }).join("") : '<div class="tr-code-empty">请先在明细中添加批次，再扫描追溯码</div>');
-
-    var input = $("scanCode");
-    function submitCode() {
-      var code = input.value.trim().toUpperCase();
-      if (!code) return;
-      var matched = null, ri = -1;
-      g.rows.forEach(function (r, i) {
-        if (code.indexOf("TRC" + r.batchNo) === 0) { matched = r; ri = i; }
-      });
-      if (!matched) {
-        SEL.toast("该追溯码不属于「" + g.drugName + "」当前批次，已忽略");
-        input.value = "";
-        return;
-      }
-      if ((matched.traceCodes || []).indexOf(code) >= 0) {
-        SEL.toast("追溯码已扫描，已自动去重");
-        input.value = "";
-        return;
-      }
-      if ((matched.traceCodes || []).length >= matched.outQty) {
-        SEL.toast("批次 " + matched.batchNo + " 追溯码已达出库数量");
-        input.value = "";
-        return;
-      }
-      matched.traceCodes = matched.traceCodes || [];
-      matched.traceCodes.push(code);
-      renderScanBody();
-      setTimeout(function () { var el = $("scanCode"); if (el) el.focus(); }, 0);
-    }
-    input.addEventListener("keydown", function (e) {
-      if (e.key === "Enter") { e.preventDefault(); submitCode(); }
-    });
-    $("scanAdd").addEventListener("click", submitCode);
-    $("scanAuto").addEventListener("click", function () {
-      var total = 0;
-      g.rows.forEach(function (r) {
-        var need = Math.max(0, (r.outQty || 0) - (r.traceCodes || []).length);
-        if (!need) return;
-        var pool = TR.codesFor(g.drugId, g.si, r.batchNo, r.outQty);
-        var existing = r.traceCodes || [];
-        pool.forEach(function (c) {
-          if (need > 0 && existing.indexOf(c) < 0) { existing.push(c); need--; total++; }
-        });
-        r.traceCodes = existing;
-      });
-      renderScanBody();
-      renderTree();
-      renderTotals();
-      SEL.toast("已自动补齐 " + total + " 个追溯码（演示）");
-    });
-    setTimeout(function () { input.focus(); }, 50);
-  }
-
   /* ---------------- 校验 / 确认出库 ---------------- */
   function confirmOut() {
     var bad = [];
     $("fLocation").classList.remove("is-invalid");
     if (!$("fLocation").value) { $("fLocation").classList.add("is-invalid"); bad.push("出库库位"); }
 
-    var totalRows = 0, qtyBad = false, scanBad = null;
+    var totalRows = 0, qtyBad = false;
     bill.batches.forEach(function (g) {
       (g.rows || []).forEach(function (r) {
         totalRows++;
         var q = Number(r.outQty) || 0;
         var ok = /^\d+$/.test(String(r.outQty)) && q >= 1 && q <= r.stock;
         if (!ok) qtyBad = true;
-        var need = TR.allocated(g);
-        if ((r.traceCodes || []).length !== q && !scanBad) {
-          scanBad = "批次 " + r.batchNo + " 追溯码已扫 " + (r.traceCodes || []).length + " / " + q;
-        }
-        if (need < 0) scanBad = scanBad || "已分配数量超出库存";
       });
     });
     if (!totalRows) bad.push("出库批次");
     if (qtyBad) bad.push("出库数量（需为正整数且不超过库存）");
     if (bad.length) { SEL.toast("请完善：" + bad.join("、")); return; }
-    if (scanBad) { SEL.toast(scanBad + "，请扫码或使用「自动补齐（演示）」后再提交"); return; }
 
     var loc = TR.locationsOfOrg(outOrg).filter(function (l) { return l.id === $("fLocation").value; })[0];
     var code = TR.newOutCode(TR.load());
@@ -526,8 +405,6 @@
     }
     var add = e.target.closest("[data-add]");
     if (add) { openBatch(parseInt(add.getAttribute("data-add"), 10)); return; }
-    var scan = e.target.closest("[data-scan]");
-    if (scan) { openScan(parseInt(scan.getAttribute("data-scan"), 10)); return; }
     var rm = e.target.closest("[data-rm]");
     if (rm) {
       var gi0 = parseInt(rm.getAttribute("data-rm"), 10);
@@ -542,23 +419,6 @@
     var row = bill.batches[idx].rows[ri];
     row.outQty = e.target.value;
     renderAll();
-  });
-
-  document.addEventListener("click", function (e) {
-    var mask = $("drawerMask");
-    if (!mask || !mask.innerHTML) return;
-    if (e.target === mask || e.target.closest("[data-drawer-close]")) closeDrawer();
-  });
-  $("drawerMask").addEventListener("click", function (e) {
-    var chip = e.target.closest("[data-rmcode]");
-    if (!chip) return;
-    var g = bill.batches[parseInt(chip.getAttribute("data-g"), 10)];
-    var r = g.rows[parseInt(chip.getAttribute("data-ri"), 10)];
-    var code = chip.getAttribute("data-rmcode");
-    var at = (r.traceCodes || []).indexOf(code);
-    if (at >= 0) r.traceCodes.splice(at, 1);
-    renderScanBody();
-    renderTree();
   });
 
   $("headerUser").addEventListener("click", function () {

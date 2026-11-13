@@ -1,5 +1,5 @@
 /* ==========================================================================
-   调拨管理：共享逻辑（数据 / 状态机 / 权限 / 追溯码 / 单号 / 审核页渲染）
+   调拨管理：共享逻辑（数据 / 状态机 / 权限 / 单号 / 审核页渲染）
    依赖：mock.js（MOCK.users、MOCK.transfers、MOCK.drugs、MOCK.batches）
         selection-common.js（SEL）
    ========================================================================== */
@@ -100,14 +100,11 @@
       b.batches = b.batches || [];
       b.batches.forEach(function (g) {
         if (g.si === undefined || g.si === null) g.si = findSi(g);
+        /* 已完成单据兜底：保留实收数量展示，不再生成追溯码 */
         (g.rows || []).forEach(function (r) {
-          if (!r.traceCodes || !r.traceCodes.length) {
-            r.traceCodes = codesFor(g.drugId, g.si, r.batchNo, r.outQty || 0);
-          }
           if (b.transferStatus === "done") {
             if (r.inQty === undefined) r.inQty = r.outQty;
             if (r.badQty === undefined) r.badQty = 0;
-            if (!r.badCodes) r.badCodes = [];
             if (!r.badReason) r.badReason = "";
           }
         });
@@ -204,19 +201,6 @@
     var h = 0;
     for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 997;
     return h % 48;
-  }
-
-  /* 追溯码：优先取 mock 预置池，不足时按规则生成 */
-  function codesFor(drugId, si, batchNo, qty) {
-    qty = Number(qty) || 0;
-    var base = (MOCK.traceCodes && MOCK.traceCodes[drugId + "_" + si + "_" + batchNo]) || [];
-    var out = base.slice(0, Math.min(qty, base.length));
-    for (var i = out.length; i < qty; i++) {
-      var seq = String(i + 1);
-      while (seq.length < 4) seq = "0" + seq;
-      out.push("TRC" + batchNo + seq);
-    }
-    return out;
   }
 
   /* ---------------- 登录 / 机构 ---------------- */
@@ -388,11 +372,6 @@
   function allocated(g) {
     var sum = 0;
     (g.rows || []).forEach(function (r) { sum += Number(r.outQty) || 0; });
-    return sum;
-  }
-  function scanned(g) {
-    var sum = 0;
-    (g.rows || []).forEach(function (r) { sum += (r.traceCodes || []).length; });
     return sum;
   }
   function outSums(b) {
@@ -670,9 +649,9 @@
     addRecord: addRecord, submitBill: submitBill, withdrawBill: withdrawBill,
     newCode: newCode, newHCode: newHCode, newOutCode: newOutCode, newInCode: newInCode,
     money: money, intVal: intVal,
-    allocated: allocated, scanned: scanned, outSums: outSums, inSums: inSums,
+    allocated: allocated, outSums: outSums, inSums: inSums,
     drugOf: drugOf, specList: specList, specByKey: specByKey, unitOfSpec: unitOfSpec,
-    batchesOf: batchesOf, orgStock: orgStock, codesFor: codesFor,
+    batchesOf: batchesOf, orgStock: orgStock,
     mountAudit: mountAudit, bindJump: bindJump
   };
 })();

@@ -226,8 +226,6 @@
     } else if (bill.status === "pending") {
       if (canAudit(bill, user)) ops.push({ key: "audit", label: "审核" });
       else if (mine) ops.push({ key: "withdraw", label: "撤回" });
-    } else if (bill.status === "approved") {
-      if ((bill.uploadStatus === "wait" || bill.uploadStatus === "fail")) ops.push({ key: "upload", label: "上传" });
     }
     return ops;
   }

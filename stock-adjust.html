@@ -49,17 +49,16 @@
 .sa-table tbody tr:hover td { background: var(--table-hover); }
 /* 列冻结 */
 .sa-table .col-code { position: sticky; left: 0; z-index: 3; }
-.sa-table .col-status, .sa-table .col-upload, .sa-table .col-acts { position: sticky; z-index: 3; }
-.sa-table .col-status { right: 290px; box-shadow: -2px 0 4px rgba(0,0,0,.04); }
-.sa-table .col-upload { right: 200px; }
+.sa-table .col-status, .sa-table .col-acts { position: sticky; z-index: 3; }
+.sa-table .col-status { right: 200px; box-shadow: -2px 0 4px rgba(0,0,0,.04); }
 .sa-table .col-acts { right: 0; }
-.sa-table th.col-code, .sa-table th.col-status, .sa-table th.col-upload, .sa-table th.col-acts { background: var(--table-head); z-index: 4; }
-.sa-table td.col-code, .sa-table td.col-status, .sa-table td.col-upload, .sa-table td.col-acts { background: var(--bg-white); }
+.sa-table th.col-code, .sa-table th.col-status, .sa-table th.col-acts { background: var(--table-head); z-index: 4; }
+.sa-table td.col-code, .sa-table td.col-status, .sa-table td.col-acts { background: var(--bg-white); }
 .sa-table tbody tr:nth-child(even) td.col-code, .sa-table tbody tr:nth-child(even) td.col-status,
-.sa-table tbody tr:nth-child(even) td.col-upload, .sa-table tbody tr:nth-child(even) td.col-acts { background: var(--table-even); }
+.sa-table tbody tr:nth-child(even) td.col-acts { background: var(--table-even); }
 .sa-table tbody tr:hover td.col-code, .sa-table tbody tr:hover td.col-status,
-.sa-table tbody tr:hover td.col-upload, .sa-table tbody tr:hover td.col-acts { background: var(--table-hover); }
-.sa-table .col-status, .sa-table .col-upload { width: 90px; min-width: 90px; }
+.sa-table tbody tr:hover td.col-acts { background: var(--table-hover); }
+.sa-table .col-status { width: 90px; min-width: 90px; }
 .sa-table .col-acts { width: 200px; min-width: 200px; }
 .sa-table th.col-code, .sa-table td.col-code { padding-left: 16px; }
 .sa-table th.col-acts, .sa-table td.col-acts { padding-right: 16px; }
@@ -149,7 +148,6 @@
             <div class="sa-fi"><span class="lbl">增损方式：</span><div class="ctrl"><select class="select" id="fMethod"><option value="">全部</option></select></div></div>
             <div class="sa-fi"><span class="lbl">增损时间：</span><div class="ctrl"><div class="sa-drange"><input type="date" id="fT1"><span>~</span><input type="date" id="fT2"></div></div></div>
             <div class="sa-fi"><span class="lbl">审核状态：</span><div class="ctrl"><select class="select" id="fStatus"></select></div></div>
-            <div class="sa-fi"><span class="lbl">上传状态：</span><div class="ctrl"><select class="select" id="fUpload"></select></div></div>
             <div class="sa-fi"><span class="lbl">提交人：</span><div class="ctrl"><select class="select" id="fCreator"></select></div></div>
           </div>
           <div class="sa-filter-actions">
@@ -175,7 +173,6 @@
                 <th style="width:80px">提交人</th>
                 <th class="col-status">审核状态</th>
                 <th class="col-inout" style="width:140px">出/入库单号</th>
-                <th class="col-upload">上传状态</th>
                 <th class="col-acts" style="width:200px">操作</th>
               </tr>
             </thead>
@@ -273,7 +270,6 @@
 
   $("#fMethod").innerHTML = '<option value="">全部</option><option value="add">报增入库</option><option value="minus">报损出库</option>';
   $("#fStatus").innerHTML = '<option value="">全部</option><option value="draft">草稿</option><option value="pending">待审核</option><option value="approved">审核通过</option><option value="rejected">已驳回</option>';
-  $("#fUpload").innerHTML = '<option value="">全部</option><option value="none">—</option><option value="wait">未上传</option><option value="success">上传成功</option><option value="fail">上传失败</option>';
   $("#fCreator").innerHTML = '<option value="">全部</option>' + SA.USERS.map(function(u){return '<option value="'+u.id+'">'+SA.esc(u.name)+'</option>';}).join("");
 
   $("#fOrg").addEventListener("change",function(){ fillLocations(this.value); $("#fLocation").value=""; });
@@ -282,7 +278,7 @@
   function applyFilter(){
     var code = $("#fCode").value.trim(), t1 = $("#fT1").value, t2 = $("#fT2").value;
     var org = $("#fOrg").value, loc = $("#fLocation").value;
-    var m = $("#fMethod").value, st = $("#fStatus").value, up = $("#fUpload").value, cr = $("#fCreator").value;
+    var m = $("#fMethod").value, st = $("#fStatus").value, cr = $("#fCreator").value;
     ST.filtered = list.filter(function(b){
       if(code && b.code.indexOf(code)<0) return false;
       var d = (b.submitTime||"").slice(0,10);
@@ -292,7 +288,6 @@
       if(loc && b.location!==loc) return false;
       if(m){ var want = SA.METHODS[m]; if(b.method!==want) return false; }
       if(st && b.status!==st) return false;
-      if(up){ if(b.uploadStatus!==up) return false; }
       if(cr && b.creatorId!==cr) return false;
       return true;
     });
@@ -308,7 +303,7 @@
   $("#btnReset").addEventListener("click", function(){
     $("#fCode").value=""; $("#fT1").value=""; $("#fT2").value="";
     $("#fOrg").value = user.orgId; fillLocations(user.orgId); $("#fLocation").value="";
-    $("#fMethod").value=""; $("#fStatus").value=""; $("#fUpload").value=""; $("#fCreator").value="";
+    $("#fMethod").value=""; $("#fStatus").value=""; $("#fCreator").value="";
     applyFilter();
   });
   $("#fCode").addEventListener("keydown",function(e){ if(e.key==="Enter") applyFilter(); });
@@ -369,7 +364,6 @@
         +'<td>'+SA.esc(b.creatorName)+'</td>'
         +'<td class="col-status">'+SA.esc(SA.STATUS[b.status])+'</td>'
         +'<td class="col-inout" title="'+SA.esc(b.inoutCode||"")+'">'+SA.esc(b.inoutCode || "—")+'</td>'
-        +'<td class="col-upload">'+SA.esc(SA.UPLOAD[b.uploadStatus])+'</td>'
         +'<td class="col-acts">'+ops+'</td>'
         +'</tr>';
     }).join("");
@@ -435,13 +429,6 @@
         SA.save(list);
         ST.filtered = ST.filtered.filter(function(x){return x.id!==id;});
         renderTable(); toast("已删除");
-      });
-      return;
-    }
-    if(op==="upload"){
-      confirmDlg("上传增损单", "确认将增损单 "+b.code+" 上传至医保/监管平台？", "上传", false, function(){
-        b.uploadStatus = "success";
-        persist(); renderTable(); toast("上传成功");
       });
       return;
     }

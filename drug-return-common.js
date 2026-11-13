@@ -267,6 +267,7 @@
   var SEED = [
     {
       id: "dr1", code: "TH20261109001", creatorRole: "village",
+      outLocation: "A 区药柜",
       creatorId: "u1", creator: "王芳", creatorOrg: "青河村卫生室",
       supplier: "国药控股江苏有限公司", invoiceNo: "INV20261109012",
       desc: "近效期批次退回供应商处理。", createdAt: "2026-11-09 10:20",
@@ -282,6 +283,7 @@
     },
     {
       id: "dr2", code: "TH20261110002", creatorRole: "village",
+      outLocation: "B 区药柜",
       creatorId: "u1", creator: "王芳", creatorOrg: "青河村卫生室",
       supplier: "华润医药商业集团上海有限公司", invoiceNo: "",
       desc: "运输破损，与供应商协商退回。", createdAt: "2026-11-10 14:35",
@@ -295,6 +297,7 @@
     },
     {
       id: "dr3", code: "TH20261110003", creatorRole: "member",
+      outLocation: "货架一区",
       creatorId: "u2", creator: "李强", creatorOrg: "城东社区卫生服务中心",
       supplier: "九州通医药集团股份有限公司", invoiceNo: "INV20261108091",
       desc: "包装印刷批次有误，按协议退回。", createdAt: "2026-11-10 16:12",
@@ -308,6 +311,7 @@
     },
     {
       id: "dr4", code: "TH20261110004", creatorRole: "center",
+      outLocation: "A 区库房",
       creatorId: "u3", creator: "赵敏", creatorOrg: "区域中心药房",
       supplier: "上海医药集团股份有限公司", invoiceNo: "",
       desc: "中心药房年度质量回退批次。", createdAt: "2026-11-10 17:40",
@@ -322,6 +326,7 @@
     },
     {
       id: "dr5", code: "TH20261111001", creatorRole: "village",
+      outLocation: "A 区药柜",
       creatorId: "u1", creator: "王芳", creatorOrg: "青河村卫生室",
       supplier: "国药控股江苏有限公司", invoiceNo: "",
       desc: "（草稿）退货量待与供应商确认后填写。",
@@ -333,6 +338,7 @@
     },
     {
       id: "dr6", code: "TH20261106002", creatorRole: "member",
+      outLocation: "货架二区",
       creatorId: "u2", creator: "李强", creatorOrg: "城东社区卫生服务中心",
       supplier: "华润医药商业集团上海有限公司", invoiceNo: "",
       desc: "零售价与配送单据不符，申请退回。",
@@ -347,6 +353,7 @@
     },
     {
       id: "dr7", code: "TH20261107003", creatorRole: "member",
+      outLocation: "货架一区",
       creatorId: "u2", creator: "李强", creatorOrg: "城东社区卫生服务中心",
       supplier: "九州通医药集团股份有限公司", invoiceNo: "",
       desc: "临床停止使用，整批退回。",

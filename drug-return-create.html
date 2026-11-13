@@ -197,6 +197,7 @@
             <div class="dr-sec-title">退货信息</div>
             <div class="dr-form">
               <div class="fi"><span class="lbl"><span class="req">*</span>供应商：</span><div class="ctrl"><select class="select" id="fSupplier"></select></div></div>
+              <div class="fi"><span class="lbl"><span class="req">*</span>出库库位：</span><div class="ctrl"><select class="select" id="fOutLocation"></select></div></div>
               <div class="fi"><span class="lbl">发票号：</span><div class="ctrl"><input class="input" id="fInvoiceNo" placeholder="选填" autocomplete="off"></div></div>
               <div class="fi"><span class="lbl">提交人：</span><div class="ctrl"><input class="input is-readonly" id="fCreator" readonly></div></div>
               <div class="fi"><span class="lbl">提交时间：</span><div class="ctrl"><input class="input is-readonly" id="fTime" readonly></div></div>
@@ -457,7 +458,7 @@
       creatorId: user.id,
       creator: user.name,
       creatorOrg: user.org,
-      supplier: "", invoiceNo: "", desc: "",
+      supplier: "", invoiceNo: "", desc: "", outLocation: "",
       createdAt: SEL.fmtNow(),
       status: "draft",
       inIds: [],
@@ -474,6 +475,19 @@
     $("#fSupplier").appendChild(opt);
   });
   $("#fSupplier").value = doc.supplier || "";
+  /* 出库库位：本机构药房库位（来源 SI.ORGS），必选 */
+  (function () {
+    var myOrgId = { village: "o1", member: "o2", center: "o3" }[user.role];
+    var org = ((window.SI && window.SI.ORGS) || []).filter(function (o) { return o.id === myOrgId; })[0];
+    var locs = [];
+    ((org && org.pharmacies) || []).forEach(function (p) {
+      (p.locations || []).forEach(function (l) { if (locs.indexOf(l) < 0) locs.push(l); });
+    });
+    $("#fOutLocation").innerHTML = '<option value="">请选择库位</option>' + locs.map(function (l) {
+      return '<option>' + esc(l) + '</option>';
+    }).join("");
+    $("#fOutLocation").value = doc.outLocation || "";
+  })();
   $("#fInvoiceNo").value = doc.invoiceNo || "";
   $("#fDesc").value = doc.desc || "";
   $("#fCreator").value = doc.creator;
@@ -1087,6 +1101,7 @@
   /* ---------------- 校验 / 保存 / 提交 ---------------- */
   function collect() {
     doc.supplier = $("#fSupplier").value;
+    doc.outLocation = $("#fOutLocation").value;
     doc.invoiceNo = $("#fInvoiceNo").value.trim();
     doc.desc = $("#fDesc").value.trim();
     $("#itemsBody").querySelectorAll('[data-f="qty"]').forEach(function (el) {
@@ -1098,6 +1113,7 @@
   function validate() {
     var errs = [];
     if (!doc.supplier) errs.push("供应商");
+    if (!doc.outLocation) errs.push("出库库位");
     if (!doc.items.length) errs.push("药品明细（至少 1 条）");
     doc.items.forEach(function (it, i) {
       var n = "第" + (i + 1) + "行";

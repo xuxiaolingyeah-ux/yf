@@ -6,9 +6,8 @@
 <title>药品出库 · 中心药房</title>
 <link rel="stylesheet" href="styles.css">
 <style>
-/* 出库列表：6 个筛选项 */
-.ob-fields { grid-template-columns: minmax(0,.9fr) minmax(0,1.1fr) minmax(0,1.1fr) minmax(0,.8fr) minmax(0,.8fr) minmax(0,1.1fr); }
-@media (max-width: 1399px) { .ob-fields { grid-template-columns: repeat(3, minmax(0,1fr)); } }
+/* 出库列表筛选区（对齐药品入库筛选栏样式，7 项全部平铺） */
+.ob-fields { grid-template-columns: repeat(4, minmax(0,1fr)); }
 .ob-table td .link-btn + .link-btn { margin-left: 12px; }
 </style>
 </head>
@@ -63,14 +62,15 @@
         </div>
 
         <!-- 筛选区 -->
-        <div class="ob-filter">
+        <div class="ob-filter" id="filterBar">
           <div class="ob-fields">
             <div class="ob-fi"><span class="lbl">出库单号：</span><div class="ctrl"><input class="input" id="fCode" placeholder="请输入单号" autocomplete="off"></div></div>
+            <div class="ob-fi"><span class="lbl">出库时间：</span><div class="ctrl"><div class="ob-drange"><input type="date" id="fT1"><span>~</span><input type="date" id="fT2"></div></div></div>
             <div class="ob-fi"><span class="lbl">出库机构：</span><div class="ctrl"><select class="select" id="fOrg"></select></div></div>
+            <div class="ob-fi"><span class="lbl">出库库位：</span><div class="ctrl"><select class="select" id="fLocation"><option value="">全部</option></select></div></div>
             <div class="ob-fi"><span class="lbl">接收机构：</span><div class="ctrl"><select class="select" id="fInOrg"></select></div></div>
             <div class="ob-fi"><span class="lbl">出库方式：</span><div class="ctrl"><select class="select" id="fMethod"><option value="">全部</option></select></div></div>
             <div class="ob-fi"><span class="lbl">审核状态：</span><div class="ctrl"><select class="select" id="fStatus"></select></div></div>
-            <div class="ob-fi"><span class="lbl">出库时间：</span><div class="ctrl"><div class="ob-drange"><input type="date" id="fT1"><span>~</span><input type="date" id="fT2"></div></div></div>
           </div>
           <div class="ob-filter-acts">
             <button class="btn btn-sm" id="btnReset">重置 ( R )</button>
@@ -80,12 +80,13 @@
 
         <!-- 表格 -->
         <div class="ob-table-wrap">
-          <table class="ob-table" style="min-width:1120px">
+          <table class="ob-table" style="min-width:1210px">
             <thead>
               <tr>
                 <th style="width:132px">出库单号</th>
                 <th style="width:88px">出库方式</th>
                 <th style="width:140px">出库机构</th>
+                <th style="width:88px">出库库位</th>
                 <th style="width:140px">接收机构</th>
                 <th style="width:100px" class="num">进货价合计金额</th>
                 <th style="width:100px" class="num">零售价合计金额</th>
@@ -175,6 +176,9 @@
   }
   fillOrgs($("#fOrg"));
   fillOrgs($("#fInOrg"));
+  $("#fLocation").innerHTML = '<option value="">全部</option>' + OB.LOCATIONS.map(function(l){
+    return '<option>'+OB.esc(l)+'</option>';
+  }).join("");
   $("#fMethod").innerHTML = '<option value="">全部</option>' + OB.METHODS.map(function(m){
     return '<option>'+OB.esc(m)+'</option>';
   }).join("");
@@ -197,12 +201,13 @@
   }
   function applyFilter(){
     var code = $("#fCode").value.trim();
-    var org = $("#fOrg").value, inOrg = $("#fInOrg").value, method = $("#fMethod").value;
+    var org = $("#fOrg").value, loc = $("#fLocation").value, inOrg = $("#fInOrg").value, method = $("#fMethod").value;
     var status = $("#fStatus").value;
     var t1 = $("#fT1").value, t2 = $("#fT2").value;
     ST.filtered = list.filter(function(b){
       if(code && b.code.indexOf(code) < 0) return false;
       if(org && OB.ownerOrg(b) !== org) return false;
+      if(loc && b.outLocation !== loc) return false;
       if(inOrg && b.inOrgId !== inOrg) return false;
       if(method && b.method !== method) return false;
       if(status && b.auditStatus !== status) return false;
@@ -221,7 +226,7 @@
   $("#btnSearch").addEventListener("click", applyFilter);
   $("#btnReset").addEventListener("click", function(){
     $("#fCode").value = ""; $("#fT1").value = ""; $("#fT2").value = "";
-    $("#fOrg").value = ""; $("#fInOrg").value = ""; $("#fMethod").value = ""; $("#fStatus").value = "";
+    $("#fOrg").value = ""; $("#fLocation").value = ""; $("#fInOrg").value = ""; $("#fMethod").value = ""; $("#fStatus").value = "";
     applyFilter();
   });
   $("#fCode").addEventListener("keydown", function(e){ if(e.key === "Enter") applyFilter(); });
@@ -342,6 +347,7 @@
       h += "<td class='cell-code' title='"+OB.esc(b.code || "草稿未生成单号")+"'>"+OB.esc(b.code || "—")+"</td>";
       h += "<td>"+OB.esc(b.method)+"</td>";
       h += "<td title='"+OB.esc(orgName(b.outOrgId))+"'>"+OB.esc(orgName(b.outOrgId))+"</td>";
+      h += "<td>"+OB.esc(b.outLocation || "—")+"</td>";
       h += "<td title='"+OB.esc(orgName(b.inOrgId))+"'>"+OB.esc(orgName(b.inOrgId))+"</td>";
       h += "<td class='num'>"+OB.num2(s.purchase)+"</td>";
       h += "<td class='num'>"+OB.num2(s.retail)+"</td>";

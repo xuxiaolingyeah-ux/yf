@@ -4,6 +4,22 @@
 <meta charset="UTF-8">
 <title>药品退货 · 区域药房协同管理系统</title>
 <link rel="stylesheet" href="styles.css">
+<style>
+/* 列表：审核状态 / 操作列固定在右侧（参考药品入库列表） */
+.data-table { border-collapse: separate; border-spacing: 0; }
+.pur-table { min-width: 1440px; }
+.pur-table th.col-status, .pur-table td.col-status,
+.pur-table th.col-acts, .pur-table td.col-acts { position: sticky; z-index: 3; }
+.pur-table .col-status { right: 160px; width: 130px; min-width: 130px; box-shadow: -2px 0 4px rgba(0,0,0,.04); }
+.pur-table .col-acts { right: 0; width: 160px; min-width: 160px; }
+.pur-table th { background: var(--table-head); }
+.pur-table th.col-status, .pur-table th.col-acts { z-index: 4; }
+.pur-table td.col-status, .pur-table td.col-acts { background: var(--bg-white); }
+.pur-table tbody tr:nth-child(even) td.col-status,
+.pur-table tbody tr:nth-child(even) td.col-acts { background: var(--table-even); }
+.pur-table tbody tr:hover td.col-status,
+.pur-table tbody tr:hover td.col-acts { background: var(--table-hover); }
+</style>
 </head>
 <body>
 
@@ -57,7 +73,19 @@
               <input class="input" id="fCode" placeholder="请输入退货单号" style="width:170px;">
             </div>
             <div class="filter-item">
-              <span class="filter-label">出库时间</span>
+              <span class="filter-label">出库机构</span>
+              <select class="select" id="fOutOrg" style="width:180px;">
+                <option value="">全部机构</option>
+              </select>
+            </div>
+            <div class="filter-item">
+              <span class="filter-label">出库库位</span>
+              <select class="select" id="fOutLocation" style="width:150px;">
+                <option value="">全部库位</option>
+              </select>
+            </div>
+            <div class="filter-item">
+              <span class="filter-label">提交时间</span>
               <input class="input" type="date" id="fDateFrom">
               <span class="filter-sep">至</span>
               <input class="input" type="date" id="fDateTo">
@@ -90,14 +118,15 @@
               <thead>
                 <tr>
                   <th style="width:150px;">单号</th>
-                  <th style="width:150px;">出库时间</th>
+                  <th style="width:150px;">出库机构</th>
+                  <th style="width:90px;">出库库位</th>
                   <th style="min-width:180px;">供应商</th>
                   <th style="width:100px;" class="num">涉及药品笔数</th>
                   <th style="width:120px;" class="num">进货价金额合计</th>
                   <th style="width:120px;" class="num">零售价金额合计</th>
                   <th style="width:90px;">提交人</th>
                   <th style="width:145px;">提交时间</th>
-                  <th style="width:130px;">审核状态</th>
+                  <th style="width:130px;" class="col-status">审核状态</th>
                   <th class="col-acts">操作</th>
                 </tr>
               </thead>
@@ -146,7 +175,7 @@
   if (user.role === "his") { location.href = "home.html"; return; }
 
   var state = {
-    code: "", dateFrom: "", dateTo: "", supplier: "", status: "",
+    code: "", outOrg: "", outLoc: "", dateFrom: "", dateTo: "", supplier: "", status: "",
     page: 1, size: 10
   };
 
@@ -157,6 +186,26 @@
     opt.textContent = s.name;
     $("fSupplier").appendChild(opt);
   });
+
+  /* 出库机构 / 出库库位下拉：按可见范围内单据实际值去重生成 */
+  (function () {
+    var orgs = [], locs = [];
+    DR.load().forEach(function (r) {
+      if (!DR.inScope(r, user)) return;
+      if (r.creatorOrg && orgs.indexOf(r.creatorOrg) < 0) orgs.push(r.creatorOrg);
+      if (r.outLocation && locs.indexOf(r.outLocation) < 0) locs.push(r.outLocation);
+    });
+    orgs.forEach(function (o) {
+      var opt = document.createElement("option");
+      opt.value = o; opt.textContent = o;
+      $("fOutOrg").appendChild(opt);
+    });
+    locs.forEach(function (l) {
+      var opt = document.createElement("option");
+      opt.value = l; opt.textContent = l;
+      $("fOutLocation").appendChild(opt);
+    });
+  })();
 
   /* ---------------- 列表（全部单据合并展示） ---------------- */
   function statusLabel(r) {
@@ -170,6 +219,8 @@
     return DR.load().filter(function (r) {
       if (!DR.inScope(r, user)) return false;
       if (state.code && r.code.toLowerCase().indexOf(state.code.toLowerCase()) < 0) return false;
+      if (state.outOrg && r.creatorOrg !== state.outOrg) return false;
+      if (state.outLoc && (r.outLocation || "") !== state.outLoc) return false;
       if (state.supplier && r.supplier !== state.supplier) return false;
       if (state.status) {
         if (state.status === "audit") {
@@ -177,7 +228,7 @@
         } else if (r.status !== state.status) return false;
       }
       if (state.dateFrom || state.dateTo) {
-        /* 出库时间口径 = 退货申请提交时间 */
+        /* 提交时间口径 = 退货申请提交时间 */
         var day = r.createdAt.slice(0, 10);
         if (state.dateFrom && day < state.dateFrom) return false;
         if (state.dateTo && day > state.dateTo) return false;
@@ -218,14 +269,15 @@
       var s = DR.sums(r);
       return "<tr>" +
         "<td>" + esc(r.code) + "</td>" +
-        "<td>" + esc(r.createdAt) + "</td>" +
+        '<td><div class="cell-ellipsis" title="' + esc(r.creatorOrg) + '">' + esc(r.creatorOrg) + "</div></td>" +
+        "<td>" + esc(r.outLocation || "—") + "</td>" +
         '<td><div class="cell-ellipsis" title="' + esc(r.supplier) + '">' + esc(r.supplier) + "</div></td>" +
         '<td class="num">' + (r.items ? r.items.length : 0) + "</td>" +
         '<td class="num">' + esc(DR.fmtMoney(s.purchase)) + "</td>" +
         '<td class="num">' + esc(DR.fmtMoney(s.retail)) + "</td>" +
         "<td>" + esc(r.creator) + "</td>" +
         "<td>" + esc(r.createdAt) + "</td>" +
-        '<td><span class="status-text">' + esc(statusLabel(r)) + "</span></td>" +
+        '<td class="col-status"><span class="status-text">' + esc(statusLabel(r)) + "</span></td>" +
         '<td class="col-acts">' + actionHtml(r) + "</td>" +
       "</tr>";
     }).join("");
@@ -301,6 +353,8 @@
 
   function doQuery() {
     state.code = $("fCode").value.trim();
+    state.outOrg = $("fOutOrg").value;
+    state.outLoc = $("fOutLocation").value;
     state.dateFrom = $("fDateFrom").value;
     state.dateTo = $("fDateTo").value;
     state.supplier = $("fSupplier").value;
@@ -312,8 +366,8 @@
   $("fCode").addEventListener("keydown", function (e) { if (e.key === "Enter") doQuery(); });
 
   $("btnReset").addEventListener("click", function () {
-    state.code = ""; state.dateFrom = ""; state.dateTo = ""; state.supplier = ""; state.status = ""; state.page = 1;
-    $("fCode").value = ""; $("fDateFrom").value = ""; $("fDateTo").value = "";
+    state.code = ""; state.outOrg = ""; state.outLoc = ""; state.dateFrom = ""; state.dateTo = ""; state.supplier = ""; state.status = ""; state.page = 1;
+    $("fCode").value = ""; $("fOutOrg").value = ""; $("fOutLocation").value = ""; $("fDateFrom").value = ""; $("fDateTo").value = "";
     $("fSupplier").value = ""; $("fStatus").value = "";
     renderTable();
   });

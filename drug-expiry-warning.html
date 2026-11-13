@@ -332,7 +332,7 @@ th.sticky-days,td.sticky-days{box-shadow:-1px 0 0 var(--table-line);}
               <span class="arrow"></span>
             </div>
           </div>
-          <div class="fitem"><label>入库时间：</label>
+          <div class="fitem"><label>有效期：</label>
             <div class="date-range">
               <input type="date" id="dateFrom">
               <span class="sep">~</span>
@@ -706,8 +706,8 @@ th.sticky-days,td.sticky-days{box-shadow:-1px 0 0 var(--table-line);}
         var hay = (r.name + ' ' + r.code + ' ' + r.py).toLowerCase();
         if(hay.indexOf(kw) === -1) return false;
       }
-      if(state.from && r.inTime.slice(0,10) < state.from) return false;
-      if(state.to && r.inTime.slice(0,10) > state.to) return false;
+      if(state.from && r.expiry.slice(0,10) < state.from) return false;
+      if(state.to && r.expiry.slice(0,10) > state.to) return false;
       return true;
     });
   }

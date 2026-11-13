@@ -29,6 +29,59 @@
 .sq-fi .sq-name-input { width: 220px; }
 .sq-filter-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
 
+/* checkbox 筛选（毒性药品 / 麻醉药品） */
+.sq-fi.sq-chk { gap: 0; }
+.sq-fi.sq-chk label {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12px; color: var(--text-secondary);
+  cursor: pointer; user-select: none; white-space: nowrap;
+}
+.sq-fi.sq-chk input[type="checkbox"] { width: 14px; height: 14px; margin: 0; cursor: pointer; accent-color: var(--primary); }
+
+/* 多选下拉（精神标志） */
+.multi-select { position: relative; width: 160px; }
+.multi-select .ms-trigger {
+  display: flex; align-items: center; justify-content: space-between;
+  height: 30px; padding: 0 10px;
+  border: 1px solid var(--border-input); border-radius: var(--radius);
+  background: var(--bg-white); cursor: pointer; font-size: 13px;
+  transition: border-color .15s;
+}
+.multi-select .ms-trigger:hover { border-color: var(--primary-dark); }
+.multi-select .ms-trigger.is-open { border-color: var(--primary-dark); box-shadow: 0 0 0 2px rgba(43,127,255,.12); }
+.multi-select .ms-placeholder { color: var(--text-placeholder); }
+.multi-select .ms-value { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-primary); }
+.multi-select .ms-count {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 18px; height: 18px; padding: 0 4px;
+  background: var(--primary); color: #fff; font-size: 11px; line-height: 1;
+  border-radius: 9px; margin-left: 6px;
+}
+.multi-select .ms-arrow { color: var(--text-tertiary); font-size: 12px; margin-left: 4px; }
+.multi-select .ms-panel {
+  position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+  max-height: 260px; overflow-y: auto;
+  background: #fff; border: 1px solid var(--border-input);
+  border-radius: var(--radius); box-shadow: 0 4px 12px rgba(0,0,0,.1);
+  z-index: 100; display: none;
+}
+.multi-select .ms-panel.is-open { display: block; }
+.multi-select .ms-option {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 10px; cursor: pointer; font-size: 13px;
+}
+.multi-select .ms-option:hover { background: var(--table-hover); }
+.multi-select .ms-option.is-checked { color: var(--primary); }
+.multi-select .ms-check {
+  width: 14px; height: 14px; border: 1px solid var(--border-input); border-radius: 3px;
+  display: flex; align-items: center; justify-content: center; flex: none;
+}
+.multi-select .ms-option.is-checked .ms-check { background: var(--primary); border-color: var(--primary); }
+.multi-select .ms-option.is-checked .ms-check::after {
+  content: ""; width: 8px; height: 4px; border: solid #fff; border-width: 0 1.5px 1.5px 0;
+  transform: rotate(45deg) translate(-1px, -1px);
+}
+
 /* 统计方式胶囊（复用 page-tabs，在筛选区里内联） */
 .sq-tabs {
   display: inline-flex; align-items: center; gap: 2px;
@@ -94,6 +147,14 @@
 .sq-table thead th.col-left-fixed { z-index: 4; background: var(--table-head); }
 .sq-table tbody tr:nth-child(even) td.col-left-fixed { background: var(--table-even); }
 .sq-table tbody tr:hover td.col-left-fixed { background: var(--table-hover); }
+.sq-table .col-left-fixed2 {
+  position: sticky; left: 100px; z-index: 2;
+  background: var(--bg-white);
+  box-shadow: 2px 0 4px -2px rgba(0,0,0,.12);
+}
+.sq-table thead th.col-left-fixed2 { z-index: 4; background: var(--table-head); }
+.sq-table tbody tr:nth-child(even) td.col-left-fixed2 { background: var(--table-even); }
+.sq-table tbody tr:hover td.col-left-fixed2 { background: var(--table-hover); }
 .sq-table tbody tr:last-child td { border-bottom: none; }
 .sq-table td:last-child, .sq-table th:last-child { border-right: none; }
 
@@ -208,6 +269,7 @@
           <span class="lbl">统计方式：</span>
           <div class="sq-tabs" id="fMode">
             <div class="sq-tab active" data-mode="batch">批次</div>
+            <div class="sq-tab" data-mode="prod">产品</div>
             <div class="sq-tab" data-mode="spec">品规</div>
           </div>
         </div>
@@ -218,6 +280,26 @@
             <option value="gt">大于零</option>
             <option value="eq">等于零</option>
           </select>
+        </div>
+        <div class="sq-fi">
+          <span class="lbl">精神标志：</span>
+          <div class="multi-select" id="ms-psy">
+            <div class="ms-trigger">
+              <span class="ms-placeholder">全部</span>
+              <span class="ms-arrow">▾</span>
+            </div>
+            <div class="ms-panel" id="ms-psy-panel">
+              <div class="ms-option" data-val="第一类精神药品"><span class="ms-check"></span>第一类精神药品</div>
+              <div class="ms-option" data-val="第二类精神药品"><span class="ms-check"></span>第二类精神药品</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="sq-fi sq-chk">
+          <label><input type="checkbox" id="fToxic">毒性药品</label>
+        </div>
+        <div class="sq-fi sq-chk">
+          <label><input type="checkbox" id="fNarc">麻醉药品</label>
         </div>
 
         <div class="sq-filter-actions">
@@ -281,8 +363,78 @@
     sortField: "",       // 默认按编码/品规编码
     sortOrder: "asc",
     filtered: [],        // 批次模式直接行 或 品规模式聚合后的行
-    page: 1, pageSize: 20
+    page: 1, pageSize: 20,
+    msPsyVals: []        // 精神标志多选（空 = 不筛选）
   };
+
+  // ---- 精神标志多选下拉 ----
+  var SQ = {};
+  window.SQ = SQ;
+
+  SQ.toggleMs = function (id, ev) {
+    if (ev) ev.stopPropagation();
+    var el = $(id);
+    var trigger = el.querySelector(".ms-trigger");
+    var panel = el.querySelector(".ms-panel");
+    var isOpen = panel.classList.contains("is-open");
+    closeAllMs();
+    if (!isOpen) { panel.classList.add("is-open"); trigger.classList.add("is-open"); }
+  };
+
+  SQ.toggleMsOpt = function (id, opt, ev) {
+    if (ev) ev.stopPropagation();
+    opt.classList.toggle("is-checked");
+    var vals = [];
+    $(id + "-panel").querySelectorAll(".ms-option.is-checked").forEach(function (o) {
+      vals.push(o.getAttribute("data-val"));
+    });
+    ST.msPsyVals = vals;
+    syncMsTrigger(id);
+    ST.page = 1;
+    doFilter();
+  };
+
+  function syncMsTrigger(id) {
+    var el = $(id);
+    var trigger = el.querySelector(".ms-trigger");
+    var label = trigger.querySelector(".ms-value") || trigger.querySelector(".ms-placeholder");
+    var checked = el.querySelectorAll(".ms-option.is-checked");
+    var names = [];
+    checked.forEach(function (o) { names.push(o.textContent.trim()); });
+    if (!names.length) {
+      if (label.classList.contains("ms-value")) label.classList.remove("ms-value");
+      label.classList.add("ms-placeholder");
+      label.textContent = "全部";
+      var countEl = trigger.querySelector(".ms-count");
+      if (countEl) countEl.remove();
+    } else {
+      if (label.classList.contains("ms-placeholder")) label.classList.remove("ms-placeholder");
+      label.classList.add("ms-value");
+      label.textContent = names.join("、");
+      var countEl = trigger.querySelector(".ms-count");
+      if (names.length > 1) {
+        if (!countEl) {
+          countEl = document.createElement("span");
+          countEl.className = "ms-count";
+          trigger.appendChild(countEl);
+        }
+        countEl.textContent = names.length;
+      } else if (countEl) {
+        countEl.remove();
+      }
+    }
+  }
+
+  function closeAllMs() {
+    document.querySelectorAll(".multi-select .ms-panel.is-open").forEach(function (p) { p.classList.remove("is-open"); });
+    document.querySelectorAll(".multi-select .ms-trigger.is-open").forEach(function (t) { t.classList.remove("is-open"); });
+  }
+
+  function resetMsPsy() {
+    document.querySelectorAll("#ms-psy-panel .ms-option.is-checked").forEach(function (o) { o.classList.remove("is-checked"); });
+    ST.msPsyVals = [];
+    syncMsTrigger("ms-psy");
+  }
 
   // ---- 机构范围 ----
   function visibleOrgs(){
@@ -378,6 +530,12 @@
       var d = ds.drug, s = ds.spec;
       if (kind && d.kind !== kind) return false;
       if (cls && leafOfPath(d.category) !== cls) return false;
+      // 毒性药品 / 麻醉药品 checkbox（勾选 = 只看对应药品）
+      var mk = d.marks || {};
+      if ($("fToxic").checked && !mk.toxic) return false;
+      if ($("fNarc").checked && !mk.narcotic) return false;
+      // 精神标志多选（未选 = 不筛选）
+      if (ST.msPsyVals.length && ST.msPsyVals.indexOf(mk.spirit || "") === -1) return false;
       if (nameQ) {
         var hit = (d.name && d.name.toLowerCase().indexOf(nameQ)>=0)
                || (d.code && d.code.toLowerCase().indexOf(nameQ)>=0)
@@ -396,16 +554,17 @@
   }
 
   /**
-   * 品规聚合：按 drugId + si 分组 SUM
-   * 每行 = { drugId, si, drug, spec, 各 SUM, 标志冲突取最严 }
+   * 品规聚合：按 库位 + drugId + si 分组 SUM
+   * 每行 = { locationId, drugId, si, drug, spec, 各 SUM }
    */
   function getAggregatedSpecs(batches){
     var groups = {};
     batches.forEach(function(b){
-      var key = b.drugId + "_" + b.si;
+      var key = (b.locationId||"") + "_" + b.drugId + "_" + b.si;
       if (!groups[key]) {
         groups[key] = {
           key: key,
+          locationId: b.locationId,
           drugId: b.drugId, si: b.si,
           drug: b._drug, spec: b._spec,
           stock:0, stopQty:0, preQty:0
@@ -415,6 +574,33 @@
       g.stock += b.stock;
       g.stopQty += b.stopQty;
       g.preQty  += b.preQty;
+    });
+    return Object.keys(groups).map(function(k){ return groups[k]; });
+  }
+
+  /**
+   * 产品聚合：按 库位 + drugId 分组 SUM（同一药品各品规/批次合并）
+   * 规格展示取该药品首个品规；生产企业取首个非空
+   */
+  function getAggregatedProducts(batches){
+    var groups = {};
+    batches.forEach(function(b){
+      var key = (b.locationId||"") + "_" + b.drugId;
+      if (!groups[key]) {
+        groups[key] = {
+          key: key,
+          locationId: b.locationId,
+          drugId: b.drugId, si: b.si,
+          drug: b._drug, spec: b._spec,
+          vendor: b.vendor || "",
+          stock:0, stopQty:0, preQty:0
+        };
+      }
+      var g = groups[key];
+      g.stock += b.stock;
+      g.stopQty += b.stopQty;
+      g.preQty  += b.preQty;
+      if (!g.vendor && b.vendor) g.vendor = b.vendor;
     });
     return Object.keys(groups).map(function(k){ return groups[k]; });
   }
@@ -457,7 +643,8 @@
 
   // 批次模式表头
   var BATCH_COLS = [
-    { key:"name", label:"药品名称", width:200, fixed:"left" },
+    { key:"loc", label:"库位", width:100, fixed:"left" },
+    { key:"name", label:"药品名称", width:200, fixed:"left2" },
     { key:"drugCode", label:"药品编码", width:110 },
     { key:"specTitle", label:"药品规格", width:140 },
     { key:"pkgSpec", label:"药品包装", width:110 },
@@ -482,9 +669,34 @@
     { key:"antibiotic", label:"抗生素级别", width:130 }
   ];
 
-  // 品规模式表头（砍掉批次号/有效期/进货价/零售价/生产企业，药品编码→品规编码）
+  // 产品模式表头（按 库位+药品 聚合批次，展示生产企业等药品级信息）
+  var PROD_COLS = [
+    { key:"loc", label:"库位", width:100, fixed:"left" },
+    { key:"name", label:"药品名称", width:200, fixed:"left2" },
+    { key:"drugCode", label:"药品编码", width:110 },
+    { key:"specTitle", label:"药品规格", width:140 },
+    { key:"pkgSpec", label:"药品包装", width:110 },
+    { key:"minFactor", label:"最小换算系数", width:100, num:true },
+    { key:"stock", label:"库存数量", width:130, sortable:true, sortField:"stock" },
+    { key:"stockBig", label:"库存数量(大包装)", width:110, num:true },
+    { key:"stopQty", label:"停用数量", width:110 },
+    { key:"preQty", label:"预减数量", width:130 },
+    { key:"avail", label:"可用数量", width:130, sortable:true, sortField:"avail" },
+    { key:"vendor", label:"生产企业", width:180 },
+    { key:"kind", label:"药品种类", width:80 },
+    { key:"category", label:"药品分类", width:160 },
+    { key:"form", label:"剂型", width:80 },
+    { key:"essential", label:"基药标志", width:70 },
+    { key:"toxic", label:"毒性药品", width:80 },
+    { key:"narcotic", label:"麻醉药品", width:80 },
+    { key:"spirit", label:"精神标志", width:110 },
+    { key:"antibiotic", label:"抗生素级别", width:130 }
+  ];
+
+  // 品规模式表头（砍掉批次号/有效期/进货价/零售价，药品编码→品规编码）
   var SPEC_COLS = [
-    { key:"name", label:"药品名称", width:200, fixed:"left" },
+    { key:"loc", label:"库位", width:100, fixed:"left" },
+    { key:"name", label:"药品名称", width:200, fixed:"left2" },
     { key:"specCode", label:"品规编码", width:110 },
     { key:"specTitle", label:"药品规格", width:140 },
     { key:"pkgSpec", label:"药品包装", width:110 },
@@ -504,13 +716,17 @@
     { key:"antibiotic", label:"抗生素级别", width:130 }
   ];
 
-  function currentCols(){ return ST.mode === "batch" ? BATCH_COLS : SPEC_COLS; }
+  function currentCols(){
+    if (ST.mode === "batch") return BATCH_COLS;
+    if (ST.mode === "prod")  return PROD_COLS;
+    return SPEC_COLS;
+  }
 
   function renderThead(){
     var cols = currentCols();
     var html = "<tr>";
     cols.forEach(function(c){
-      var fixedCls = c.fixed === "left" ? " col-left-fixed" : "";
+      var fixedCls = c.fixed === "left" ? " col-left-fixed" : (c.fixed === "left2" ? " col-left-fixed2" : "");
       var sortCls = c.sortable ? " sortable" : "";
       var ascCls  = ST.sortField === c.sortField && ST.sortOrder === "asc" ? " is-asc" : "";
       var descCls = ST.sortField === c.sortField && ST.sortOrder === "desc" ? " is-desc" : "";
@@ -544,8 +760,8 @@
 
     // 排序
     if (!ST.sortField) {
-      // 默认：批次模式=药品编码升序；品规模式=品规编码升序
-      ST.sortField = ST.mode === "batch" ? "drugCode" : "specCode";
+      // 默认：批次/产品模式=药品编码升序；品规模式=品规编码升序
+      ST.sortField = ST.mode === "spec" ? "specCode" : "drugCode";
       ST.sortOrder = "asc";
     }
     rows = rows.slice().sort(function(a,b){
@@ -567,7 +783,8 @@
       tbody.innerHTML = pageRows.map(function(r){
         var trCls = (r.stock === 0 && r.stopQty > 0) ? ' class="is-disabled"' : '';
         return "<tr" + trCls + ">" + cols.map(function(c){
-          return "<td class='" + (c.num?"num":"") + (c.fixed==="left"?" col-left-fixed":"") + "'>" + renderCell(r, c) + "</td>";
+          var fixedCls = c.fixed === "left" ? " col-left-fixed" : (c.fixed === "left2" ? " col-left-fixed2" : "");
+          return "<td class='" + (c.num?"num":"") + fixedCls + "'>" + renderCell(r, c) + "</td>";
         }).join("") + "</tr>";
       }).join("");
     }
@@ -582,6 +799,16 @@
     return String(a).localeCompare(String(b), "zh-CN");
   }
 
+  // ---- 库位名称映射（MOCK.locations: phId → [{id,name}]）----
+  var LOC_NAME_MAP = {};
+  (function buildLocNames(){
+    var map = MOCK.locations || {};
+    Object.keys(map).forEach(function(phId){
+      (map[phId] || []).forEach(function(l){ LOC_NAME_MAP[l.id] = l.name; });
+    });
+  })();
+  function locName(id){ return LOC_NAME_MAP[id] || id || ""; }
+
   /** 行对象上的字段，批次 vs 品规结构不同 */
   function cellVal(r, key){
     // 批次模式 r 有 stock, stopQty, preQty, availQty 等直接字段
@@ -594,6 +821,7 @@
     var marks = d.marks || {};
 
     switch(key){
+      case "loc": return locName(r.locationId);
       case "name": return d.name || "";
       case "drugCode": return d.code || "";
       case "specCode": return s.code || "";
@@ -633,6 +861,7 @@
     var marks = d.marks || {};
 
     switch(col.key){
+      case "loc": return '<div title="'+esc(locName(r.locationId))+'">'+esc(locName(r.locationId))+'</div>';
       case "name": return '<div title="'+esc(d.name)+'">'+esc(d.name)+'</div>';
       case "drugCode": return esc(d.code);
       case "specCode": return esc(s.code);
@@ -713,11 +942,12 @@
   // =====================================================================
   function doFilter(){
     // 统计方式切换 → 改默认排序字段
-    if (ST.mode === "batch") ST.sortField = "drugCode";
-    else ST.sortField = "specCode";
+    ST.sortField = ST.mode === "spec" ? "specCode" : "drugCode";
     var raw = getFilteredBatches();
     if (ST.mode === "spec") {
       ST.filtered = getAggregatedSpecs(raw);
+    } else if (ST.mode === "prod") {
+      ST.filtered = getAggregatedProducts(raw);
     } else {
       ST.filtered = raw;
     }
@@ -730,6 +960,9 @@
     $("fKind").value = "";
     $("fClass").value = "";
     $("fStock").value = "";
+    $("fToxic").checked = false;
+    $("fNarc").checked = false;
+    resetMsPsy();
     // 机构保持当前，库位重置为全部
     $("fLocation").value = "";
     ST.page = 1;
@@ -756,6 +989,18 @@
     // 查询/重置
     $("btnSearch").onclick = function(){ ST.page = 1; doFilter(); };
     $("btnReset").onclick = resetFilter;
+    // 毒性/麻醉 checkbox 即时筛选
+    $("fToxic").onchange = function(){ ST.page = 1; doFilter(); };
+    $("fNarc").onchange = function(){ ST.page = 1; doFilter(); };
+    // 精神标志多选下拉
+    $("ms-psy").querySelector(".ms-trigger").addEventListener("click", function(ev){ SQ.toggleMs("ms-psy", ev); });
+    document.querySelectorAll("#ms-psy-panel .ms-option").forEach(function(o){
+      o.addEventListener("click", function(ev){ SQ.toggleMsOpt("ms-psy", o, ev); });
+    });
+    // 多选下拉：点击外部关闭
+    document.addEventListener("click", function(e){
+      if (!e.target.closest(".multi-select")) closeAllMs();
+    });
     // 回车
     document.addEventListener("keydown", function(e){
       if (e.key === "Enter") {

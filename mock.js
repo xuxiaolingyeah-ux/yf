@@ -483,6 +483,117 @@ window.MOCK = {
           ]
         }
       ]
+    },
+
+    {
+      id: "d10",
+      name: "盐酸吗啡注射液",
+      code: "1210500310",
+      py: "YSMFZSY",
+      en: "Morphine Hydrochloride Injection",
+      kind: "西药",
+      category: "化学药品 / 镇痛药 / 阿片类",
+      form: "注射液",
+      ddd: "0.03",
+      dddUnit: "g",
+      insClass: "甲类",
+      insCode: "XN01AH0101010101032",
+      status: "on",
+      marks: {
+        spirit: "", toxic: false, narcotic: true,
+        antibiotic: "", antitumor: "", highAlert: "高警示药品",
+        allergy: [], skinTest: false, longTerm: false,
+        otc: false, essential: true, ins: true,
+        centralized: "", negotiated: false,
+        emergency: false, keyMonitor: true, rare: false,
+        valuable: false, defaultSplit: false
+      },
+      specs: [
+        {
+          code: "1010401001", title: "10mg * 1ml * 5支/盒",
+          formSpec: "10mg", basicDose: "10", doseUnit: "mg", prepUnit: "支",
+          minFactor: "5", pkgUnit: "盒", pkgFactor: "5", pkgSpec: "5支/盒",
+          pkgMaterial: "安瓿", insCode: "XN01AH0101010101032",
+          splitUnit: "支", splitFactor: "5", status: "on",
+          vendors: [
+            { name: "东北制药集团股份有限公司", approval: "H21022455", imported: "否", purchase: "阳光采购" }
+          ]
+        }
+      ]
+    },
+
+    {
+      id: "d11",
+      name: "地西泮片",
+      code: "1210500311",
+      py: "DXP",
+      en: "Diazepam Tablets",
+      kind: "西药",
+      category: "化学药品 / 镇静催眠药 / 苯二氮卓类",
+      form: "片剂",
+      ddd: "0.01",
+      dddUnit: "g",
+      insClass: "甲类",
+      insCode: "XN05BA0101010101032",
+      status: "on",
+      marks: {
+        spirit: "第二类精神药品", toxic: false, narcotic: false,
+        antibiotic: "", antitumor: "", highAlert: "高警示药品",
+        allergy: [], skinTest: false, longTerm: false,
+        otc: false, essential: true, ins: true,
+        centralized: "", negotiated: false,
+        emergency: false, keyMonitor: true, rare: false,
+        valuable: false, defaultSplit: false
+      },
+      specs: [
+        {
+          code: "1010401101", title: "2.5mg * 24片/盒",
+          formSpec: "2.5mg", basicDose: "2.5", doseUnit: "mg", prepUnit: "片",
+          minFactor: "24", pkgUnit: "盒", pkgFactor: "24", pkgSpec: "24片/盒",
+          pkgMaterial: "铝塑泡罩", insCode: "XN05BA0101010101032",
+          splitUnit: "片", splitFactor: "24", status: "on",
+          vendors: [
+            { name: "江苏恩华药业股份有限公司", approval: "H32020337", imported: "否", purchase: "阳光采购" }
+          ]
+        }
+      ]
+    },
+
+    {
+      id: "d12",
+      name: "注射用A型肉毒毒素",
+      code: "1210500312",
+      py: "ZSYAXRDDD",
+      en: "Botulinum Toxin Type A for Injection",
+      kind: "西药",
+      category: "生物制品 / 毒性药品 / 神经毒素类",
+      form: "注射用无菌粉末",
+      ddd: "",
+      dddUnit: "U",
+      insClass: "乙类",
+      insCode: "XZ09X0101010101032",
+      status: "on",
+      marks: {
+        spirit: "", toxic: true, narcotic: false,
+        antibiotic: "", antitumor: "", highAlert: "高警示药品",
+        allergy: [], skinTest: false, longTerm: false,
+        otc: false, essential: false, ins: true,
+        centralized: "", negotiated: false,
+        emergency: false, keyMonitor: true, rare: false,
+        valuable: true, defaultSplit: false
+      },
+      specs: [
+        {
+          code: "1010401201", title: "100U * 1支/盒",
+          formSpec: "100U", basicDose: "100", doseUnit: "U", prepUnit: "支",
+          minFactor: "1", pkgUnit: "盒", pkgFactor: "1", pkgSpec: "1支/盒",
+          pkgMaterial: "西林瓶", insCode: "XZ09X0101010101032",
+          splitUnit: "支", splitFactor: "1", status: "on",
+          vendors: [
+            { name: "兰州生物制品研究所有限公司", approval: "S10970011", imported: "否", purchase: "阳光采购" }
+          ]
+        }
+      ]
     }
   ]
 };
@@ -2271,6 +2382,34 @@ MOCK.stockBatches = [
     purchase:11.35, retail:21.50,
     expDate:"2028-08-25", inTime:"2026-08-28 14:40" }
 ];
+
+/* 毒麻精类药品批次（库存查询/药品效期查询筛选演示） */
+MOCK.stockBatches.push(
+  { orgId:"org-c", pharmacyId:"ph-c1", locationId:"loc-c1-B",
+    drugId:"d10", si:0, batchNo:"M260112",
+    vendor:"东北制药集团股份有限公司",
+    stock:40, stopQty:0, preQty:0,
+    purchase:12.00, retail:18.50,
+    expDate:"2028-01-12", inTime:"2026-01-13 09:00" },
+  { orgId:"org-c", pharmacyId:"ph-c1", locationId:"loc-c1-B",
+    drugId:"d10", si:0, batchNo:"M260318",
+    vendor:"东北制药集团股份有限公司",
+    stock:25, stopQty:0, preQty:0,
+    purchase:12.20, retail:18.50,
+    expDate:"2028-03-18", inTime:"2026-03-19 10:20" },
+  { orgId:"org-c", pharmacyId:"ph-c1", locationId:"loc-c1-B",
+    drugId:"d11", si:0, batchNo:"S260208",
+    vendor:"江苏恩华药业股份有限公司",
+    stock:120, stopQty:0, preQty:24,
+    purchase:0.40, retail:0.80,
+    expDate:"2028-02-08", inTime:"2026-02-09 11:30" },
+  { orgId:"org-c", pharmacyId:"ph-c1", locationId:"loc-c1-B",
+    drugId:"d12", si:0, batchNo:"T260120",
+    vendor:"兰州生物制品研究所有限公司",
+    stock:15, stopQty:0, preQty:0,
+    purchase:380.00, retail:520.00,
+    expDate:"2027-06-20", inTime:"2026-06-21 15:00" }
+);
 
 /* 辅助：根据 drugId+si 查出 { drug, spec } */
 MOCK.findDrugSpec = function (drugId, si) {

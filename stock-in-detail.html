@@ -83,6 +83,8 @@
 .si-tx-more:hover { background: var(--primary-lighter); }
 /* 明细行当前选中高亮 */
 .si-items tbody tr.row-cur > td { background: var(--primary-lighter) !important; }
+/* 数量列单位后缀 */
+.qty-unit { font-size: 12px; color: var(--text-tertiary); white-space: nowrap; }
 </style>
 </head>
 <body>
@@ -280,10 +282,10 @@
       h += "<td class='cell-ellipsis' title='"+SI.esc(it.vendor)+"'>"+SI.esc(it.vendor)+"</td>";
       h += "<td class='num'>"+SI.esc(it.factor)+"</td><td>"+SI.esc(it.packUnit)+"</td>";
       h += "<td>"+SI.esc(it.insCode)+"</td><td>"+SI.esc(it.insName)+"</td>";
-      h += "<td>"+SI.esc(it.batch)+"</td><td class='num'>"+SI.esc(it.qty)+"</td>";
+      h += "<td>"+SI.esc(it.batch)+"</td><td class='num'>"+SI.esc(it.qty)+(it.packUnit?" <span class='qty-unit'>"+SI.esc(it.packUnit)+"</span>":"")+"</td>";
       h += "<td class='num'>"+SI.num2(it.purchase)+"</td><td class='num'>"+SI.num2(it.retail)+"</td>";
-      h += "<td>"+SI.esc(it.expiry)+"</td><td class='num'>"+SI.qualified(it)+"</td>";
-      h += "<td class='num'>"+SI.esc(it.unq)+"</td><td>"+SI.esc(it.reason)+"</td>";
+      h += "<td>"+SI.esc(it.expiry)+"</td><td class='num'>"+SI.qualified(it)+(it.packUnit?" <span class='qty-unit'>"+SI.esc(it.packUnit)+"</span>":"")+"</td>";
+      h += "<td class='num'>"+SI.esc(it.unq)+(it.packUnit?" <span class='qty-unit'>"+SI.esc(it.packUnit)+"</span>":"")+"</td><td>"+SI.esc(it.reason)+"</td>";
       h += "<td class='num'>"+SI.num2(SI.purchaseAmt(it))+"</td><td class='num'>"+SI.num2(SI.retailAmt(it))+"</td>";
       if(detail) h += "<td>"+SI.esc(it.invoiceNo)+"</td>";
       h += "<td class='col-acts'><a class='link-btn' data-tr='"+i+"'>查看药品追溯码</a></td>";

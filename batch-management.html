@@ -314,8 +314,8 @@
               <div class="ctrl">
                 <select class="select" id="fStatus">
                   <option value="">全部</option>
-                  <option value="on">启用</option>
-                  <option value="off">停用</option>
+                  <option value="on">正常</option>
+                  <option value="off">封存</option>
                 </select>
               </div>
             </div>
@@ -596,6 +596,11 @@
         <input class="input" id="qtyInput" type="number" style="flex:1" placeholder="请输入数量">
         <span id="qtyUnit" style="font-size:13px;color:var(--text-secondary);white-space:nowrap">盒</span>
       </div>
+      <div style="display:none;align-items:center;gap:10px;padding:8px 0" id="qtySplitRow">
+        <span style="width:96px;text-align:right;font-size:13px;color:var(--text-primary)" id="qtySplitLabel">停用拆零数量：</span>
+        <input class="input" id="qtySplitInput" type="number" style="flex:1" placeholder="可不填">
+        <span id="qtySplitUnit" style="font-size:13px;color:var(--text-secondary);white-space:nowrap">片</span>
+      </div>
     </div>
     <div class="modal-foot">
       <button class="btn" id="qtyCancel">取消</button>
@@ -698,23 +703,23 @@
         var canStart = (r.stopQty||0)>0;     // 停用数量大于零 → 可启用
         return '<tr>'+
           '<td class="col-check"><input type="checkbox" class="row-check" data-idx="'+idx+'"'+(listSel.has(r)?" checked":"")+'></td>'+
-          '<td class="col-status"><span class="status-tag '+(r.status==="on"?"on":"off")+'"><span class="dot"></span>'+(r.status==="on"?"启用":"停用")+'</span></td>'+
+          '<td class="col-status"><span class="status-tag '+(r.status==="on"?"on":"off")+'"><span class="dot"></span>'+(r.status==="on"?"正常":"封存")+'</span></td>'+
           '<td class="col-name name-cell" title="'+esc(r.name)+'">'+esc(r.name)+'</td>'+
           '<td>'+esc(r.code)+'</td>'+
           '<td>'+esc(r.kind)+'</td>'+
           '<td>'+esc(r.spec)+'</td>'+
           '<td class="num">'+r.minFactor+'</td>'+
-          '<td class="num">'+r.availQty+'</td>'+
+          '<td class="num">'+r.availQty+(r.availQty!==0?' <span class="qty-unit">'+esc(r.minPkgUnit)+'</span>':'')+'</td>'+
           '<td class="num">'+r.sendQty+'</td>'+
           '<td>'+esc(r.sendUnit)+'</td>'+
           '<td>'+esc(r.batchNo)+'</td>'+
           '<td>'+esc(r.expire)+'</td>'+
           '<td class="num">'+r.outPrice.toFixed(2)+'</td>'+
           '<td class="num">'+r.splitOutPrice.toFixed(2)+'</td>'+
-          '<td class="num">'+r.stockQty+'</td>'+
-          '<td class="num">'+r.stockBig+'</td>'+
-          '<td class="num">'+r.stopQty+'</td>'+
-          '<td class="num">'+r.preQty+'</td>'+
+          '<td class="num">'+r.stockQty+(r.stockQty!==0?' <span class="qty-unit">'+esc(r.minPkgUnit)+'</span>':'')+'</td>'+
+          '<td class="num">'+r.stockBig+(r.stockBig!==0?' <span class="qty-unit">'+esc(r.minPkgUnit)+'</span>':'')+'</td>'+
+          '<td class="num">'+r.stopQty+(r.stopQty!==0?' <span class="qty-unit">'+esc(r.minPkgUnit)+'</span>':'')+'</td>'+
+          '<td class="num">'+r.preQty+(r.preQty!==0?' <span class="qty-unit">'+esc(r.minPkgUnit)+'</span>':'')+'</td>'+
           '<td class="name-cell" title="'+esc(r.vendor)+'">'+esc(r.vendor)+'</td>'+
           '<td class="num">'+r.inPrice.toFixed(2)+'</td>'+
           '<td class="num">'+r.splitInPrice.toFixed(2)+'</td>'+
@@ -739,7 +744,6 @@
             '<button class="link-btn" data-act="edit" data-idx="'+idx+'">编辑</button>'+
             (canStop?'<button class="link-btn" data-act="stop" data-idx="'+idx+'">停用</button>':'')+
             (canStart?'<button class="link-btn" data-act="start" data-idx="'+idx+'">启用</button>':'')+
-            '<button class="link-btn" data-act="del" data-idx="'+idx+'" style="color:var(--danger)">删除</button>'+
           '</td>'+
         '</tr>';
       }).join("");
@@ -903,6 +907,14 @@
     $("#qtyLabel").textContent = (isStop?"停用数量：":"启用数量：");
     $("#qtyUnit").textContent = r.minPkgUnit || "盒";
     $("#qtyInput").value = "";
+    /* 拆零标志为"是"时，允许录入拆零数量（单位取制剂单位） */
+    var canSplit = r.split === "是";
+    $("#qtySplitRow").style.display = canSplit ? "flex" : "none";
+    if(canSplit){
+      $("#qtySplitLabel").textContent = isStop ? "停用拆零数量：" : "启用拆零数量：";
+      $("#qtySplitUnit").textContent = r.prepUnit || "片";
+      $("#qtySplitInput").value = "";
+    }
     $("#qtyMask").classList.add("show");
     setTimeout(function(){$("#qtyInput").focus();},50);
   }
@@ -957,14 +969,7 @@
       if(act==="edit"){openBatchDrawer(idx);}
       else if(act==="stop"){openQtyDialog("stop",idx);}
       else if(act==="start"){openQtyDialog("start",idx);}
-      else if(act==="del"){
-        if(confirm("确定删除该批次吗？")){
-          var r=ST.filtered[idx], realIdx=BATCHES.indexOf(r);
-          if(realIdx>=0) BATCHES.splice(realIdx,1);
-          ST.filtered.splice(idx,1);
-          toast("已删除"); renderTable();
-        }
-      }
+      /* 批次不可删除，仅支持数量维度停用/启用（状态随之正常/封存） */
     });
 
     // 列表勾选
@@ -1068,19 +1073,28 @@
     $("#qtySave").addEventListener("click",function(){
       var qty=parseFloat($("#qtyInput").value);
       if(isNaN(qty)||qty<=0){toast("请输入有效数量");return;}
+      /* 拆零数量：可为空；填写时须为正数 */
+      var splitQty = null;
+      if($("#qtySplitRow").style.display==="flex"){
+        var sv=$("#qtySplitInput").value.trim();
+        if(sv!==""){
+          splitQty=parseFloat(sv);
+          if(isNaN(splitQty)||splitQty<=0){toast("拆零数量须为正数");return;}
+        }
+      }
       var r=ST.filtered[qtyCtx.idx];
       if(qtyCtx.act==="stop"){
         r.stopQty = (r.stopQty||0) + qty;
         r.stockQty = Math.max(0, (r.stockQty||0) - qty);
         r.availQty = Math.max(0, (r.availQty||0) - qty);
-        r.status = r.availQty<=0 ? "off" : "on";   // 可用数量为 0 才算停用
-        toast("已停用 "+qty+" "+r.minPkgUnit);
+        r.status = r.availQty<=0 ? "off" : "on";   // 可用数量为 0 才算封存
+        toast("已停用 "+qty+" "+(r.minPkgUnit||"盒")+(splitQty!=null?"、拆零 "+splitQty+" "+(r.prepUnit||"片"):""));
       }else{
         r.stopQty = Math.max(0, (r.stopQty||0) - qty);
         r.stockQty = (r.stockQty||0) + qty;
         r.availQty = (r.availQty||0) + qty;
         if(r.stopQty<=0){ r.status="on"; }
-        toast("已启用 "+qty+" "+r.minPkgUnit);
+        toast("已启用 "+qty+" "+(r.minPkgUnit||"盒")+(splitQty!=null?"、拆零 "+splitQty+" "+(r.prepUnit||"片"):""));
       }
       closeQtyDialog();
       renderTable();

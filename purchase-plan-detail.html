@@ -242,7 +242,7 @@
           "<td>" + esc(it.spec) + "</td>" +
           '<td><div class="cell-ellipsis" title="' + esc(it.vendor) + '">' + esc(it.vendor) + "</div></td>" +
           "<td>" + (it.essential ? "是" : "否") + "</td>" +
-          '<td class="num">' + esc(it.qty === "" || it.qty === null ? "—" : it.qty) + "</td>" +
+          '<td class="num">' + esc(it.qty === "" || it.qty === null ? "—" : it.qty) + (it.qty !== "" && it.qty !== null && (it.unit || PC.unitOfSpec(it.spec)) ? ' <span class="qty-unit">' + esc(it.unit || PC.unitOfSpec(it.spec)) + "</span>" : "") + "</td>" +
           '<td class="num">' + esc(it.price === "" || it.price === null ? "—" : it.price) + "</td>" +
           '<td class="num">' + esc(PC.fmtMoney(t)) + "</td>" +
         "</tr>";

@@ -204,7 +204,7 @@
           "<td>" + esc(it.drugCode) + "</td>" +
           "<td>" + esc(it.spec) + "</td>" +
           '<td><div class="cell-ellipsis" title="' + esc(it.vendor) + '">' + esc(it.vendor) + "</div></td>" +
-          '<td class="num">' + esc(it.qty === "" || it.qty === null ? "—" : it.qty) + "</td>" +
+          '<td class="num">' + esc(it.qty === "" || it.qty === null ? "—" : it.qty) + (it.qty !== "" && it.qty !== null && (it.unit || PC.unitOfSpec(it.spec)) ? ' <span class="qty-unit">' + esc(it.unit || PC.unitOfSpec(it.spec)) + "</span>" : "") + "</td>" +
           '<td class="num" style="color:' + (low ? "var(--danger)" : "inherit") + ';">' + esc(it.stock) + " " + esc(it.unit || "") + "</td>" +
           '<td class="num">' + esc(it.upper) + "</td>" +
           '<td class="num">' + esc(it.lower) + "</td>" +

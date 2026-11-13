@@ -201,13 +201,14 @@
     } else {
       body.innerHTML = bill.items.map(function (it, i) {
         var over = /^\d+$/.test(String(it.applyQty)) && parseInt(it.applyQty, 10) > it.stock;
+        var unit = TR.unitOfSpec(it.spec);
         return "<tr>" +
           '<td title="' + esc(it.drugName) + '">' + esc(it.drugName) + "</td>" +
           "<td>" + esc(it.drugCode) + "</td>" +
           '<td title="' + esc(it.spec) + '">' + esc(it.spec) + "</td>" +
           '<td class="num">' + it.stock + "</td>" +
-          '<td class="num"><input class="input tr-qty' + (over ? " is-invalid" : "") +
-            '" type="text" inputmode="numeric" data-si="' + i + '" value="' + it.applyQty + '" title="不可超过出库机构库存 ' + it.stock + '"></td>' +
+          '<td class="num"><div class="qty-wrap"><input class="input tr-qty' + (over ? " is-invalid" : "") +
+            '" type="text" inputmode="numeric" data-si="' + i + '" value="' + it.applyQty + '" title="不可超过出库机构库存 ' + it.stock + '">' + (unit ? '<span class="qty-unit">' + esc(unit) + "</span>" : "") + "</div></td>" +
           '<td><button class="link-btn is-danger" data-remove="' + i + '">删除</button></td>' +
         "</tr>";
       }).join("");

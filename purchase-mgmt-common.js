@@ -328,6 +328,11 @@
   function isQty(v) {
     return /^\d+$/.test(String(v).trim()) && parseInt(v, 10) > 0;
   }
+  /* 从规格标题提取最小包装单位，如 "0.25g * 24粒/盒" → "盒"（items 缺 unit 字段时兜底） */
+  function unitOfSpec(spec) {
+    var m = /\/\s*([^/]+?)\s*$/.exec(String(spec || "").trim());
+    return m ? m[1] : "";
+  }
   function isPrice(v) {
     var n = Number(v);
     return isFinite(n) && n > 0 && /^\d+(\.\d{1,2})?$/.test(String(v).trim());
@@ -450,8 +455,8 @@
         addressId: "ad1", address: "山东省济南市历下区文化东路街道文化西路107号 中心药房收货区",
         createdAt: "2026-11-04 14:00", status: "approved", linkedNeedIds: [],
         items: [
-          { key: "d1_0_0", drugCode: "1010400101", drugName: "阿莫西林胶囊", spec: "0.25g * 24粒/盒", vendor: "华北制药股份有限公司", essential: true, qty: 200, price: "6.80" },
-          { key: "d6_0_0", drugCode: "1010400601", drugName: "布洛芬缓释胶囊", spec: "0.3g * 20粒/盒", vendor: "中美天津史克制药有限公司", essential: true, qty: 100, price: "7.50" }
+          { key: "d1_0_0", drugCode: "1010400101", drugName: "阿莫西林胶囊", spec: "0.25g * 24粒/盒", vendor: "华北制药股份有限公司", essential: true, qty: 200, price: "6.80", unit: "盒" },
+          { key: "d6_0_0", drugCode: "1010400601", drugName: "布洛芬缓释胶囊", spec: "0.3g * 20粒/盒", vendor: "中美天津史克制药有限公司", essential: true, qty: 100, price: "7.50", unit: "盒" }
         ],
         records: [
           { node: "提交", org: "区域中心药房", person: "赵敏", result: "已提交", opinion: "—", time: "2026-11-04 14:00" },
@@ -651,6 +656,6 @@
     recordRows: recordRows,
     specRows: specRows, locsFor: locsFor,
     fmtMoney: fmtMoney, planTotal: planTotal, planEssentialRatio: planEssentialRatio,
-    isQty: isQty, isPrice: isPrice
+    isQty: isQty, isPrice: isPrice, unitOfSpec: unitOfSpec
   };
 })();

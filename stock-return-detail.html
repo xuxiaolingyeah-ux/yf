@@ -73,6 +73,8 @@
 /* 确认弹窗 */
 .sr-confirm .modal { width: 400px; }
 .sr-confirm-desc { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
+/* 数量列单位后缀 */
+.qty-unit { font-size: 12px; color: var(--text-tertiary); white-space: nowrap; }
 </style>
 </head>
 <body>
@@ -326,12 +328,14 @@
     }).join("")+"</tr>";
 
     $("#itemsBody").innerHTML = (bill.items||[]).map(function(it, i){
+      /* 行单位：明细数据缺省时按药品编码回查（兼容旧数据） */
+      var unit = it.minUnit || ((SR.drugOf(it.code) || {}).minUnit) || "";
       var h = "<tr>";
       h += '<td class="col-drug cell-ellipsis" title="'+SR.esc(it.name)+'">'+SR.esc(it.name)+'</td>';
       h += "<td>"+SR.esc(it.code)+"</td><td>"+SR.esc(it.spec)+"</td>";
       h += '<td class="cell-ellipsis" title="'+SR.esc(it.vendor)+'">'+SR.esc(it.vendor)+'</td>';
       h += "<td>"+SR.esc(it.packSpec)+"</td><td>"+SR.esc(it.batch)+"</td>";
-      h += '<td class="num">'+SR.esc(it.stock)+'</td><td class="num">'+SR.esc(it.qty)+"</td>";
+      h += '<td class="num">'+SR.esc(it.stock)+'</td><td class="num">'+SR.esc(it.qty)+(unit?' <span class="qty-unit">'+SR.esc(unit)+'</span>':"")+"</td>";
       h += '<td class="num">'+SR.num2(it.purchase)+'</td><td class="num">'+SR.num2(it.retail)+'</td>';
       h += '<td class="num">'+SR.num2(SR.purchaseAmt(it))+'</td><td class="num">'+SR.num2(SR.retailAmt(it))+"</td>";
       h += "<td>"+SR.esc(it.expiry)+"</td>";
@@ -339,18 +343,18 @@
       if(isIn){
         var v = (it.verified||[]).length, b = (it.badCodes||[]).length, need = (it.traces||[]).length;
         vDone = need>0 && v+b>=need;
-        h += '<td class="num">'+v+'</td><td class="num"'+(b?' style="color:var(--danger)"':'')+'>'+b+'</td>';
+        h += '<td class="num">'+v+(unit?' <span class="qty-unit">'+SR.esc(unit)+'</span>':'')+'</td><td class="num"'+(b?' style="color:var(--danger)"':'')+'>'+b+(unit?' <span class="qty-unit">'+SR.esc(unit)+'</span>':'')+'</td>';
         h += '<td>'+SR.esc(it.unqReason||'—')+'</td>';
-        h += '<td class="num" style="color:'+(vDone?'var(--success)':v>0?'var(--warning)':'var(--text-tertiary)')+';font-weight:500">'+v+'/'+need+'</td>';
+        h += '<td class="num" style="color:'+(vDone?'var(--success)':v>0?'var(--warning)':'var(--text-tertiary)')+';font-weight:500">'+v+'/'+need+(unit?' '+SR.esc(unit):'')+'</td>';
       } else if(bill.receiveStatus==="done"){
         var vd = Number(it.inQty||0), bd = Number(it.unqQty||0), nd = (it.traces||[]).length || Number(it.qty||0);
-        h += '<td class="num">'+SR.esc(it.inQty)+'</td><td class="num">'+SR.esc(it.unqQty)+'</td><td>'+SR.esc(it.unqReason||'—')+'</td>';
-        h += '<td class="num">'+(vd+bd)+'/'+nd+'</td>';
+        h += '<td class="num">'+SR.esc(it.inQty)+(unit?' <span class="qty-unit">'+SR.esc(unit)+'</span>':'')+'</td><td class="num">'+SR.esc(it.unqQty)+(unit?' <span class="qty-unit">'+SR.esc(unit)+'</span>':'')+'</td><td>'+SR.esc(it.unqReason||'—')+'</td>';
+        h += '<td class="num">'+(vd+bd)+'/'+nd+(unit?' '+SR.esc(unit):'')+'</td>';
       }
       if(hasTraceCol){
         if(isOut){
           var n = (it.traces||[]).length;
-          h += '<td class="col-acts"><a class="link-btn" data-act="trace" data-idx="'+i+'">录入追溯码</a><span style="font-size:12px;color:var(--text-tertiary);margin-left:6px">'+n+'/'+SR.esc(it.qty)+'</span></td>';
+          h += '<td class="col-acts"><a class="link-btn" data-act="trace" data-idx="'+i+'">录入追溯码</a><span style="font-size:12px;color:var(--text-tertiary);margin-left:6px">'+n+'/'+SR.esc(it.qty)+(unit?' '+SR.esc(unit):'')+'</span></td>';
         } else if(isIn){
           h += '<td class="col-acts"><a class="link-btn" data-act="verify" data-idx="'+i+'">'+(vDone?'查看核对':'扫码核对')+'</a></td>';
         } else {

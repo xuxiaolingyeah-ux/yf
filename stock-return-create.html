@@ -38,6 +38,10 @@
 .sr-items tbody tr:nth-child(even) td { background: var(--table-even); }
 .sr-items .num { text-align: right; font-variant-numeric: tabular-nums; }
 .sr-items .cell-input { height: 28px; width: 100%; min-width: 0; box-sizing: border-box; font-size: 12px; }
+/* 数量列：输入框 + 单位后缀 */
+.sr-items .qty-wrap { display: flex; align-items: center; justify-content: flex-end; gap: 3px; }
+.sr-items .qty-wrap .cell-input { width: auto; flex: 1; min-width: 0; }
+.sr-items .qty-unit { flex: none; font-size: 12px; color: var(--text-tertiary); white-space: nowrap; }
 .sr-items .cell-ellipsis { max-width: 180px; overflow: hidden; text-overflow: ellipsis; }
 /* 药品名称列左固定 / 操作列右固定 */
 .sr-items .col-drug { position: sticky; left: 0; z-index: 3; box-shadow: 2px 0 4px rgba(0,0,0,.04); }
@@ -353,9 +357,12 @@
   $("#fToLocation").addEventListener("change",function(){ ST.toLocation=this.value; });
 
   /* ===== 药品明细表 ===== */
+  /* 行单位：明细数据缺省时按药品编码回查（兼容旧数据） */
+  function unitOf(it){ return it.minUnit || ((SR.drugOf(it.code) || {}).minUnit) || ""; }
   function renderItems(){
     $("#itemsEmpty").style.display = ST.items.length ? "none" : "block";
     $("#itemsBody").innerHTML = ST.items.map(function(it, i){
+      var unit = unitOf(it);
       var h = '<tr data-idx="'+i+'">';
       h += '<td class="col-drug cell-ellipsis" title="'+SR.esc(it.name)+'">'+SR.esc(it.name)+'</td>';
       h += '<td>'+SR.esc(it.code)+'</td>';
@@ -364,7 +371,7 @@
       h += '<td>'+SR.esc(it.packSpec)+'</td>';
       h += '<td>'+SR.esc(it.batch)+'</td>';
       h += '<td class="num">'+SR.esc(it.stock)+'</td>';
-      h += '<td><input class="cell-input" type="number" min="1" max="'+SR.esc(it.stock)+'" data-f="qty" data-idx="'+i+'" value="'+SR.raw(it.qty)+'"></td>';
+      h += '<td><div class="qty-wrap"><input class="cell-input" type="number" min="1" max="'+SR.esc(it.stock)+'" data-f="qty" data-idx="'+i+'" value="'+SR.raw(it.qty)+'">'+(unit?'<span class="qty-unit">'+SR.esc(unit)+'</span>':'')+'</div></td>';
       h += '<td class="num">'+(it.purchase===""?"":SR.num2(it.purchase))+'</td>';
       h += '<td class="num">'+(it.retail===""?"":SR.num2(it.retail))+'</td>';
       h += '<td class="num" data-c="pamt">'+SR.num2(SR.purchaseAmt(it))+'</td>';

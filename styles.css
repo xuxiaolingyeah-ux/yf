@@ -2905,6 +2905,10 @@ input, select { font-family: inherit; font-size: inherit; }
 .tr-items-table th.num, .tr-items-table td.num { text-align: right; }
 .tr-qty { width: 108px; text-align: right; }
 .tr-qty.is-invalid { border-color: var(--danger); }
+/* 数量列：输入框/数值后跟单位后缀 */
+.qty-unit { font-size: 12px; color: var(--text-tertiary); white-space: nowrap; }
+.qty-wrap { display: flex; align-items: center; justify-content: flex-end; gap: 3px; }
+.qty-wrap .input, .qty-wrap .cell-input { flex: 1; min-width: 0; width: auto; }
 
 /* 添加药品弹窗 */
 .tr-drug-modal { width: 880px; }

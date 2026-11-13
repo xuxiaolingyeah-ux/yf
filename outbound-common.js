@@ -52,16 +52,16 @@
 
   /* ---------- 药品库 ---------- */
   var DRUGS = [
-    { code: "1210500301", name: "阿莫西林胶囊", spec: "0.25g×24粒", packSpec: "24粒/盒", minFactor: 24, vendor: "华北制药股份有限公司" },
-    { code: "1210500302", name: "阿莫西林胶囊", spec: "0.5g×12粒", packSpec: "12粒/盒", minFactor: 12, vendor: "石药集团中诺药业（石家庄）有限公司" },
-    { code: "1210500501", name: "头孢克肟分散片", spec: "0.1g×6片", packSpec: "6片/盒", minFactor: 6, vendor: "上海信谊药厂有限公司" },
-    { code: "1210500601", name: "布洛芬缓释胶囊", spec: "0.3g×20粒", packSpec: "20粒/盒", minFactor: 20, vendor: "中美天津史克制药有限公司" },
-    { code: "1210500901", name: "奥美拉唑肠溶胶囊", spec: "20mg×14粒", packSpec: "14粒/盒", minFactor: 14, vendor: "常州四药制药有限公司" },
-    { code: "1210501101", name: "复方甘草片", spec: "100片", packSpec: "100片/瓶", minFactor: 100, vendor: "广州白云山制药股份有限公司" },
-    { code: "1210501201", name: "硝苯地平控释片", spec: "30mg×7片", packSpec: "7片/盒", minFactor: 7, vendor: "拜耳医药保健有限公司" },
-    { code: "1210501301", name: "盐酸二甲双胍片", spec: "0.5g×20片", packSpec: "20片/盒", minFactor: 20, vendor: "中美上海施贵宝制药有限公司" },
-    { code: "1210501401", name: "左氧氟沙星片", spec: "0.5g×4片", packSpec: "4片/盒", minFactor: 4, vendor: "第一三共制药（北京）有限公司" },
-    { code: "1210501601", name: "阿托伐他汀钙片", spec: "20mg×7片", packSpec: "7片/盒", minFactor: 7, vendor: "辉瑞制药有限公司" }
+    { code: "1210500301", name: "阿莫西林胶囊", spec: "0.25g×24粒", packSpec: "24粒/盒", minFactor: 24, packUnit: "箱", minUnit: "盒", vendor: "华北制药股份有限公司" },
+    { code: "1210500302", name: "阿莫西林胶囊", spec: "0.5g×12粒", packSpec: "12粒/盒", minFactor: 12, packUnit: "箱", minUnit: "盒", vendor: "石药集团中诺药业（石家庄）有限公司" },
+    { code: "1210500501", name: "头孢克肟分散片", spec: "0.1g×6片", packSpec: "6片/盒", minFactor: 6, packUnit: "箱", minUnit: "盒", vendor: "上海信谊药厂有限公司" },
+    { code: "1210500601", name: "布洛芬缓释胶囊", spec: "0.3g×20粒", packSpec: "20粒/盒", minFactor: 20, packUnit: "箱", minUnit: "盒", vendor: "中美天津史克制药有限公司" },
+    { code: "1210500901", name: "奥美拉唑肠溶胶囊", spec: "20mg×14粒", packSpec: "14粒/盒", minFactor: 14, packUnit: "箱", minUnit: "盒", vendor: "常州四药制药有限公司" },
+    { code: "1210501101", name: "复方甘草片", spec: "100片", packSpec: "100片/瓶", minFactor: 100, packUnit: "箱", minUnit: "瓶", vendor: "广州白云山制药股份有限公司" },
+    { code: "1210501201", name: "硝苯地平控释片", spec: "30mg×7片", packSpec: "7片/盒", minFactor: 7, packUnit: "箱", minUnit: "盒", vendor: "拜耳医药保健有限公司" },
+    { code: "1210501301", name: "盐酸二甲双胍片", spec: "0.5g×20片", packSpec: "20片/盒", minFactor: 20, packUnit: "箱", minUnit: "盒", vendor: "中美上海施贵宝制药有限公司" },
+    { code: "1210501401", name: "左氧氟沙星片", spec: "0.5g×4片", packSpec: "4片/盒", minFactor: 4, packUnit: "箱", minUnit: "盒", vendor: "第一三共制药（北京）有限公司" },
+    { code: "1210501601", name: "阿托伐他汀钙片", spec: "20mg×7片", packSpec: "7片/盒", minFactor: 7, packUnit: "箱", minUnit: "盒", vendor: "辉瑞制药有限公司" }
   ];
 
   /* ---------- 批次库（按药品编码）：stock = 中心药房库存总量 ---------- */

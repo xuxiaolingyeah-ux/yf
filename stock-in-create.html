@@ -42,6 +42,10 @@
 .si-items td { padding: 6px 8px; border-bottom: 1px solid var(--border); white-space: nowrap; vertical-align: middle; }
 .si-items .num { text-align: right; font-variant-numeric: tabular-nums; }
 .si-items .cell-input, .si-items .cell-select { height: 28px; width: 100%; min-width: 0; box-sizing: border-box; font-size: 12px; }
+/* 数量列：输入框 + 单位后缀 */
+.si-items .qty-wrap { display: flex; align-items: center; gap: 3px; }
+.si-items .qty-wrap .cell-input { width: auto; flex: 1; min-width: 0; }
+.si-items .qty-unit { flex: none; font-size: 12px; color: var(--text-tertiary); white-space: nowrap; }
 .si-items .w-drug { width: 170px; } .si-items .w-code { width: 100px; } .si-items .w-spec { width: 90px; }
 .si-items .w-pack { width: 90px; } .si-items .w-vendor { width: 180px; } .si-items .w-factor { width: 80px; }
 .si-items .w-unit { width: 70px; } .si-items .w-ins { width: 160px; } .si-items .w-insn { width: 100px; }
@@ -69,7 +73,7 @@
 .batch-pop-pager .bp-btn { width: 20px; height: 20px; line-height: 18px; text-align: center; padding: 0; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-white); color: var(--text-secondary); font-size: 12px; cursor: pointer; }
 .batch-pop-pager .bp-btn:disabled { color: var(--text-placeholder); cursor: not-allowed; background: var(--bg-disabled); }
 .batch-pop-pager .bp-page { min-width: 20px; height: 20px; line-height: 20px; text-align: center; padding: 0 3px; border: none; background: none; color: var(--primary-dark); font-size: 12px; cursor: pointer; border-radius: var(--radius); }
-.batch-pop-pager .bp-page.on { background: var(--primary); color: #fff; } .si-items .w-qty { width: 80px; } .si-items .w-price { width: 90px; }
+.batch-pop-pager .bp-page.on { background: var(--primary); color: #fff; } .si-items .w-qty { width: 96px; } .si-items .w-price { width: 90px; }
 .si-items .w-date { width: 120px; } .si-items .w-reason { width: 150px; } .si-items .w-amt { width: 100px; }
 .si-items .w-inv { width: 130px; } .si-items .w-acts { width: 196px; min-width: 196px; }
 /* 操作列右固定 */
@@ -586,19 +590,19 @@
           + '<button type="button" class="batch-clear" data-act="batchClear" data-idx="'+i+'" title="清空"'+(it.batch?'':' style="display:none"')+'>×</button>'
           + '</div></td>';
       }
-      h += '<td class="w-qty"><input class="cell-input" type="number" min="0" data-f="qty" data-idx="'+i+'" value="'+SI.raw(it.qty)+'"></td>';
+      h += '<td class="w-qty"><div class="qty-wrap"><input class="cell-input" type="number" min="0" data-f="qty" data-idx="'+i+'" value="'+SI.raw(it.qty)+'">'+(it.packUnit?'<span class="qty-unit">'+SI.esc(it.packUnit)+'</span>':'')+'</div></td>';
       /* 进货价、零售价、有效期：选择已有批次自动带出，手工录入批号时手工填写 */
       h += '<td class="w-price"><input class="cell-input" type="number" step="0.0001" min="0" data-f="purchase" data-idx="'+i+'" value="'+SI.raw(it.purchase)+'" placeholder="进货价"></td>';
       h += '<td class="w-price"><input class="cell-input" type="number" step="0.01" min="0" data-f="retail" data-idx="'+i+'" value="'+SI.raw(it.retail)+'" placeholder="零售价"></td>';
       h += '<td class="w-date"><input class="cell-input" type="date" data-f="expiry" data-idx="'+i+'" value="'+SI.raw(it.expiry)+'" placeholder="请输入日期"></td>';
-      h += '<td class="w-qty num" data-c="qualified">'+qualified+'</td>';
-      h += '<td class="w-qty"><input class="cell-input" type="number" min="0" data-f="unq" data-idx="'+i+'" value="'+SI.raw(it.unq)+'"></td>';
+      h += '<td class="w-qty num" data-c="qualified">'+qualified+(qualified!==""&&it.packUnit?' <span class="qty-unit">'+SI.esc(it.packUnit)+'</span>':'')+'</td>';
+      h += '<td class="w-qty"><div class="qty-wrap"><input class="cell-input" type="number" min="0" data-f="unq" data-idx="'+i+'" value="'+SI.raw(it.unq)+'">'+(it.packUnit?'<span class="qty-unit">'+SI.esc(it.packUnit)+'</span>':'')+'</div></td>';
       var reasonOpts = '<option value="">请选择</option>' + SI.REASONS.map(function(r){return '<option'+(r===it.reason?' selected':'')+'>'+r+'</option>';}).join("");
       h += '<td class="w-reason"><select class="cell-select" data-f="reason" data-idx="'+i+'"'+(Number(it.unq)>0?'':' disabled')+'>'+reasonOpts+'</select></td>';
       var needTrace = it.qty!=="" ? SI.qualified(it) : 0;
       var haveTrace = (it.traces||[]).length;
       var traceOk = needTrace > 0 && haveTrace === needTrace;
-      h += '<td class="w-qty num" data-c="traceProg" style="color:'+(traceOk?'var(--success)':haveTrace>0?'var(--warning)':'var(--text-tertiary)')+';font-weight:'+(traceOk?'500':'400')+'">'+haveTrace+'/'+needTrace+'</td>';
+      h += '<td class="w-qty num" data-c="traceProg" style="color:'+(traceOk?'var(--success)':haveTrace>0?'var(--warning)':'var(--text-tertiary)')+';font-weight:'+(traceOk?'500':'400')+'">'+haveTrace+'/'+needTrace+(needTrace>0&&it.packUnit?' <span class="qty-unit">'+SI.esc(it.packUnit)+'</span>':'')+'</td>';
       h += '<td class="w-amt num" data-c="pamt">'+SI.num2(SI.purchaseAmt(it))+'</td>';
       h += '<td class="w-amt num" data-c="ramt">'+SI.num2(SI.retailAmt(it))+'</td>';
       if(detailMode()) h += '<td class="w-inv"><input class="cell-input" data-f="invoiceNo" data-idx="'+i+'" value="'+SI.esc(it.invoiceNo)+'" placeholder="发票号"></td>';
@@ -614,13 +618,13 @@
     var tr = $('#itemsBody tr[data-idx="'+i+'"]');
     if(!tr) return;
     var q = tr.querySelector('[data-c="qualified"]');
-    if(q) q.textContent = it.qty!=="" ? SI.qualified(it) : "";
+    if(q) q.innerHTML = (it.qty!=="" ? SI.qualified(it) : "")+(it.qty!==""&&it.packUnit?' <span class="qty-unit">'+SI.esc(it.packUnit)+'</span>':'');
     var tp = tr.querySelector('[data-c="traceProg"]');
     if(tp){
       var needTrace = it.qty!=="" ? SI.qualified(it) : 0;
       var haveTrace = (it.traces||[]).length;
       var traceOk = needTrace > 0 && haveTrace === needTrace;
-      tp.textContent = haveTrace+"/"+needTrace;
+      tp.innerHTML = haveTrace+"/"+needTrace+(needTrace>0&&it.packUnit?' <span class="qty-unit">'+SI.esc(it.packUnit)+'</span>':'');
       tp.style.color = traceOk ? "var(--success)" : haveTrace>0 ? "var(--warning)" : "var(--text-tertiary)";
       tp.style.fontWeight = traceOk ? "500" : "400";
     }

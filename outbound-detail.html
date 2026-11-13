@@ -120,6 +120,8 @@
 .si-tx-more:hover { background: var(--primary-lighter); }
 .od-items tr.row-cur > td { background: var(--primary-lighter) !important; }
 .od-items tr.row-cur td.col-name, .od-items tr.row-cur td.col-trace, .od-items tr.row-cur td.col-acts { background: var(--primary-lighter); }
+/* 数量列单位后缀 */
+.qty-unit { font-size: 12px; color: var(--text-tertiary); white-space: nowrap; }
 </style>
 </head>
 <body>
@@ -364,6 +366,8 @@
   function renderItems(){
     $("#itemsBody").innerHTML = (bill.items || []).map(function(it, i){
       var tp = (it.traces || []).length;
+      var tp = (it.traces || []).length;
+      var unit = it.minUnit || ((OB.drugOf(it.code) || {}).minUnit || "");
       var h = "<tr data-idx='"+i+"'>";
       h += "<td class='col-name cell-ellipsis' title='"+OB.esc(it.name)+"'>"+OB.esc(it.name)+"</td>";
       h += "<td>"+OB.esc(it.code)+"</td>";
@@ -371,7 +375,7 @@
       h += "<td class='cell-ellipsis' title='"+OB.esc(it.vendor)+"'>"+OB.esc(it.vendor)+"</td>";
       h += "<td>"+OB.esc(it.packSpec)+"</td>";
       h += "<td class='num'>"+OB.esc(it.minFactor)+"</td>";
-      h += "<td class='num'>"+OB.esc(it.qty)+"</td>";
+      h += "<td class='num'>"+OB.esc(it.qty)+(unit?" <span class='qty-unit'>"+OB.esc(unit)+"</span>":"")+"</td>";
       h += "<td>"+OB.esc(it.batch)+"</td>";
       h += "<td class='num'>"+OB.num2(it.purchase)+"</td>";
       h += "<td class='num'>"+OB.num2(it.retail)+"</td>";
@@ -382,7 +386,7 @@
         h += "<td class='col-trace'><span class='tr-code-progress'>无需追溯码</span></td>";
         h += "<td class='col-acts'><span class='link-btn is-disabled'>查看追溯码</span></td>";
       } else {
-        h += "<td class='col-trace'><span class='tr-code-progress' title='已录入 "+tp+" 条追溯码'>"+tp+"/"+Number(it.qty)+"</span></td>";
+        h += "<td class='col-trace'><span class='tr-code-progress' title='已录入 "+tp+" 条追溯码'>"+tp+"/"+Number(it.qty)+(unit?" "+OB.esc(unit):"")+"</span></td>";
         h += "<td class='col-acts'><a class='link-btn' data-tr='"+i+"'>查看追溯码</a></td>";
       }
       return h + "</tr>";

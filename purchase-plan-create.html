@@ -235,7 +235,7 @@
         "<td>" + esc(it.spec) + "</td>" +
         '<td><div class="cell-ellipsis" title="' + esc(it.vendor) + '">' + esc(it.vendor) + "</div></td>" +
         "<td>" + (it.essential ? "是" : "否") + "</td>" +
-        '<td class="num"><input class="input pur-qty" data-ii="' + i + '" data-f="qty" value="' + esc(it.qty) + '" placeholder="请输入"></td>' +
+        '<td class="num"><div class="qty-wrap"><input class="input pur-qty" data-ii="' + i + '" data-f="qty" value="' + esc(it.qty) + '" placeholder="请输入"><span class="qty-unit">' + esc(it.unit || PC.unitOfSpec(it.spec)) + '</span></div></td>' +
         '<td class="num"><input class="input pur-qty" data-ii="' + i + '" data-f="price" value="' + esc(it.price) + '" placeholder="请输入"></td>' +
         '<td class="num">' + (PC.isQty(it.qty) && PC.isPrice(it.price) ? esc(PC.fmtMoney(itemTotal(it))) : "—") + "</td>" +
         '<td class="col-acts"><button class="link-btn is-danger" data-del="' + i + '">删除</button></td>' +
@@ -432,6 +432,7 @@
         spec: s.spec,
         vendor: s.vendor,
         essential: s.essential,
+        unit: s.unit || PC.unitOfSpec(s.spec),
         qty: "",
         price: ""
       });
@@ -547,6 +548,7 @@
               spec: it.spec,
               vendor: it.vendor,
               essential: !!it.essential,
+              unit: it.unit || PC.unitOfSpec(it.spec),
               qty: String(it.qty === "" || it.qty === null ? "" : it.qty),
               price: ""
             });

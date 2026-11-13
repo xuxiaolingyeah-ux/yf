@@ -246,6 +246,7 @@
       var okN = okCount(g);
       var mCount = manifestCount(g);
       var m = moneyOf(g);
+      var unit = TR.unitOfSpec(g.spec);
       var done = mCount > 0 && okN + badN >= mCount;
       var html =
         '<tr class="tr-tree-parent">' +
@@ -255,10 +256,10 @@
           "<td>" + esc(g.drugName) + "</td>" +
           "<td>" + esc(g.spec) + "</td>" +
           "<td>" + esc(g.drugCode) + "</td>" +
-          '<td class="num">' + g.applyQty + "</td>" +
-          '<td class="num">' + TR.allocated(g) + "</td>" +
-          '<td class="num">' + (mCount ? okN : "—") + "</td>" +
-          '<td class="num' + (badN ? " is-bad-num" : "") + '">' + badN + "</td>" +
+          '<td class="num">' + g.applyQty + (unit ? ' <span class="qty-unit">' + esc(unit) + "</span>" : "") + "</td>" +
+          '<td class="num">' + TR.allocated(g) + (unit ? ' <span class="qty-unit">' + esc(unit) + "</span>" : "") + "</td>" +
+          '<td class="num">' + (mCount ? okN + (unit ? ' <span class="qty-unit">' + esc(unit) + "</span>" : "") : "—") + "</td>" +
+          '<td class="num' + (badN ? " is-bad-num" : "") + '">' + badN + (mCount && unit ? ' <span class="qty-unit">' + esc(unit) + "</span>" : "") + "</td>" +
           '<td><select class="select tr-reason" data-g="' + idx + '" data-field="badReason"' + (badN > 0 ? "" : " disabled") + ">" +
             '<option value="">请选择</option>' +
             TR.BAD_REASONS.map(function (x) {
@@ -293,9 +294,9 @@
               "<td>" + esc(r.expDate) + "</td>" +
               '<td class="num">' + TR.money(r.purchase) + "</td>" +
               '<td class="num">' + TR.money(r.retail) + "</td>" +
-              '<td class="num">' + v + "</td>" +
-              '<td class="num">' + (r.badCodes || []).length + "</td>" +
-              '<td class="num">' + v + "/" + (r.traceCodes || []).length + "</td>" +
+              '<td class="num">' + v + (unit ? ' <span class="qty-unit">' + esc(unit) + "</span>" : "") + "</td>" +
+              '<td class="num">' + (r.badCodes || []).length + (unit ? ' <span class="qty-unit">' + esc(unit) + "</span>" : "") + "</td>" +
+              '<td class="num">' + v + "/" + (r.traceCodes || []).length + (unit ? " " + esc(unit) : "") + "</td>" +
             "</tr>";
           }).join("");
         }

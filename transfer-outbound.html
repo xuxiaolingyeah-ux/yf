@@ -214,14 +214,15 @@
       var rows = g.rows || [];
       var open = isOpen(g);
       var m = moneyOf(g);
+      var unit = TR.unitOfSpec(g.spec);
       var html =
         '<tr class="tr-tree-parent">' +
           '<td><button class="tr-expander' + (open ? " is-open" : "") + '" data-toggle="' + idx + '" title="展开/收起">' +
             '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>' +
           "</button>" + esc(g.drugName) + '<span class="sub">' + esc(g.spec) + "</span></td>" +
           "<td>" + esc(g.drugCode) + "</td>" +
-          '<td class="num">' + g.applyQty + "</td>" +
-          '<td class="num">' + TR.allocated(g) + "</td>" +
+          '<td class="num">' + g.applyQty + (unit ? ' <span class="qty-unit">' + esc(unit) + "</span>" : "") + "</td>" +
+          '<td class="num">' + TR.allocated(g) + (unit ? ' <span class="qty-unit">' + esc(unit) + "</span>" : "") + "</td>" +
           '<td class="num">' + m.purchase + "</td>" +
           '<td class="num">' + m.retail + "</td>" +
           "<td>" + progressHtml(g) + "</td>" +
@@ -252,8 +253,8 @@
               '<td class="num">' + TR.money(r.purchase) + "</td>" +
               '<td class="num">' + TR.money(r.retail) + "</td>" +
               '<td class="num">' + r.stock + "</td>" +
-              '<td class="num"><input class="input tr-qty" type="text" inputmode="numeric" value="' + r.outQty +
-                '" data-g="' + idx + '" data-r="' + ri + '"></td>' +
+              '<td class="num"><div class="qty-wrap"><input class="input tr-qty" type="text" inputmode="numeric" value="' + r.outQty +
+                '" data-g="' + idx + '" data-r="' + ri + '">' + (unit ? '<span class="qty-unit">' + esc(unit) + "</span>" : "") + "</div></td>" +
               '<td class="tr-act-cell"><button class="link-btn is-danger" data-rm="' + idx + '" data-ri="' + ri + '">删除</button></td>' +
             "</tr>";
           }).join("");

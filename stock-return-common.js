@@ -37,16 +37,16 @@
 
   /* ---------- 药品库 ---------- */
   var DRUGS = [
-    { name: "阿莫西林胶囊", py: "AMXLJN", code: "1210500301", spec: "0.25g×24粒", packSpec: "24粒/盒", vendor: "华北制药股份有限公司", approval: "国药准字H13023917" },
-    { name: "阿莫西林胶囊", py: "AMXLJN", code: "1210500302", spec: "0.5g×12粒", packSpec: "12粒/盒", vendor: "石药集团中诺药业（石家庄）有限公司", approval: "国药准字H20033293" },
-    { name: "头孢克肟分散片", py: "TBKFFSP", code: "1210500501", spec: "0.1g×6片", packSpec: "6片/盒", vendor: "上海信谊药厂有限公司", approval: "国药准字H31020315" },
-    { name: "布洛芬缓释胶囊", py: "BLFHSJN", code: "1210500601", spec: "0.3g×20粒", packSpec: "20粒/盒", vendor: "中美天津史克制药有限公司", approval: "国药准字H10900089" },
-    { name: "奥美拉唑肠溶胶囊", py: "AMLZCRJN", code: "1210500901", spec: "20mg×14粒", packSpec: "14粒/盒", vendor: "常州四药制药有限公司", approval: "国药准字H10950185" },
-    { name: "复方甘草片", py: "FFGCP", code: "1210501101", spec: "100片", packSpec: "100片/瓶", vendor: "广州白云山制药股份有限公司", approval: "国药准字Z44021234" },
-    { name: "硝苯地平控释片", py: "XBDPKSP", code: "1210501201", spec: "30mg×7片", packSpec: "7片/盒", vendor: "拜耳医药保健有限公司", approval: "国药准字J20180015" },
-    { name: "盐酸二甲双胍片", py: "YSEJGP", code: "1210501301", spec: "0.5g×20片", packSpec: "20片/盒", vendor: "中美上海施贵宝制药有限公司", approval: "国药准字H31020246" },
-    { name: "左氧氟沙星片", py: "ZYFSXP", code: "1210501401", spec: "0.5g×4片", packSpec: "4片/盒", vendor: "第一三共制药（北京）有限公司", approval: "国药准字H20000567" },
-    { name: "阿托伐他汀钙片", py: "ATFTGP", code: "1210501601", spec: "20mg×7片", packSpec: "7片/盒", vendor: "辉瑞制药有限公司", approval: "国药准字H20051408" }
+    { name: "阿莫西林胶囊", py: "AMXLJN", code: "1210500301", spec: "0.25g×24粒", packSpec: "24粒/盒", packUnit: "箱", minUnit: "盒", vendor: "华北制药股份有限公司", approval: "国药准字H13023917" },
+    { name: "阿莫西林胶囊", py: "AMXLJN", code: "1210500302", spec: "0.5g×12粒", packSpec: "12粒/盒", packUnit: "箱", minUnit: "盒", vendor: "石药集团中诺药业（石家庄）有限公司", approval: "国药准字H20033293" },
+    { name: "头孢克肟分散片", py: "TBKFFSP", code: "1210500501", spec: "0.1g×6片", packSpec: "6片/盒", packUnit: "箱", minUnit: "盒", vendor: "上海信谊药厂有限公司", approval: "国药准字H31020315" },
+    { name: "布洛芬缓释胶囊", py: "BLFHSJN", code: "1210500601", spec: "0.3g×20粒", packSpec: "20粒/盒", packUnit: "箱", minUnit: "盒", vendor: "中美天津史克制药有限公司", approval: "国药准字H10900089" },
+    { name: "奥美拉唑肠溶胶囊", py: "AMLZCRJN", code: "1210500901", spec: "20mg×14粒", packSpec: "14粒/盒", packUnit: "箱", minUnit: "盒", vendor: "常州四药制药有限公司", approval: "国药准字H10950185" },
+    { name: "复方甘草片", py: "FFGCP", code: "1210501101", spec: "100片", packSpec: "100片/瓶", packUnit: "箱", minUnit: "瓶", vendor: "广州白云山制药股份有限公司", approval: "国药准字Z44021234" },
+    { name: "硝苯地平控释片", py: "XBDPKSP", code: "1210501201", spec: "30mg×7片", packSpec: "7片/盒", packUnit: "箱", minUnit: "盒", vendor: "拜耳医药保健有限公司", approval: "国药准字J20180015" },
+    { name: "盐酸二甲双胍片", py: "YSEJGP", code: "1210501301", spec: "0.5g×20片", packSpec: "20片/盒", packUnit: "箱", minUnit: "盒", vendor: "中美上海施贵宝制药有限公司", approval: "国药准字H31020246" },
+    { name: "左氧氟沙星片", py: "ZYFSXP", code: "1210501401", spec: "0.5g×4片", packSpec: "4片/盒", packUnit: "箱", minUnit: "盒", vendor: "第一三共制药（北京）有限公司", approval: "国药准字H20000567" },
+    { name: "阿托伐他汀钙片", py: "ATFTGP", code: "1210501601", spec: "20mg×7片", packSpec: "7片/盒", packUnit: "箱", minUnit: "盒", vendor: "辉瑞制药有限公司", approval: "国药准字H20051408" }
   ];
 
   /* ---------- 批次库（按药品编码，含当前库存量） ---------- */
@@ -166,14 +166,14 @@
   function blankItem() {
     return { name: "", code: "", spec: "", packSpec: "", vendor: "", approval: "",
       batch: "", expiry: "", purchase: "", retail: "", stock: 0, qty: "",
-      traces: [], inQty: "", unqQty: 0, unqReason: "", badCodes: [] };
+      minUnit: "", traces: [], inQty: "", unqQty: 0, unqReason: "", badCodes: [] };
   }
   function itemOf(code, batchNo, qty) {
     var d = drugOf(code), b = batchOf(code, batchNo);
     if (!d || !b) return null;
     var it = blankItem();
     it.name = d.name; it.code = d.code; it.spec = d.spec; it.packSpec = d.packSpec;
-    it.vendor = d.vendor; it.approval = d.approval;
+    it.vendor = d.vendor; it.approval = d.approval; it.minUnit = d.minUnit;
     it.batch = b.batch; it.expiry = b.expiry; it.purchase = b.purchase; it.retail = b.retail; it.stock = b.stock;
     it.qty = (qty === undefined) ? "" : qty;
     return it;

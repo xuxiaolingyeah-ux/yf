@@ -178,12 +178,13 @@
       body.innerHTML = '<tr><td colspan="6" class="tr-empty-cell">请点击右上角「添加药品」选择调拨药品</td></tr>';
     } else {
       body.innerHTML = bill.items.map(function (it, i) {
+        var unit = TR.unitOfSpec(it.spec);
         return "<tr>" +
           '<td title="' + esc(it.drugName) + '">' + esc(it.drugName) + "</td>" +
           "<td>" + esc(it.drugCode) + "</td>" +
           '<td title="' + esc(it.spec) + '">' + esc(it.spec) + "</td>" +
           '<td class="num">' + it.stock + "</td>" +
-          '<td class="num"><input class="input tr-qty" type="text" inputmode="numeric" data-si="' + i + '" value="' + it.applyQty + '"></td>' +
+          '<td class="num"><div class="qty-wrap"><input class="input tr-qty" type="text" inputmode="numeric" data-si="' + i + '" value="' + it.applyQty + '">' + (unit ? '<span class="qty-unit">' + esc(unit) + "</span>" : "") + "</div></td>" +
           '<td><button class="link-btn is-danger" data-remove="' + i + '">删除</button></td>' +
         "</tr>";
       }).join("");

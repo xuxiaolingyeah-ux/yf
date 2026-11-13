@@ -66,6 +66,9 @@
   height: 28px; width: 76px; box-sizing: border-box; font-size: 12px; text-align: right;
 }
 .oc-items .cell-input.is-invalid { border-color: var(--danger); }
+/* 数量列：输入框 + 单位后缀 */
+.oc-items .qty-wrap { display: flex; align-items: center; justify-content: flex-end; gap: 3px; }
+.oc-items .qty-unit { flex: none; font-size: 12px; color: var(--text-tertiary); white-space: nowrap; }
 .oc-items .w-acts .link-btn + .link-btn { margin-left: 10px; }
 .oc-empty-row td { text-align: center; color: var(--text-placeholder); padding: 34px 0 !important; background: var(--bg-white) !important; }
 /* 合计条（表格外） */
@@ -423,7 +426,7 @@
   };
 
   function blankItem(){
-    return { code:"", name:"", spec:"", vendor:"", packSpec:"", minFactor:"",
+    return { code:"", name:"", spec:"", vendor:"", packSpec:"", minFactor:"", minUnit:"",
       batch:"", expiry:"", purchase:"", retail:"", qty:1, traces:[], traceResolved:{} };
   }
 
@@ -498,7 +501,7 @@
         h += '<td class="cell-ellipsis" title="'+OB.esc(it.vendor)+'">'+OB.esc(it.vendor)+'</td>';
         h += '<td>'+OB.esc(it.packSpec)+'</td>';
         h += '<td class="num">'+OB.esc(it.minFactor)+'</td>';
-        h += '<td class="num"><input class="cell-input" type="number" min="1" max="'+av+'" data-f="qty" data-idx="'+i+'" value="'+it.qty+'"></td>';
+        h += '<td class="num"><div class="qty-wrap"><input class="cell-input" type="number" min="1" max="'+av+'" data-f="qty" data-idx="'+i+'" value="'+it.qty+'">'+(it.minUnit?'<span class="qty-unit">'+OB.esc(it.minUnit)+'</span>':'')+'</div></td>';
         h += '<td class="num" data-c="avail">'+av+'</td>';
         h += '<td>'+OB.esc(it.batch)+'</td>';
         h += '<td class="num">'+OB.num2(it.purchase)+'</td>';
@@ -506,7 +509,7 @@
         h += '<td class="num" data-c="pamt">'+OB.num2(OB.purchaseAmt(it))+'</td>';
         h += '<td class="num" data-c="ramt">'+OB.num2(OB.retailAmt(it))+'</td>';
         h += '<td>'+OB.esc(it.expiry)+'</td>';
-        h += '<td class="w-trace"><span class="tr-code-progress" title="已录入 '+tp+' 条追溯码">'+tp+'/'+it.qty+'</span></td>';
+        h += '<td class="w-trace"><span class="tr-code-progress" title="已录入 '+tp+' 条追溯码">'+tp+'/'+it.qty+(it.minUnit?' '+OB.esc(it.minUnit):'')+'</span></td>';
         h += '<td class="w-acts"><a class="link-btn" data-act="trace" data-idx="'+i+'">录入追溯码</a><a class="link-btn" data-act="traceview" data-idx="'+i+'">查看追溯码</a><a class="link-btn is-danger" data-act="del" data-idx="'+i+'">删除</a></td>';
         h += '</tr>';
         return h;
@@ -525,7 +528,7 @@
     var prog = tr.querySelector('.tr-code-progress');
     if(prog){
       var tp = (it.traces||[]).length;
-      prog.textContent = tp + "/" + it.qty;
+      prog.textContent = tp + "/" + it.qty + (it.minUnit ? " " + it.minUnit : "");
       prog.className = "tr-code-progress";
       prog.title = "已录入 "+tp+" 条追溯码";
     }
@@ -662,7 +665,7 @@
     sel.forEach(function(r){
       var it = blankItem();
       it.code = r.d.code; it.name = r.d.name; it.spec = r.d.spec; it.vendor = r.d.vendor;
-      it.packSpec = r.d.packSpec; it.minFactor = r.d.minFactor;
+      it.packSpec = r.d.packSpec; it.minFactor = r.d.minFactor; it.minUnit = r.d.minUnit;
       it.batch = r.b.batch; it.expiry = r.b.expiry;
       it.purchase = r.b.purchase; it.retail = r.b.retail;
       it.qty = 1;

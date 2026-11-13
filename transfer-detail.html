@@ -209,8 +209,9 @@
         (bill.createType === "horizontal" ? "出库机构库存" : "机构库存") + "</th>" +
         '<th style="width:110px;" class="num">申请数量</th></tr>';
       body.innerHTML = bill.items.map(function (it) {
+        var unit = TR.unitOfSpec(it.spec);
         return "<tr><td>" + esc(it.drugName) + "</td><td>" + esc(it.drugCode) + "</td>" +
-          "<td>" + esc(it.spec) + '</td><td class="num">' + it.stock + '</td><td class="num">' + it.applyQty + "</td></tr>";
+          "<td>" + esc(it.spec) + '</td><td class="num">' + it.stock + '</td><td class="num">' + it.applyQty + (unit ? ' <span class="qty-unit">' + esc(unit) + "</span>" : "") + "</td></tr>";
       }).join("");
       var applyTotal = 0;
       bill.items.forEach(function (it) { applyTotal += Number(it.applyQty) || 0; });
@@ -225,20 +226,21 @@
         '<th style="width:100px;">有效期</th>' +
         '<th style="width:140px;">追溯码</th></tr>';
       body.innerHTML = (bill.batches || []).map(function (g) {
+        var unit = TR.unitOfSpec(g.spec);
         var rows = (g.rows || []).map(function (r) {
           var scanned = (r.traceCodes || []).length;
           return '<tr class="tr-batch-row">' +
             "<td>" + esc(r.batchNo) + "</td>" +
             "<td>" + esc(r.vendor) + "</td>" +
-            '<td class="num">' + r.outQty + "</td>" +
+            '<td class="num">' + r.outQty + (unit ? ' <span class="qty-unit">' + esc(unit) + "</span>" : "") + "</td>" +
             '<td class="num">' + TR.money(r.purchase) + "</td>" +
             '<td class="num">' + TR.money(r.retail) + "</td>" +
             "<td>" + esc(r.expDate) + "</td>" +
-            "<td>" + '<span class="tr-code-progress ' + (scanned === r.outQty ? "is-ok" : "is-bad") + '">已扫 ' + scanned + " / " + r.outQty + "</span></td>" +
+            "<td>" + '<span class="tr-code-progress ' + (scanned === r.outQty ? "is-ok" : "is-bad") + '">已扫 ' + scanned + " / " + r.outQty + (unit ? " " + esc(unit) : "") + "</span></td>" +
           "</tr>";
         }).join("");
         return '<tr class="tr-spec-row"><td colspan="7">' + esc(g.drugName) + '<span class="sub">' + esc(g.spec) +
-          " · 申请 " + g.applyQty + " · 调拨 " + TR.allocated(g) + "</span></td></tr>" + rows;
+          " · 申请 " + g.applyQty + " · 调拨 " + TR.allocated(g) + (unit ? " " + esc(unit) : "") + "</span></td></tr>" + rows;
       }).join("");
       var so = TR.outSums(bill);
       sum.innerHTML =
@@ -272,16 +274,17 @@
           mCount += (r.traceCodes || []).length;
         });
         var m = groupMoney(g);
+        var unit = TR.unitOfSpec(g.spec);
         var done = mCount > 0 && okN + badN >= mCount;
         var html = '<tr class="tr-tree-parent">' +
           '<td><button class="tr-expander' + (open ? " is-open" : "") + '" data-toggle="' + idx + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button></td>' +
           "<td>" + esc(g.drugName) + "</td>" +
           "<td>" + esc(g.spec) + "</td>" +
           "<td>" + esc(g.drugCode) + "</td>" +
-          '<td class="num">' + g.applyQty + "</td>" +
-          '<td class="num">' + TR.allocated(g) + "</td>" +
-          '<td class="num">' + (mCount ? okN + badN : "—") + "</td>" +
-          '<td class="num' + (badN ? " is-bad-num" : "") + '">' + badN + "</td>" +
+          '<td class="num">' + g.applyQty + (unit ? ' <span class="qty-unit">' + esc(unit) + "</span>" : "") + "</td>" +
+          '<td class="num">' + TR.allocated(g) + (unit ? ' <span class="qty-unit">' + esc(unit) + "</span>" : "") + "</td>" +
+          '<td class="num">' + (mCount ? okN + badN + (unit ? ' <span class="qty-unit">' + esc(unit) + "</span>" : "") : "—") + "</td>" +
+          '<td class="num' + (badN ? " is-bad-num" : "") + '">' + badN + (mCount && unit ? ' <span class="qty-unit">' + esc(unit) + "</span>" : "") + "</td>" +
           "<td>" + esc(g.badReason || "—") + "</td>" +
           '<td class="num">' + m.purchase + "</td>" +
           '<td class="num">' + m.retail + "</td>" +

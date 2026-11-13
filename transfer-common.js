@@ -149,6 +149,12 @@
   }
 
   /* ---------------- 药品 / 规格 ---------------- */
+  /* 从规格标题提取最小包装单位（如 "0.25g * 24粒/盒" → 盒、"1kg/袋" → 袋） */
+  function unitOfSpec(title) {
+    var m = /\/\s*([^/\s]+)\s*$/.exec(title || "");
+    return m ? m[1] : "";
+  }
+
   function drugOf(drugId) {
     for (var i = 0; i < MOCK.drugs.length; i++) {
       if (MOCK.drugs[i].id === drugId) return MOCK.drugs[i];
@@ -171,11 +177,12 @@
     var out = [];
     MOCK.drugs.forEach(function (d) {
       d.specs.forEach(function (s, si) {
-        out.push({
-          key: d.id + "_" + si, drugId: d.id, si: si,
-          drugCode: d.code, drugName: d.name,
-          specCode: s.code, spec: s.title, kind: d.kind
-        });
+    out.push({
+      key: d.id + "_" + si, drugId: d.id, si: si,
+      drugCode: d.code, drugName: d.name,
+      specCode: s.code, spec: s.title, kind: d.kind,
+      minUnit: unitOfSpec(s.title)
+    });
       });
     });
     return out;
@@ -664,7 +671,7 @@
     newCode: newCode, newHCode: newHCode, newOutCode: newOutCode, newInCode: newInCode,
     money: money, intVal: intVal,
     allocated: allocated, scanned: scanned, outSums: outSums, inSums: inSums,
-    drugOf: drugOf, specList: specList, specByKey: specByKey,
+    drugOf: drugOf, specList: specList, specByKey: specByKey, unitOfSpec: unitOfSpec,
     batchesOf: batchesOf, orgStock: orgStock, codesFor: codesFor,
     mountAudit: mountAudit, bindJump: bindJump
   };

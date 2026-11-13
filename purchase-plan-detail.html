@@ -92,6 +92,10 @@
                     <span class="form-label">申请说明</span>
                     <span class="text-value" id="vDesc">—</span>
                   </div>
+                  <div class="form-item" style="grid-column:1 / -1;">
+                    <span class="form-label">配送地址</span>
+                    <span class="text-value" id="vAddr" style="line-height:1.6;">—</span>
+                  </div>
                 </div>
                 <div class="form-item" id="vNeedWrap" style="margin-top:8px;display:none;">
                   <span class="form-label">关联采购需求</span>
@@ -202,6 +206,14 @@
     $("vCreatedAt").textContent = doc.createdAt || "—";
     $("vCreator").textContent = doc.creator || "—";
     $("vDesc").textContent = doc.desc || "—";
+
+    /* 配送地址：优先用单据保存时的快照，历史单据不受地址库后续修改影响 */
+    var addrText = doc.address;
+    if (!addrText && doc.addressId) {
+      var saved = PC.addressesOf(doc.creatorOrg).filter(function (a) { return a.id === doc.addressId; })[0];
+      if (saved) addrText = PC.addrLine(saved);
+    }
+    $("vAddr").textContent = addrText || "—";
 
     /* 关联采购需求展示 */
     var needIds = doc.linkedNeedIds || [];

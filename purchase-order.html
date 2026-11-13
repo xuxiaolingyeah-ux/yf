@@ -4,6 +4,62 @@
 <meta charset="UTF-8">
 <title>采购订单 · 区域药房协同管理系统</title>
 <link rel="stylesheet" href="styles.css">
+<style>
+/* 订单明细展开：同订单多明细行，订单级列 rowspan 合并（列 = 省平台接口字段，不含药品信息） */
+.ord-table { table-layout: fixed; min-width: 1090px; }
+.ord-table th, .ord-table td { overflow: hidden; }
+.ord-table .cell-ellipsis { max-width: none; width: 100%; }
+/* 关闭全局斑马纹：合并单元格跨行，隔行变色会把同一订单切成两截 */
+.ord-table tbody tr:nth-child(even) { background: #fff; }
+.ord-table tbody tr:hover { background: #fff; }
+.ord-table tbody tr:nth-child(even):hover { background: #fff; }
+/* 订单级列（rowspan 合并）：浅灰蓝底衬区分「订单」与「明细」两个层级 */
+.ord-table td.ord-grp {
+  vertical-align: top;
+  background: var(--table-even);
+}
+.ord-table tr.ord-first > td { border-top: 1px solid var(--border); }
+.ord-table tr.ord-first:first-child > td { border-top: none; }
+.ord-table td.ord-time { white-space: nowrap; }
+.ord-table td.ord-did { font-family: var(--font-mono); font-size: 12px; white-space: nowrap; }
+.ord-table td.ord-plan-code { font-family: var(--font-mono); font-size: 12px; white-space: nowrap; }
+.ord-state { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; font-size: 12.5px; }
+.ord-state > i { width: 6px; height: 6px; border-radius: 50%; flex: none; }
+.ord-reason { color: var(--text-secondary); }
+
+/* ---------- 抽屉：配送明细（订单明细 1 : n 配送明细） ---------- */
+.ship-drawer { width: 1060px; max-width: 96vw; }
+.ship-sub { font-size: 12px; font-weight: 400; color: var(--text-tertiary); margin-left: 4px; }
+.ship-reason-row { margin-top: 10px; align-items: flex-start; }
+.ship-reason-text {
+  flex: 1; min-width: 0; font-size: 13px; line-height: 20px;
+  color: var(--text-primary); white-space: normal; word-break: break-all;
+}
+.ship-wrap {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: auto;
+  max-height: 420px;
+}
+.ship-table { width: 100%; min-width: 980px; border-collapse: collapse; font-size: 12.5px; }
+.ship-table th {
+  position: sticky; top: 0; z-index: 1;
+  background: var(--table-head); color: var(--text-primary);
+  font-weight: 400; text-align: left;
+  height: 34px; padding: 0 10px; white-space: nowrap;
+}
+.ship-table td {
+  height: 38px; padding: 0 10px;
+  border-bottom: 1px solid var(--border-light);
+  white-space: nowrap; color: var(--text-primary);
+}
+.ship-table tr:last-child td { border-bottom: none; }
+.ship-table .num { text-align: right; }
+.ship-table .mono { font-family: var(--font-mono); font-size: 12px; }
+.ship-table .is-part { color: var(--warning); }   /* 部分收货 */
+.ship-table .is-none { color: var(--text-tertiary); }
+.ship-empty { text-align: center; color: var(--text-placeholder); padding: 30px 0 !important; }
+</style>
 </head>
 <body>
 
@@ -62,22 +118,34 @@
               <span class="filter-label">订单号</span>
               <input class="input" id="fCode" placeholder="请输入省平台订单号" style="width:200px;">
             </div>
+            <div class="filter-item">
+              <span class="filter-label">采购计划单号</span>
+              <input class="input" id="fPlanCode" placeholder="请输入采购计划单号" style="width:190px;">
+            </div>
+            <div class="filter-item">
+              <span class="filter-label">订单明细状态</span>
+              <select class="select" id="fState" style="width:150px;"></select>
+            </div>
             <div class="filter-acts">
               <button class="btn" id="btnReset">重置</button>
               <button class="btn btn-primary" id="btnQuery">查询</button>
             </div>
           </div>
 
-          <!-- 列表 -->
+          <!-- 列表：一行 = 一条订单明细；同一订单的订单号 / 采购计划单号合并展示 -->
+          <!-- 列口径 = 省平台接口字段（H005/H006/H008），药品信息不在此展示 -->
           <div class="pa-list-wrap">
-            <table class="data-table pur-table">
+            <table class="data-table pur-table ord-table">
               <thead>
                 <tr>
-                  <th style="width:180px;">省平台订单号</th>
-                  <th style="width:130px;">关联采购计划数</th>
-                  <th style="width:150px;">订单发起时间</th>
-                  <th style="width:110px;">订单状态</th>
-                  <th class="col-acts">操作</th>
+                  <th style="width:150px;">省平台订单号</th>
+                  <th style="width:150px;">采购计划单号</th>
+                  <th style="width:130px;">订单提交时间</th>
+                  <th style="width:160px;">订单明细编号</th>
+                  <th style="width:115px;">订单明细状态</th>
+                  <th style="width:125px;">响应时间</th>
+                  <th>响应原因</th>
+                  <th class="col-acts" style="width:110px;">操作</th>
                 </tr>
               </thead>
               <tbody id="tbody"></tbody>
@@ -104,6 +172,22 @@
 </div>
 
 <div class="modal-mask" id="modalMask"></div>
+
+<!-- ========== 抽屉：配送明细（一条订单明细 → 多次配送） ========== -->
+<div class="drawer-mask" id="shipMask"></div>
+<aside class="drawer ship-drawer" id="shipDrawer">
+  <div class="drawer-head">
+    <div class="drawer-title" id="shipTitle">配送明细</div>
+    <button class="drawer-close" id="shipClose" title="关闭">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+    </button>
+  </div>
+  <div class="drawer-body" id="shipBody"></div>
+  <div class="drawer-foot">
+    <button class="btn" id="shipDone">关闭</button>
+  </div>
+</aside>
+
 <div class="toast" id="toast">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
   <span id="toastText"></span>
@@ -124,19 +208,96 @@
     location.href = "purchase-plan.html"; return;
   }
 
-  var state = { code: "", page: 1, size: 10 };
+  var state = { code: "", planCode: "", detailState: "", page: 1, size: 10 };
 
-  /* ---------------- 列表 ---------------- */
+  function submitTime(o) { return o.submitTime || o.createdAt || ""; }
+
+  /* ---------------- 列表（按订单分页，行内按明细展开） ---------------- */
   function filtered() {
     var list = PC.load("order");
     return list.filter(function (r) {
       if (!PC.orderInScope(r, user)) return false;
       if (state.code && r.code.toLowerCase().indexOf(state.code.toLowerCase()) < 0) return false;
+      /* 采购计划单号筛选：订单关联的任一计划单号命中即保留 */
+      if (state.planCode && planCodes(r).join(",").toLowerCase().indexOf(state.planCode.toLowerCase()) < 0) return false;
+      /* 明细状态筛选：订单下任一明细命中即保留该订单 */
+      if (state.detailState) {
+        var hit = (r.items || []).some(function (it) { return String(it.state) === state.detailState; });
+        if (!hit) return false;
+      }
       return true;
     }).sort(function (x, y) {
-      if (x.createdAt === y.createdAt) return 0;
-      return x.createdAt < y.createdAt ? 1 : -1;
+      var a = submitTime(x), b = submitTime(y);
+      if (a === b) return 0;
+      return a < b ? 1 : -1;
     });
+  }
+
+  function stateHtml(code) {
+    var tone = PC.orderStateTone(code);
+    var color = {
+      primary: "var(--primary)", success: "var(--success)", danger: "var(--danger)",
+      info: "var(--text-secondary)", muted: "var(--text-tertiary)"
+    }[tone] || "var(--text-secondary)";
+    return '<span class="ord-state" style="color:' + color + '"><i style="background:' + color + '"></i>' +
+      esc(PC.orderStateLabel(code)) + "</span>";
+  }
+
+  /* 采购计划单号（订单级）：planIds → 计划单号列表 */
+  function planCodes(o) {
+    var plans = PC.load("plan");
+    return (o.planIds || []).map(function (id) {
+      var p = PC.byId(plans, id);
+      return p ? p.code : "";
+    }).filter(Boolean);
+  }
+
+  /* 订单级单元格（rowspan 合并）：省平台订单号 / 采购计划单号 */
+  function codeCell(o, span) {
+    var sp = span > 1 ? ' rowspan="' + span + '"' : "";
+    return '<td class="ord-grp"' + sp + ">" + esc(o.code) + "</td>";
+  }
+
+  function planCell(o, span) {
+    var sp = span > 1 ? ' rowspan="' + span + '"' : "";
+    var codes = planCodes(o);
+    var inner = codes.length
+      ? codes.map(function (c) { return '<div class="ord-plan-code">' + esc(c) + "</div>"; }).join("")
+      : "—";
+    return '<td class="ord-grp"' + sp + ">" + inner + "</td>";
+  }
+
+  /* 订单级单元格（rowspan 合并）：订单提交时间（提交省平台的时间） */
+  function submitCell(o, span) {
+    var sp = span > 1 ? ' rowspan="' + span + '"' : "";
+    return '<td class="ord-grp ord-time"' + sp + ">" + esc(submitTime(o) || "—") + "</td>";
+  }
+
+  /* 明细级：订单明细编号（省平台回传的唯一标识，一条明细可对应多次配送） */
+  function detailIdCell(it) {
+    return '<td class="ord-did" title="订单明细编号">' + esc(it.detailId || "—") + "</td>";
+  }
+
+  function itemCells(it) {
+    var reason = it.responseReason || "";
+    return "<td>" + stateHtml(it.state) + "</td>" +
+      '<td class="ord-time">' + esc(it.responseTime || "—") + "</td>" +
+      '<td><div class="cell-ellipsis ord-reason" title="' + esc(reason || "—") + '">' +
+        esc(reason || "—") + "</div></td>";
+  }
+
+  /* 明细级操作：查看配送明细（1 条订单明细可多次配送） */
+  function actCell(o, it) {
+    return '<td class="col-acts">' +
+      '<button class="link-btn" data-act="viewShip" data-id="' + o.id +
+        '" data-did="' + esc(it.detailId) + '">查看配送明细</button></td>';
+  }
+
+  /* 当前筛选下该订单要展示的明细：按状态筛选时只列命中的明细 */
+  function visibleItems(o) {
+    var items = o.items || [];
+    if (!state.detailState) return items;
+    return items.filter(function (it) { return String(it.state) === state.detailState; });
   }
 
   function renderTable() {
@@ -147,240 +308,114 @@
     var start = (state.page - 1) * state.size;
     var slice = rows.slice(start, start + state.size);
 
-    $("tbody").innerHTML = slice.map(function (r) {
-      var n = (r.planIds || []).length;
-      return "<tr>" +
-        "<td>" + esc(r.code) + "</td>" +
-        '<td><button class="link-btn' + (n ? "" : " is-muted") + '" data-act="viewPlans" data-id="' + r.id + '">' +
-          n + "</button></td>" +
-        "<td>" + esc(r.createdAt) + "</td>" +
-        '<td><span class="status-text">' + esc(r.status) + "</span></td>" +
-        '<td class="col-acts"><button class="link-btn" data-act="linkPlans" data-id="' + r.id + '">关联采购计划</button></td>' +
-      "</tr>";
-    }).join("");
+    var html = [];
+    slice.forEach(function (o) {
+      var items = visibleItems(o);
+      if (!items.length) {
+        html.push('<tr class="ord-first">' + codeCell(o, 1) + planCell(o, 1) + submitCell(o, 1) +
+          '<td colspan="5" class="pa-empty" style="text-align:center;color:var(--text-placeholder);">暂无订单明细</td>' +
+          "</tr>");
+        return;
+      }
+      items.forEach(function (it, i) {
+        var h = "<tr" + (i === 0 ? ' class="ord-first"' : "") + ">";
+        if (i === 0) h += codeCell(o, items.length) + planCell(o, items.length) + submitCell(o, items.length);
+        h += detailIdCell(it) + itemCells(it) + actCell(o, it);
+        html.push(h + "</tr>");
+      });
+    });
+    $("tbody").innerHTML = html.join("");
 
+    var detailTotal = 0;
+    rows.forEach(function (o) { detailTotal += visibleItems(o).length; });
     $("tableEmpty").style.display = total ? "none" : "block";
-    $("pagerInfo").textContent = "共 " + total + " 条";
+    $("pagerInfo").textContent = "共 " + total + " 个订单 · " + detailTotal + " 条明细" +
+      (state.detailState ? "（仅列该状态明细）" : "");
     $("pgNum").textContent = state.page + " / " + pages;
     $("pgPrev").disabled = state.page <= 1;
     $("pgNext").disabled = state.page >= pages;
   }
 
-  /* ---------------- 查看关联采购计划详情 ---------------- */
-  function openViewPlans(orderId) {
+  /* ---------------- 查看配送明细（订单明细 1 : n 配送明细） ---------------- */
+  function openShipments(orderId, detailId) {
     var order = PC.byId(PC.load("order"), orderId);
     if (!order) return;
-    var plans = PC.load("plan");
-    var linked = (order.planIds || []).map(function (id) { return PC.byId(plans, id); })
-      .filter(function (p) { return !!p; });
+    var it = null;
+    (order.items || []).forEach(function (x) { if (x.detailId === detailId) it = x; });
+    if (!it) return;
 
-    var rowsHtml = linked.length
-      ? linked.map(function (p) {
+    var list = PC.shipmentsOf(it);
+    var st = PC.shipStats(it);
+
+    var kvHtml = [
+      ["省平台订单号", order.code, ""],
+      ["采购计划单号", planCodes(order).join("、") || "—", ""],
+      ["订单提交时间", submitTime(order) || "—", ""],
+      ["订单明细编号", it.detailId || "—", "mono"],
+      ["订单明细状态", PC.orderStateLabel(it.state), ""],
+      ["响应时间", it.responseTime || "—", ""]
+    ].map(function (k) {
+      return '<div class="kv"><span class="kv-label">' + k[0] + "</span>" +
+        '<span class="kv-value ' + k[2] + '" title="' + esc(k[1]) + '">' + esc(k[1]) + "</span></div>";
+    }).join("");
+
+    var rows = list.length
+      ? list.map(function (s) {
+          var q = Number(s.qty) || 0, r = Number(s.recvQty) || 0;
+          var none = (s.recvQty === "" || s.recvQty === null || s.recvQty === undefined);
+          var recvTxt = none ? "—" : s.recvQty;
+          var recvCls = none || !r ? "is-none" : (r < q ? "is-part" : "");
+          var recvTip = none || !r ? "未收货" : (r < q ? "部分收货" : "已收货");
           return "<tr>" +
-            "<td>" + esc(p.code) + "</td>" +
-            '<td class="num">' + esc(PC.fmtMoney(PC.planTotal(p.items))) + "</td>" +
-            "<td>" + esc(p.creator) + "</td>" +
-            "<td>" + esc(p.createdAt) + "</td>" +
+            '<td class="mono">' + esc(s.shipId) + "</td>" +
+            '<td class="num">' + esc(s.price) + "</td>" +
+            "<td>" + esc(s.invoiceNo) + "</td>" +
+            "<td>" + esc(s.invoiceCode) + "</td>" +
+            "<td>" + esc(s.batchNo) + "</td>" +
+            "<td>" + esc(s.expiry) + "</td>" +
+            '<td class="num">' + esc(s.qty) + "</td>" +
+            "<td>" + esc(s.shipTime) + "</td>" +
+            '<td class="num ' + recvCls + '" title="' + recvTip + '">' + esc(recvTxt) + "</td>" +
+            "<td>" + esc(s.recvTime || "—") + "</td>" +
           "</tr>";
         }).join("")
-      : '<tr><td colspan="4" class="pa-empty">暂未关联采购计划</td></tr>';
+      : '<tr><td colspan="10" class="ship-empty">暂无配送明细' +
+          (Number(it.state) === 5 ? "（该订单明细已拒绝配送）" : "") + "</td></tr>";
 
-    SEL.openModal(
-      '<div class="modal-head">' +
-        '<span class="modal-title">关联采购计划（' + esc(order.code) + "）</span>" +
-        '<button class="drawer-close" data-close="1">' +
-          '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>' +
-        "</button>" +
+    var sub = list.length
+      ? "共 " + st.times + " 次配送 · 累计配送 " + st.qty + " · 累计收货 " + st.recv
+      : "暂无配送记录";
+
+    $("shipTitle").textContent = "配送明细 · " + (it.detailId || "");
+    $("shipBody").innerHTML =
+      '<div class="drawer-section">' +
+        '<div class="drawer-section-title">订单明细</div>' +
+        '<div class="kv-grid">' + kvHtml + "</div>" +
+        '<div class="kv ship-reason-row"><span class="kv-label">响应原因</span>' +
+          '<span class="ship-reason-text">' + esc(it.responseReason || "—") + "</span></div>" +
       "</div>" +
-      '<div class="modal-body">' +
-        '<div class="pa-pick-wrap pur-pick-wrap">' +
-          '<table class="data-table"><thead><tr>' +
-            '<th style="width:150px;">计划单号</th>' +
-            '<th style="width:110px;" class="num">合计金额</th>' +
-            '<th style="width:100px;">提交人</th>' +
-            '<th style="width:145px;">提交时间</th>' +
-          '</tr></thead><tbody>' + rowsHtml + "</tbody></table>" +
-        "</div>" +
-      "</div>" +
-      '<div class="modal-foot"><button class="btn" data-close="1">关闭</button></div>'
-    );
-    document.querySelector("#modalMask .modal").classList.add("pa-modal");
+      '<div class="drawer-section">' +
+        '<div class="drawer-section-title">配送明细<span class="ship-sub">' + esc(sub) + "</span></div>" +
+        '<div class="ship-wrap"><table class="ship-table">' +
+          "<thead><tr>" +
+            "<th>配送明细编号</th>" +
+            '<th class="num">采购价格</th>' +
+            "<th>发票号</th>" +
+            "<th>发票代码</th>" +
+            "<th>批号</th>" +
+            "<th>有效期</th>" +
+            '<th class="num">配送数量</th>' +
+            "<th>配送时间</th>" +
+            '<th class="num">收货数量</th>' +
+            "<th>收货时间</th>" +
+          "</tr></thead><tbody>" + rows + "</tbody></table></div>" +
+      "</div>";
+    document.body.classList.add("drawer-open");
   }
 
-  /* ---------------- 关联采购计划：单个 / 批量添加或移除已审核通过的计划 ---------------- */
-  function openLinkPlans(orderId) {
-    var orders = PC.load("order");
-    var order = PC.byId(orders, orderId);
-    if (!order) return;
-
-    /* 可关联范围：审核通过的采购计划 */
-    var approved = PC.load("plan").filter(function (p) { return p.status === "approved"; });
-    if (!approved.length) {
-      SEL.confirmDialog({
-        title: "关联采购计划",
-        text: "暂无已审核通过的采购计划，请先完成采购计划的编制与审核。",
-        okText: "知道了"
-      });
-      return;
-    }
-
-    /* 初始关联状态（关联状态筛选项以此为准） */
-    var linkedMap = {};
-    (order.planIds || []).forEach(function (id) { linkedMap[id] = true; });
-
-    /* 待提交的关联集合：筛选/翻看过程中勾选状态不丢失 */
-    var pending = {};
-    Object.keys(linkedMap).forEach(function (id) { pending[id] = true; });
-
-    var f = { creator: "", dateFrom: "", dateTo: "", rel: "" };
-
-    SEL.openModal(
-      '<div class="modal-head">' +
-        '<span class="modal-title">关联采购计划（' + esc(order.code) + "）</span>" +
-        '<button class="drawer-close" data-close="1">' +
-          '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>' +
-        "</button>" +
-      "</div>" +
-      '<div class="modal-body">' +
-        '<div class="filter-bar" style="padding:10px 0;border-bottom:none;gap:8px 16px;">' +
-          '<div class="filter-item">' +
-            '<span class="filter-label">提交人</span>' +
-            '<input class="input" id="lpFCreator" placeholder="请输入提交人" style="width:120px;">' +
-          "</div>" +
-          '<div class="filter-item">' +
-            '<span class="filter-label">提交时间</span>' +
-            '<input class="input" type="date" id="lpFDateFrom" style="width:130px;">' +
-            '<span class="filter-sep">至</span>' +
-            '<input class="input" type="date" id="lpFDateTo" style="width:130px;">' +
-          "</div>" +
-          '<div class="filter-item">' +
-            '<span class="filter-label">关联状态</span>' +
-            '<select class="select" id="lpFRel" style="width:110px;">' +
-              '<option value="">全部</option>' +
-              '<option value="linked">已关联</option>' +
-              '<option value="unlinked">未关联</option>' +
-            "</select>" +
-          "</div>" +
-          '<div class="filter-acts">' +
-            '<button class="btn" id="lpFReset">重置</button>' +
-            '<button class="btn btn-primary" id="lpFQuery">查询</button>' +
-          "</div>" +
-        "</div>" +
-        '<div class="pa-pick-wrap pur-pick-wrap">' +
-          '<table class="data-table"><thead><tr>' +
-            '<th style="width:36px;"><input type="checkbox" id="lpAll" title="全选"></th>' +
-            '<th style="width:150px;">计划单号</th>' +
-            '<th style="width:110px;" class="num">合计金额</th>' +
-            '<th style="width:100px;">提交人</th>' +
-            '<th style="width:145px;">提交时间</th>' +
-          '</tr></thead><tbody id="lpBody"></tbody></table>' +
-        "</div>" +
-      "</div>" +
-      '<div class="modal-foot">' +
-        '<span class="pur-pick-count" style="margin-right:auto;font-size:12px;color:var(--text-tertiary);">已选 <b id="lpCount">0</b> 个计划</span>' +
-        '<button class="btn" data-close="1">取消</button>' +
-        '<button class="btn btn-primary" id="lpOk">确定</button>' +
-      "</div>"
-    );
-    document.querySelector("#modalMask .modal").classList.add("pa-modal");
-
-    function visiblePlans() {
-      return approved.filter(function (p) {
-        if (f.creator && p.creator.indexOf(f.creator) < 0) return false;
-        if (f.dateFrom || f.dateTo) {
-          var day = (p.createdAt || "").slice(0, 10);
-          if (f.dateFrom && day < f.dateFrom) return false;
-          if (f.dateTo && day > f.dateTo) return false;
-        }
-        if (f.rel === "linked" && !linkedMap[p.id]) return false;
-        if (f.rel === "unlinked" && linkedMap[p.id]) return false;
-        return true;
-      }).sort(function (x, y) {
-        if (x.createdAt === y.createdAt) return 0;
-        return x.createdAt < y.createdAt ? 1 : -1;
-      });
-    }
-
-    function renderRows() {
-      var rows = visiblePlans();
-      if (!rows.length) {
-        $("lpBody").innerHTML = '<tr><td colspan="5" class="pa-empty">暂无符合条件的采购计划</td></tr>';
-      } else {
-        $("lpBody").innerHTML = rows.map(function (p) {
-          return "<tr>" +
-            '<td><input type="checkbox" data-id="' + esc(p.id) + '"' + (pending[p.id] ? " checked" : "") + "></td>" +
-            "<td>" + esc(p.code) + "</td>" +
-            '<td class="num">' + esc(PC.fmtMoney(PC.planTotal(p.items))) + "</td>" +
-            "<td>" + esc(p.creator) + "</td>" +
-            "<td>" + esc(p.createdAt) + "</td>" +
-          "</tr>";
-        }).join("");
-      }
-      syncCount();
-    }
-
-    function syncCount() {
-      $("lpCount").textContent = Object.keys(pending).length;
-      var boxes = $("lpBody").querySelectorAll("input[data-id]");
-      var all = $("lpAll");
-      all.checked = boxes.length > 0 &&
-        [].every.call(boxes, function (c) { return c.checked; });
-    }
-
-    $("lpAll").addEventListener("change", function () {
-      var on = this.checked;
-      $("lpBody").querySelectorAll("input[data-id]").forEach(function (c) {
-        var id = c.getAttribute("data-id");
-        c.checked = on;
-        if (on) pending[id] = true; else delete pending[id];
-      });
-      syncCount();
-    });
-
-    $("lpBody").addEventListener("change", function (e) {
-      var c = e.target.closest("input[data-id]");
-      if (!c) return;
-      var id = c.getAttribute("data-id");
-      if (c.checked) pending[id] = true; else delete pending[id];
-      syncCount();
-    });
-
-    function doFilter() {
-      f.creator = $("lpFCreator").value.trim();
-      f.dateFrom = $("lpFDateFrom").value;
-      f.dateTo = $("lpFDateTo").value;
-      f.rel = $("lpFRel").value;
-      renderRows();
-    }
-    $("lpFQuery").addEventListener("click", doFilter);
-    $("lpFCreator").addEventListener("keydown", function (e) { if (e.key === "Enter") doFilter(); });
-    $("lpFReset").addEventListener("click", function () {
-      f = { creator: "", dateFrom: "", dateTo: "", rel: "" };
-      $("lpFCreator").value = ""; $("lpFDateFrom").value = ""; $("lpFDateTo").value = ""; $("lpFRel").value = "";
-      renderRows();
-    });
-
-    $("lpOk").addEventListener("click", function () {
-      var ids = Object.keys(pending);
-      var before = (order.planIds || []).length;
-      order.planIds = ids;
-      PC.persist("order", order);
-      /* 同步计划侧的关联订单（便于追溯） */
-      var plans = PC.load("plan");
-      plans.forEach(function (p) {
-        var was = (p.linkedOrderIds || []).indexOf(order.id) >= 0;
-        var now = ids.indexOf(p.id) >= 0;
-        if (now && !was) p.linkedOrderIds = (p.linkedOrderIds || []).concat([order.id]);
-        if (!now && was) p.linkedOrderIds = (p.linkedOrderIds || []).filter(function (x) { return x !== order.id; });
-      });
-      PC.save("plan", plans);
-      SEL.closeModal();
-      document.body.classList.remove("modal-open");
-      renderTable();
-      SEL.toast("已更新关联：" + before + " 个 → " + ids.length + " 个");
-    });
-
-    renderRows();
+  function closeShipments() {
+    document.body.classList.remove("drawer-open");
+    $("shipBody").innerHTML = "";
   }
 
   /* ---------------- 同步省平台订单（演示） ---------------- */
@@ -390,17 +425,25 @@
   });
 
   /* ---------------- 事件 ---------------- */
+  $("fState").innerHTML = '<option value="">全部明细状态</option>' +
+    PC.orderStateOptions().map(function (o) {
+      return '<option value="' + o.v + '">' + esc(o.t) + "</option>";
+    }).join("");
+
   function doQuery() {
     state.code = $("fCode").value.trim();
+    state.planCode = $("fPlanCode").value.trim();
+    state.detailState = $("fState").value;
     state.page = 1;
     renderTable();
   }
   $("btnQuery").addEventListener("click", doQuery);
   $("fCode").addEventListener("keydown", function (e) { if (e.key === "Enter") doQuery(); });
+  $("fPlanCode").addEventListener("keydown", function (e) { if (e.key === "Enter") doQuery(); });
 
   $("btnReset").addEventListener("click", function () {
-    state.code = ""; state.page = 1;
-    $("fCode").value = "";
+    state.code = ""; state.planCode = ""; state.detailState = ""; state.page = 1;
+    $("fCode").value = ""; $("fPlanCode").value = ""; $("fState").value = "";
     renderTable();
   });
 
@@ -410,10 +453,16 @@
   $("tbody").addEventListener("click", function (e) {
     var btn = e.target.closest("[data-act]");
     if (!btn) return;
-    var id = btn.getAttribute("data-id");
-    var act = btn.getAttribute("data-act");
-    if (act === "viewPlans") openViewPlans(id);
-    else if (act === "linkPlans") openLinkPlans(id);
+    if (btn.getAttribute("data-act") === "viewShip") {
+      openShipments(btn.getAttribute("data-id"), btn.getAttribute("data-did"));
+    }
+  });
+
+  $("shipClose").addEventListener("click", closeShipments);
+  $("shipDone").addEventListener("click", closeShipments);
+  $("shipMask").addEventListener("click", closeShipments);
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && document.body.classList.contains("drawer-open")) closeShipments();
   });
 
   $("tabClose").addEventListener("click", function () { location.href = "home.html"; });

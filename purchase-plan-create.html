@@ -76,6 +76,10 @@
                     <label class="form-label">提交时间</label>
                     <input class="input is-readonly" id="fCreatedAt" readonly>
                   </div>
+                  <div class="form-item" style="grid-column:1 / -1;">
+                    <label class="form-label"><span class="req">*</span>配送地址</label>
+                    <select class="select" id="fAddr" style="width:100%;"></select>
+                  </div>
                   <div class="form-item span-3">
                     <label class="form-label">申请说明</label>
                     <textarea class="textarea" id="fDesc" placeholder="选填，可说明计划编制依据等（200 字以内）" maxlength="200" style="flex:1;min-width:0;min-height:56px;"></textarea>
@@ -189,6 +193,17 @@
     $("fLoc").appendChild(opt);
   });
   $("fLoc").value = doc.loc || "";
+
+  /* ---------------- 配送地址（来自「采购计划 → 配送地址维护」的机构地址库） ---------------- */
+  var addrOptions = PC.addressesOf(doc.creatorOrg);
+  var defAddr = PC.defaultAddress(doc.creatorOrg);
+  $("fAddr").innerHTML = addrOptions.length
+    ? addrOptions.map(function (a) {
+        return '<option value="' + esc(a.id) + '">' + esc(PC.addrLine(a)) +
+          (a.isDefault ? "　（默认）" : "") + "</option>";
+      }).join("")
+    : '<option value="">当前机构未维护配送地址，请到「采购计划 → 配送地址维护」中添加</option>';
+  $("fAddr").value = doc.addressId || (defAddr ? defAddr.id : "");
 
   if (editId) {
     $("pageTitle").textContent = "编辑采购计划";
@@ -554,6 +569,12 @@
   function collect() {
     doc.loc = $("fLoc").value;
     doc.desc = $("fDesc").value.trim();
+    /* 配送地址：存 id + 地址快照，避免地址后续修改影响历史计划 */
+    var aid = $("fAddr").value;
+    var picked = null;
+    addrOptions.forEach(function (a) { if (a.id === aid) picked = a; });
+    doc.addressId = aid || "";
+    doc.address = picked ? PC.addrLine(picked) : "";
     $("itemBody").querySelectorAll("[data-ii]").forEach(function (el) {
       var i = parseInt(el.getAttribute("data-ii"), 10);
       var f = el.getAttribute("data-f");
@@ -564,6 +585,12 @@
   function validate() {
     var missing = [];
     if (!$("fLoc").value) missing.push("申请库位");
+    if (!$("fAddr").value) {
+      $("fAddr").classList.add("is-invalid");
+      missing.push("配送地址");
+    } else {
+      $("fAddr").classList.remove("is-invalid");
+    }
     if (!doc.items.length) missing.push("至少 1 条药品明细");
     doc.items.forEach(function (it, i) {
       var qEl = document.querySelector('[data-ii="' + i + '"][data-f="qty"]');

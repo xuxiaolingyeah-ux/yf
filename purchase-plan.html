@@ -4,6 +4,31 @@
 <meta charset="UTF-8">
 <title>采购计划 · 区域药房协同管理系统</title>
 <link rel="stylesheet" href="styles.css">
+<style>
+/* ---------- 配送地址维护（右侧抽屉）：一行 = 地址输入框 + 默认地址勾选 ---------- */
+.addr-drawer { width: 620px; }
+.addr-tip { font-size: 12px; color: var(--text-tertiary); line-height: 1.7; margin-bottom: 14px; }
+.addr-list { display: flex; flex-direction: column; gap: 12px; }
+.addr-row { display: flex; align-items: center; gap: 10px; }
+.addr-row .addr-input { flex: 1; min-width: 0; font-size: 13px; }
+.addr-row .addr-input.is-error { border-color: var(--danger); }
+.addr-default {
+  flex: none; display: inline-flex; align-items: center; gap: 6px;
+  font-size: 13px; color: var(--text-secondary); cursor: pointer;
+  user-select: none; white-space: nowrap;
+}
+.addr-default input { width: 14px; height: 14px; margin: 0; accent-color: var(--primary); cursor: pointer; }
+.addr-del { flex: none; font-size: 13px; color: var(--text-tertiary); cursor: pointer; white-space: nowrap; }
+.addr-del:hover { color: var(--danger); }
+.addr-empty { padding: 24px 0 6px; text-align: center; color: var(--text-placeholder); font-size: 13px; }
+/* 新增地址：紧跟地址列表下方的虚线按钮 */
+.addr-add {
+  width: 100%; height: 40px; margin-top: 12px;
+  border: 1px dashed var(--border); border-radius: 6px; background: transparent;
+  color: var(--primary); font-size: 13px; cursor: pointer;
+}
+.addr-add:hover { border-color: var(--primary); background: var(--primary-lighter, #F0F7FF); }
+</style>
 </head>
 <body>
 
@@ -119,6 +144,29 @@
     </div>
   </main>
 </div>
+
+<!-- ========== 抽屉：配送地址维护 ========== -->
+<div class="drawer-mask" id="addrMask"></div>
+<aside class="drawer addr-drawer" id="addrDrawer">
+  <div class="drawer-head">
+    <div class="drawer-title" id="addrTitle">配送地址维护</div>
+    <button class="drawer-close" id="addrClose" title="关闭">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+    </button>
+  </div>
+  <div class="drawer-body">
+    <!-- 每行直接是地址输入框 + 「默认地址」勾选，抽屉底部统一 保存/取消 -->
+    <div id="addrListView">
+      <div class="addr-tip" id="addrTip"></div>
+      <div class="addr-list" id="addrList"></div>
+      <button class="addr-add" id="addrAdd">＋ 新增地址</button>
+    </div>
+  </div>
+  <div class="drawer-foot">
+    <button class="btn" id="addrCancel">取消</button>
+    <button class="btn btn-primary" id="addrSave">保存</button>
+  </div>
+</aside>
 
 <div class="modal-mask" id="modalMask"></div>
 <div class="toast" id="toast">
@@ -283,8 +331,153 @@
     });
   }
 
+  /* ---------------- 配送地址维护（每行直接是输入框 + 默认地址勾选，抽屉整体 保存/取消） ---------------- */
+  var addrDraft = [];      /* 当前机构地址草稿（未保存） */
+
+  function clone(o) { return JSON.parse(JSON.stringify(o)); }
+
+  function addrStored() { return PC.addressesOf(user.org); }
+  function addrDirty() { return JSON.stringify(addrDraft) !== JSON.stringify(addrStored()); }
+
+  function openAddr() {
+    addrDraft = addrStored().map(clone);
+    renderAddrList();
+    document.body.classList.add("drawer-open");
+  }
+
+  function closeAddr(force) {
+    if (!force && addrDirty()) {
+      SEL.confirmDialog({
+        title: "放弃修改",
+        text: "地址修改尚未保存，确定关闭并放弃？",
+        okText: "放弃修改",
+        onOk: function () { closeAddr(true); }
+      });
+      return;
+    }
+    document.body.classList.remove("drawer-open");
+  }
+
+  function addrInputEl(id) {
+    return document.querySelector('#addrList input[data-addr-input][data-id="' + id + '"]');
+  }
+
+  function renderAddrList() {
+    var def = addrDraft.filter(function (a) { return a.isDefault; })[0];
+    $("addrTip").innerHTML = "当前机构：<b>" + esc(user.org) + "</b>　共 " + addrDraft.length + " 条地址" +
+      (def ? "；默认地址将在新建采购计划时自动带入" : '<span style="color:var(--danger);">尚未设置默认地址</span>') +
+      "；修改地址后点「保存」生效";
+    var html;
+    if (!addrDraft.length) {
+      html = '<div class="addr-empty">暂无配送地址，点击下方「新增地址」添加</div>';
+    } else {
+      html = addrDraft.map(function (a) {
+        return '<div class="addr-row">' +
+          '<input class="input addr-input" data-addr-input data-id="' + a.id + '" maxlength="100"' +
+            ' value="' + esc(a.address || PC.addrFull(a)) + '" placeholder="请输入配送地址（最多 100 字）">' +
+          '<label class="addr-default"><input type="checkbox" data-addr-default data-id="' + a.id + '"' +
+            (a.isDefault ? " checked" : "") + ">默认地址</label>" +
+          '<a class="addr-del" data-addr-act="del" data-id="' + a.id + '">删除</a>' +
+        "</div>";
+      }).join("");
+    }
+    $("addrList").innerHTML = html;
+  }
+
+  function saveAddr() {
+    if (!addrDraft.length) { SEL.toast("请至少添加一条配送地址"); return; }
+    var bad = addrDraft.filter(function (x) { return !(x.address || "").trim(); })[0];
+    if (bad) {
+      renderAddrList();
+      var el = addrInputEl(bad.id);
+      if (el) { el.classList.add("is-error"); el.focus(); }
+      SEL.toast("存在空地址，请填写后再保存");
+      return;
+    }
+    if (!addrDraft.some(function (x) { return x.isDefault; })) addrDraft[0].isDefault = true;
+    /* 存克隆：断开草稿与库存的对象引用，取消时才能真正回退 */
+    PC.setAddresses(user.org, addrDraft.map(clone));
+    renderAddrList();
+    SEL.toast("地址已保存");
+  }
+
+  /* 输入即写入草稿（不重渲染，避免打断输入） */
+  $("addrList").addEventListener("input", function (e) {
+    var el = e.target;
+    if (!el.matches || !el.matches("[data-addr-input]")) return;
+    el.classList.remove("is-error");
+    var id = el.getAttribute("data-id");
+    addrDraft.forEach(function (x) { if (x.id === id) x.address = el.value; });
+  });
+
+  /* 默认地址：单选（勾选一条自动取消其他；取消勾选时还原，始终保留一条默认） */
+  $("addrList").addEventListener("change", function (e) {
+    var el = e.target;
+    if (!el.matches || !el.matches("[data-addr-default]")) return;
+    var id = el.getAttribute("data-id");
+    if (!el.checked) {
+      el.checked = true;
+      SEL.toast("需保留一条默认地址");
+      return;
+    }
+    addrDraft.forEach(function (x) { x.isDefault = x.id === id; });
+    renderAddrList();
+  });
+
+  $("addrList").addEventListener("click", function (e) {
+    var a = e.target.closest("[data-addr-act]");
+    if (!a || a.getAttribute("data-addr-act") !== "del") return;
+    var id = a.getAttribute("data-id");
+    var target = addrDraft.filter(function (x) { return x.id === id; })[0];
+    if (!target) return;
+    SEL.confirmDialog({
+      title: "删除配送地址",
+      text: "确认删除配送地址「" + (target.address || PC.addrFull(target) || "空地址") + "」？（保存后生效）",
+      okText: "删除",
+      onOk: function () {
+        addrDraft = addrDraft.filter(function (x) { return x.id !== id; });
+        /* 删掉的若是默认地址，自动把第一条转正 */
+        if (addrDraft.length && !addrDraft.some(function (x) { return x.isDefault; })) addrDraft[0].isDefault = true;
+        renderAddrList();
+      }
+    });
+  });
+
+  /* 输入框回车 = 直接保存 */
+  $("addrList").addEventListener("keydown", function (e) {
+    if (e.key === "Enter" && e.target.matches && e.target.matches("[data-addr-input]")) {
+      e.preventDefault();
+      saveAddr();
+    }
+  });
+
+  /* 新增地址：列表末尾追加一行空输入框并聚焦 */
+  $("addrAdd").addEventListener("click", function () {
+    var rec = {
+      id: "ad-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5),
+      org: user.org, address: "",
+      isDefault: addrDraft.length === 0
+    };
+    addrDraft.push(rec);
+    renderAddrList();
+    var el = addrInputEl(rec.id);
+    if (el) el.focus();
+  });
+
+  $("addrSave").addEventListener("click", saveAddr);
+  /* 「取消」= 明确放弃修改，直接关闭；X / 遮罩 / Esc 关闭时才确认是否丢弃 */
+  $("addrCancel").addEventListener("click", function () { closeAddr(true); });
+  $("addrClose").addEventListener("click", function () { closeAddr(false); });
+  $("addrMask").addEventListener("click", function () { closeAddr(false); });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && document.body.classList.contains("drawer-open")) closeAddr(false);
+  });
+
   /* ---------------- 事件 ---------------- */
-  $("pageActs").innerHTML = '<button class="btn btn-primary" id="btnCreate">发起采购计划</button>';
+  $("pageActs").innerHTML =
+    '<button class="btn" id="btnAddr">配送地址维护</button>' +
+    '<button class="btn btn-primary" id="btnCreate">发起采购计划</button>';
+  $("btnAddr").addEventListener("click", openAddr);
   $("btnCreate").addEventListener("click", function () {
     location.href = "purchase-plan-create.html";
   });

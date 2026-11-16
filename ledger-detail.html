@@ -66,6 +66,8 @@
 .lgx-table thead th.sub-out { background: #FDF0ED; }
 .lgx-table thead th.sub-bal { background: #F1EDFC; }
 .lgx-table thead th.num, .lgx-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+/* 数量后的最小包装单位：弱化显示，数字仍是视觉主体 */
+.lgx-table td.num .qty-unit { margin-left: 2px; color: var(--text-tertiary); font-size: 12px; font-weight: 400; }
 .lgx-table tbody td { padding: 8px; border-bottom: 1px solid var(--border); vertical-align: middle; background: var(--bg-white); }
 .lgx-table tbody tr:nth-child(even) td { background: var(--table-even); }
 .lgx-table tbody tr:hover td { background: var(--table-hover); }
@@ -201,7 +203,7 @@
           <span><i class="dot" style="background:#FBE3DE"></i>减少（出库类）</span>
           <span><i class="dot" style="background:#E7E1FA"></i>结存</span>
           <span class="lgx-src">取数说明：按库位 + 药品种类汇总出入库流水</span>
-          <span class="lgx-formula">结存数量 = 期初 + 增加汇总 − 减少汇总；金额随价格口径同步换算</span>
+          <span class="lgx-formula">数量按最小包装单位（盒/袋/支/瓶）计；结存数量 = 期初 + 增加汇总 − 减少汇总；金额随价格口径同步换算</span>
         </div>
       </div>
     </div>
@@ -280,6 +282,8 @@
     var s = String(Math.round(Number(n) || 0));
     return s.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   }
+  /* 明细行数量：数字后带该药品的最小包装单位（盒/袋/支/瓶）；合计行跨单位不带单位 */
+  function qtyUnit(n, r) { return qty(n) + '<span class="qty-unit">' + LG.esc(r.unit || "") + '</span>'; }
   function zeroDash(v) { return (Number(v) || 0) === 0 ? "—" : null; }
 
   /* ---------- 筛选 ---------- */
@@ -306,20 +310,20 @@
         + '<td class="c-vendor" title="' + LG.esc(r.vendor) + '">' + LG.esc(r.vendor) + '</td>'
         + '<td class="c-code">' + LG.esc(r.code) + '</td>'
         + '<td class="num open-amt">' + money(amt(r.openQty, r)) + '</td>'
-        + '<td class="num">' + qty(r.openQty) + '</td>';
+        + '<td class="num">' + qtyUnit(r.openQty, r) + '</td>';
       LG.IN_DIMS.forEach(function (d) {
         var q = Number(r.inQty[d.key]) || 0;
-        cells += '<td class="num">' + (zeroDash(q) || qty(q)) + '</td>'
+        cells += '<td class="num">' + (zeroDash(q) || qtyUnit(q, r)) + '</td>'
           + '<td class="num">' + (zeroDash(q) || money(amt(q, r))) + '</td>';
       });
-      cells += '<td class="num sum-in">' + qty(r.inSumQty) + '</td><td class="num sum-in">' + money(amt(r.inSumQty, r)) + '</td>';
+      cells += '<td class="num sum-in">' + qtyUnit(r.inSumQty, r) + '</td><td class="num sum-in">' + money(amt(r.inSumQty, r)) + '</td>';
       LG.OUT_DIMS.forEach(function (d) {
         var q = Number(r.outQty[d.key]) || 0;
-        cells += '<td class="num">' + (zeroDash(q) || qty(q)) + '</td>'
+        cells += '<td class="num">' + (zeroDash(q) || qtyUnit(q, r)) + '</td>'
           + '<td class="num">' + (zeroDash(q) || money(amt(q, r))) + '</td>';
       });
-      cells += '<td class="num sum-out">' + qty(r.outSumQty) + '</td><td class="num sum-out">' + money(amt(r.outSumQty, r)) + '</td>';
-      cells += '<td class="num bal-amt">' + money(amt(r.closeQty, r)) + '</td><td class="num">' + qty(r.closeQty) + '</td>';
+      cells += '<td class="num sum-out">' + qtyUnit(r.outSumQty, r) + '</td><td class="num sum-out">' + money(amt(r.outSumQty, r)) + '</td>';
+      cells += '<td class="num bal-amt">' + money(amt(r.closeQty, r)) + '</td><td class="num">' + qtyUnit(r.closeQty, r) + '</td>';
       return '<tr>' + cells + '</tr>';
     }).join("");
     $("#tbody").innerHTML = body || "";
@@ -394,11 +398,12 @@
 
     var lines = [head.join(",")];
     ST.view.forEach(function (r) {
-      var c = [r.name, r.spec, r.vendor, r.code, amt(r.openQty, r).toFixed(2), r.openQty];
-      LG.IN_DIMS.forEach(function (d) { var q = Number(r.inQty[d.key]) || 0; c.push(q, amt(q, r).toFixed(2)); });
-      c.push(r.inSumQty, amt(r.inSumQty, r).toFixed(2));
-      LG.OUT_DIMS.forEach(function (d) { var q = Number(r.outQty[d.key]) || 0; c.push(q, amt(q, r).toFixed(2)); });
-      c.push(r.outSumQty, amt(r.outSumQty, r).toFixed(2), amt(r.closeQty, r).toFixed(2), r.closeQty);
+      var u = r.unit || "";
+      var c = [r.name, r.spec, r.vendor, r.code, amt(r.openQty, r).toFixed(2), qty(r.openQty) + u];
+      LG.IN_DIMS.forEach(function (d) { var q = Number(r.inQty[d.key]) || 0; c.push(q ? qty(q) + u : "", amt(q, r).toFixed(2)); });
+      c.push(qty(r.inSumQty) + u, amt(r.inSumQty, r).toFixed(2));
+      LG.OUT_DIMS.forEach(function (d) { var q = Number(r.outQty[d.key]) || 0; c.push(q ? qty(q) + u : "", amt(q, r).toFixed(2)); });
+      c.push(qty(r.outSumQty) + u, amt(r.outSumQty, r).toFixed(2), amt(r.closeQty, r).toFixed(2), qty(r.closeQty) + u);
       lines.push(c.map(function (x) { return '"' + String(x).replace(/"/g, '""') + '"'; }).join(","));
     });
     var csv = "\ufeff" + lines.join("\r\n");

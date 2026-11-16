@@ -45,24 +45,24 @@
 
   /* ---------- 药品主数据（台账明细行来源） ---------- */
   var DRUGS = [
-    { code: "1210500301", name: "阿莫西林胶囊", py: "AMXLJN", spec: "0.25g×24粒", vendor: "华北制药股份有限公司", kind: "西药", purchase: 8.20, retail: 12.50 },
-    { code: "1210500302", name: "阿莫西林胶囊", py: "AMXLJN", spec: "0.5g×12粒", vendor: "石药集团中诺药业（石家庄）有限公司", kind: "西药", purchase: 12.50, retail: 18.80 },
-    { code: "1210500501", name: "头孢克肟分散片", py: "TBKWFSP", spec: "0.1g×6片", vendor: "上海信谊药厂有限公司", kind: "西药", purchase: 16.80, retail: 24.60 },
-    { code: "1210500601", name: "布洛芬缓释胶囊", py: "BLFHSJN", spec: "0.3g×20粒", vendor: "中美天津史克制药有限公司", kind: "西药", purchase: 15.00, retail: 22.00 },
-    { code: "1210500901", name: "奥美拉唑肠溶胶囊", py: "AMLZCRJN", spec: "20mg×14粒", vendor: "常州四药制药有限公司", kind: "西药", purchase: 24.00, retail: 35.80 },
-    { code: "1210501101", name: "复方甘草片", py: "FFGCP", spec: "100片/瓶", vendor: "广州白云山制药股份有限公司", kind: "中成药", purchase: 5.20, retail: 8.50 },
-    { code: "1210501201", name: "硝苯地平控释片", py: "XBDPKSP", spec: "30mg×7片", vendor: "拜耳医药保健有限公司", kind: "西药", purchase: 20.50, retail: 29.80 },
-    { code: "1210501301", name: "盐酸二甲双胍片", py: "YSEJSGP", spec: "0.5g×20片", vendor: "中美上海施贵宝制药有限公司", kind: "西药", purchase: 10.20, retail: 15.60 },
-    { code: "1210501401", name: "左氧氟沙星片", py: "ZYFSXP", spec: "0.5g×4片", vendor: "第一三共制药（北京）有限公司", kind: "西药", purchase: 22.00, retail: 32.00 },
-    { code: "1210501501", name: "双歧杆菌三联活菌胶囊", py: "SQGJSLHJJN", spec: "0.21g×24粒", vendor: "上海上药信谊药厂有限公司", kind: "西药", purchase: 18.00, retail: 26.50 },
-    { code: "1210501601", name: "阿托伐他汀钙片", py: "ATFTTGP", spec: "20mg×7片", vendor: "辉瑞制药有限公司", kind: "西药", purchase: 26.50, retail: 38.90 },
-    { code: "1210700101", name: "连花清瘟胶囊", py: "LHQWJN", spec: "0.35g×24粒", vendor: "石家庄以岭药业股份有限公司", kind: "中成药", purchase: 14.80, retail: 21.50 },
-    { code: "1410100101", name: "重组乙型肝炎疫苗", py: "ZZYXXGYM", spec: "10μg/0.5ml×1支", vendor: "深圳康泰生物制品股份有限公司", kind: "疫苗", purchase: 68.00, retail: 98.00 },
-    { code: "1310100101", name: "黄芪饮片", py: "HQYP", spec: "500g/袋", vendor: "亳州中药饮片厂", kind: "中药饮片", purchase: 32.00, retail: 45.00 },
-    { code: "1310100201", name: "当归饮片", py: "DGYP", spec: "500g/袋", vendor: "亳州中药饮片厂", kind: "中药饮片", purchase: 56.00, retail: 78.00 },
-    { code: "1310100301", name: "金银花饮片", py: "JYHYP", spec: "500g/袋", vendor: "亳州中药饮片厂", kind: "中药饮片", purchase: 78.00, retail: 108.00 },
-    { code: "1310100401", name: "麸炒白术饮片", py: "FCBZYP", spec: "500g/袋", vendor: "亳州中药饮片厂", kind: "中药饮片", purchase: 41.00, retail: 58.00 },
-    { code: "1310200101", name: "黄芪配方颗粒", py: "HQPFKL", spec: "1g×15袋/盒", vendor: "江阴天江药业有限公司", kind: "配方颗粒", purchase: 36.00, retail: 52.00 }
+    { code: "1210500301", name: "阿莫西林胶囊", py: "AMXLJN", spec: "0.25g×24粒", unit: "盒", vendor: "华北制药股份有限公司", kind: "西药", purchase: 8.20, retail: 12.50 },
+    { code: "1210500302", name: "阿莫西林胶囊", py: "AMXLJN", spec: "0.5g×12粒", unit: "盒", vendor: "石药集团中诺药业（石家庄）有限公司", kind: "西药", purchase: 12.50, retail: 18.80 },
+    { code: "1210500501", name: "头孢克肟分散片", py: "TBKWFSP", spec: "0.1g×6片", unit: "盒", vendor: "上海信谊药厂有限公司", kind: "西药", purchase: 16.80, retail: 24.60 },
+    { code: "1210500601", name: "布洛芬缓释胶囊", py: "BLFHSJN", spec: "0.3g×20粒", unit: "盒", vendor: "中美天津史克制药有限公司", kind: "西药", purchase: 15.00, retail: 22.00 },
+    { code: "1210500901", name: "奥美拉唑肠溶胶囊", py: "AMLZCRJN", spec: "20mg×14粒", unit: "盒", vendor: "常州四药制药有限公司", kind: "西药", purchase: 24.00, retail: 35.80 },
+    { code: "1210501101", name: "复方甘草片", py: "FFGCP", spec: "100片/瓶", unit: "瓶", vendor: "广州白云山制药股份有限公司", kind: "中成药", purchase: 5.20, retail: 8.50 },
+    { code: "1210501201", name: "硝苯地平控释片", py: "XBDPKSP", spec: "30mg×7片", unit: "盒", vendor: "拜耳医药保健有限公司", kind: "西药", purchase: 20.50, retail: 29.80 },
+    { code: "1210501301", name: "盐酸二甲双胍片", py: "YSEJSGP", spec: "0.5g×20片", unit: "盒", vendor: "中美上海施贵宝制药有限公司", kind: "西药", purchase: 10.20, retail: 15.60 },
+    { code: "1210501401", name: "左氧氟沙星片", py: "ZYFSXP", spec: "0.5g×4片", unit: "盒", vendor: "第一三共制药（北京）有限公司", kind: "西药", purchase: 22.00, retail: 32.00 },
+    { code: "1210501501", name: "双歧杆菌三联活菌胶囊", py: "SQGJSLHJJN", spec: "0.21g×24粒", unit: "盒", vendor: "上海上药信谊药厂有限公司", kind: "西药", purchase: 18.00, retail: 26.50 },
+    { code: "1210501601", name: "阿托伐他汀钙片", py: "ATFTTGP", spec: "20mg×7片", unit: "盒", vendor: "辉瑞制药有限公司", kind: "西药", purchase: 26.50, retail: 38.90 },
+    { code: "1210700101", name: "连花清瘟胶囊", py: "LHQWJN", spec: "0.35g×24粒", unit: "盒", vendor: "石家庄以岭药业股份有限公司", kind: "中成药", purchase: 14.80, retail: 21.50 },
+    { code: "1410100101", name: "重组乙型肝炎疫苗", py: "ZZYXXGYM", spec: "10μg/0.5ml×1支", unit: "支", vendor: "深圳康泰生物制品股份有限公司", kind: "疫苗", purchase: 68.00, retail: 98.00 },
+    { code: "1310100101", name: "黄芪饮片", py: "HQYP", spec: "500g/袋", unit: "袋", vendor: "亳州中药饮片厂", kind: "中药饮片", purchase: 32.00, retail: 45.00 },
+    { code: "1310100201", name: "当归饮片", py: "DGYP", spec: "500g/袋", unit: "袋", vendor: "亳州中药饮片厂", kind: "中药饮片", purchase: 56.00, retail: 78.00 },
+    { code: "1310100301", name: "金银花饮片", py: "JYHYP", spec: "500g/袋", unit: "袋", vendor: "亳州中药饮片厂", kind: "中药饮片", purchase: 78.00, retail: 108.00 },
+    { code: "1310100401", name: "麸炒白术饮片", py: "FCBZYP", spec: "500g/袋", unit: "袋", vendor: "亳州中药饮片厂", kind: "中药饮片", purchase: 41.00, retail: 58.00 },
+    { code: "1310200101", name: "黄芪配方颗粒", py: "HQPFKL", spec: "1g×15袋/盒", unit: "盒", vendor: "江阴天江药业有限公司", kind: "配方颗粒", purchase: 36.00, retail: 52.00 }
   ];
 
   /* ---------- 增减维度 ----------
@@ -258,7 +258,7 @@
         }
       }
       return {
-        code: drug.code, name: drug.name, py: drug.py, spec: drug.spec, vendor: drug.vendor,
+        code: drug.code, name: drug.name, py: drug.py, spec: drug.spec, unit: drug.unit, vendor: drug.vendor,
         kind: drug.kind, purchase: drug.purchase, retail: drug.retail,
         openQty: last.open, inQty: last.flows, inSumQty: last.inSum,
         outQty: last.flows, outSumQty: last.outSum, closeQty: last.close

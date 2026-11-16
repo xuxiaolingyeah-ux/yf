@@ -205,7 +205,7 @@
           <div class="oc-sec">
             <div class="oc-sec-title">出库信息</div>
             <div class="oc-form">
-              <div class="fi"><span class="lbl"><span class="req">*</span>出库方式：</span><div class="ctrl"><select class="select" id="fMethod"><option>院内调拨出库</option><option>调外出库</option></select></div></div>
+              <div class="fi"><span class="lbl"><span class="req">*</span>出库方式：</span><div class="ctrl"><select class="select" id="fMethod"><option>调外出库</option></select></div></div>
               <div class="fi"><span class="lbl">出库机构：</span><div class="ctrl"><input class="input is-readonly" id="fOrg" readonly></div></div>
               <div class="fi"><span class="lbl"><span class="req">*</span>出库库位：</span><div class="ctrl"><select class="select" id="fLocation"></select></div></div>
               <div class="fi" id="fiInOrg" style="display:none"><span class="lbl"><span class="req">*</span>接收机构：</span><div class="ctrl"><select class="select" id="fInOrgSel"></select></div></div>
@@ -422,7 +422,7 @@
   var editBill = editId ? list.filter(function(b){ return b.id === editId; })[0] : null;
 
   var ST = {
-    method: "院内调拨出库",
+    method: "调外出库",
     location: "", inOrgId: "", inLocation: "", remark: "",
     items: []
   };
@@ -434,8 +434,8 @@
 
   /* ===== 顶部信息 ===== */
   $("#fOrg").value = OB.orgName(user.orgId);
-  /* 接收机构：院内调拨不展示（数据固定为当前机构）；调外出库需选择其他机构 */
-  ST.inOrgId = user.orgId;
+  /* 接收机构：调外出库必选（仅可选其他机构），初始为空待选 */
+  ST.inOrgId = "";
   $("#fCreator").value = user.name;
   $("#fTime").value = OB.fmtNow();
 
@@ -455,13 +455,14 @@
   }
   fillOptions();
 
-  /* ===== 出库方式切换：院内调拨出库 / 调外出库 ===== */
+  /* ===== 出库方式：新增仅开放「调外出库」 =====
+   * 院内调拨出库已从新增入口下线（调拨统一走「药品调拨」），以下分支仅兼容历史单据回填 */
   function isOuterMethod(){ return ST.method === "调外出库"; }
-  /* 追溯码：仅调外出库需要采集；院内调拨出库（本院库位间调拨）无需追溯码 */
+  /* 追溯码：调外出库需采集 */
   function traceRequired(){ return isOuterMethod(); }
   function applyMethodUI(silent){
     var outer = isOuterMethod();
-    /* 接收机构：仅调外出库展示；院内调拨整行隐藏（数据仍取当前机构） */
+    /* 接收机构：调外出库展示；院内调拨（历史单据）整行隐藏（数据仍取当前机构） */
     $("#fiInOrg").style.display = outer ? "" : "none";
     $("#fiInLocation").style.display = outer ? "none" : "";
     if(outer){
@@ -1035,6 +1036,12 @@
     $("#headStatus").textContent = "审核状态：" + (OB.AUDIT_STATUS[editBill.auditStatus] || "—");
     ST.location = editBill.outLocation || "";
     ST.method = (editBill.method === "调外出库") ? "调外出库" : "院内调拨出库";
+    /* 历史单据兜底：院内调拨出库已下线，补一个禁用选项仅供回填展示，不可再选 */
+    if (ST.method !== "调外出库") {
+      var legacyOpt = document.createElement("option");
+      legacyOpt.textContent = ST.method; legacyOpt.value = ST.method; legacyOpt.disabled = true;
+      $("#fMethod").insertBefore(legacyOpt, $("#fMethod").firstChild);
+    }
     $("#fMethod").value = ST.method;
     if (ST.method === "调外出库") {
       ST.inOrgId = editBill.inOrgId || "";   /* 调外出库：还原已选接收机构 */

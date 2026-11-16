@@ -86,7 +86,7 @@
       { name: "出库明细查询", href: "outbound-detail-query.html", files: ["outbound-detail-query.html"], roles: ["center"] }
     ], roles: ["center", "his"] },
     { name: "系统维护", icon: "sys", items: [
-      { name: "库位维护", href: "pharmacy-maintenance.html", files: ["pharmacy-maintenance.html"], roles: C3 },
+      { name: "库位维护", href: "pharmacy-maintenance.html", files: ["pharmacy-maintenance.html"], roles: ["center"] },
       { name: "特殊参数设置", href: "param-settings.html", files: ["param-settings.html"], roles: ["center"] },
       { name: "审批流程配置", href: "approval-flow-config.html", files: ["approval-flow-config.html", "approval-rule-config.html"], roles: ["center"] },
       { name: "机构维护", href: "org-maintenance.html", files: ["org-maintenance.html"], roles: ["center"] },

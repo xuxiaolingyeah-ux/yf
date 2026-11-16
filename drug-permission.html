@@ -6,7 +6,7 @@
 <title>药品权限管理 · 系统维护</title>
 <link rel="stylesheet" href="styles.css">
 <style>
-/* ===== 系统维护 · 药品权限管理 ===== */
+/* ===== 系统维护 · 药品权限管理（左右分栏） ===== */
 
 .page.dp-page { background: var(--bg-page); padding: 12px; gap: 0; }
 .dp-card {
@@ -18,188 +18,193 @@
   overflow: hidden;
 }
 
-/* 筛选区 */
-.dp-filter {
-  flex: none;
-  display: flex; flex-wrap: wrap; align-items: center;
-  gap: 10px 20px; padding: 12px 16px;
-  border-bottom: 1px solid var(--border);
+.dp-split { flex: 1; min-height: 0; display: flex; }
+
+/* ---------- 左栏：药品属性 ---------- */
+.dp-side {
+  width: 248px; flex: none;
+  display: flex; flex-direction: column;
+  border-right: 1px solid var(--border);
   background: var(--bg-white);
 }
-.dp-filter .filter-item { display: flex; align-items: center; gap: 6px; }
-.dp-filter .filter-label { font-size: 12px; color: var(--text-tertiary); white-space: nowrap; }
-.dp-filter .input { height: 30px; width: 220px; }
-.dp-filter .select { height: 30px; width: 140px; }
-.dp-filter .dp-acts { margin-left: auto; display: flex; align-items: center; gap: 6px; }
-
-/* 表格 */
-.dp-table-wrap { flex: 1; min-height: 0; overflow: auto; background: var(--bg-white); padding: 0 16px; }
-.dp-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-.dp-table th {
-  position: sticky; top: 0; z-index: 2;
-  background: var(--table-head);
-  height: 38px; padding: 0 10px;
-  text-align: left; font-weight: 500; color: var(--text-secondary);
-  border-bottom: 1px solid var(--border); white-space: nowrap;
-}
-.dp-table td {
-  padding: 10px; border-bottom: 1px solid var(--border);
-  color: var(--text-primary); vertical-align: middle;
-}
-.dp-table tbody tr:nth-child(even) { background: var(--table-even); }
-.dp-table tbody tr:hover { background: var(--table-hover); }
-.dp-table .col-num { color: var(--text-tertiary); }
-.dp-attr { display: flex; align-items: center; gap: 6px; }
-.dp-dot { width: 7px; height: 7px; border-radius: 50%; flex: none; }
-.dp-attr-name { font-weight: 500; }
-.dp-desc { color: var(--text-secondary); font-size: 12px; line-height: 1.5; }
-
-/* 标签 */
-.dp-chip {
-  display: inline-block; margin: 2px 4px 2px 0; padding: 0 6px;
-  height: 20px; line-height: 18px; border-radius: 3px;
-  font-size: 12px; border: 1px solid transparent; white-space: nowrap;
-}
-.dp-chip-role { color: #185FA5; background: #E6F1FB; border-color: #B5D4F4; }
-.dp-chip-person { color: #0F6E56; background: #E1F5EE; border-color: #9FE1CB; }
-.dp-chip-more { color: var(--text-tertiary); background: #F5F5F5; border-color: #E8E8E8; }
-.dp-none { color: var(--text-tertiary); font-size: 12px; }
-.dp-none-warn { color: #A32D2D; background: #FCEBEB; border: 1px solid #F7C1C1; border-radius: 3px; padding: 0 6px; font-size: 12px; line-height: 18px; display: inline-block; }
-.dp-link { color: var(--primary); cursor: pointer; }
-.dp-link:hover { color: var(--primary-dark); }
-.dp-time { font-size: 12px; color: var(--text-secondary); }
-.dp-count { font-size: 13px; color: var(--text-secondary); }
-
-/* 弹窗 */
-.dp-mask {
-  position: fixed; inset: 0; z-index: 120;
-  background: rgba(0,0,0,.45);
-  display: none; align-items: flex-start; justify-content: center;
-  padding: 36px 24px 24px;
-}
-.dp-mask.show { display: flex; }
-.dp-dialog {
-  width: 1040px; max-width: calc(100vw - 48px); height: 100%; max-height: 840px;
-  background: #fff; border-radius: var(--radius-lg);
-  display: flex; flex-direction: column; overflow: hidden;
-  box-shadow: 0 12px 40px rgba(0,0,0,.2);
-}
-.dp-dlg-head {
-  flex: none; height: 46px; padding: 0 16px;
-  display: flex; align-items: center; justify-content: space-between;
+.dp-side-head {
+  flex: none; display: flex; gap: 6px;
+  padding: 10px 12px;
   border-bottom: 1px solid var(--border);
 }
-.dp-dlg-title { font-size: 15px; font-weight: 500; }
-.dp-dlg-close {
-  width: 26px; height: 26px; border: none; background: none; cursor: pointer;
-  color: var(--text-tertiary); border-radius: 4px;
-  display: inline-flex; align-items: center; justify-content: center;
-}
-.dp-dlg-close:hover { background: var(--table-head); color: var(--text-primary); }
-.dp-dlg-body { flex: 1; min-height: 0; overflow-y: auto; padding: 14px 16px; }
-.dp-dlg-foot {
-  flex: none; padding: 10px 16px; border-top: 1px solid var(--border);
-  display: flex; justify-content: flex-end; gap: 8px; background: var(--bg-white);
-}
-
-/* 信息块 */
-.dp-block-title {
+.dp-side-head .input { flex: 1; min-width: 0; height: 28px; font-size: 12px; padding: 0 8px; }
+.dp-side-head .select { width: 80px; height: 28px; font-size: 12px; padding: 0 4px; }
+.dp-side-list { flex: 1; min-height: 0; overflow-y: auto; padding: 4px 0 6px; }
+.dp-item {
   display: flex; align-items: center; gap: 8px;
-  font-size: 14px; font-weight: 500; color: var(--text-primary);
-  margin: 4px 0 10px;
+  height: 38px; padding: 0 12px;
+  cursor: pointer;
+  border-left: 2px solid transparent;
 }
-.dp-block-title::before { content: ""; width: 3px; height: 14px; background: var(--primary); border-radius: 1px; }
-.dp-block-title .dp-sub { font-size: 12px; font-weight: 400; color: var(--text-tertiary); }
-.dp-info-row { display: flex; flex-wrap: wrap; gap: 6px 48px; padding: 2px 0 8px; }
-.dp-info-item { display: flex; align-items: center; gap: 4px; font-size: 13px; min-width: 200px; }
-.dp-info-label { color: var(--text-tertiary); }
-.dp-info-value { color: var(--text-primary); }
-
-/* 角色卡片 */
-.dp-roles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 16px; }
-.dp-role {
-  display: flex; gap: 8px; align-items: flex-start;
-  padding: 8px 10px; border: 1px solid var(--border); border-radius: 4px;
-  background: #fff; cursor: pointer; user-select: none;
-}
-.dp-role:hover { border-color: var(--primary); }
-.dp-role.on { border-color: var(--primary); background: var(--primary-lighter); }
-.dp-role input[type="checkbox"] {
-  width: 14px; height: 14px; margin: 2px 0 0; flex: none;
-  accent-color: var(--primary); pointer-events: none;
-}
-.dp-role-name { font-size: 13px; color: var(--text-primary); line-height: 1.3; }
-.dp-role-desc { font-size: 11px; color: var(--text-tertiary); margin-top: 3px; line-height: 1.3; }
-
-/* 人员穿梭 */
-.dp-transfer { display: flex; gap: 12px; align-items: stretch; height: 320px; }
-.dp-pane {
+.dp-item:hover { background: var(--table-even); }
+.dp-item.on { background: var(--primary-light); border-left-color: var(--primary); }
+.dp-item-dot { width: 6px; height: 6px; border-radius: 50%; flex: none; }
+.dp-item-name {
   flex: 1; min-width: 0;
-  display: flex; flex-direction: column;
-  border: 1px solid var(--border); border-radius: var(--radius);
-  overflow: hidden; background: var(--bg-white);
+  font-size: 13px; color: var(--text-primary);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.dp-pane-filter {
-  flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
-  padding: 8px 10px; border-bottom: 1px solid var(--border);
+.dp-item.on .dp-item-name { color: var(--primary-dark); font-weight: 500; }
+.dp-item-flag { flex: none; font-size: 11px; color: var(--danger); }
+.dp-side-foot {
+  flex: none; padding: 8px 12px;
+  border-top: 1px solid var(--border);
+  font-size: 12px; color: var(--text-tertiary);
 }
-.dp-pane-filter .input { height: 28px; font-size: 12px; width: 96px; }
-.dp-pane-filter .select { height: 28px; font-size: 12px; width: 116px; }
-.dp-pane-head {
-  flex: none; padding: 8px 10px 6px;
-  display: flex; align-items: center; justify-content: space-between; gap: 8px;
-  font-size: 13px; font-weight: 500;
+
+/* ---------- 右栏：授权配置 ---------- */
+.dp-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.dp-main-head { flex: none; padding: 14px 18px 12px; border-bottom: 1px solid var(--border); }
+.dp-main-title { display: flex; align-items: center; gap: 8px; }
+.dp-main-title h2 { margin: 0; font-size: 15px; font-weight: 500; color: var(--text-primary); }
+.dp-badge { font-size: 11px; line-height: 18px; padding: 0 6px; border-radius: 3px; }
+.dp-badge.on { color: #0F6E56; background: #E1F5EE; border: 1px solid #9FE1CB; }
+.dp-badge.off { color: #A32D2D; background: #FCEBEB; border: 1px solid #F7C1C1; }
+.dp-main-desc { margin-top: 6px; font-size: 12px; color: var(--text-secondary); line-height: 1.6; }
+.dp-main-meta { margin-top: 4px; font-size: 11px; color: var(--text-tertiary); }
+
+.dp-main-body { flex: 1; min-height: 0; overflow-y: auto; padding: 2px 18px 18px; }
+.dp-block { margin-top: 16px; }
+.dp-block-title { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500; color: var(--text-primary); }
+.dp-block-title::before { content: ""; width: 3px; height: 13px; background: var(--primary); border-radius: 1px; }
+.dp-block-title .dp-sub { font-weight: 400; font-size: 11px; color: var(--text-tertiary); }
+.dp-block-title .dp-right { margin-left: auto; font-weight: 400; font-size: 12px; color: var(--text-tertiary); }
+
+/* 已选角色标签 */
+.dp-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.dp-tag {
+  display: inline-flex; align-items: center; gap: 5px;
+  height: 26px; padding: 0 4px 0 9px;
+  font-size: 12px; color: #185FA5;
+  background: var(--primary-light); border: 1px solid #B5D4F4; border-radius: 3px;
 }
-.dp-pane-body { flex: 1; min-height: 0; overflow-y: auto; }
-.dp-pane table { width: 100%; border-collapse: collapse; font-size: 13px; }
-.dp-pane th {
-  position: sticky; top: 0; z-index: 2;
-  background: var(--table-head); height: 32px; padding: 0 8px;
-  text-align: left; font-weight: 500; color: var(--text-secondary);
-  border-bottom: 1px solid var(--border); white-space: nowrap;
+.dp-tag-x {
+  width: 16px; height: 16px; flex: none;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 2px; cursor: pointer; color: #5A8FC4;
 }
-.dp-pane td {
-  padding: 6px 8px; border-bottom: 1px solid var(--border);
-  color: var(--text-primary); white-space: nowrap;
+.dp-tag-x:hover { background: #B5D4F4; color: #185FA5; }
+.dp-tag-empty { font-size: 12px; color: var(--text-tertiary); line-height: 26px; }
+.dp-tag-more {
+  height: 26px; line-height: 24px; padding: 0 8px;
+  font-size: 12px; color: var(--primary);
+  background: #fff; border: 1px dashed var(--border-input); border-radius: 3px;
+  cursor: pointer;
 }
-.dp-pane tbody tr { cursor: pointer; }
-.dp-pane tbody tr:nth-child(even) { background: var(--table-even); }
-.dp-pane tbody tr:hover { background: var(--table-hover); }
-.dp-pane tbody tr.sel { background: var(--primary-lighter); }
-.dp-pane .empty { padding: 24px 0; text-align: center; color: var(--text-tertiary); font-size: 13px; }
-.dp-pane-foot {
-  flex: none; padding: 6px 10px; border-top: 1px solid var(--border);
-  display: flex; align-items: center; justify-content: space-between; gap: 6px;
-  font-size: 12px; color: var(--text-secondary);
+.dp-tag-more:hover { border-color: var(--primary); }
+
+/* 角色多选下拉 */
+.dp-picker { position: relative; margin-top: 8px; }
+.dp-add {
+  height: 28px; padding: 0 10px;
+  font-size: 12px; color: var(--primary);
+  background: #fff; border: 1px dashed var(--border-input); border-radius: 4px;
+  cursor: pointer;
+  display: inline-flex; align-items: center; gap: 4px;
 }
-.dp-pg { display: flex; align-items: center; gap: 2px; }
-.dp-pg button {
-  min-width: 22px; height: 22px; padding: 0 4px;
-  border: 1px solid var(--border); background: #fff; border-radius: 3px;
-  color: var(--text-secondary); cursor: pointer; font-size: 12px;
+.dp-add:hover { border-color: var(--primary); background: var(--primary-lighter); }
+
+.dp-dd {
+  position: absolute; top: 34px; left: 0; z-index: 30;
+  width: 340px;
+  background: #fff; border: 1px solid var(--border); border-radius: 6px;
+  box-shadow: var(--shadow-2);
+  display: none;
 }
-.dp-pg button:hover:not(:disabled) { border-color: var(--primary); color: var(--primary); }
-.dp-pg button.on { border-color: var(--primary); color: var(--primary); background: var(--primary-lighter); }
-.dp-pg button:disabled { opacity: .45; cursor: not-allowed; }
-.dp-mid { flex: none; display: flex; flex-direction: column; justify-content: center; gap: 10px; padding: 0 2px; }
-.dp-move {
-  width: 30px; height: 30px;
-  display: inline-flex; align-items: center; justify-content: center;
-  background: var(--primary); color: #fff; border: none; border-radius: 4px; cursor: pointer;
+.dp-dd.show { display: block; }
+.dp-dd-head { padding: 8px; border-bottom: 1px solid var(--border); }
+.dp-dd-head .input { width: 100%; height: 28px; font-size: 12px; }
+.dp-dd-body { max-height: 244px; overflow-y: auto; padding: 2px 0 4px; }
+.dp-dd-group {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 7px 10px 4px;
+  font-size: 11px; color: var(--text-tertiary);
 }
-.dp-move:hover:not(:disabled) { background: var(--primary-dark); }
-.dp-move:disabled { opacity: .45; cursor: not-allowed; }
-.dp-all {
-  height: 28px; padding: 0 12px; font-size: 12px; white-space: nowrap;
-  border: 1px solid var(--primary); color: var(--primary);
-  background: #fff; border-radius: 3px; cursor: pointer;
+.dp-dd-group .dp-gsel { color: var(--primary); cursor: pointer; }
+.dp-dd-group .dp-gsel:hover { text-decoration: underline; }
+.dp-dd-item {
+  display: flex; align-items: center; gap: 8px;
+  height: 30px; padding: 0 10px;
+  font-size: 12px; cursor: pointer;
 }
-.dp-all:hover { background: var(--primary); color: #fff; }
+.dp-dd-item:hover { background: var(--table-even); }
+.dp-dd-item.on { background: var(--primary-lighter); }
+.dp-check {
+  width: 14px; height: 14px; flex: none;
+  border: 1px solid var(--border-input); border-radius: 2px;
+  background: #fff;
+  display: flex; align-items: center; justify-content: center;
+}
+.dp-dd-item.on .dp-check { background: var(--primary); border-color: var(--primary); }
+.dp-check svg { display: none; }
+.dp-dd-item.on .dp-check svg { display: block; }
+.dp-dd-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dp-dd-num { flex: none; font-size: 11px; color: var(--text-tertiary); }
+.dp-dd-foot {
+  display: flex; align-items: center; gap: 14px;
+  padding: 8px 10px; border-top: 1px solid var(--border);
+  font-size: 12px;
+}
+.dp-dd-foot span { color: var(--primary); cursor: pointer; }
+.dp-dd-foot span:hover { color: var(--primary-dark); }
+.dp-dd-foot .dp-sel-count { margin-left: auto; color: var(--text-tertiary); cursor: default; }
+.dp-dd-empty { padding: 22px 10px; text-align: center; font-size: 12px; color: var(--text-tertiary); }
+
+/* 生效人员 */
+.dp-sum { margin-top: 10px; font-size: 12px; color: var(--text-secondary); }
+.dp-sum b { font-weight: 500; color: var(--text-primary); }
+.dp-persons { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.dp-person {
+  font-size: 12px; line-height: 24px; padding: 0 8px;
+  border-radius: 3px; color: #0F6E56;
+  background: #E1F5EE; border: 1px solid #9FE1CB;
+}
+.dp-more {
+  font-size: 12px; line-height: 24px; padding: 0 9px;
+  border-radius: 3px; color: var(--primary);
+  background: #fff; border: 1px dashed var(--border-input);
+  cursor: pointer;
+}
+.dp-more:hover { border-color: var(--primary); }
+.dp-empty {
+  margin-top: 10px; padding: 10px 12px;
+  font-size: 12px; color: #A32D2D;
+  background: #FCEBEB; border: 1px solid #F7C1C1; border-radius: 4px;
+}
 .dp-note {
-  margin-top: 12px; padding: 8px 10px;
-  font-size: 12px; color: #FA8C16;
+  margin-top: 16px; padding: 8px 10px;
+  font-size: 12px; line-height: 1.6; color: #AD6800;
   background: #FFF9F0; border: 1px solid #FFE7BA; border-radius: 4px;
 }
+
+.dp-main-foot {
+  flex: none; display: flex; align-items: center; gap: 8px;
+  padding: 10px 18px;
+  border-top: 1px solid var(--border);
+}
+.dp-main-foot .spacer { flex: 1; }
+.dp-dirty { font-size: 12px; color: var(--warning); }
+
+/* ---------- 未保存确认层 ---------- */
+.dp-mask {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(0,0,0,.4);
+  display: none; align-items: center; justify-content: center;
+}
+.dp-mask.show { display: flex; }
+.dp-confirm {
+  width: 380px; padding: 18px 20px;
+  background: var(--bg-white); border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-2);
+}
+.dp-confirm-title { font-size: 15px; font-weight: 500; color: var(--text-primary); }
+.dp-confirm-text { margin-top: 8px; font-size: 13px; line-height: 1.7; color: var(--text-secondary); }
+.dp-confirm-foot { margin-top: 16px; display: flex; justify-content: flex-end; gap: 8px; }
 </style>
 </head>
 <body>
@@ -244,130 +249,34 @@
           </div>
         </div>
 
-        <div class="dp-filter">
-          <div class="filter-item">
-            <span class="filter-label">药品属性：</span>
-            <input class="input" id="f-kw" placeholder="属性名称/关键字">
+        <div class="dp-split">
+          <div class="dp-side">
+            <div class="dp-side-head">
+              <input class="input" id="f-kw" placeholder="搜索属性名称" oninput="DP.search()">
+              <select class="select" id="f-state" onchange="DP.search()">
+                <option value="">全部</option>
+                <option value="on">已配置</option>
+                <option value="off">未配置</option>
+              </select>
+            </div>
+            <div class="dp-side-list" id="attr-list"></div>
+            <div class="dp-side-foot" id="attr-count"></div>
           </div>
-          <div class="filter-item">
-            <span class="filter-label">配置状态：</span>
-            <select class="select" id="f-state">
-              <option value="">全部</option>
-              <option value="on">已配置</option>
-              <option value="off">未配置</option>
-            </select>
-          </div>
-          <div class="dp-acts">
-            <button class="btn" onclick="DP.reset()">重置</button>
-            <button class="btn btn-primary" onclick="DP.search()">查询</button>
-          </div>
-        </div>
 
-        <div class="dp-table-wrap">
-          <table class="dp-table">
-            <thead>
-              <tr>
-                <th style="width:56px">序号</th>
-                <th style="min-width:190px">药品属性</th>
-                <th style="min-width:250px">属性说明</th>
-                <th style="min-width:210px">已授权角色</th>
-                <th style="min-width:200px">已授权人员</th>
-                <th style="min-width:130px">更新时间</th>
-                <th style="width:80px">操作</th>
-              </tr>
-            </thead>
-            <tbody id="perm-tbody"></tbody>
-          </table>
-        </div>
-
-        <div class="pager">
-          <div class="dp-count" id="perm-count"></div>
+          <div class="dp-main" id="attr-main"></div>
         </div>
       </div>
     </div>
   </main>
 </div>
 
-<!-- ========== 配置弹窗 ========== -->
-<div class="dp-mask" id="dlg-perm">
-  <div class="dp-dialog">
-    <div class="dp-dlg-head">
-      <div class="dp-dlg-title" id="dlg-title">配置药品权限</div>
-      <button class="dp-dlg-close" onclick="DP.closeDlg()">
-        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 5l14 14M19 5L5 19"/></svg>
-      </button>
-    </div>
-
-    <div class="dp-dlg-body">
-      <div class="dp-block-title">属性信息</div>
-      <div class="dp-info-row" id="dlg-info"></div>
-
-      <div class="dp-block-title">角色授权<span class="dp-sub">勾选后该角色的全部人员可开具本类药品</span></div>
-      <div class="dp-roles" id="dlg-roles"></div>
-
-      <div class="dp-block-title">人员授权<span class="dp-sub">在角色之外，额外授予具体人员</span></div>
-      <div class="dp-transfer">
-        <div class="dp-pane">
-          <div class="dp-pane-head">
-            <span>人员列表</span>
-            <button class="dp-all" onclick="DP.allRight()">全部指定</button>
-          </div>
-          <div class="dp-pane-filter">
-            <input class="input" id="pl-kw" placeholder="姓名" oninput="DP.paneSearch('l')">
-            <select class="select" id="pl-org" onchange="DP.paneSearch('l')">
-              <option value="">全部机构</option>
-            </select>
-          </div>
-          <div class="dp-pane-body">
-            <table>
-              <thead><tr><th style="width:26px"></th><th>姓名</th><th>机构</th><th>岗位</th></tr></thead>
-              <tbody id="pl-tbody"></tbody>
-            </table>
-          </div>
-          <div class="dp-pane-foot">
-            <span id="pl-count"></span>
-            <div class="dp-pg" id="pl-pager"></div>
-          </div>
-        </div>
-
-        <div class="dp-mid">
-          <button class="dp-move" id="move-right" title="移入已授权" onclick="DP.move('r')">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
-          </button>
-          <button class="dp-move" id="move-left" title="移出已授权" onclick="DP.move('l')">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
-          </button>
-        </div>
-
-        <div class="dp-pane">
-          <div class="dp-pane-head">
-            <span>已授权人员</span>
-            <button class="dp-all" onclick="DP.allLeft()">全部取消</button>
-          </div>
-          <div class="dp-pane-filter">
-            <input class="input" id="pr-kw" placeholder="姓名" oninput="DP.paneSearch('r')">
-          </div>
-          <div class="dp-pane-body">
-            <table>
-              <thead><tr><th style="width:26px"></th><th>姓名</th><th>机构</th><th>岗位</th></tr></thead>
-              <tbody id="pr-tbody"></tbody>
-            </table>
-          </div>
-          <div class="dp-pane-foot">
-            <span id="pr-count"></span>
-            <div class="dp-pg" id="pr-pager"></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="dp-note">
-        提示：角色与人员为并集关系，任一命中即可开具本类药品；两侧均为空表示该类药品无人可开（除已单独配置的药品外一律拦截）。
-      </div>
-    </div>
-
-    <div class="dp-dlg-foot">
-      <button class="btn" onclick="DP.closeDlg()">取消</button>
-      <button class="btn btn-primary" onclick="DP.save()">保存</button>
+<div class="dp-mask" id="dlg-confirm">
+  <div class="dp-confirm">
+    <div class="dp-confirm-title">当前属性有未保存的修改</div>
+    <div class="dp-confirm-text" id="confirm-text">切换后将丢弃这些改动，是否继续？</div>
+    <div class="dp-confirm-foot">
+      <button class="btn" onclick="DP.closeConfirm()">留在本页</button>
+      <button class="btn btn-primary" onclick="DP.confirmSwitch()">放弃并切换</button>
     </div>
   </div>
 </div>
@@ -379,7 +288,7 @@
 
 <script>
 /* ============================================================
-   药品权限管理 · 原型脚本
+   药品权限管理 · 原型脚本（左右分栏 / 仅按角色授权）
    ============================================================ */
 (function () {
   var DP = {};
@@ -391,388 +300,490 @@
       .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   }
 
-  /* ---------- 角色字典（与 MOCK.users.role 对齐） ---------- */
-  var ROLES = [
-    { key: "village",        name: "村室发起人",         desc: "村卫生室" },
-    { key: "member",         name: "成员机构",           desc: "可发起、可审核" },
-    { key: "center",         name: "中心药房审核人",     desc: "区域中心药房" },
-    { key: "pharmacist",     name: "中心药房发起人",     desc: "区域中心药房" },
-    { key: "his",            name: "HIS 对接人员",       desc: "信息中心" },
-    { key: "expert",         name: "药学专家",           desc: "医共体药学专家库" },
-    { key: "narcoticAuditor",name: "毒麻精药房审核专员", desc: "区域中心药房" }
+  /* ---------- 角色池（按岗位分组，与 RBAC 角色体系对齐） ---------- */
+  var ROLE_GROUPS = [
+    { key: "pharmacy", name: "药房岗位", roles: [
+      { key: "center",           name: "中心药房审核人" },
+      { key: "pharmacist",       name: "中心药房发起人" },
+      { key: "narcoticAuditor",  name: "毒麻精药房审核专员" },
+      { key: "opDispenser",      name: "门诊药房发药人" },
+      { key: "storeKeeper",      name: "药库保管员" },
+      { key: "herbManager",      name: "中药房负责人" }
+    ]},
+    { key: "org", name: "机构与村室", roles: [
+      { key: "village",          name: "村室发起人" },
+      { key: "member",           name: "成员机构管理员" },
+      { key: "memberDoctor",     name: "成员机构医师" },
+      { key: "memberPharmacist", name: "成员机构药师" }
+    ]},
+    { key: "expert", name: "专家与职能科室", roles: [
+      { key: "expert",             name: "药学专家" },
+      { key: "clinicalPharmacist", name: "临床药师" },
+      { key: "medicalAffairs",     name: "医务科" },
+      { key: "qc",                 name: "质控专员" }
+    ]},
+    { key: "sys", name: "信息与系统", roles: [
+      { key: "his",         name: "HIS 对接人员" },
+      { key: "sysAdmin",    name: "系统管理员" },
+      { key: "auditViewer", name: "审计查看员" }
+    ]}
   ];
+  var ROLES = [];
+  ROLE_GROUPS.forEach(function (g) { g.roles.forEach(function (r) { ROLES.push(r); }); });
+  var ROLE_BY = {};
+  ROLES.forEach(function (r) { ROLE_BY[r.key] = r; });
+  var ALL_ROLES = ROLES.map(function (r) { return r.key; });
 
   /* ---------- 药品属性字典（口径与药品目录一致） ---------- */
   var ATTRS = [
-    { key: "normal",  name: "普通药品",                 level: "—",           color: "#888780", desc: "无特殊管理标识的常规药品，通常全部角色可开" },
-    { key: "toxic",   name: "毒性药品",                 level: "—",           color: "#D85A30", desc: "毒性药品管理目录内药品，专区专柜、双人复核" },
-    { key: "narcotic",name: "麻醉药品",                 level: "—",           color: "#BA7517", desc: "麻醉药品，专用处方，发药前转毒麻精审核" },
-    { key: "psychic1",name: "精神药品·第一类",           level: "第一类",      color: "#7F77DD", desc: "第一类精神药品，专用处方，发药前转毒麻精审核" },
-    { key: "psychic2",name: "精神药品·第二类",           level: "第二类",      color: "#7F77DD", desc: "第二类精神药品，限定量、限疗程开具" },
-    { key: "abx1",    name: "抗菌药物·非限制使用级",      level: "非限制使用级", color: "#378ADD", desc: "疗效确切、安全性好，一般医师可开具" },
-    { key: "abx2",    name: "抗菌药物·限制使用级",        level: "限制使用级",   color: "#378ADD", desc: "需主治及以上医师或经授权医师开具" },
-    { key: "abx3",    name: "抗菌药物·特殊使用级",        level: "特殊使用级",   color: "#378ADD", desc: "需高级职称医师会诊同意后方可开具" },
-    { key: "ant1",    name: "抗肿瘤药物·非限制使用级",    level: "非限制使用级", color: "#D4537E", desc: "普通使用级抗肿瘤药物，可由授权医师开具" },
-    { key: "ant2",    name: "抗肿瘤药物·限制使用级",      level: "限制使用级",   color: "#D4537E", desc: "需肿瘤专科医师或经授权医师开具" }
+    { key: "normal",   name: "普通药品",              color: "#888780", desc: "无特殊管理标识的常规药品。默认全部角色可开，可按实际情况收窄" },
+    { key: "toxic",    name: "毒性药品",              color: "#D85A30", desc: "毒性药品管理目录内药品，专区专柜、双人复核" },
+    { key: "narcotic", name: "麻醉药品",              color: "#BA7517", desc: "麻醉药品，专用处方，发药前转毒麻精审核" },
+    { key: "psychic1", name: "精神药品·第一类",        color: "#7F77DD", desc: "第一类精神药品，专用处方，发药前转毒麻精审核" },
+    { key: "psychic2", name: "精神药品·第二类",        color: "#7F77DD", desc: "第二类精神药品，限定量、限疗程开具" },
+    { key: "abx1",     name: "抗菌药物·非限制使用级",   color: "#378ADD", desc: "疗效确切、安全性好，一般医师可开具" },
+    { key: "abx2",     name: "抗菌药物·限制使用级",     color: "#378ADD", desc: "需主治及以上医师或经授权医师开具" },
+    { key: "abx3",     name: "抗菌药物·特殊使用级",     color: "#378ADD", desc: "需高级职称医师会诊同意后方可开具" },
+    { key: "ant1",     name: "抗肿瘤药物·非限制使用级", color: "#D4537E", desc: "普通使用级抗肿瘤药物，可由授权医师开具" },
+    { key: "ant2",     name: "抗肿瘤药物·限制使用级",   color: "#D4537E", desc: "需肿瘤专科医师或经授权医师开具" }
   ];
+  var ATTR_BY = {};
+  ATTRS.forEach(function (a) { ATTR_BY[a.key] = a; });
 
-  /* ---------- 人员池（原型 mock） ---------- */
+  /* ---------- 人员池（原型 mock，每人可属多个角色） ---------- */
   var SURNAMES = ["王","李","张","刘","陈","杨","赵","黄","周","吴","徐","孙","胡","朱","高","林","何","郭","马","罗","梁","宋","郑","谢","韩","唐","冯","于","董","萧","程","曹","袁","邓","许","傅","沈","曾","彭","吕"];
   var GIVEN = ["建平","丽华","志强","秀英","文明","晓东","春燕","晓峰","海燕","振华","丽娟","国华","伟东","雅琴","云鹏","小玲","学军","玉梅","建华","志刚","红梅","建军","立新","秀兰","嘉伟","婉如","思远","慧敏","勇刚","静怡","浩宇","若婷"];
-  var ORGS = ["区域中心药房","XX 社区卫生服务中心","YY 人民医院","ZZ 中西医结合医院","城东社区卫生服务中心","青河村卫生室","西塘村卫生室"];
-  var POSTS = ["医师","药师","护士","管理人员"];
 
-  var seed = 20261111;
+  var seed = 20261116;
   function srand() { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; }
   function sItem(arr) { return arr[Math.floor(srand() * arr.length)]; }
-  function sInt(a, b) { return a + Math.floor(srand() * (b - a + 1)); }
 
   var STAFF = [];
   (function genStaff() {
     var used = {};
-    while (STAFF.length < 168) {
-      var n = sItem(SURNAMES) + sItem(GIVEN);
-      if (used[n]) continue;
-      used[n] = 1;
-      var org = STAFF.length < 24 ? "区域中心药房" : sItem(ORGS);
-      var post = org === "区域中心药房" ? sItem(["药师", "药师", "医师", "管理人员"]) : sItem(POSTS);
-      STAFF.push({ id: "p" + STAFF.length, name: n, org: org, post: post });
-    }
-    /* 演示初始人员确保存在 */
-    [["刘芸", "区域中心药房", "药师"], ["赵敏", "区域中心药房", "药师"], ["周雯", "区域中心药房", "药师"]].forEach(function (x) {
-      var hit = STAFF.filter(function (s) { return s.name === x[0]; })[0];
-      if (hit) { hit.org = x[1]; hit.post = x[2]; }
-      else STAFF.push({ id: "p" + STAFF.length, name: x[0], org: x[1], post: x[2] });
+    [["刘芸", "pharmacist"], ["赵敏", "center"], ["周雯", "narcoticAuditor"]].forEach(function (x) {
+      used[x[0]] = 1;
+      STAFF.push({ id: "p" + STAFF.length, name: x[0], org: "区域中心药房", post: "药师", roles: [x[1]] });
+    });
+
+    var PLAN = [
+      { org: "区域中心药房", dist: [
+        ["药师","pharmacist",6], ["药师","center",5], ["药师","narcoticAuditor",3],
+        ["药师","storeKeeper",3], ["药师","herbManager",2], ["药师","opDispenser",2],
+        ["药师","clinicalPharmacist",4], ["医师","expert",9],
+        ["管理人员","his",4], ["管理人员","sysAdmin",2], ["管理人员","medicalAffairs",3], ["管理人员","qc",2]
+      ]},
+      { org: "XX 社区卫生服务中心", dist: [
+        ["医师","memberDoctor",10], ["药师","memberPharmacist",5], ["药师","clinicalPharmacist",2],
+        ["护士","member",2], ["管理人员","member",2], ["管理人员","auditViewer",1]
+      ]},
+      { org: "YY 人民医院", dist: [
+        ["医师","memberDoctor",10], ["药师","memberPharmacist",5],
+        ["护士","member",2], ["管理人员","member",2], ["管理人员","qc",1]
+      ]},
+      { org: "ZZ 中西医结合医院", dist: [
+        ["医师","memberDoctor",8], ["药师","memberPharmacist",5], ["药师","herbManager",2],
+        ["护士","member",2], ["管理人员","member",2]
+      ]},
+      { org: "城东社区卫生服务中心", dist: [
+        ["医师","memberDoctor",8], ["药师","memberPharmacist",4],
+        ["护士","member",2], ["管理人员","member",2], ["管理人员","auditViewer",1]
+      ]},
+      { org: "青河村卫生室", dist: [["医师","village",9], ["护士","village",3]] },
+      { org: "西塘村卫生室", dist: [["医师","village",8], ["护士","village",3]] }
+    ];
+
+    PLAN.forEach(function (pl) {
+      pl.dist.forEach(function (d) {
+        for (var i = 0; i < d[2]; i++) {
+          var n, guard = 0;
+          do { n = sItem(SURNAMES) + sItem(GIVEN); guard++; } while (used[n] && guard < 200);
+          used[n] = 1;
+          STAFF.push({ id: "p" + STAFF.length, name: n, org: pl.org, post: d[0], roles: [d[1]] });
+        }
+      });
+    });
+
+    /* 部分成员兼任多角色，贴近真实 RBAC */
+    STAFF.forEach(function (s, i) {
+      if (s.roles.indexOf("clinicalPharmacist") > -1 && i % 3 === 0) s.roles.push("memberPharmacist");
+      if (s.roles.indexOf("member") > -1 && i % 4 === 0) s.roles.push("auditViewer");
+      if (s.roles.indexOf("expert") > -1 && i % 5 === 0) s.roles.push("medicalAffairs");
     });
   })();
 
-  function staffById(id) {
-    return STAFF.filter(function (s) { return s.id === id; })[0];
+  function personsOf(roles) {
+    if (!roles || !roles.length) return [];
+    return STAFF.filter(function (s) {
+      return s.roles.some(function (r) { return roles.indexOf(r) > -1; });
+    });
   }
-  function staffNames(ids) {
-    return (ids || []).map(function (id) { var s = staffById(id); return s ? s.name : ""; }).filter(Boolean);
-  }
-
-  /* 演示人员 id（按姓名解析，避免随机生成顺序变化导致绑定错人） */
-  var DEMO_ID = {};
-  ["刘芸", "赵敏", "周雯"].forEach(function (n) {
-    var s = STAFF.filter(function (x) { return x.name === n; })[0];
-    if (s) DEMO_ID[n] = s.id;
-  });
-  function demoIds(names) {
-    return names.map(function (n) { return DEMO_ID[n]; }).filter(Boolean);
+  function roleCount(key) {
+    var n = 0;
+    STAFF.forEach(function (s) { if (s.roles.indexOf(key) > -1) n++; });
+    return n;
   }
 
-  /* ---------- 授权表（原型内存态） ---------- */
-  var ALL_ROLES = ROLES.map(function (r) { return r.key; });
+  /* ---------- 授权表（原型内存态：只存角色） ---------- */
   var PERM = {
-    normal:   { roles: ALL_ROLES.slice(), users: [], at: "2026-11-03 10:20", by: "孙磊" },
-    toxic:    { roles: ["center", "pharmacist"], users: demoIds(["刘芸"]), at: "2026-11-05 14:08", by: "孙磊" },
-    narcotic: { roles: ["center"], users: demoIds(["刘芸", "赵敏"]), at: "2026-11-06 09:32", by: "孙磊" },
-    psychic1: { roles: ["center", "narcoticAuditor"], users: demoIds(["赵敏"]), at: "2026-11-06 09:35", by: "孙磊" },
-    psychic2: { roles: ["center", "pharmacist"], users: [], at: "2026-11-07 11:20", by: "孙磊" },
-    abx1:     { roles: ALL_ROLES.slice(), users: [], at: "2026-11-03 10:22", by: "孙磊" },
-    abx2:     { roles: ["member", "center", "pharmacist"], users: [], at: "2026-11-08 15:40", by: "孙磊" },
-    abx3:     { roles: ["center"], users: demoIds(["周雯"]), at: "2026-11-08 15:45", by: "孙磊" },
-    ant1:     { roles: ["center", "member"], users: [], at: "2026-11-09 09:10", by: "孙磊" },
-    ant2:     { roles: [], users: [], at: "", by: "" }
+    normal:   { roles: ALL_ROLES.slice(), at: "2026-11-03 10:20", by: "孙磊" },
+    toxic:    { roles: ["center", "pharmacist", "storeKeeper"], at: "2026-11-05 14:08", by: "孙磊" },
+    narcotic: { roles: ["center", "narcoticAuditor"], at: "2026-11-06 09:32", by: "孙磊" },
+    psychic1: { roles: ["center", "narcoticAuditor", "expert"], at: "2026-11-06 09:35", by: "孙磊" },
+    psychic2: { roles: ["center", "pharmacist"], at: "2026-11-07 11:20", by: "孙磊" },
+    abx1:     { roles: ALL_ROLES.slice(), at: "2026-11-03 10:22", by: "孙磊" },
+    abx2:     { roles: ["member", "memberDoctor", "center", "pharmacist"], at: "2026-11-08 15:40", by: "孙磊" },
+    abx3:     { roles: ["center", "expert", "clinicalPharmacist"], at: "2026-11-08 15:45", by: "孙磊" },
+    ant1:     { roles: ["center", "memberDoctor", "expert"], at: "2026-11-09 09:10", by: "孙磊" },
+    ant2:     { roles: [], at: "", by: "" }
   };
 
-  /* ---------- 列表 ---------- */
-  var ST = { filtered: ATTRS.slice(), dlg: null };
+  var ST = {
+    filtered: ATTRS.slice(),
+    cur: null, draft: [],
+    expand: false, tagExpand: false,
+    ddOpen: false, roleKw: "",
+    pending: null
+  };
 
-  function isConfigured(a) {
-    var p = PERM[a.key];
-    return !!(p && ((p.roles && p.roles.length) || (p.users && p.users.length)));
+  function permOf(k) { return PERM[k] || { roles: [], at: "", by: "" }; }
+  function isConfigured(k) { return permOf(k).roles.length > 0; }
+  function sameSet(a, b) {
+    if (a.length !== b.length) return false;
+    var m = {}; a.forEach(function (x) { m[x] = 1; });
+    return b.every(function (x) { return m[x]; });
   }
+  function isDirty() { return !!ST.cur && !sameSet(ST.draft, permOf(ST.cur).roles); }
 
+  /* ---------- 左栏 ---------- */
   DP.search = function () {
     var kw = $("f-kw").value.trim().toLowerCase();
     var st = $("f-state").value;
     ST.filtered = ATTRS.filter(function (a) {
-      var hitKw = !kw || a.name.toLowerCase().indexOf(kw) > -1 || a.desc.toLowerCase().indexOf(kw) > -1;
-      var on = isConfigured(a);
+      var hitKw = !kw || a.name.toLowerCase().indexOf(kw) > -1;
+      var on = isConfigured(a.key);
       var hitSt = !st || (st === "on" ? on : !on);
       return hitKw && hitSt;
     });
-    renderTable();
+    renderSide();
   };
 
-  DP.reset = function () {
-    $("f-kw").value = "";
-    $("f-state").value = "";
-    DP.search();
-  };
-
-  function roleName(key) {
-    var r = ROLES.filter(function (x) { return x.key === key; })[0];
-    return r ? r.name : key;
-  }
-
-  function renderTable() {
+  function renderSide() {
     var html = "";
+    ST.filtered.forEach(function (a) {
+      var off = !isConfigured(a.key);
+      html += '<div class="dp-item' + (a.key === ST.cur ? " on" : "") + '" data-attr="' + a.key + '">'
+        + '<span class="dp-item-dot" style="background:' + (off ? "#D9D9D9" : a.color) + '"></span>'
+        + '<span class="dp-item-name" title="' + esc(a.name) + '">' + esc(a.name) + '</span>'
+        + (off ? '<span class="dp-item-flag">未配置</span>' : '')
+        + '</div>';
+    });
     if (!ST.filtered.length) {
-      html = '<tr><td colspan="7" class="table-empty" style="text-align:center;padding:40px 0;color:var(--text-tertiary)">暂无数据</td></tr>';
-    } else {
-      ST.filtered.forEach(function (a, i) {
-        var p = PERM[a.key] || { roles: [], users: [], at: "", by: "" };
-        var roleChips = (p.roles || []).map(function (k) {
-          return '<span class="dp-chip dp-chip-role">' + esc(roleName(k)) + '</span>';
-        }).join("") || '<span class="dp-none-warn">未授权角色</span>';
-
-        var names = staffNames(p.users);
-        var personChips;
-        if (!names.length) {
-          personChips = '<span class="dp-none">—</span>';
-        } else {
-          var show = names.slice(0, 3).map(function (n) {
-            return '<span class="dp-chip dp-chip-person">' + esc(n) + '</span>';
-          }).join("");
-          if (names.length > 3) show += '<span class="dp-chip dp-chip-more">+' + (names.length - 3) + '</span>';
-          personChips = show;
-        }
-
-        var time = p.at ? '<span class="dp-time">' + esc(p.at) + '<br><span style="color:var(--text-tertiary)">' + esc(p.by) + '</span></span>' : '<span class="dp-none">—</span>';
-
-        html += '<tr>'
-          + '<td class="col-num">' + (i + 1) + '</td>'
-          + '<td><div class="dp-attr"><span class="dp-dot" style="background:' + a.color + '"></span>'
-          + '<span class="dp-attr-name">' + esc(a.name) + '</span></div></td>'
-          + '<td><div class="dp-desc">' + esc(a.desc) + '</div></td>'
-          + '<td>' + roleChips + '</td>'
-          + '<td>' + personChips + '</td>'
-          + '<td>' + time + '</td>'
-          + '<td><span class="dp-link" data-cfg="' + a.key + '">配置</span></td>'
-          + '</tr>';
-      });
+      html = '<div style="padding:24px 12px;text-align:center;font-size:12px;color:var(--text-tertiary)">暂无匹配属性</div>';
     }
-    $("perm-tbody").innerHTML = html;
-    $("perm-count").textContent = "共 " + ST.filtered.length + " 条";
+    $("attr-list").innerHTML = html;
+    $("attr-count").textContent = "共 " + ST.filtered.length + " 类药品属性";
   }
 
-  $("perm-tbody").addEventListener("click", function (e) {
-    var link = e.target.closest("[data-cfg]");
-    if (!link) return;
-    DP.openDlg(link.getAttribute("data-cfg"));
+  $("attr-list").addEventListener("click", function (e) {
+    var it = e.target.closest("[data-attr]");
+    if (it) DP.select(it.getAttribute("data-attr"));
   });
 
-  /* ---------- 弹窗：状态 ---------- */
-  DP.openDlg = function (key) {
-    var a = ATTRS.filter(function (x) { return x.key === key; })[0];
-    if (!a) return;
-    var p = PERM[key] || { roles: [], users: [] };
+  /* ---------- 切换属性 ---------- */
+  DP.select = function (key) {
+    if (key === ST.cur) return;
+    if (isDirty()) {
+      ST.pending = key;
+      $("confirm-text").textContent = "「" + ATTR_BY[ST.cur].name + "」有未保存的授权改动，切换到「"
+        + ATTR_BY[key].name + "」将丢弃这些改动，是否继续？";
+      $("dlg-confirm").classList.add("show");
+      return;
+    }
+    doSelect(key);
+  };
 
-    /* 机构下拉 */
-    var orgSel = $("pl-org");
-    if (orgSel.options.length <= 1) {
-      ORGS.forEach(function (o) {
-        var op = document.createElement("option");
-        op.value = o; op.textContent = o;
-        orgSel.appendChild(op);
+  function doSelect(key) {
+    ST.cur = key;
+    ST.draft = permOf(key).roles.slice();
+    ST.expand = false;
+    ST.tagExpand = false;
+    ST.ddOpen = false;
+    ST.roleKw = "";
+    renderSide();
+    renderMain();
+  }
+
+  DP.closeConfirm = function () {
+    ST.pending = null;
+    $("dlg-confirm").classList.remove("show");
+  };
+  DP.confirmSwitch = function () {
+    var k = ST.pending;
+    DP.closeConfirm();
+    if (k) doSelect(k);
+  };
+
+  /* ---------- 右栏 ---------- */
+  function renderMain() {
+    var a = ATTR_BY[ST.cur];
+    var box = $("attr-main");
+    if (!a) { box.innerHTML = ""; return; }
+
+    box.innerHTML =
+      '<div class="dp-main-head">'
+      +   '<div class="dp-main-title">'
+      +     '<span class="dp-item-dot" style="background:' + a.color + '"></span>'
+      +     '<h2>' + esc(a.name) + '</h2>'
+      +     '<span class="dp-badge off" id="main-badge"></span>'
+      +   '</div>'
+      +   '<div class="dp-main-desc">' + esc(a.desc) + '</div>'
+      +   '<div class="dp-main-meta" id="main-meta"></div>'
+      + '</div>'
+      + '<div class="dp-main-body">'
+      +   '<div class="dp-block">'
+      +     '<div class="dp-block-title">授权角色<span class="dp-sub">勾选后该角色的全部人员可开具本类药品</span>'
+      +       '<span class="dp-right" id="role-total"></span></div>'
+      +     '<div class="dp-tags" id="role-tags"></div>'
+      +     '<div class="dp-picker" id="role-picker">'
+      +       '<button class="dp-add" id="role-add" onclick="DP.toggleDd()">'
+      +         '<svg viewBox="0 0 12 12" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M6 2v8M2 6h8"/></svg>'
+      +         '添加角色</button>'
+      +       '<div class="dp-dd' + (ST.ddOpen ? " show" : "") + '" id="role-dd">'
+      +         '<div class="dp-dd-head"><input class="input" id="role-kw" placeholder="搜索角色名称" value="' + esc(ST.roleKw) + '" oninput="DP.roleSearch(this.value)"></div>'
+      +         '<div class="dp-dd-body" id="role-dd-body"></div>'
+      +         '<div class="dp-dd-foot">'
+      +           '<span data-all="1">全选</span><span data-clear="1">清空</span>'
+      +           '<span class="dp-sel-count" id="dd-sel-count"></span>'
+      +         '</div>'
+      +       '</div>'
+      +     '</div>'
+      +   '</div>'
+      +   '<div class="dp-block">'
+      +     '<div class="dp-block-title">生效人员<span class="dp-sub">由已勾选角色自动汇总，不可单独增删</span></div>'
+      +     '<div id="person-box"></div>'
+      +   '</div>'
+      +   '<div class="dp-note">提示：本页只按角色授权。若个别人员需要额外放开某类药品，请到「限制医生使用管理」按药品单独配置白名单，或为其分配对应角色。</div>'
+      + '</div>'
+      + '<div class="dp-main-foot">'
+      +   '<span class="dp-dirty" id="dirty-hint"></span>'
+      +   '<span class="spacer"></span>'
+      +   '<button class="btn" onclick="DP.cancel()">取消</button>'
+      +   '<button class="btn btn-primary" onclick="DP.save()">保存</button>'
+      + '</div>';
+
+    renderTags();
+    renderPanelList();
+    renderPersons();
+    renderStatus();
+  }
+
+  function renderTags() {
+    var box = $("role-tags");
+    if (!box) return;
+
+    if (!ST.draft.length) {
+      box.innerHTML = '<span class="dp-tag-empty">尚未授权任何角色，该类药品当前无人可开</span>';
+      return;
+    }
+    var limit = ST.tagExpand ? ST.draft.length : 6;
+    var html = ST.draft.slice(0, limit).map(function (k) {
+      var r = ROLE_BY[k];
+      if (!r) return "";
+      return '<span class="dp-tag">' + esc(r.name)
+        + '<span class="dp-tag-x" data-untag="' + k + '" title="移除">'
+        + '<svg viewBox="0 0 12 12" width="9" height="9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 3l6 6M9 3L3 9"/></svg>'
+        + '</span></span>';
+    }).join("");
+
+    if (ST.draft.length > 6) {
+      html += '<span class="dp-tag-more" data-tagexp="1">'
+        + (ST.tagExpand ? "收起" : "+" + (ST.draft.length - 6) + " 个角色") + '</span>';
+    }
+    box.innerHTML = html;
+  }
+
+  function renderPanelList() {
+    var body = $("role-dd-body");
+    if (!body) return;
+    var kw = ST.roleKw.trim().toLowerCase();
+    var html = "";
+
+    ROLE_GROUPS.forEach(function (g) {
+      var hit = g.roles.filter(function (r) { return !kw || r.name.toLowerCase().indexOf(kw) > -1; });
+      if (!hit.length) return;
+
+      var allOn = hit.every(function (r) { return ST.draft.indexOf(r.key) > -1; });
+      html += '<div class="dp-dd-group"><span>' + esc(g.name) + '</span>'
+        + '<span class="dp-gsel" data-gsel="' + g.key + '">' + (allOn ? "取消本组" : "选中本组") + '</span></div>';
+
+      hit.forEach(function (r) {
+        var on = ST.draft.indexOf(r.key) > -1;
+        html += '<div class="dp-dd-item' + (on ? " on" : "") + '" data-rpick="' + r.key + '">'
+          + '<span class="dp-check"><svg viewBox="0 0 12 12" width="10" height="10" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 6.2l2.4 2.4 4.6-4.8"/></svg></span>'
+          + '<span class="dp-dd-name" title="' + esc(r.name) + '">' + esc(r.name) + '</span>'
+          + '<span class="dp-dd-num">' + roleCount(r.key) + ' 人</span>'
+          + '</div>';
       });
+    });
+
+    body.innerHTML = html || '<div class="dp-dd-empty">没有匹配的角色</div>';
+
+    var cnt = $("dd-sel-count");
+    if (cnt) cnt.textContent = "已选 " + ST.draft.length + " / " + ALL_ROLES.length;
+
+    var total = $("role-total");
+    if (total) total.textContent = "已选 " + ST.draft.length + " 个角色";
+  }
+
+  function renderPersons() {
+    var box = $("person-box");
+    if (!box) return;
+
+    if (!ST.draft.length) {
+      box.innerHTML = '<div class="dp-empty">未勾选任何角色，该类药品当前无人可开，所有开具请求都会被拦截。</div>';
+      return;
     }
 
-    ST.dlg = {
-      attr: a,
-      roles: (p.roles || []).slice(),
-      users: (p.users || []).slice(),
-      l: { page: 1, size: 10, kw: "", org: "", sel: {} },
-      r: { page: 1, size: 10, kw: "", sel: {} }
-    };
+    var list = personsOf(ST.draft);
+    var limit = ST.expand ? list.length : 12;
+    var show = list.slice(0, limit);
 
-    $("dlg-title").textContent = "配置药品权限 · " + a.name;
-    $("pl-kw").value = ""; $("pr-kw").value = ""; $("pl-org").value = "";
-    $("dlg-info").innerHTML =
-      infoItem("属性名称", a.name) +
-      infoItem("属性级别", a.level) +
-      infoItem("属性说明", a.desc) +
-      infoItem("当前状态", isConfigured(a) ? "已配置 · 最近由 " + (p.by || "—") + " 于 " + (p.at || "—") + " 更新" : "未配置（该类药品当前无人可开）");
-
-    renderRoles();
-    renderPanes();
-    $("dlg-perm").classList.add("show");
-  };
-
-  function infoItem(label, value) {
-    return '<div class="dp-info-item"><span class="dp-info-label">' + esc(label) + '：</span>'
-      + '<span class="dp-info-value">' + esc(value) + '</span></div>';
-  }
-
-  DP.closeDlg = function () {
-    $("dlg-perm").classList.remove("show");
-    ST.dlg = null;
-  };
-
-  /* ---------- 弹窗：角色 ---------- */
-  function renderRoles() {
-    var dlg = ST.dlg;
-    $("dlg-roles").innerHTML = ROLES.map(function (r) {
-      var on = dlg.roles.indexOf(r.key) > -1;
-      return '<div class="dp-role' + (on ? " on" : "") + '" onclick="DP.toggleRole(\'' + r.key + '\')">'
-        + '<input type="checkbox"' + (on ? " checked" : "") + ' tabindex="-1">'
-        + '<div><div class="dp-role-name">' + esc(r.name) + '</div>'
-        + '<div class="dp-role-desc">' + esc(r.desc) + '</div></div>'
-        + '</div>';
+    var html = '<div class="dp-sum">已勾选 <b>' + ST.draft.length + '</b> 个角色 · 覆盖 <b>' + list.length + '</b> 人</div>';
+    html += '<div class="dp-persons">';
+    html += show.map(function (s) {
+      return '<span class="dp-person" title="' + esc(s.org + " · " + s.post) + '">' + esc(s.name) + '</span>';
     }).join("");
+    if (list.length > 12) {
+      html += '<span class="dp-more" data-more="1">' + (ST.expand ? "收起" : "+" + (list.length - 12) + " 展开全部") + '</span>';
+    }
+    html += '</div>';
+    box.innerHTML = html;
   }
+
+  function renderStatus() {
+    var p = permOf(ST.cur);
+    var draftOn = ST.draft.length > 0;
+    var badge = $("main-badge");
+    if (badge) {
+      badge.className = "dp-badge " + (draftOn ? "on" : "off");
+      badge.textContent = draftOn ? "已配置" : "未配置";
+    }
+    var meta = $("main-meta");
+    if (meta) {
+      meta.textContent = p.at ? "最后修改 " + p.at + " · " + p.by : "尚未配置，该类药品当前无人可开";
+    }
+    var hint = $("dirty-hint");
+    if (hint) hint.textContent = isDirty() ? "有未保存的修改" : "";
+  }
+
+  /* ---------- 右栏交互 ---------- */
+  $("attr-main").addEventListener("click", function (e) {
+    var untag = e.target.closest("[data-untag]");
+    if (untag) { DP.toggleRole(untag.getAttribute("data-untag")); return; }
+
+    var more = e.target.closest("[data-more]");
+    if (more) { ST.expand = !ST.expand; renderPersons(); return; }
+
+    var exp = e.target.closest("[data-tagexp]");
+    if (exp) { ST.tagExpand = !ST.tagExpand; renderTags(); return; }
+
+    var pick = e.target.closest("[data-rpick]");
+    if (pick) { DP.toggleRole(pick.getAttribute("data-rpick")); return; }
+
+    var gsel = e.target.closest("[data-gsel]");
+    if (gsel) { DP.groupSelect(gsel.getAttribute("data-gsel")); return; }
+
+    if (e.target.closest("[data-all]")) { DP.selectAll(); return; }
+    if (e.target.closest("[data-clear]")) { DP.clearAll(); return; }
+  });
+
+  DP.toggleDd = function () {
+    ST.ddOpen = !ST.ddOpen;
+    var dd = $("role-dd");
+    if (dd) dd.classList.toggle("show", ST.ddOpen);
+    if (ST.ddOpen) {
+      ST.roleKw = "";
+      var kw = $("role-kw");
+      if (kw) { kw.value = ""; kw.focus(); }
+      renderPanelList();
+    }
+  };
+
+  DP.roleSearch = function (v) {
+    ST.roleKw = v;
+    renderPanelList();
+  };
 
   DP.toggleRole = function (key) {
-    var arr = ST.dlg.roles;
-    var i = arr.indexOf(key);
-    if (i > -1) arr.splice(i, 1); else arr.push(key);
-    renderRoles();
+    var i = ST.draft.indexOf(key);
+    if (i > -1) ST.draft.splice(i, 1); else ST.draft.push(key);
+    ST.expand = false;
+    ST.tagExpand = false;
+    afterEdit();
   };
 
-  /* ---------- 弹窗：人员穿梭 ---------- */
-  function paneSource(side) {
-    var dlg = ST.dlg;
-    var kw = dlg[side].kw.trim().toLowerCase();
-    var base;
-    if (side === "l") {
-      base = STAFF.filter(function (s) { return dlg.users.indexOf(s.id) < 0; });
-      var org = dlg.l.org;
-      if (org) base = base.filter(function (s) { return s.org === org; });
+  DP.groupSelect = function (gkey) {
+    var g = ROLE_GROUPS.filter(function (x) { return x.key === gkey; })[0];
+    if (!g) return;
+    var keys = g.roles.map(function (r) { return r.key; });
+    var allOn = keys.every(function (k) { return ST.draft.indexOf(k) > -1; });
+    if (allOn) {
+      ST.draft = ST.draft.filter(function (k) { return keys.indexOf(k) === -1; });
     } else {
-      base = dlg.users.map(staffById).filter(Boolean);
+      keys.forEach(function (k) { if (ST.draft.indexOf(k) === -1) ST.draft.push(k); });
     }
-    if (kw) base = base.filter(function (s) { return s.name.toLowerCase().indexOf(kw) > -1; });
-    return base;
+    afterEdit();
+  };
+
+  DP.selectAll = function () {
+    ST.draft = ALL_ROLES.slice();
+    ST.tagExpand = false;
+    afterEdit();
+  };
+
+  DP.clearAll = function () {
+    ST.draft = [];
+    ST.tagExpand = false;
+    ST.expand = false;
+    afterEdit();
+  };
+
+  function afterEdit() {
+    renderTags();
+    renderPanelList();
+    renderPersons();
+    renderStatus();
   }
 
-  function renderPanes() {
-    ["l", "r"].forEach(renderPane);
-    syncMoveBtns();
-  }
-
-  function renderPane(side) {
-    var dlg = ST.dlg;
-    var st = dlg[side];
-    var list = paneSource(side);
-    var pages = Math.max(1, Math.ceil(list.length / st.size));
-    if (st.page > pages) st.page = pages;
-    var rows = list.slice((st.page - 1) * st.size, st.page * st.size);
-
-    var tbody = $(side === "l" ? "pl-tbody" : "pr-tbody");
-    if (!rows.length) {
-      tbody.innerHTML = '<tr><td colspan="4" class="empty">' + (side === "l" ? "暂无可指定人员" : "暂无已授权人员") + '</td></tr>';
-    } else {
-      tbody.innerHTML = rows.map(function (s) {
-        var on = !!st.sel[s.id];
-        return '<tr class="' + (on ? "sel" : "") + '" onclick="DP.toggleSel(\'' + side + '\',\'' + s.id + '\')">'
-          + '<td><input type="checkbox" class="rs-chk"' + (on ? " checked" : "") + ' tabindex="-1" style="pointer-events:none;width:14px;height:14px;accent-color:var(--primary)"></td>'
-          + '<td>' + esc(s.name) + '</td>'
-          + '<td>' + esc(s.org) + '</td>'
-          + '<td>' + esc(s.post) + '</td>'
-          + '</tr>';
-      }).join("");
-    }
-
-    $(side === "l" ? "pl-count" : "pr-count").textContent = "共 " + list.length + " 条";
-
-    /* 简化分页 */
-    var html = '<button ' + (st.page <= 1 ? "disabled" : "") + ' onclick="DP.go(\'' + side + '\',' + (st.page - 1) + ')">‹</button>';
-    for (var p = 1; p <= pages; p++) {
-      if (pages > 5 && p > 2 && p < pages && Math.abs(p - st.page) > 1) {
-        if (p === 3) html += '<span style="padding:0 2px;color:var(--text-tertiary)">…</span>';
-        continue;
-      }
-      html += '<button class="' + (p === st.page ? "on" : "") + '" onclick="DP.go(\'' + side + '\',' + p + ')">' + p + '</button>';
-    }
-    html += '<button ' + (st.page >= pages ? "disabled" : "") + ' onclick="DP.go(\'' + side + '\',' + (st.page + 1) + ')">›</button>';
-    $(side === "l" ? "pl-pager" : "pr-pager").innerHTML = html;
-  }
-
-  DP.go = function (side, page) {
-    ST.dlg[side].page = Math.max(1, page);
-    renderPane(side);
-  };
-
-  DP.toggleSel = function (side, id) {
-    var sel = ST.dlg[side].sel;
-    if (sel[id]) delete sel[id]; else sel[id] = 1;
-    renderPane(side);
-    syncMoveBtns();
-  };
-
-  DP.paneSearch = function (side) {
-    if (side === "l") {
-      ST.dlg.l.kw = $("pl-kw").value;
-      ST.dlg.l.org = $("pl-org").value;
-    } else {
-      ST.dlg.r.kw = $("pr-kw").value;
-    }
-    ST.dlg[side].page = 1;
-    ST.dlg[side].sel = {};
-    renderPane(side);
-    syncMoveBtns();
-  };
-
-  function selCount(side) { return Object.keys(ST.dlg[side].sel).length; }
-
-  function syncMoveBtns() {
-    var dlg = ST.dlg;
-    if (!dlg) return;
-    $("move-right").disabled = selCount("l") === 0;
-    $("move-left").disabled = selCount("r") === 0;
-  }
-
-  DP.move = function (target) {
-    var dlg = ST.dlg;
-    if (target === "r") {
-      var ids = Object.keys(dlg.l.sel);
-      if (!ids.length) { DP.toast("请先勾选左侧人员"); return; }
-      ids.forEach(function (id) { if (dlg.users.indexOf(id) < 0) dlg.users.push(id); });
-      dlg.l.sel = {};
-      dlg.l.page = 1;
-    } else {
-      var ids2 = Object.keys(dlg.r.sel);
-      if (!ids2.length) { DP.toast("请先勾选右侧人员"); return; }
-      dlg.users = dlg.users.filter(function (id) { return ids2.indexOf(id) < 0; });
-      dlg.r.sel = {};
-      dlg.r.page = 1;
-    }
-    renderPanes();
-  };
-
-  DP.allRight = function () {
-    var dlg = ST.dlg;
-    var list = paneSource("l");
-    if (!list.length) { DP.toast("左侧暂无可指定人员"); return; }
-    list.forEach(function (s) { if (dlg.users.indexOf(s.id) < 0) dlg.users.push(s.id); });
-    dlg.l.sel = {};
-    dlg.l.page = 1;
-    renderPanes();
-  };
-
-  DP.allLeft = function () {
-    var dlg = ST.dlg;
-    if (!dlg.users.length) { DP.toast("右侧暂无已授权人员"); return; }
-    dlg.users = [];
-    dlg.r.sel = {};
-    dlg.r.page = 1;
-    renderPanes();
-  };
-
-  /* ---------- 保存 ---------- */
+  /* ---------- 保存 / 取消 ---------- */
   function nowStr() {
     var d = new Date();
     function p2(n) { return n < 10 ? "0" + n : "" + n; }
-    return d.getFullYear() + "-" + p2(d.getMonth() + 1) + "-" + p2(d.getDate()) + " " + p2(d.getHours()) + ":" + p2(d.getMinutes());
+    return d.getFullYear() + "-" + p2(d.getMonth() + 1) + "-" + p2(d.getDate())
+      + " " + p2(d.getHours()) + ":" + p2(d.getMinutes());
   }
 
   DP.save = function () {
-    var dlg = ST.dlg;
-    if (!dlg) return;
-    PERM[dlg.attr.key] = {
-      roles: dlg.roles.slice(),
-      users: dlg.users.slice(),
-      at: nowStr(),
-      by: "孙磊"
-    };
-    var empty = !dlg.roles.length && !dlg.users.length;
-    DP.closeDlg();
-    renderTable();
-    DP.toast(empty ? "已保存：该类药品当前无人可开" : "已保存（原型演示）");
+    if (!isDirty()) { DP.toast("没有需要保存的修改"); return; }
+    PERM[ST.cur] = { roles: ST.draft.slice(), at: nowStr(), by: "孙磊" };
+    renderSide();
+    renderStatus();
+    DP.toast(ST.draft.length ? "已保存，授权即时生效（原型演示）" : "已保存：该类药品当前无人可开");
+  };
+
+  DP.cancel = function () {
+    ST.draft = permOf(ST.cur).roles.slice();
+    ST.expand = false;
+    ST.tagExpand = false;
+    ST.ddOpen = false;
+    ST.roleKw = "";
+    renderTags();
+    renderPanelList();
+    renderPersons();
+    renderStatus();
+    var dd = $("role-dd");
+    if (dd) dd.classList.remove("show");
   };
 
   DP.toast = function (msg) {
@@ -785,13 +796,26 @@
 
   /* ---------- 初始化 ---------- */
   function init() {
-    DP.search();
+    renderSide();
+    doSelect("normal");
 
-    document.addEventListener("keydown", function (e) {
-      if (e.key === "Escape" && ST.dlg) DP.closeDlg();
+    document.addEventListener("click", function (e) {
+      if (!ST.ddOpen) return;
+      if (!e.target.closest("#role-picker")) {
+        ST.ddOpen = false;
+        var dd = $("role-dd");
+        if (dd) dd.classList.remove("show");
+      }
     });
-    $("dlg-perm").addEventListener("click", function (e) {
-      if (e.target === $("dlg-perm")) DP.closeDlg();
+
+    $("dlg-confirm").addEventListener("click", function (e) {
+      if (e.target === $("dlg-confirm")) DP.closeConfirm();
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") {
+        DP.closeConfirm();
+        if (ST.ddOpen) DP.toggleDd();
+      }
     });
   }
 

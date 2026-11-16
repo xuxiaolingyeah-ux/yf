@@ -469,7 +469,7 @@
   var ST = {
     filtered: ATTRS.slice(),
     cur: null, draft: [],
-    expand: false, tagExpand: false,
+    expand: true, tagExpand: true,
     dlgDraft: [], dlgKw: "",
     pending: null
   };
@@ -533,8 +533,8 @@
   function doSelect(key) {
     ST.cur = key;
     ST.draft = permOf(key).roles.slice();
-    ST.expand = false;
-    ST.tagExpand = false;
+    ST.expand = true;
+    ST.tagExpand = true;
     renderSide();
     renderMain();
   }
@@ -593,20 +593,29 @@
     renderDirty();
   }
 
-  function foldBtn(elId, expanded) {
-    var b = $(elId);
-    if (b) b.textContent = expanded ? "收起" : "展开";
+  /* 折叠按钮：收起时显示「展开」；展开后仅当内容超过两行才显示「收起」 */
+  function foldCtl(foldId, expanded) {
+    var fold = $(foldId);
+    if (!fold) return null;
+    if (!expanded) { fold.textContent = "展开"; fold.style.display = ""; return null; }
+    return fold;
+  }
+  /* 标签区是否超过两行：行高 26 + 间距 6 */
+  function overTwoLines(box, lineH, gap) {
+    var h = box.offsetHeight || 0;
+    return h > lineH * 2 + gap + 2;
   }
 
   function renderTags() {
     var box = $("role-tags");
     if (!box) return;
-    foldBtn("role-fold", ST.tagExpand);
+    var fold = foldCtl("role-fold", ST.tagExpand);
 
     if (!ST.tagExpand) { box.innerHTML = ""; return; }
 
     if (!ST.draft.length) {
       box.innerHTML = '<span class="dp-tag-empty">尚未授权任何角色</span>';
+      if (fold) fold.style.display = "none";
       return;
     }
     box.innerHTML = ST.draft.map(function (k) {
@@ -617,27 +626,32 @@
         + '<svg viewBox="0 0 12 12" width="9" height="9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 3l6 6M9 3L3 9"/></svg>'
         + '</span></span>';
     }).join("");
+    /* 超过两行才出现「收起」 */
+    if (fold) fold.style.display = overTwoLines(box, 26, 6) ? "" : "none";
   }
 
   function renderPersons() {
     var box = $("person-box");
     if (!box) return;
-    foldBtn("person-fold", ST.expand);
+    var fold = foldCtl("person-fold", ST.expand);
 
     if (!ST.expand) { box.innerHTML = ""; return; }
 
     if (!ST.draft.length) {
       box.innerHTML = '<div class="dp-empty">未授权任何角色，该类药品当前无人可开。</div>';
+      if (fold) fold.style.display = "none";
       return;
     }
 
     var list = personsOf(ST.draft);
-    var html = '<div class="dp-persons">';
-    html += list.map(function (s) {
-      return '<span class="dp-person" title="' + esc(s.org + " · " + s.post) + '">' + esc(s.name) + '</span>';
-    }).join("");
-    html += '</div>';
-    box.innerHTML = html;
+    box.innerHTML = '<div class="dp-persons" id="person-chips">'
+      + list.map(function (s) {
+        return '<span class="dp-person" title="' + esc(s.org + " · " + s.post) + '">' + esc(s.name) + '</span>';
+      }).join("")
+      + '</div>';
+    /* 超过两行才出现「收起」：行高 24 + 间距 6 */
+    var chips = $("person-chips");
+    if (fold) fold.style.display = overTwoLines(chips, 24, 6) ? "" : "none";
   }
 
   function renderDirty() {
@@ -756,8 +770,8 @@
 
   DP.cancel = function () {
     ST.draft = permOf(ST.cur).roles.slice();
-    ST.expand = false;
-    ST.tagExpand = false;
+    ST.expand = true;
+    ST.tagExpand = true;
     renderTags();
     renderPersons();
     renderDirty();

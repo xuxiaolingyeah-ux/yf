@@ -2,9 +2,18 @@
  * 药品退库 · 共享逻辑（SR 命名空间）
  * 依赖：无（独立 IIFE，挂 window.SR）
  * 数据：sessionStorage "SR_DATA" / "SR_USER"，首次从种子生成
+ * 关联规则（2026-11-16 已确认）：
+ *   1) 退库仅支持关联一张「调拨业务单」（transfer 模块口径），单选；
+ *      可关联范围 = 本机构作为调入申请方 + 调拨状态「已完成」；
+ *   2) 明细整单带入：允许删行、录入退库数量，不能新增；批次按调拨单带入；
+ *   3) 数量校验：退库数量 ≤ 调拨单对应数量 − 该调拨单已退数量（支持多次部分退）；
+ *   4) 同一调拨单存在未完成退库单（草稿/审核中/出库中/待签收）时不允许再次关联；
+ *   5) 接收机构/接收库位 = 调拨单发出方；退库库位 = 调拨单申请方库位（原路退回，只读）；
+ *   6) 调拨单数量为剔除不合格品后的净数量；
+ *   7) 关联调拨单号落库保存，详情页展示；
  * 流程：草稿 → 待上级审核 →（上级==接收机构时跳过）→ 待接收机构审核 → 审核通过
  *       → 待出库 →（出库，生成 CK 单号）→ 待签收 →（入库，生成 RK 单号）→ 已完成
- *       内部流转不录追溯码
+ *       退库出入库独立生成新单据，与调拨的出入库单无关；内部流转不录追溯码
  * ========================================================= */
 (function () {
   "use strict";
@@ -54,13 +63,15 @@
   var BATCHES = {
     "1210500301": [
       { batch: "20260101A", expiry: "2028-01-01", purchase: 8.20, retail: 12.50, stock: 120 },
-      { batch: "20260315B", expiry: "2028-03-14", purchase: 8.35, retail: 12.80, stock: 80 }
+      { batch: "20260315B", expiry: "2028-03-14", purchase: 8.35, retail: 12.80, stock: 80 },
+      { batch: "20260401C", expiry: "2028-04-01", purchase: 8.40, retail: 12.80, stock: 90 }
     ],
     "1210500302": [
       { batch: "20260115A", expiry: "2028-01-14", purchase: 12.50, retail: 18.80, stock: 60 }
     ],
     "1210500501": [
-      { batch: "20260201A", expiry: "2028-01-31", purchase: 16.80, retail: 24.60, stock: 200 }
+      { batch: "20260201A", expiry: "2028-01-31", purchase: 16.80, retail: 24.60, stock: 200 },
+      { batch: "20260402C", expiry: "2028-04-02", purchase: 17.00, retail: 25.00, stock: 70 }
     ],
     "1210500601": [
       { batch: "20251201A", expiry: "2027-11-30", purchase: 15.00, retail: 22.00, stock: 0 }
@@ -85,24 +96,93 @@
     ]
   };
 
-  /* ---------- 原入库单（关联带入数据源） ----------
-   * inType：调拨入库 / 采购入库
-   * 调拨入库：fromOrg/fromPharmacy/fromLocation = 出库机构/药房/库位
-   * 采购入库：fromOrg = 供应商名称，fromPharmacy/fromLocation 为空（页面显示 —） */
-  var INBOUNDS = [
-    { code: "RK20261028001", time: "2026-10-28 09:12:30", inType: "采购入库",
-      fromOrg: "山东医药集团", fromPharmacy: "", fromLocation: "",
-      items: [ { code: "1210500301", batch: "20260101A", qty: 100 }, { code: "1210500501", batch: "20260201A", qty: 60 } ] },
-    { code: "RK20261029002", time: "2026-10-29 14:05:11", inType: "调拨入库",
-      fromOrg: "城东社区卫生服务中心", fromPharmacy: "门诊药房", fromLocation: "货架一区",
-      items: [ { code: "1210500501", batch: "20260201A", qty: 180 } ] },
-    { code: "RK20261030003", time: "2026-10-30 10:48:02", inType: "调拨入库",
-      fromOrg: "区域中心药房", fromPharmacy: "中心药房", fromLocation: "A 区库房",
-      items: [ { code: "1210500901", batch: "20260301A", qty: 50 }, { code: "1210501301", batch: "20260120A", qty: 40 } ] },
-    { code: "RK20261031005", time: "2026-10-31 15:30:20", inType: "采购入库",
-      fromOrg: "辉瑞制药有限公司", fromPharmacy: "", fromLocation: "",
-      items: [ { code: "1210501601", batch: "20260208A", qty: 200 }, { code: "1210501201", batch: "20260310A", qty: 120 } ] }
+  /* ---------- 可关联调拨单（演示数据源） ----------
+   * 口径与调拨业务单一致：apply* = 调入申请方（本机构），out* = 发出方（退库接收方）；
+   * 仅收录「已完成」的调拨单；qty 为剔除不合格品后的实调数量；
+   * 演示说明：调拨模块为独立数据域，此处按调拨业务单口径镜像已完成单据，
+   * 药品编码 / 批次对齐本模块药品库，保证明细可直接带入 */
+  var TRANSFERS = [
+    { id: "tr1", code: "DB20261015001", transferStatus: "done",
+      applyOrgId: "o1", applyOrgName: "幸福村卫生室", applyLocation: "A 区药柜",
+      outOrgId: "o3", outOrgName: "区域中心药房", outLocation: "A 区库房",
+      inTime: "2026-10-18 09:30:00",
+      items: [ { code: "1210500301", batch: "20260101A", qty: 40 }, { code: "1210500501", batch: "20260201A", qty: 30 } ] },
+    { id: "tr2", code: "DB20261016002", transferStatus: "done",
+      applyOrgId: "o1", applyOrgName: "幸福村卫生室", applyLocation: "B 区药柜",
+      outOrgId: "o3", outOrgName: "区域中心药房", outLocation: "B 区库房",
+      inTime: "2026-10-19 14:00:00",
+      items: [ { code: "1210500901", batch: "20260301A", qty: 50 } ] },
+    { id: "tr3", code: "DB20261018003", transferStatus: "done",
+      applyOrgId: "o1", applyOrgName: "幸福村卫生室", applyLocation: "A 区药柜",
+      outOrgId: "o2", outOrgName: "城东社区卫生服务中心", outLocation: "货架一区",
+      inTime: "2026-10-19 16:20:00",
+      items: [ { code: "1210501201", batch: "20260310A", qty: 30 }, { code: "1210501301", batch: "20260120A", qty: 40 } ] },
+    { id: "tr4", code: "DB20261019004", transferStatus: "done",
+      applyOrgId: "o2", applyOrgName: "城东社区卫生服务中心", applyLocation: "货架二区",
+      outOrgId: "o3", outOrgName: "区域中心药房", outLocation: "A 区库房",
+      inTime: "2026-10-20 10:00:00",
+      items: [ { code: "1210501401", batch: "20260220A", qty: 30 }, { code: "1210501601", batch: "20260208A", qty: 25 } ] },
+    { id: "tr5", code: "DB20261020005", transferStatus: "done",
+      applyOrgId: "o2", applyOrgName: "城东社区卫生服务中心", applyLocation: "病房药柜",
+      outOrgId: "o3", outOrgName: "区域中心药房", outLocation: "A 区库房",
+      inTime: "2026-10-21 11:30:00",
+      items: [ { code: "1210501101", batch: "20260215A", qty: 25 } ] },
+    { id: "tr6", code: "DB20261021006", transferStatus: "done",
+      applyOrgId: "o1", applyOrgName: "幸福村卫生室", applyLocation: "A 区药柜",
+      outOrgId: "o3", outOrgName: "区域中心药房", outLocation: "冷链柜",
+      inTime: "2026-10-22 09:40:00",
+      items: [ { code: "1210501301", batch: "20260120A", qty: 20 } ] },
+    { id: "tr7", code: "DB20261022007", transferStatus: "done",
+      applyOrgId: "o1", applyOrgName: "幸福村卫生室", applyLocation: "B 区药柜",
+      outOrgId: "o2", outOrgName: "城东社区卫生服务中心", outLocation: "货架二区",
+      inTime: "2026-10-23 15:10:00",
+      items: [ { code: "1210500301", batch: "20260315B", qty: 15 } ] },
+    { id: "tr8", code: "DB20261025008", transferStatus: "done",
+      applyOrgId: "o1", applyOrgName: "幸福村卫生室", applyLocation: "A 区药柜",
+      outOrgId: "o3", outOrgName: "区域中心药房", outLocation: "B 区库房",
+      inTime: "2026-10-26 10:30:00",
+      items: [ { code: "1210500301", batch: "20260401C", qty: 40 }, { code: "1210500501", batch: "20260402C", qty: 30 } ] },
+    { id: "tr9", code: "DB20261026009", transferStatus: "done",
+      applyOrgId: "o3", applyOrgName: "区域中心药房", applyLocation: "A 区库房",
+      outOrgId: "o2", outOrgName: "城东社区卫生服务中心", outLocation: "货架一区",
+      inTime: "2026-10-27 09:00:00",
+      items: [ { code: "1210501201", batch: "20260310A", qty: 20 }, { code: "1210501401", batch: "20260220A", qty: 15 } ] },
+    { id: "tr10", code: "DB20261027010", transferStatus: "done",
+      applyOrgId: "o2", applyOrgName: "城东社区卫生服务中心", applyLocation: "货架一区",
+      outOrgId: "o3", outOrgName: "区域中心药房", outLocation: "B 区库房",
+      inTime: "2026-10-28 10:20:00",
+      items: [ { code: "1210501201", batch: "20260310A", qty: 25 } ] }
   ];
+
+  /* ---------- 关联规则计算 ---------- */
+  /* 本机构可关联的调拨单：申请方 = 指定机构 + 调拨状态「已完成」 */
+  function transfersFor(orgId) {
+    return TRANSFERS.filter(function (t) { return t.applyOrgId === orgId && t.transferStatus === "done"; });
+  }
+  function transferByCode(code) {
+    return TRANSFERS.filter(function (t) { return t.code === code; })[0] || null;
+  }
+  /* 指定调拨单已退数量（同药品 + 批次）：已拒绝单不计，草稿不计入可退量占用 */
+  function transferReturnedQty(transferCode, code, batch, excludeBillId) {
+    var n = 0;
+    load().forEach(function (b) {
+      if (b.transferCode !== transferCode || b.id === excludeBillId) return;
+      if (b.auditStatus === "rejected") return;
+      (b.items || []).forEach(function (it) {
+        if (it.code === code && it.batch === batch) n += Number(it.qty || 0);
+      });
+    });
+    return n;
+  }
+  /* 调拨单是否被未完成退库单占用：草稿 / 审核中 / 出库中 / 待签收 均占用；已拒绝、已完成不占用 */
+  function transferOccupied(transferCode, excludeBillId) {
+    return load().some(function (b) {
+      if (b.transferCode !== transferCode || b.id === excludeBillId) return false;
+      if (b.auditStatus === "rejected") return false;
+      if (b.auditStatus === "approved" && b.receiveStatus === "done") return false;
+      return true;
+    });
+  }
 
   /* ---------- 工具 ---------- */
   function qs(k) { var m = location.search.match(new RegExp("[?&]" + k + "=([^&]*)")); return m ? decodeURIComponent(m[1]) : ""; }
@@ -186,24 +266,24 @@
       return mk(it);
     }
     return [
-      /* r1 草稿 */
-      { id: "r1", code: "TK20261103001", fromOrgId: "o1", fromPharmacyId: "p11", fromLocation: "A 区药柜",
-        toOrgId: "o3", toPharmacyId: "p31", toLocation: "A 区库房",
+      /* r1 草稿（已关联调拨单，退库数量待填） */
+      { id: "r1", code: "TK20261103001", transferCode: "DB20261021006", fromOrgId: "o1", fromPharmacyId: "p11", fromLocation: "A 区药柜",
+        toOrgId: "o3", toPharmacyId: "p31", toLocation: "冷链柜",
         outCode: "", outTime: "", inCode: "", inTime: "",
         creatorId: "u1", creatorName: "王芳", submitTime: "",
         auditStatus: "draft", receiveStatus: "",
-        items: [ itm("1210500301", "20260101A", 20) ],
+        items: [ itm("1210501301", "20260120A", "") ],
         records: [] },
-      /* r2 待上级审核（两级路径：上级 o2 ≠ 接收 o3） */
-      { id: "r2", code: "TK20261102002", fromOrgId: "o1", fromPharmacyId: "p11", fromLocation: "A 区药柜",
+      /* r2 待上级审核（两级路径：上级 o2 ≠ 接收 o3；关联 DB20261015001） */
+      { id: "r2", code: "TK20261102002", transferCode: "DB20261015001", fromOrgId: "o1", fromPharmacyId: "p11", fromLocation: "A 区药柜",
         toOrgId: "o3", toPharmacyId: "p31", toLocation: "A 区库房",
         outCode: "", outTime: "", inCode: "", inTime: "",
         creatorId: "u1", creatorName: "王芳", submitTime: "2026-11-02 16:40:12",
         auditStatus: "upper", receiveStatus: "",
         items: [ itm("1210500301", "20260101A", 20), itm("1210500501", "20260201A", 5) ],
         records: [ { node: "提交", person: "王芳", org: "幸福村卫生室", time: "2026-11-02 16:40:12", result: "已提交", opinion: "" } ] },
-      /* r3 待接收机构审核（上级已通过） */
-      { id: "r3", code: "TK20261101003", fromOrgId: "o1", fromPharmacyId: "p11", fromLocation: "B 区药柜",
+      /* r3 待接收机构审核（上级已通过；关联 DB20261016002） */
+      { id: "r3", code: "TK20261101003", transferCode: "DB20261016002", fromOrgId: "o1", fromPharmacyId: "p11", fromLocation: "B 区药柜",
         toOrgId: "o3", toPharmacyId: "p31", toLocation: "B 区库房",
         outCode: "", outTime: "", inCode: "", inTime: "",
         creatorId: "u1", creatorName: "王芳", submitTime: "2026-11-01 10:20:45",
@@ -213,8 +293,8 @@
           { node: "提交", person: "王芳", org: "幸福村卫生室", time: "2026-11-01 10:20:45", result: "已提交", opinion: "" },
           { node: "审核", person: "李强", org: "城东社区卫生服务中心", time: "2026-11-01 15:02:11", result: "通过", opinion: "数量与库存一致，同意退库" }
         ] },
-      /* r4 待出库（跳级路径：o1 退 o2，上级==接收，一次审核通过） */
-      { id: "r4", code: "TK20261030004", fromOrgId: "o1", fromPharmacyId: "p11", fromLocation: "A 区药柜",
+      /* r4 待出库（跳级路径：o1 退 o2，上级==接收，一次审核通过；关联 DB20261018003） */
+      { id: "r4", code: "TK20261030004", transferCode: "DB20261018003", fromOrgId: "o1", fromPharmacyId: "p11", fromLocation: "A 区药柜",
         toOrgId: "o2", toPharmacyId: "p21", toLocation: "货架一区",
         outCode: "", outTime: "", inCode: "", inTime: "",
         creatorId: "u1", creatorName: "王芳", submitTime: "2026-10-30 14:05:08",
@@ -224,8 +304,8 @@
           { node: "提交", person: "王芳", org: "幸福村卫生室", time: "2026-10-30 14:05:08", result: "已提交", opinion: "" },
           { node: "审核", person: "李强", org: "城东社区卫生服务中心", time: "2026-10-30 16:22:40", result: "通过", opinion: "" }
         ] },
-      /* r5 待签收（已出库） */
-      { id: "r5", code: "TK20261029005", fromOrgId: "o2", fromPharmacyId: "p21", fromLocation: "货架二区",
+      /* r5 待签收（已出库；关联 DB20261019004） */
+      { id: "r5", code: "TK20261029005", transferCode: "DB20261019004", fromOrgId: "o2", fromPharmacyId: "p21", fromLocation: "货架二区",
         toOrgId: "o3", toPharmacyId: "p31", toLocation: "A 区库房",
         outCode: "CK20261030001", outTime: "2026-10-30 10:15:22", inCode: "", inTime: "",
         creatorId: "u2", creatorName: "李强", submitTime: "2026-10-29 09:30:18",
@@ -239,8 +319,8 @@
           { node: "审核", person: "赵敏", org: "区域中心药房", time: "2026-10-29 17:08:44", result: "通过", opinion: "同意退库" },
           { node: "出库", person: "李强", org: "城东社区卫生服务中心", time: "2026-10-30 10:15:22", result: "已出库", opinion: "出库单号：CK20261030001" }
         ] },
-      /* r6 已完成（含不合格品记录） */
-      { id: "r6", code: "TK20261026006", fromOrgId: "o2", fromPharmacyId: "p22", fromLocation: "病房药柜",
+      /* r6 已完成（部分退：调拨 25 已退 10，剩余可退 15；含不合格品记录；关联 DB20261020005） */
+      { id: "r6", code: "TK20261026006", transferCode: "DB20261020005", fromOrgId: "o2", fromPharmacyId: "p22", fromLocation: "病房药柜",
         toOrgId: "o3", toPharmacyId: "p31", toLocation: "A 区库房",
         outCode: "CK20261027001", outTime: "2026-10-27 11:02:36", inCode: "RK20261028001", inTime: "2026-10-28 14:40:05",
         creatorId: "u2", creatorName: "李强", submitTime: "2026-10-26 09:12:00",
@@ -254,24 +334,24 @@
           { node: "出库", person: "李强", org: "城东社区卫生服务中心", time: "2026-10-27 11:02:36", result: "已出库", opinion: "出库单号：CK20261027001" },
           { node: "入库", person: "陈静", org: "区域中心药房", time: "2026-10-28 14:40:05", result: "已入库", opinion: "入库单号：RK20261028001；不合格 1 盒（包装不合格），线下处理" }
         ] },
-      /* r7 已拒绝 */
-      { id: "r7", code: "TK20261025007", fromOrgId: "o1", fromPharmacyId: "p11", fromLocation: "B 区药柜",
-        toOrgId: "o2", toPharmacyId: "p21", toLocation: "货架二区",
+      /* r7 已拒绝（已拒绝不占用调拨单，可重新关联退库；关联 DB20261021006） */
+      { id: "r7", code: "TK20261025007", transferCode: "DB20261021006", fromOrgId: "o1", fromPharmacyId: "p11", fromLocation: "A 区药柜",
+        toOrgId: "o3", toPharmacyId: "p31", toLocation: "冷链柜",
         outCode: "", outTime: "", inCode: "", inTime: "",
         creatorId: "u1", creatorName: "王芳", submitTime: "2026-10-25 11:33:20",
         auditStatus: "rejected", receiveStatus: "",
-        items: [ itm("1210500301", "20260315B", 10) ],
+        items: [ itm("1210501301", "20260120A", 10) ],
         records: [
           { node: "提交", person: "王芳", org: "幸福村卫生室", time: "2026-10-25 11:33:20", result: "已提交", opinion: "" },
           { node: "审核", person: "李强", org: "城东社区卫生服务中心", time: "2026-10-27 10:22:40", result: "拒绝", opinion: "批号与库存台账不符，请核对后重新提交" }
         ] },
-      /* r8 待上级审核（含撤回历史：提交 → 撤回 → 再提交） */
-      { id: "r8", code: "TK20261103008", fromOrgId: "o1", fromPharmacyId: "p11", fromLocation: "A 区药柜",
-        toOrgId: "o3", toPharmacyId: "p31", toLocation: "冷链柜",
+      /* r8 待上级审核（含撤回历史：提交 → 撤回 → 再提交；关联 DB20261022007） */
+      { id: "r8", code: "TK20261103008", transferCode: "DB20261022007", fromOrgId: "o1", fromPharmacyId: "p11", fromLocation: "B 区药柜",
+        toOrgId: "o2", toPharmacyId: "p21", toLocation: "货架二区",
         outCode: "", outTime: "", inCode: "", inTime: "",
         creatorId: "u1", creatorName: "王芳", submitTime: "2026-11-03 08:50:00",
         auditStatus: "upper", receiveStatus: "",
-        items: [ itm("1210501301", "20260120A", 6) ],
+        items: [ itm("1210500301", "20260315B", 6) ],
         records: [
           { node: "提交", person: "王芳", org: "幸福村卫生室", time: "2026-11-02 09:00:00", result: "已提交", opinion: "" },
           { node: "撤回", person: "王芳", org: "幸福村卫生室", time: "2026-11-02 09:30:00", result: "已撤回", opinion: "退库数量填错，撤回修改" },
@@ -347,7 +427,9 @@
   }
 
   window.SR = {
-    USERS: USERS, ORGS: ORGS, REASONS: REASONS, DRUGS: DRUGS, BATCHES: BATCHES, INBOUNDS: INBOUNDS,
+    USERS: USERS, ORGS: ORGS, REASONS: REASONS, DRUGS: DRUGS, BATCHES: BATCHES, TRANSFERS: TRANSFERS,
+    transfersFor: transfersFor, transferByCode: transferByCode,
+    transferReturnedQty: transferReturnedQty, transferOccupied: transferOccupied,
     AUDIT_STATUS: AUDIT_STATUS, RECV: RECV,
     qs: qs, esc: esc, raw: raw, fmtNow: fmtNow, money: money, num2: num2,
     currentUser: currentUser, setUser: setUser, orgOf: orgOf, allLocationsOf: allLocationsOf, orgName: orgName, upperOrgOf: upperOrgOf,

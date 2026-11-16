@@ -151,9 +151,10 @@
             <div class="sr-sec-head"><div class="sr-sec-title">退库信息</div></div>
             <div class="sr-form">
               <div class="fi"><span class="lbl"><span class="req">*</span>退库机构：</span><div class="ctrl"><input class="input is-readonly" id="fFromOrg" readonly></div></div>
-              <div class="fi"><span class="lbl"><span class="req">*</span>退库库位：</span><div class="ctrl"><select class="select" id="fFromLocation"></select></div></div>
-              <div class="fi"><span class="lbl"><span class="req">*</span>接收机构：</span><div class="ctrl"><select class="select" id="fToOrg"></select></div></div>
-              <div class="fi"><span class="lbl"><span class="req">*</span>接收库位：</span><div class="ctrl"><select class="select" id="fToLocation"></select></div></div>
+              <div class="fi"><span class="lbl"><span class="req">*</span>关联调拨单：</span><div class="ctrl"><input class="input is-readonly" id="fTransferCode" readonly placeholder="未关联，请点击右上角「关联调拨单」"></div></div>
+              <div class="fi"><span class="lbl"><span class="req">*</span>退库库位：</span><div class="ctrl"><input class="input is-readonly" id="fFromLocation" readonly placeholder="关联调拨单后自动带入"></div></div>
+              <div class="fi"><span class="lbl"><span class="req">*</span>接收机构：</span><div class="ctrl"><input class="input is-readonly" id="fToOrg" readonly placeholder="关联调拨单后自动带入"></div></div>
+              <div class="fi"><span class="lbl"><span class="req">*</span>接收库位：</span><div class="ctrl"><input class="input is-readonly" id="fToLocation" readonly placeholder="关联调拨单后自动带入"></div></div>
 
               <div class="fi"><span class="lbl">出库单号：</span><div class="ctrl"><input class="input is-readonly" id="fOutCode" readonly placeholder="出库后自动生成"></div></div>
               <div class="fi"><span class="lbl">入库单号：</span><div class="ctrl"><input class="input is-readonly" id="fInCode" readonly placeholder="入库后自动生成"></div></div>
@@ -167,8 +168,7 @@
             <div class="sr-sec-head">
               <div class="sr-sec-title"><span class="req">*</span>药品明细</div>
               <div class="sr-sec-acts">
-                <button class="btn btn-sm" id="btnPick">批量添加药品</button>
-                <button class="btn btn-sm" id="btnInbound">关联原入库单</button>
+                <button class="btn btn-sm btn-primary" id="btnInbound">关联调拨单</button>
               </div>
             </div>
             <div class="sr-items-wrap">
@@ -182,6 +182,7 @@
                     <th style="width:90px">包装规格</th>
                     <th style="width:96px">批次号</th>
                     <th class="num" style="width:86px">当前库存量</th>
+                    <th class="num" style="width:86px">可退数量</th>
                     <th style="width:92px"><span class="req">*</span>退库数量</th>
                     <th class="num" style="width:84px">进货价</th>
                     <th class="num" style="width:84px">零售价</th>
@@ -193,7 +194,7 @@
                 </thead>
                 <tbody id="itemsBody"></tbody>
               </table>
-              <div class="sr-empty-row" id="itemsEmpty">暂无药品明细，请通过右上角「批量添加药品」或「关联原入库单」添加</div>
+              <div class="sr-empty-row" id="itemsEmpty">暂无药品明细，请先点击右上角「关联调拨单」带入明细</div>
             </div>
             <div class="sr-sum-line">已选 <b id="sumRows">0</b> 个批次 · 退库数量合计 <b id="sumQty">0</b> · 进货价合计金额 <b id="sumPurchase">0.00</b> · 零售价合计金额 <b id="sumRetail">0.00</b></div>
           </div>
@@ -210,83 +211,49 @@
   </main>
 </div>
 
-<!-- ========== 弹窗：批量添加药品（药品+批次，多选） ========== -->
-<div class="modal-mask sr-pick" id="pickMask">
-  <div class="modal">
-    <div class="modal-head">
-      <div class="modal-title">批量添加药品</div>
-      <button class="drawer-close" id="pickClose" title="关闭">
-        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
-      </button>
-    </div>
-    <div class="modal-body">
-      <div class="sr-pick-search">
-        <div class="fi"><span class="lbl">药品名称/拼音码：</span><input class="input" id="pkKey" autocomplete="off"></div>
-        <div class="fi"><span class="lbl">生产企业：</span><input class="input" id="pkVendor" autocomplete="off"></div>
-        <button class="btn btn-sm" id="pkReset">重置</button>
-        <button class="btn btn-sm btn-primary" id="pkSearch">查询</button>
-      </div>
-      <table class="sr-pick-table">
-        <thead>
-          <tr>
-            <th style="width:40px"></th>
-            <th>药品名称</th><th>药品编码</th><th>药品规格</th><th>生产企业</th>
-            <th>批次号</th><th>有效期</th><th class="num">当前库存量</th><th class="num">进货价</th><th class="num">零售价</th>
-          </tr>
-        </thead>
-        <tbody id="pickBody"></tbody>
-      </table>
-      <div class="sr-pick-empty" id="pickEmpty" style="display:none">未找到符合条件的药品批次</div>
-    </div>
-    <div class="modal-foot">
-      <button class="btn" id="pkCancel">取消</button>
-      <button class="btn btn-primary" id="pkOk" disabled>确定</button>
-    </div>
-  </div>
-</div>
-
-<!-- ========== 抽屉：关联原入库单（单选 + 查询） ========== -->
+<!-- ========== 抽屉：关联调拨单（单选 + 查询；仅本机构申请且已完成的调拨单） ========== -->
 <div class="sr-drawer-mask" id="ibMask">
   <div class="sr-drawer">
     <div class="sr-drawer-head">
-      关联原入库单
+      关联调拨单
       <button class="drawer-close" id="ibClose" title="关闭">
         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
       </button>
     </div>
     <div class="sr-ib-filter">
-      <div class="fi"><span class="lbl">入库单号</span><input class="input" id="ibQCode" placeholder="请输入" autocomplete="off"></div>
-      <div class="fi"><span class="lbl">出库机构</span><select class="select" id="ibQOrg"></select></div>
-      <div class="fi"><span class="lbl">出库库位</span><select class="select" id="ibQLocation"></select></div>
+      <div class="fi"><span class="lbl">调拨单号</span><input class="input" id="ibQCode" placeholder="请输入" autocomplete="off"></div>
+      <div class="fi"><span class="lbl">发出机构</span><select class="select" id="ibQOrg"></select></div>
+      <div class="fi"><span class="lbl">发出库位</span><select class="select" id="ibQLocation"></select></div>
       <div class="sr-ib-acts">
         <button class="btn btn-sm" id="ibReset">重置</button>
         <button class="btn btn-sm btn-primary" id="ibSearch">查询</button>
       </div>
     </div>
     <div class="sr-drawer-body">
-      <div class="sr-ib-sub">入库单列表</div>
+      <div class="sr-ib-sub">调拨单列表<span class="tip">仅显示本机构作为调入申请方、且调拨状态为「已完成」的调拨单</span></div>
       <table class="sr-pick-table">
         <thead>
           <tr>
             <th style="width:40px"></th>
-            <th>入库单号</th><th>入库时间</th><th>入库方式</th>
-            <th>出库机构</th><th>出库库位</th>
+            <th>调拨单号</th><th>完成时间</th>
+            <th>发出机构</th><th>发出库位</th><th>调入库位</th>
           </tr>
         </thead>
         <tbody id="ibBody"></tbody>
       </table>
-      <div class="sr-pick-empty" id="ibEmpty" style="display:none">暂无可关联的入库单</div>
-      <div class="sr-ib-sub" style="margin-top:16px">药品明细<span class="tip" id="ibItemsTip"></span></div>
+      <div class="sr-pick-empty" id="ibEmpty" style="display:none">暂无可关联的调拨单</div>
+      <div class="sr-ib-sub" style="margin-top:16px">调拨明细<span class="tip" id="ibItemsTip"></span></div>
       <table class="sr-pick-table">
         <thead>
           <tr>
             <th>药品名称</th><th>药品编码</th><th>药品规格</th>
-            <th>厂商</th><th>批次号</th><th class="num">入库量</th>
+            <th>厂商</th><th>批次号</th>
+            <th class="num">调拨数量</th><th class="num">已退数量</th><th class="num">可退数量</th>
           </tr>
         </thead>
         <tbody id="ibItemsBody"></tbody>
       </table>
-      <div class="sr-pick-empty" id="ibItemsEmpty">请先在上方选择入库单</div>
+      <div class="sr-pick-empty" id="ibItemsEmpty">请先在上方选择调拨单</div>
     </div>
     <div class="sr-drawer-foot">
       <button class="btn" id="ibCancel">取消</button>
@@ -335,26 +302,39 @@
 
   /* ===== 页面状态 ===== */
   var ST = {
-    fromOrgId: user.orgId, fromLocation: "",
-    toOrgId: "", toLocation: "",
+    fromOrgId: user.orgId, transferCode: "",
+    fromLocation: "", toOrgId: "", toLocation: "",
     items: []
   };
 
-  /* ===== 初始化下拉 ===== */
-  /* 退库机构：只读，显示当前登录机构名称 */
+  /* 退库机构：只读，显示当前登录机构名称；
+   * 退库库位 / 接收机构 / 接收库位均由关联调拨单代入（原路退回），只读不可手选 */
   $("#fFromOrg").value = (SR.orgOf(ST.fromOrgId) || {}).name || user.orgName || "";
-  $("#fToOrg").innerHTML = '<option value="">请选择接收机构</option>' + SR.ORGS.map(function(o){return '<option value="'+o.id+'">'+SR.esc(o.name)+'</option>';}).join("");
-  function fillFromLocations(){
-    $("#fFromLocation").innerHTML = '<option value="">请选择库位</option>' + SR.allLocationsOf(ST.fromOrgId).map(function(l){return '<option value="'+SR.esc(l)+'">'+SR.esc(l)+'</option>';}).join("");
-  }
-  function fillToLocations(){
-    $("#fToLocation").innerHTML = '<option value="">请选择库位</option>' + SR.allLocationsOf(ST.toOrgId).map(function(l){return '<option value="'+SR.esc(l)+'">'+SR.esc(l)+'</option>';}).join("");
-  }
-  fillFromLocations(); fillToLocations();
 
-  $("#fFromLocation").addEventListener("change",function(){ ST.fromLocation=this.value; });
-  $("#fToOrg").addEventListener("change",function(){ ST.toOrgId=this.value; ST.toLocation=""; fillToLocations(); });
-  $("#fToLocation").addEventListener("change",function(){ ST.toLocation=this.value; });
+  /* 按关联调拨单回填只读地址字段（传 null 表示解除关联） */
+  function applyTransferFields(t){
+    ST.transferCode = t ? t.code : "";
+    $("#fTransferCode").value = t ? t.code : "";
+    ST.fromLocation = t ? t.applyLocation : "";
+    $("#fFromLocation").value = ST.fromLocation;
+    ST.toOrgId = t ? t.outOrgId : "";
+    $("#fToOrg").value = t ? t.outOrgName : "";
+    ST.toLocation = t ? t.outLocation : "";
+    $("#fToLocation").value = ST.toLocation;
+  }
+
+  /* ===== 关联数量计算 ===== */
+  function transferOf(){ return ST.transferCode ? SR.transferByCode(ST.transferCode) : null; }
+  /* 可退数量 = 调拨单对应数量 − 该调拨单已退数量（编辑当前单时排除自身；未关联时返回 null） */
+  function remQtyOf(code, batch){
+    var t = transferOf();
+    if(!t) return null;
+    var base = 0;
+    (t.items || []).forEach(function(x){
+      if(x.code === code && x.batch === batch) base = Number(x.qty || 0);
+    });
+    return Math.max(0, base - SR.transferReturnedQty(ST.transferCode, code, batch, editBill ? editBill.id : ""));
+  }
 
   /* ===== 药品明细表 ===== */
   /* 行单位：明细数据缺省时按药品编码回查（兼容旧数据） */
@@ -363,6 +343,8 @@
     $("#itemsEmpty").style.display = ST.items.length ? "none" : "block";
     $("#itemsBody").innerHTML = ST.items.map(function(it, i){
       var unit = unitOf(it);
+      var rem = remQtyOf(it.code, it.batch);
+      var maxQty = Math.min(Number(it.stock || 0), rem === null ? Number(it.stock || 0) : rem);
       var h = '<tr data-idx="'+i+'">';
       h += '<td class="col-drug cell-ellipsis" title="'+SR.esc(it.name)+'">'+SR.esc(it.name)+'</td>';
       h += '<td>'+SR.esc(it.code)+'</td>';
@@ -371,7 +353,8 @@
       h += '<td>'+SR.esc(it.packSpec)+'</td>';
       h += '<td>'+SR.esc(it.batch)+'</td>';
       h += '<td class="num">'+SR.esc(it.stock)+'</td>';
-      h += '<td><div class="qty-wrap"><input class="cell-input" type="number" min="1" max="'+SR.esc(it.stock)+'" data-f="qty" data-idx="'+i+'" value="'+SR.raw(it.qty)+'">'+(unit?'<span class="qty-unit">'+SR.esc(unit)+'</span>':'')+'</div></td>';
+      h += '<td class="num">'+(rem===null ? "—" : rem)+'</td>';
+      h += '<td><div class="qty-wrap"><input class="cell-input" type="number" min="1" max="'+maxQty+'" data-f="qty" data-idx="'+i+'" value="'+SR.raw(it.qty)+'">'+(unit?'<span class="qty-unit">'+SR.esc(unit)+'</span>':'')+'</div></td>';
       h += '<td class="num">'+(it.purchase===""?"":SR.num2(it.purchase))+'</td>';
       h += '<td class="num">'+(it.retail===""?"":SR.num2(it.retail))+'</td>';
       h += '<td class="num" data-c="pamt">'+SR.num2(SR.purchaseAmt(it))+'</td>';
@@ -426,98 +409,28 @@
     }
   });
 
-  /* ===== 批量添加药品弹窗 ===== */
-  var pickRows = [];
-  function rowAdded(code, batch){
-    return ST.items.some(function(it){ return it.code===code && it.batch===batch; });
-  }
-  function renderPick(){
-    var k = $("#pkKey").value.trim().toLowerCase(), v = $("#pkVendor").value.trim().toLowerCase();
-    pickRows = [];
-    SR.DRUGS.forEach(function(d){
-      if(k && d.name.toLowerCase().indexOf(k)<0 && d.py.toLowerCase().indexOf(k)<0) return;
-      if(v && d.vendor.toLowerCase().indexOf(v)<0) return;
-      (SR.BATCHES[d.code]||[]).forEach(function(b){ pickRows.push({ d:d, b:b }); });
-    });
-    $("#pickEmpty").style.display = pickRows.length ? "none" : "block";
-    $("#pickBody").innerHTML = pickRows.map(function(r, i){
-      var added = rowAdded(r.d.code, r.b.batch);
-      var noStock = Number(r.b.stock)<=0;
-      var dis = added || noStock;
-      var tag = added ? '<span class="row-tag">已添加</span>' : (noStock ? '<span class="row-tag">库存不足</span>' : '');
-      return '<tr data-i="'+i+'"'+(dis?' class="is-disabled"':'')+'>'
-        +'<td><input type="checkbox" data-pk="'+i+'"'+(dis?' disabled':'')+'></td>'
-        +'<td>'+SR.esc(r.d.name)+tag+'</td>'
-        +'<td>'+SR.esc(r.d.code)+'</td><td>'+SR.esc(r.d.spec)+'</td>'
-        +'<td class="cell-ellipsis" title="'+SR.esc(r.d.vendor)+'">'+SR.esc(r.d.vendor)+'</td>'
-        +'<td>'+SR.esc(r.b.batch)+'</td><td>'+SR.esc(r.b.expiry)+'</td>'
-        +'<td class="num">'+SR.esc(r.b.stock)+'</td>'
-        +'<td class="num">'+SR.num2(r.b.purchase)+'</td><td class="num">'+SR.num2(r.b.retail)+'</td></tr>';
-    }).join("");
-    $$('#pickBody input[type="checkbox"]').forEach(function(cb){
-      cb.addEventListener("change", syncPickOk);
-    });
-    $$('#pickBody tr:not(.is-disabled)').forEach(function(tr){
-      tr.addEventListener("click", function(e){
-        if(e.target.type==="checkbox") return;
-        var cb = tr.querySelector('input[type="checkbox"]');
-        if(!cb || cb.disabled) return;
-        cb.checked = !cb.checked;
-        syncPickOk();
-      });
-    });
-    syncPickOk();
-  }
-  function syncPickOk(){
-    $("#pkOk").disabled = !$$('#pickBody input[type="checkbox"]:checked').length;
-  }
-  function openPicker(){
-    $("#pkKey").value=""; $("#pkVendor").value="";
-    renderPick();
-    $("#pickMask").classList.add("show");
-  }
-  function closePicker(){ $("#pickMask").classList.remove("show"); pickRows=[]; }
-  $("#btnPick").addEventListener("click", openPicker);
-  $("#pkSearch").addEventListener("click", renderPick);
-  $("#pkReset").addEventListener("click", function(){ $("#pkKey").value=""; $("#pkVendor").value=""; renderPick(); });
-  $("#pickClose").addEventListener("click", closePicker);
-  $("#pkCancel").addEventListener("click", closePicker);
-  $("#pkOk").addEventListener("click", function(){
-    var sel = $$('#pickBody input[type="checkbox"]:checked').map(function(cb){
-      return pickRows[parseInt(cb.getAttribute("data-pk"),10)];
-    });
-    if(!sel.length) return;
-    sel.forEach(function(r){
-      var it = SR.itemOf(r.d.code, r.b.batch);
-      if(it) ST.items.push(it);
-    });
-    closePicker();
-    renderItems();
-    toast("已添加 "+sel.length+" 条药品明细");
-  });
-
-  /* ===== 关联原入库单抽屉（按单号/出库机构/出库库位查询，点「查询」生效；单选联动明细） ===== */
-  var ibSel = "";   /* 选中的入库单号 */
+  /* ===== 关联调拨单抽屉（单选 + 查询；仅本机构作为调入申请方且已完成的调拨单） ===== */
+  var ibSel = "";   /* 选中的调拨单号 */
   var ibQ = { code:"", org:"", location:"" };   /* 已生效的查询条件 */
   function ibRows(){
-    return SR.INBOUNDS.filter(function(b){
-      if(ibQ.code && b.code.toLowerCase().indexOf(ibQ.code)<0) return false;
-      if(ibQ.org && b.fromOrg!==ibQ.org) return false;
-      if(ibQ.location && (b.fromLocation||"")!==ibQ.location) return false;
+    return SR.transfersFor(ST.fromOrgId).filter(function(t){
+      if(ibQ.code && t.code.toLowerCase().indexOf(ibQ.code)<0) return false;
+      if(ibQ.org && t.outOrgName!==ibQ.org) return false;
+      if(ibQ.location && t.outLocation!==ibQ.location) return false;
       return true;
     });
   }
-  /* 下拉选项：从入库单数据去重生成 */
+  /* 下拉选项：从可关联调拨单去重生成 */
   function ibOpts(key){
     var seen = {}, arr = [];
-    SR.INBOUNDS.forEach(function(b){
-      var v = b[key] || "";
+    SR.transfersFor(ST.fromOrgId).forEach(function(t){
+      var v = t[key] || "";
       if(v && !seen[v]){ seen[v] = 1; arr.push(v); }
     });
     return arr;
   }
   function fillIbFilterOptions(){
-    [["#ibQOrg","fromOrg"],["#ibQLocation","fromLocation"]].forEach(function(p){
+    [["#ibQOrg","outOrgName"],["#ibQLocation","outLocation"]].forEach(function(p){
       $(p[0]).innerHTML = '<option value="">全部</option>' + ibOpts(p[1]).map(function(v){
         return '<option value="'+SR.esc(v)+'">'+SR.esc(v)+'</option>';
       }).join("");
@@ -525,16 +438,21 @@
   }
   function renderIbList(){
     var rows = ibRows();
+    var excl = editBill ? editBill.id : "";
     $("#ibEmpty").style.display = rows.length ? "none" : "block";
-    $("#ibBody").innerHTML = rows.map(function(b){
-      var sel = b.code===ibSel;
-      return '<tr data-code="'+SR.esc(b.code)+'"'+(sel?' class="is-sel"':'')+'>'
-        +'<td><input type="radio" name="ibPick"'+(sel?' checked':'')+'></td>'
-        +'<td>'+SR.esc(b.code)+'</td><td>'+SR.esc(b.time)+'</td><td>'+SR.esc(b.inType)+'</td>'
-        +'<td>'+SR.esc(b.fromOrg)+'</td><td>'+SR.esc(b.fromLocation)+'</td></tr>';
+    $("#ibBody").innerHTML = rows.map(function(t){
+      var sel = t.code===ibSel;
+      var occupied = SR.transferOccupied(t.code, excl);
+      var cls = (sel ? " is-sel" : "") + (occupied ? " is-disabled" : "");
+      return '<tr data-code="'+SR.esc(t.code)+'"'+(cls?' class="'+cls+'"':'')+'>'
+        +'<td><input type="radio" name="ibPick"'+(sel?' checked':'')+(occupied?' disabled':'')+'></td>'
+        +'<td>'+SR.esc(t.code)+(occupied?'<span class="row-tag">已有未完成退库单</span>':'')+'</td>'
+        +'<td>'+SR.esc(t.inTime)+'</td>'
+        +'<td>'+SR.esc(t.outOrgName)+'</td><td>'+SR.esc(t.outLocation)+'</td><td>'+SR.esc(t.applyLocation)+'</td></tr>';
     }).join("");
     $$('#ibBody tr').forEach(function(tr){
       tr.addEventListener("click", function(){
+        if(tr.classList.contains("is-disabled")) return;
         ibSel = tr.getAttribute("data-code");
         renderIbList(); renderIbItems();
       });
@@ -542,13 +460,17 @@
     $("#ibOk").disabled = !ibSel;
   }
   function renderIbItems(){
-    var ib = SR.INBOUNDS.filter(function(b){return b.code===ibSel;})[0] || null;
-    $("#ibItemsTip").textContent = ib ? ib.code+" · 共 "+ib.items.length+" 条" : "";
-    $("#ibItemsEmpty").style.display = ib ? "none" : "block";
-    $("#ibItemsBody").innerHTML = ib ? ib.items.map(function(x){
+    var t = ibSel ? SR.transferByCode(ibSel) : null;
+    var excl = editBill ? editBill.id : "";
+    $("#ibItemsTip").textContent = t ? t.code+" · 共 "+t.items.length+" 条" : "";
+    $("#ibItemsEmpty").style.display = t ? "none" : "block";
+    $("#ibItemsBody").innerHTML = t ? t.items.map(function(x){
       var d = SR.drugOf(x.code) || {};
+      var ret = SR.transferReturnedQty(t.code, x.code, x.batch, excl);
+      var rem = Math.max(0, Number(x.qty||0) - ret);
       return '<tr><td>'+SR.esc(d.name)+'</td><td>'+SR.esc(x.code)+'</td><td>'+SR.esc(d.spec)+'</td>'
-        +'<td>'+SR.esc(d.vendor)+'</td><td>'+SR.esc(x.batch)+'</td><td class="num">'+x.qty+'</td></tr>';
+        +'<td>'+SR.esc(d.vendor)+'</td><td>'+SR.esc(x.batch)+'</td>'
+        +'<td class="num">'+x.qty+'</td><td class="num">'+ret+'</td><td class="num">'+rem+'</td></tr>';
     }).join("") : "";
   }
   function readIbQuery(){
@@ -557,7 +479,7 @@
     ibQ.location = $("#ibQLocation").value;
   }
   function openIb(){
-    ibSel = "";
+    ibSel = ST.transferCode || "";
     fillIbFilterOptions();
     $("#ibQCode").value=""; $("#ibQOrg").value=""; $("#ibQLocation").value="";
     ibQ = { code:"", org:"", location:"" };
@@ -577,20 +499,24 @@
     inp.addEventListener("keydown", function(e){ if(e.key==="Enter"){ readIbQuery(); renderIbList(); } });
   });
   $("#ibOk").addEventListener("click", function(){
-    var ib = SR.INBOUNDS.filter(function(b){return b.code===ibSel;})[0];
-    if(!ib) return;
+    var t = SR.transferByCode(ibSel);
+    if(!t) return;
+    var excl = editBill ? editBill.id : "";
     var doImport = function(){
-      ST.items = ib.items.map(function(x){
+      applyTransferFields(t);
+      ST.items = (t.items || []).map(function(x){
         var it = SR.itemOf(x.code, x.batch);
         if(!it) return null;
-        it.qty = Math.min(x.qty, Number(it.stock||0));
+        var ret = SR.transferReturnedQty(t.code, x.code, x.batch, excl);
+        var rem = Math.max(0, Number(x.qty||0) - ret);
+        it.qty = Math.min(rem, Number(it.stock||0));
         return it;
       }).filter(function(x){ return !!x; });
       renderItems();
-      toast("已关联入库单 "+ib.code+"，带入 "+ST.items.length+" 条明细");
+      toast("已关联调拨单 "+t.code+"，带入 "+ST.items.length+" 条明细");
     };
     if(ST.items.length){
-      confirmDlg("关联原入库单", "关联后将清空当前明细，并整单带入入库单 "+ib.code+" 的药品与批次，是否继续？", "继续", false, function(){
+      confirmDlg("关联调拨单", "关联后将清空当前明细，并整单带入调拨单 "+t.code+" 的药品与批次（可删行、录入退库数量，不能新增药品），是否继续？", "继续", false, function(){
         closeIb(); doImport();
       });
       return;
@@ -622,16 +548,18 @@
     $("#headStatus").textContent = "审核状态：" + SR.AUDIT_STATUS[editBill.auditStatus];
     ST.fromOrgId = editBill.fromOrgId; ST.fromLocation = editBill.fromLocation || "";
     ST.toOrgId = editBill.toOrgId; ST.toLocation = editBill.toLocation || "";
+    ST.transferCode = editBill.transferCode || "";
     ST.items = (editBill.items||[]).map(function(it){ return Object.assign(SR.blankItem(), it); });
-    $("#fFromOrg").value = (SR.orgOf(ST.fromOrgId) || {}).name || ""; fillFromLocations();
+    $("#fFromOrg").value = (SR.orgOf(ST.fromOrgId) || {}).name || "";
+    $("#fTransferCode").value = ST.transferCode;
     $("#fFromLocation").value = ST.fromLocation;
-    $("#fToOrg").value = ST.toOrgId; fillToLocations();
+    $("#fToOrg").value = (SR.orgOf(ST.toOrgId) || {}).name || "";
     $("#fToLocation").value = ST.toLocation;
     $("#fCreator").value = editBill.creatorName;
     $("#fTime").value = editBill.submitTime || "";
     $("#fTime").placeholder = "提交后回填";
   } else {
-    $("#fFromOrg").value = (SR.orgOf(ST.fromOrgId) || {}).name || user.orgName || ""; fillFromLocations();
+    $("#fFromOrg").value = (SR.orgOf(ST.fromOrgId) || {}).name || user.orgName || "";
     $("#fCreator").value = user.name;
   }
   renderItems();
@@ -642,6 +570,7 @@
   function validate(){
     var errs = [];
     markInvalid($("#fFromOrg"), !ST.fromOrgId);             if(!ST.fromOrgId) errs.push("退库机构");
+    markInvalid($("#fTransferCode"), !ST.transferCode);     if(!ST.transferCode) errs.push("关联调拨单");
     markInvalid($("#fFromLocation"), !ST.fromLocation);     if(!ST.fromLocation) errs.push("退库库位");
     markInvalid($("#fToOrg"), !ST.toOrgId);                 if(!ST.toOrgId) errs.push("接收机构");
     markInvalid($("#fToLocation"), !ST.toLocation);         if(!ST.toLocation) errs.push("接收库位");
@@ -649,7 +578,11 @@
     ST.items.forEach(function(it, i){
       var n = "第"+(i+1)+"行";
       if(it.qty==="" || !INT_RE.test(String(it.qty)) || Number(it.qty)<=0) errs.push(n+"退库数量（必填且为正整数）");
-      else if(Number(it.qty) > Number(it.stock||0)) errs.push(n+"退库数量不能超过当前库存量（"+it.stock+"）");
+      else {
+        if(Number(it.qty) > Number(it.stock||0)) errs.push(n+"退库数量不能超过当前库存量（"+it.stock+"）");
+        var rem = remQtyOf(it.code, it.batch);
+        if(rem !== null && Number(it.qty) > rem) errs.push(n+"退库数量不能超过可退数量（"+rem+"，调拨单数量扣除已退）");
+      }
     });
     return errs;
   }
@@ -663,6 +596,7 @@
       creatorId: user.id, creatorName: user.name,
       receiveStatus: "", records: []
     };
+    b.transferCode = ST.transferCode;
     b.fromOrgId = ST.fromOrgId; b.fromLocation = ST.fromLocation;
     b.toOrgId = ST.toOrgId; b.toLocation = ST.toLocation;
     b.items = ST.items;

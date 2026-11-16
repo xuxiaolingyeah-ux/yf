@@ -137,6 +137,7 @@
 
               <div class="fi"><span class="lbl">接收机构：</span><span class="val" id="vToOrg"></span></div>
               <div class="fi"><span class="lbl">接收库位：</span><span class="val" id="vToLocation"></span></div>
+              <div class="fi"><span class="lbl">关联调拨单：</span><span class="val" id="vTransferCode"></span></div>
               <div class="fi"><span class="lbl">出库单号：</span><span class="val" id="vOutCode"></span></div>
               <div class="fi"><span class="lbl">入库单号：</span><span class="val" id="vInCode"></span></div>
             </div>
@@ -231,6 +232,7 @@
     $("#headStatus").innerHTML = "<span>审核状态："+SR.esc(SR.AUDIT_STATUS[bill.auditStatus])+"</span><span>接收状态："+SR.esc(SR.RECV[bill.receiveStatus])+"</span>";
     setV("#vFromOrg", SR.orgName(bill.fromOrgId)); setV("#vFromLocation", bill.fromLocation);
     setV("#vToOrg", SR.orgName(bill.toOrgId)); setV("#vToLocation", bill.toLocation);
+    setV("#vTransferCode", bill.transferCode || "—");
     setV("#vCreator", bill.creatorName); setV("#vTime", bill.submitTime);
     setV("#vOutCode", bill.outCode ? bill.outCode : "—（出库后生成）");
     setV("#vInCode", bill.inCode ? bill.inCode : "—（入库后生成）");

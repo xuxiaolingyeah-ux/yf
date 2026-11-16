@@ -393,8 +393,6 @@
                 <th style="width:140px">药品规格</th>
                 <th style="width:90px" class="num">最小换算系数</th>
                 <th style="width:90px" class="num">可用数量</th>
-                <th style="width:90px" class="num">发药数量</th>
-                <th style="width:80px">发药单位</th>
                 <th style="width:110px">批号</th>
                 <th style="width:100px">有效期</th>
                 <th style="width:90px" class="num">零售价</th>
@@ -695,7 +693,7 @@
     var rows = ST.filtered.slice(start, start+ST.pageSize);
     var tbody = $("#listBody");
     if(rows.length===0){
-      tbody.innerHTML = '<tr><td colspan="38" class="col-status"><div class="bm-empty">暂无数据</div></td></tr>';
+      tbody.innerHTML = '<tr><td colspan="37" class="col-status"><div class="bm-empty">暂无数据</div></td></tr>';
     } else {
       tbody.innerHTML = rows.map(function(r,i){
         var idx = start+i;
@@ -710,8 +708,6 @@
           '<td>'+esc(r.spec)+'</td>'+
           '<td class="num">'+r.minFactor+'</td>'+
           '<td class="num">'+r.availQty+(r.availQty!==0?' <span class="qty-unit">'+esc(r.minPkgUnit)+'</span>':'')+'</td>'+
-          '<td class="num">'+r.sendQty+'</td>'+
-          '<td>'+esc(r.sendUnit)+'</td>'+
           '<td>'+esc(r.batchNo)+'</td>'+
           '<td>'+esc(r.expire)+'</td>'+
           '<td class="num">'+r.outPrice.toFixed(2)+'</td>'+

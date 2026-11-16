@@ -2,7 +2,7 @@
 <html lang="zh-CN"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>企业管理 · 中心药房</title>
+<title>药企管理 · 中心药房</title>
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -34,7 +34,7 @@
     <div class="tabbar">
       <div class="tab" onclick="location.href='drug-catalog.html'">首页</div>
       <div class="tab active">
-        企业管理
+        药企管理
         <button class="tab-close" title="关闭" onclick="location.href='drug-catalog.html'">
           <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
             <path d="M5 5l14 14M19 5L5 19"></path>
@@ -45,7 +45,7 @@
 
     <div class="page">
       <div class="page-head">
-        <h1 class="page-title">企业管理</h1>
+        <h1 class="page-title">药企管理</h1>
         <div class="page-acts">
           <button class="btn" id="btnBlack">黑名单管理</button>
           <button class="btn btn-primary" id="btnAdd">新增企业</button>
@@ -96,7 +96,7 @@
             </div>
           </div>
 
-          <!-- 企业管理 -->
+          <!-- 药企管理 -->
           <div class="mf-table-wrap" id="paneVendor" style="padding:0 16px;">
             <table class="data-table mf-table">
               <colgroup>
@@ -302,7 +302,19 @@
     classType: "股份制企业", website: "www.shuangtong-med.com", email: "service@shuangtong-med.com"
   };
 
-  var DATA_KEY = "MF_VENDORS_V4";
+  /* 资质证号示例（双通医疗）：证号全局唯一，供必填/去重演示 */
+  function seedQual() {
+    return {
+      business: { no: "91320100MA1X8T9K2R", from: "2019-03-12", to: "2039-03-11", forever: false, img: true },
+      tax: { no: "320102600098765", from: "2019-03-12", to: "", forever: true, img: true },
+      org: { no: "72012345-8", from: "2019-03-12", to: "", forever: true, img: false },
+      prod: { no: "苏食药监械生产许20180027号", from: "2023-05-20", to: "2028-05-19", forever: false, img: true },
+      biz: { no: "苏AA0250136", from: "2022-07-01", to: "2027-06-30", forever: false, img: true },
+      hyg: { no: "苏卫食证字(2019)第320102-0001号", from: "2019-06-01", to: "2027-05-31", forever: false, img: false }
+    };
+  }
+
+  var DATA_KEY = "MF_VENDORS_V5";
   var DATA = [];
 
   function loadData() {
@@ -314,6 +326,7 @@
       var base = makeVendor(o);
       if (i === 0) {
         Object.keys(SEED_DETAIL).forEach(function (k) { base[k] = SEED_DETAIL[k]; });
+        base.qual = seedQual();
       }
       return base;
     });
@@ -492,6 +505,10 @@
     }
     head += "</div>";
 
+    /* 资质证号：仅营业执照必填 + 全系统唯一 */
+    var tip = detail ? ""
+      : '<p class="mf-qual-tip"><span class="req">*</span> 营业执照的资质证号为必填项，且不得与其它企业的营业执照证号重复；其余证照证号选填。</p>';
+
     var secs = QUAL_SECTIONS.map(function (s) {
       var q = v.qual[s.k] || { no: "", from: "", to: "", forever: false, img: false };
       var rows;
@@ -506,8 +523,12 @@
           + '<div class="mf-upload" data-upload="' + s.k + '" title="上传照片">'
           + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>'
           + "</div></div>"
-          + '<div class="mf-qual-row"><span class="lbl">资质证号：</span>'
-          + '<input class="input" style="max-width:320px" data-q="' + s.k + '.no" value="' + esc(q.no) + '" autocomplete="off"></div>'
+          + '<div class="mf-qual-row"><span class="lbl">'
+          + (s.k === "business" ? '<span class="req">*</span>' : "")
+          + '资质证号：</span>'
+          + '<input class="input" style="max-width:320px" data-q="' + s.k + '.no"'
+          + (s.k === "business" ? ' data-qno="1" placeholder="请输入资质证号（全系统唯一）"' : '')
+          + ' value="' + esc(q.no) + '" autocomplete="off"></div>'
           + '<div class="mf-qual-row"><span class="lbl">有效期：</span><div class="mf-date-range">'
           + '<input class="input" type="date" data-q="' + s.k + '.from" value="' + esc(q.from) + '">'
           + "<span>-</span>"
@@ -518,7 +539,7 @@
       return '<div class="mf-qual-sec"><div class="mf-qual-title">' + esc(s.name) + "</div>" + rows + "</div>";
     }).join("");
 
-    return head + secs;
+    return head + tip + secs;
   }
 
   function renderDrawerFoot() {
@@ -603,6 +624,36 @@
     });
   }
 
+  /* 资质证号：仅营业执照必填 + 全系统唯一（跨企业的营业执照证号不可重复） */
+  function qualErrors(draft, selfCode) {
+    var empty = [], dup = [];
+    var no = String(((draft.qual || {}).business || {}).no || "").trim();
+    if (!no) {
+      empty.push({ k: "business", name: "营业执照" });
+      return { empty: empty, dup: dup };
+    }
+    var key = no.toUpperCase();
+    for (var i = 0; i < DATA.length; i++) {
+      var v = DATA[i];
+      if (v.code === selfCode) continue;
+      var other = String(((v.qual || {}).business || {}).no || "").trim().toUpperCase();
+      if (other === key) {
+        dup.push({ k: "business", name: "营业执照", reason: "营业执照证号已被「" + (v.name || v.code) + "」占用" });
+        break;
+      }
+    }
+    return { empty: empty, dup: dup };
+  }
+
+  function markQualInvalid(errs) {
+    var bad = {};
+    errs.empty.concat(errs.dup).forEach(function (e) { bad[e.k] = 1; });
+    Array.prototype.forEach.call(document.querySelectorAll("#drawerBody [data-qno]"), function (el) {
+      var sec = el.getAttribute("data-q").split(".")[0];
+      el.classList.toggle("is-invalid", !!bad[sec]);
+    });
+  }
+
   function saveDrawer(kind) {
     var dw = ST.dw;
     syncDraft();
@@ -611,8 +662,19 @@
     if (kind === "submit") {
       var miss = validate(v);
       if (miss.length) {
+        if (dw.tab !== "info") { dw.tab = "info"; renderDrawer(); }
         markInvalid();
         toast("请完善：" + miss.join("、"));
+        return;
+      }
+      var qe = qualErrors(v, dw.mode === "create" ? null : dw.code);
+      if (qe.empty.length || qe.dup.length) {
+        if (dw.tab !== "qual") { dw.tab = "qual"; renderDrawer(); }
+        markQualInvalid(qe);
+        var parts = [];
+        if (qe.empty.length) parts.push("资质证号未填写：" + qe.empty.map(function (e) { return e.name; }).join("、"));
+        if (qe.dup.length) parts.push("资质证号重复，请修改：" + qe.dup[0].reason);
+        toast(parts.join("；"));
         return;
       }
     } else if (!String(v.name || "").trim()) {

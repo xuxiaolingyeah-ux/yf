@@ -281,6 +281,7 @@
               <th style="min-width:156px">发药时间</th>
               <th style="min-width:72px">发药人</th>
               <th style="min-width:100px">开单科室</th>
+              <th style="min-width:150px">开单机构</th>
               <th style="min-width:88px">最小换算系数</th>
               <th style="min-width:130px">制剂规格</th>
               <th style="min-width:100px">发药时进货价</th>
@@ -339,6 +340,7 @@
   ];
   var DOCTORS = ['张伟', '黄药师', '李发药', '王护士', '陈发药', '赵敏'];
   var DEPTS   = ['内科', '外科', '儿科', '妇产科', '急诊科', '中医科', '皮肤科', '口腔科'];
+  var ORGS    = ['XX 社区卫生服务中心', 'YY 人民医院', 'ZZ 中西医结合医院', '青河村卫生室', '朝阳社区卫生服务站'];
 
   var DRUG_POOL = [
     { kind:'西药',    name:'阿莫西林胶囊',   code:'YP001001', spec:'0.25g*24粒',  unitCoeff:1,  prepSpec:'0.25g', purchase:0.85, retail:1.35, vendor:'华北制药股份有限公司',       approval:'国药准字H13024121', batch:'H260115A' },
@@ -379,6 +381,7 @@
         dispenseAt: dispenseAt,
         dispenser: sItem(DOCTORS),
         dept: sItem(DEPTS),
+        org: sItem(ORGS),
         drugName: drug.name, drugCode: drug.code,
         spec: drug.spec, unitCoeff: drug.unitCoeff,
         prepSpec: drug.prepSpec,
@@ -572,7 +575,7 @@
     var pageRows = ST.filtered.slice(start, start + ST.pageSize);
 
     if (pageRows.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="20" class="table-empty">暂无数据</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="21" class="table-empty">暂无数据</td></tr>';
       return;
     }
 
@@ -589,6 +592,7 @@
         + '<td>' + fmtDT(r.dispenseAt) + '</td>'
         + '<td>' + esc(r.dispenser) + '</td>'
         + '<td>' + esc(r.dept) + '</td>'
+        + '<td>' + esc(r.org) + '</td>'
         + '<td class="col-num">' + esc(r.unitCoeff) + '</td>'
         + '<td>' + esc(r.prepSpec) + '</td>'
         + '<td class="col-num">' + money(r.purchasePrice) + '</td>'
@@ -644,13 +648,13 @@
       showToast('没有可导出的数据');
       return;
     }
-    var headers = ['药房','药品名称','药品编码','药品规格','患者姓名','性别','年龄','发药时间','发药人','开单科室','最小换算系数','制剂规格','发药时进货价','发药时零售价','发药数量','零售金额','批次号','生产企业','批准文号','药品种类'];
+    var headers = ['药房','药品名称','药品编码','药品规格','患者姓名','性别','年龄','发药时间','发药人','开单科室','开单机构','最小换算系数','制剂规格','发药时进货价','发药时零售价','发药数量','零售金额','批次号','生产企业','批准文号','药品种类'];
     var lines = [headers.join(',')];
     ST.filtered.forEach(function (r) {
       var row = [
         LOC_NAMES[r.loc] || r.loc, r.drugName, r.drugCode, r.spec, r.patient,
         r.sex === 'm' ? '男' : '女', r.age, fmtDT(r.dispenseAt),
-        r.dispenser, r.dept, r.unitCoeff,
+        r.dispenser, r.dept, r.org, r.unitCoeff,
         r.prepSpec, r.purchasePrice, r.retailPrice, r.qty, r.amount,
         r.batch, r.vendor, r.approval, r.kind
       ];

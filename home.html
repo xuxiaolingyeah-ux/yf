@@ -360,7 +360,7 @@
   .hm-card { animation: none !important; }
 }
 /* ===== 村室/成员机构首页（简化版） ===== */
-.hmq-actions { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
+.hmq-actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
 .hmq-act { background: var(--bg-page); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 14px 10px; text-align: center; cursor: pointer; transition: border-color .15s; }
 .hmq-act:hover { border-color: var(--primary); }
 .hmq-act .hmq-name { font-size: 13px; font-weight: 600; color: var(--text-primary); }
@@ -969,7 +969,6 @@
       { name: "发起调拨申请", desc: "向中心药房要药", href: "transfer-create.html", main: true },
       { name: "药品入库", desc: "登记到货入库", href: "stock-in-create.html" },
       { name: "药品退库", desc: "退回中心药房", href: "stock-return-create.html" },
-      { name: "机构药品目录", desc: "查看可用药品", href: "org-drug-catalog.html" },
       { name: "目录遴选申请", desc: "申请新增品种", href: "drug-selection-create.html" }
     ];
 

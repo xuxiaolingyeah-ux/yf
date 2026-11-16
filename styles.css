@@ -2196,6 +2196,15 @@ input, select { font-family: inherit; font-size: inherit; }
   margin-bottom: 16px;
   font-size: 13px; color: var(--text-primary);
 }
+.mf-qual-tip {
+  margin: -4px 0 4px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: var(--primary-lighter);
+  color: var(--text-secondary);
+  font-size: 12px; line-height: 18px;
+}
+.mf-qual-tip .req { margin-right: 2px; }
 .mf-qual-sec { padding: 14px 0; border-top: 1px dashed var(--border-light); }
 .mf-qual-sec:first-of-type { border-top: none; padding-top: 0; }
 .mf-qual-title { font-size: 13px; font-weight: 500; color: var(--text-primary); margin-bottom: 12px; }
@@ -4367,3 +4376,43 @@ body.af-layout .af-body { padding: 12px 20px 20px; }
 .om-role-people { display: flex; flex-wrap: wrap; gap: 8px; }
 .om-person { display: inline-block; padding: 4px 14px; border: 1px solid var(--border-light); border-radius: var(--radius); font-size: 13px; color: var(--text-primary); background: var(--bg-white); }
 .om-empty { padding: 30px 0; text-align: center; color: var(--text-placeholder); font-size: 13px; }
+
+/* ==========================================================================
+   导入弹窗 · 药品期初管理
+   ========================================================================== */
+.modal.imp-modal { width: 980px; max-width: calc(100vw - 40px); }
+.imp-body { min-height: 300px; }
+.imp-steps { margin: -20px -20px 16px; }
+.imp-drop {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 30px 20px;
+  border: 1px dashed var(--border-input);
+  border-radius: var(--radius-lg);
+  background: var(--bg-page);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.imp-drop:hover, .imp-drop.is-over { border-color: var(--primary); background: var(--primary-lighter); }
+.imp-drop svg { width: 40px; height: 30px; color: var(--text-placeholder); margin-bottom: 12px; }
+.imp-drop-title { font-size: 14px; color: var(--text-primary); }
+.imp-drop-sub { font-size: 12px; color: var(--text-tertiary); margin-top: 6px; }
+.imp-tpl { display: flex; align-items: center; gap: 6px; margin-top: 12px; font-size: 12px; color: var(--text-tertiary); }
+.imp-file {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 12px; margin-bottom: 12px;
+  border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--bg-white); font-size: 13px;
+}
+.imp-file-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-primary); }
+.imp-file-meta { flex: none; font-size: 12px; color: var(--text-secondary); }
+.imp-note {
+  margin: 8px 0 0; padding: 8px 12px; border-radius: 6px;
+  background: var(--warning-bg); border: 1px solid #FFE1A8;
+  color: #AD6800; font-size: 12px; line-height: 18px;
+}
+.imp-table { min-width: 0; }
+.imp-c-idx { width: 44px; }
+.imp-c-res { width: 200px; }
+.imp-res { font-size: 12px; }
+.imp-res.is-ok { color: var(--success); }
+.imp-res.is-err { color: var(--danger); }

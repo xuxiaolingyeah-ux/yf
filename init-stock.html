@@ -54,6 +54,7 @@
         <div class="page-acts">
           <button class="btn" id="btnTemplate" style="display:none">调用库存模板</button>
           <button class="btn" id="btnExport">导出</button>
+          <button class="btn" id="btnImport">导入</button>
           <button class="btn" id="btnInit">初始化</button>
           <button class="btn btn-primary" id="btnAdd">新增期初</button>
         </div>
@@ -315,6 +316,22 @@
       <button class="btn" id="confirmCancel">取消</button>
       <button class="btn btn-primary" id="confirmOk">确定</button>
     </div>
+  </div>
+</div>
+
+<!-- ========== 导入期初数据 ========== -->
+<div class="modal-mask" id="importMask">
+  <div class="modal imp-modal">
+    <div class="modal-head">
+      <div class="modal-title">导入期初数据</div>
+      <button class="drawer-close" id="impClose" title="关闭">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <path d="M5 5l14 14M19 5L5 19"/>
+        </svg>
+      </button>
+    </div>
+    <div class="modal-body imp-body" id="impBody"></div>
+    <div class="modal-foot" id="impFoot"></div>
   </div>
 </div>
 
@@ -952,6 +969,12 @@
 
   $("btnExport").addEventListener("click", function () { toast("导出成功"); });
 
+  $("btnImport").addEventListener("click", openImport);
+  $("impClose").addEventListener("click", closeImport);
+  $("importMask").addEventListener("click", function (e) {
+    if (e.target === $("importMask")) closeImport();
+  });
+
   $("btnTemplate").addEventListener("click", function () {
     openConfirm({
       title: "提示",
@@ -1069,6 +1092,300 @@
     if (p >= 1 && p <= pages) { ST.page = p; renderList(); }
     else this.value = ST.page;
   });
+
+  /* ================= 导入期初数据 ================= */
+  var IMP_COLS = ["药品编码", "批号", "生产日期", "有效期", "期初数量", "进货价", "零售价", "供应商"];
+  var IMP_REQ = { "药品编码": 1, "批号": 1, "有效期": 1, "期初数量": 1, "进货价": 1, "零售价": 1, "供应商": 1 };
+
+  var SPEC_BY_CODE = {};
+  SPECS.forEach(function (sp) { SPEC_BY_CODE[String(sp.code)] = sp; });
+
+  var IMP = { step: 1, fileName: "", rows: [], note: "" };
+
+  function openImport() {
+    IMP = { step: 1, fileName: "", rows: [], note: "" };
+    $("importMask").classList.add("show");
+    renderImport();
+  }
+  function closeImport() { $("importMask").classList.remove("show"); }
+
+  function impStepBar(step) {
+    function cls(n) {
+      if (n < step) return "step is-done";
+      if (n === step) return "step is-active";
+      return "step";
+    }
+    return '<div class="stepbar imp-steps">'
+      + '<div class="' + cls(1) + '"><span class="step-idx">' + (step > 1 ? "✓" : "1") + "</span><span>选择文件</span></div>"
+      + '<span class="step-line"></span>'
+      + '<div class="' + cls(2) + '"><span class="step-idx">2</span><span>校验预览</span></div>'
+      + "</div>";
+  }
+
+  function renderImport() {
+    var body = $("impBody"), foot = $("impFoot");
+    if (IMP.step === 1) {
+      body.innerHTML = impStepBar(1)
+        + '<div class="imp-drop" id="impDrop">'
+        + '<svg viewBox="0 0 48 36" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">'
+        + '<path d="M24 24V7"/><path d="M16 15l8-8 8 8"/><path d="M9 27v4a1 1 0 0 0 1 1h28a1 1 0 0 0 1-1v-4"/></svg>'
+        + '<div class="imp-drop-title">点击选择文件，或将 Excel 文件拖到此处</div>'
+        + '<div class="imp-drop-sub">支持 .xlsx / .xls / .csv，单次建议不超过 500 行</div>'
+        + '<input type="file" id="impFile" accept=".xlsx,.xls,.csv" hidden>'
+        + "</div>"
+        + '<div class="imp-tpl"><span>模板列顺序：' + IMP_COLS.join(" / ") + "</span>"
+        + '<button type="button" class="link-btn" id="impTpl">下载导入模板</button></div>'
+        + '<p class="mi-note">校验规则：药品编码需在药品目录中存在；批号、有效期、期初数量（&gt;0）、进货价、零售价、供应商均为必填；同一药品编码 + 批号不可重复导入。</p>';
+      foot.innerHTML = '<button class="btn" id="impCancel">取消</button>'
+        + '<button class="btn" id="impTpl2">下载模板</button>'
+        + '<button class="btn btn-primary" id="impPick">选择文件</button>';
+    } else {
+      var ok = IMP.rows.filter(function (r) { return !r.errs.length; });
+      var bad = IMP.rows.length - ok.length;
+      var lines = IMP.rows.map(function (r, i) {
+        var res = r.errs.length
+          ? '<span class="imp-res is-err">' + esc(r.errs[0]) + (r.errs.length > 1 ? " 等 " + r.errs.length + " 项" : "") + "</span>"
+          : '<span class="imp-res is-ok">校验通过</span>';
+        return "<tr>"
+          + "<td>" + (i + 1) + "</td>"
+          + IMP_COLS.map(function (c) {
+            return "<td>" + (r.rec[c] ? esc(r.rec[c]) : '<span class="sub">—</span>') + "</td>";
+          }).join("")
+          + "<td>" + res + "</td>"
+          + "</tr>";
+      }).join("");
+      if (!IMP.rows.length) {
+        lines = '<tr><td colspan="' + (IMP_COLS.length + 2) + '" class="empty-cell">文件为空或格式不正确，请按模板填写后重新导入</td></tr>';
+      }
+      body.innerHTML = impStepBar(2)
+        + '<div class="imp-file"><span class="imp-file-name">' + esc(IMP.fileName) + "</span>"
+        + '<span class="imp-file-meta">共 ' + IMP.rows.length + " 行</span>"
+        + '<button type="button" class="link-btn" id="impReselect">重新选择</button></div>'
+        + (IMP.note ? '<div class="imp-note">' + IMP.note + "</div>" : "")
+        + '<div class="mi-stats">'
+        + '<div class="mi-stat is-ok"><div class="mi-stat-label">校验通过（可导入）</div><div class="mi-stat-val">' + ok.length + "</div></div>"
+        + '<div class="mi-stat is-warn"><div class="mi-stat-label">校验异常（将跳过）</div><div class="mi-stat-val">' + bad + "</div></div>"
+        + "</div>"
+        + '<div class="mi-preview-wrap"><table class="mi-table imp-table"><thead><tr>'
+        + '<th class="imp-c-idx">#</th>' + IMP_COLS.map(function (c) { return "<th>" + c + "</th>"; }).join("")
+        + '<th class="imp-c-res">校验结果</th></tr></thead><tbody>' + lines + "</tbody></table></div>";
+      foot.innerHTML = '<button class="btn" id="impCancel">取消</button>'
+        + '<button class="btn" id="impPrev">上一步</button>'
+        + '<button class="btn btn-primary" id="impDo"' + (ok.length ? "" : " disabled") + ">开始导入</button>";
+    }
+    bindImportEvents();
+  }
+
+  function bindImportEvents() {
+    var drop = $("impDrop");
+    var file = $("impFile");
+    if (drop && file) {
+      drop.addEventListener("click", function () { file.click(); });
+      file.addEventListener("change", function () {
+        if (file.files && file.files[0]) readImportFile(file.files[0]);
+      });
+      ["dragenter", "dragover"].forEach(function (ev) {
+        drop.addEventListener(ev, function (e) { e.preventDefault(); e.stopPropagation(); drop.classList.add("is-over"); });
+      });
+      ["dragleave", "drop"].forEach(function (ev) {
+        drop.addEventListener(ev, function (e) { e.preventDefault(); e.stopPropagation(); drop.classList.remove("is-over"); });
+      });
+      drop.addEventListener("drop", function (e) {
+        var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+        if (f) readImportFile(f);
+      });
+    }
+    ["impTpl", "impTpl2"].forEach(function (id) {
+      var el = $(id);
+      if (el) el.addEventListener("click", downloadImportTemplate);
+    });
+
+    var pick = $("impPick");
+    if (pick) pick.addEventListener("click", function () { var f = $("impFile"); if (f) f.click(); });
+
+    var cancel = $("impCancel");
+    if (cancel) cancel.addEventListener("click", closeImport);
+    var reselect = $("impReselect");
+    if (reselect) reselect.addEventListener("click", function () { IMP.step = 1; IMP.rows = []; IMP.fileName = ""; IMP.note = ""; renderImport(); });
+    var prev = $("impPrev");
+    if (prev) prev.addEventListener("click", function () { IMP.step = 1; renderImport(); });
+    var go = $("impDo");
+    if (go) go.addEventListener("click", applyImport);
+  }
+
+  /* 日期归一：2025/9/1、2025.09.01、20250901 统一成 2025-09-01 */
+  function normDate(v) {
+    var s = String(v || "").trim();
+    if (!s) return "";
+    var m = /^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})$/.exec(s);
+    if (m) return m[1] + "-" + ("0" + m[2]).slice(-2) + "-" + ("0" + m[3]).slice(-2);
+    m = /^(\d{4})(\d{2})(\d{2})$/.exec(s);
+    if (m) return m[1] + "-" + m[2] + "-" + m[3];
+    return s;
+  }
+
+  function validateImpRow(rec, seen) {
+    var errs = [];
+    IMP_COLS.forEach(function (c) {
+      if (IMP_REQ[c] && !rec[c]) errs.push(c + "不能为空");
+    });
+    var sp = rec["药品编码"] ? SPEC_BY_CODE[rec["药品编码"]] : null;
+    if (rec["药品编码"] && !sp) errs.push("药品编码不存在");
+    if (rec["有效期"] && !/^\d{4}-\d{2}-\d{2}$/.test(normDate(rec["有效期"]))) errs.push("有效期格式应为 YYYY-MM-DD");
+    if (rec["生产日期"] && !/^\d{4}-\d{2}-\d{2}$/.test(normDate(rec["生产日期"]))) errs.push("生产日期格式应为 YYYY-MM-DD");
+    if (rec["期初数量"]) {
+      var qty = Number(rec["期初数量"]);
+      if (!isFinite(qty) || qty <= 0) errs.push("期初数量需为大于 0 的数字");
+    }
+    ["进货价", "零售价"].forEach(function (c) {
+      if (rec[c] && !isFinite(Number(rec[c]))) errs.push(c + "需为数字");
+    });
+    if (rec["供应商"] && SUPPLIERS.indexOf(rec["供应商"]) < 0) errs.push("供应商不存在");
+    if (sp && rec["批号"]) {
+      var key = sp.code + "|" + rec["批号"];
+      if (seen[key]) {
+        errs.push("文件内药品编码 + 批号重复");
+      } else if (DATA.some(function (r) { return specOf(r).code === sp.code && r.batch === rec["批号"]; })) {
+        errs.push("该药品批号期初已存在");
+      }
+      seen[key] = 1;
+    }
+    return errs;
+  }
+
+  function splitCsvLine(line) {
+    var out = [], cur = "", q = false;
+    for (var i = 0; i < line.length; i++) {
+      var ch = line.charAt(i);
+      if (q) {
+        if (ch === '"') {
+          if (line.charAt(i + 1) === '"') { cur += '"'; i++; }
+          else q = false;
+        } else cur += ch;
+      } else if (ch === '"') {
+        q = true;
+      } else if (ch === ",") {
+        out.push(cur); cur = "";
+      } else {
+        cur += ch;
+      }
+    }
+    out.push(cur);
+    return out;
+  }
+
+  function parseCsvRows(text) {
+    var lines = String(text || "").replace(/\r\n?/g, "\n").split("\n").filter(function (l) { return l.trim() !== ""; });
+    if (!lines.length) return [];
+    var head = splitCsvLine(lines[0]);
+    var hasHead = head.join("").indexOf("药品编码") >= 0;
+    var data = hasHead ? lines.slice(1) : lines;
+    return data.map(function (line) {
+      var cells = splitCsvLine(line);
+      var rec = {};
+      IMP_COLS.forEach(function (c, i) {
+        rec[c] = String(cells[hasHead ? head.indexOf(c) : i] === undefined || cells[hasHead ? head.indexOf(c) : i] === null ? "" : cells[hasHead ? head.indexOf(c) : i]).trim();
+      });
+      return rec;
+    });
+  }
+
+  /* 原型未接入 Excel 解析库：.xlsx/.xls 用模板结构的示例数据模拟校验；.csv 走真实解析 */
+  function demoRecords() {
+    var picks = [];
+    for (var i = 0; i < Math.min(6, SPECS.length); i++) picks.push(SPECS[(i * 5 + 1) % SPECS.length]);
+    return picks.map(function (sp, i) {
+      var rec = {};
+      rec["药品编码"] = sp.code;
+      rec["批号"] = "2509" + ("0" + (11 + i)).slice(-2);
+      rec["生产日期"] = "2025-09-0" + ((i % 9) + 1);
+      rec["有效期"] = "2027-09-" + ("0" + (11 + i)).slice(-2);
+      rec["期初数量"] = String(100 * (i + 1));
+      rec["进货价"] = (10 + i * 2).toFixed(2);
+      rec["零售价"] = (15 + i * 3).toFixed(2);
+      rec["供应商"] = SUPPLIERS[i % SUPPLIERS.length];
+      return rec;
+    });
+  }
+
+  function readImportFile(f) {
+    IMP.fileName = f.name || "导入文件";
+    IMP.note = "";
+    var reader = new FileReader();
+    reader.onload = function () {
+      var text = String(reader.result || "");
+      /* 文本文件按真实内容解析；Excel 二进制走示例数据 */
+      var looksCsv = /\.csv$/i.test(IMP.fileName) || text.indexOf("药品编码") >= 0;
+      if (looksCsv) {
+        var seen = {};
+        IMP.rows = parseCsvRows(text).map(function (rec) { return { rec: rec, errs: validateImpRow(rec, seen) }; });
+      } else {
+        IMP.note = "原型说明：浏览器端未接入 Excel 解析库，此处按模板结构生成示例数据演示校验流程；如需校验真实文件，可另存为 .csv 后导入。";
+        var seen0 = {};
+        IMP.rows = demoRecords().map(function (rec) { return { rec: rec, errs: validateImpRow(rec, seen0) }; });
+      }
+      IMP.step = 2;
+      renderImport();
+    };
+    reader.onerror = function () { toast("文件读取失败，请重试"); };
+    reader.readAsText(f, "utf-8");
+  }
+
+  function downloadImportTemplate() {
+    var rows = [IMP_COLS.join(",")];
+    var picks = [];
+    for (var i = 0; i < Math.min(3, SPECS.length); i++) picks.push(SPECS[(i * 7 + 2) % SPECS.length]);
+    picks.forEach(function (sp, i) {
+      rows.push([
+        sp.code,
+        "2509" + ("0" + (11 + i)).slice(-2),
+        "2025-09-0" + ((i % 9) + 1),
+        "2027-09-" + ("0" + (11 + i)).slice(-2),
+        String(100 * (i + 1)),
+        (10 + i * 2).toFixed(2),
+        (15 + i * 3).toFixed(2),
+        SUPPLIERS[i % SUPPLIERS.length]
+      ].join(","));
+    });
+    var csv = "\ufeff" + rows.join("\n") + "\n";
+    var blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = "药品期初导入模板.csv";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1500);
+    toast("模板已下载");
+  }
+
+  function applyImport() {
+    var ok = IMP.rows.filter(function (r) { return !r.errs.length; });
+    if (!ok.length) { toast("没有可导入的数据"); return; }
+    var added = ok.map(function (r, i) {
+      var sp = SPEC_BY_CODE[r.rec["药品编码"]];
+      return {
+        id: "imp" + Date.now() + "-" + i,
+        sid: sp.sid,
+        supplier: r.rec["供应商"],
+        batch: r.rec["批号"],
+        prod: normDate(r.rec["生产日期"]),
+        expiry: normDate(r.rec["有效期"]),
+        qty: Number(r.rec["期初数量"]),
+        buy: Number(r.rec["进货价"]),
+        retail: Number(r.rec["零售价"] || 0),
+        split: sp.split
+      };
+    });
+    DATA = added.concat(DATA);
+    saveData();
+    ST.page = 1;
+    renderList();
+    var skipped = IMP.rows.length - ok.length;
+    closeImport();
+    toast("导入成功 " + added.length + " 条" + (skipped ? "，跳过 " + skipped + " 条异常数据" : ""));
+  }
 
   /* ================= 库位上下文 ================= */
   function fillSelect(el, list, value) {

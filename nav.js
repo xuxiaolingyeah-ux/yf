@@ -28,9 +28,10 @@
     { name: "首页", icon: "home", href: "home.html", files: ["home.html"], roles: C3 },
     { name: "药品管理", icon: "drug", items: [
       { name: "药品目录管理", href: "drug-catalog.html", files: ["drug-catalog.html", "drug-create.html"], roles: ["center"] },
-      { name: "机构药品目录", href: "org-drug-catalog.html", files: ["org-drug-catalog.html", "org-drug-select.html"], roles: C3 },
+      /* 机构药品目录：业务确认暂时隐藏入口（页面文件 org-drug-catalog.html 保留，恢复时放开本行即可） */
+      // { name: "机构药品目录", href: "org-drug-catalog.html", files: ["org-drug-catalog.html", "org-drug-select.html"], roles: C3 },
       { name: "药品目录遴选", href: "drug-selection.html", files: ["drug-selection.html", "drug-selection-create.html", "drug-selection-detail.html"], roles: ["center", "member", "village", "expert"] },
-      { name: "企业管理", href: "manufacturer-manage.html", files: ["manufacturer-manage.html", "blacklist-manage.html"], roles: ["center"] },
+      { name: "药企管理", href: "manufacturer-manage.html", files: ["manufacturer-manage.html", "blacklist-manage.html"], roles: ["center"] },
       { name: "供应商分配", href: "supplier-allocation.html", files: ["supplier-allocation.html"], roles: ["center"] },
       { name: "医保对码", href: "medical-insurance-mapping.html", files: ["medical-insurance-mapping.html"], roles: ["center"] }
     ] },

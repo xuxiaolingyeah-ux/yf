@@ -3113,6 +3113,8 @@ input, select { font-family: inherit; font-size: inherit; }
   margin-top: 8px;
   border-bottom: 1px solid var(--border-light);
 }
+.sc-block-head { padding: 14px 16px 0; }
+.sc-block-head.sc-detail-block { padding: 16px 16px 4px; margin-top: 8px; border-top: 1px dashed var(--border-light); }
 .sc-info-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -3134,6 +3136,8 @@ input, select { font-family: inherit; font-size: inherit; }
   white-space: nowrap;
 }
 .sc-info-item .input { height: 28px; font-size: 13px; }
+.sc-info-remark { grid-column: span 2; }
+.sc-info-remark .input { flex: 1; min-width: 0; }
 .sc-info-item .text-value {
   flex: 1;
   min-width: 0;

@@ -58,6 +58,7 @@
 
         <div class="sel-card">
           <!-- 盘点信息：仅盘点名称可编辑，其余 label + 内容 -->
+          <div class="sc-block-head"><h2 class="block-title">基本信息</h2></div>
           <div class="sc-info">
             <div class="sc-info-grid">
               <div class="sc-info-item">
@@ -77,17 +78,22 @@
                 <span class="text-value" id="sKind">—</span>
               </div>
               <div class="sc-info-item">
-                <span class="form-label">盘点时间</span>
+                <span class="form-label">创建时间</span>
                 <span class="text-value" id="sTime">—</span>
               </div>
               <div class="sc-info-item">
                 <span class="form-label">创建人</span>
                 <span class="text-value" id="sCreator">—</span>
               </div>
+              <div class="sc-info-item sc-info-remark">
+                <span class="form-label">说明</span>
+                <input class="input" id="sRemark" maxlength="200" placeholder="选填，可填写本次盘点相关说明">
+              </div>
             </div>
           </div>
 
           <!-- 筛选区 -->
+          <div class="sc-block-head sc-detail-block"><h2 class="block-title">盘点明细<span class="count" id="itemCount"></span></h2></div>
           <div class="filter-bar sc-filter">
             <div class="filter-item">
               <span class="filter-label">药品分类</span>
@@ -217,13 +223,15 @@
     if (!bill.items || bill.items.length === 0) SC.fillItems(bill);
 
     $("codeLabel").textContent = "盘点单号：" + bill.code;
+    $("itemCount").textContent = "（" + (bill.items || []).length + "）";
     $("statusLabel").textContent = "审核状态：" + SC.AUDIT[bill.auditStatus];
     $("sName").value = bill.name;
     $("sOrg").textContent = bill.orgName;
     $("sLoc").textContent = bill.location;
     $("sKind").textContent = bill.kind;
-    $("sTime").textContent = bill.checkTime;
+    $("sTime").textContent = bill.createdAt || bill.checkTime;
     $("sCreator").textContent = bill.creator;
+    $("sRemark").value = bill.remark || "";
 
     /* 药品分类：只列叶子节点 */
     var fClass = $("fClass");
@@ -412,6 +420,7 @@
   /* ---------------- 底部操作 ---------------- */
   function saveBill(status) {
     bill.name = $("sName").value.trim() || bill.name;
+    bill.remark = $("sRemark").value.trim();
     if (status) bill.auditStatus = status;
     SC.persist(bill);
   }

@@ -96,6 +96,10 @@
                   <span class="form-label">创建时间</span>
                   <span class="text-value" id="dCreatedAt">—</span>
                 </div>
+                <div class="form-item" style="grid-column: span 2;">
+                  <span class="form-label">说明</span>
+                  <span class="text-value" id="dRemark">—</span>
+                </div>
               </div>
             </section>
 
@@ -262,6 +266,7 @@
     $("dTime").textContent = bill.checkTime;
     $("dCreator").textContent = bill.creator;
     $("dCreatedAt").textContent = bill.createdAt;
+    $("dRemark").textContent = bill.remark || "—";
     $("itemCount").textContent = "（" + (bill.items || []).length + "）";
 
     /* 药品分类下拉：只列叶子节点 */

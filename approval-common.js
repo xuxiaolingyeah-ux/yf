@@ -12,7 +12,7 @@
 (function (global) {
   "use strict";
 
-  var STORE_KEY = "APPROVAL_CFG_V1";
+  var STORE_KEY = "APPROVAL_CFG_V2"; /* V2：业务清单对齐 12 项（新增药品退货 / 药品目录遴选），旧版演示数据自动重置 */
 
   /* 机构槽位：全系统仅三种 */
   var SLOTS = [
@@ -21,18 +21,22 @@
     { key: "in", name: "入库机构" }
   ];
 
-  /* 业务流程（系统内置，不可增删）+ 该业务支持的机构槽位 */
+  /* 业务流程（系统内置，不可增删）+ 该业务支持的机构槽位
+   * 药品调拨按纵向 / 横向拆为两条；药品退货 = 退供应商（无入库机构槽位）；
+   * 药品目录遴选 = 目录级申请（申请机构 → 上级审核，无出入库槽位） */
   var BIZ = [
-    { key: "stock-in", name: "入库审核", slots: ["apply", "in"] },
-    { key: "outbound", name: "出库审核", slots: ["apply", "out"] },
+    { key: "stock-in", name: "药品入库", slots: ["apply", "in"] },
+    { key: "outbound", name: "药品出库", slots: ["apply", "out"] },
+    { key: "drug-return", name: "药品退货", slots: ["apply"] },
     { key: "stock-adjust", name: "药品增损", slots: ["apply"] },
+    { key: "transfer-v", name: "纵向调拨", slots: ["apply", "out"] },
+    { key: "transfer-h", name: "横向调拨", slots: ["apply", "out"] },
+    { key: "stock-return", name: "药品退库", slots: ["apply", "out", "in"] },
     { key: "stock-check", name: "库存盘点", slots: ["apply"] },
-    { key: "stock-return", name: "库存退货", slots: ["apply", "out", "in"] },
+    { key: "drug-selection", name: "药品目录遴选", slots: ["apply"] },
     { key: "purchase-need", name: "采购需求", slots: ["apply"] },
     { key: "purchase-plan", name: "采购计划", slots: ["apply"] },
-    { key: "price-adjust", name: "调价申请", slots: ["apply"] },
-    { key: "transfer-v", name: "纵向调拨", slots: ["apply", "out"] },
-    { key: "transfer-h", name: "横向调拨", slots: ["apply", "out"] }
+    { key: "price-adjust", name: "药品调价", slots: ["apply"] }
   ];
 
   /* 机构树（指定机构下拉） */
@@ -85,14 +89,16 @@
     bind: {
       "stock-in": "r1",
       "outbound": "r1",
+      "drug-return": "r1",
       "stock-adjust": "r1",
-      "stock-check": "r1",
+      "transfer-v": "r3",
+      "transfer-h": "r4",
       "stock-return": "r2",
+      "stock-check": "r1",
+      "drug-selection": "r1",
       "purchase-need": "r1",
       "purchase-plan": "r1",
-      "price-adjust": "r1",
-      "transfer-v": "r3",
-      "transfer-h": "r4"
+      "price-adjust": "r1"
     }
   };
 

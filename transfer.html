@@ -61,6 +61,9 @@
         </div>
 
         <div class="sel-card">
+          <!-- 范围页签：我的申请 / 待处理 / 全部记录 -->
+          <div id="scopeTabs" class="page-tabs"></div>
+
           <!-- 筛选 -->
           <div class="filter-bar">
             <div class="filter-item">
@@ -162,6 +165,7 @@
 <script src="mock.js"></script>
 <script src="selection-common.js"></script>
 <script src="transfer-common.js"></script>
+<script src="scope-tabs.js"></script>
 <script>
 (function () {
   var $ = SEL.$, esc = SEL.esc;
@@ -169,6 +173,18 @@
   if (!user) return;
 
   var state = { code: "", apply: "", out: "", audit: "", transfer: "", from: "", to: "", page: 1, size: 10 };
+
+  /* ===== 范围页签：我的申请 / 待处理 / 全部记录 ===== */
+  var tabs = ScopeTabs.create({
+    el: "#scopeTabs",
+    data: function(){ return TR.load(); },
+    isVisible: function(b){ return TR.related(b, user); },
+    isMine: function(b){ return TR.isCreator(b, user); },
+    isPending: function(b){
+      return TR.actionsFor(b, user).some(function(a){ return a.key === "audit" || a.key === "outbound" || a.key === "inbound"; });
+    },
+    onChange: function(){ renderTable(); }
+  });
 
   function filtered() {
     return TR.load().filter(function (b) {
@@ -201,7 +217,7 @@
   }
 
   function renderTable() {
-    var rows = filtered();
+    var rows = tabs.apply(filtered());
     var total = rows.length;
     var pages = Math.max(1, Math.ceil(total / state.size));
     if (state.page > pages) state.page = pages;

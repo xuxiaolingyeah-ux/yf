@@ -51,6 +51,9 @@
         </div>
 
         <div class="sel-card">
+          <!-- 范围页签：我的申请 / 待处理 / 全部记录 -->
+          <div id="scopeTabs" class="page-tabs"></div>
+
           <!-- 筛选 -->
           <div class="filter-bar">
             <div class="filter-item">
@@ -137,6 +140,7 @@
 
 <script src="mock.js"></script>
 <script src="selection-common.js"></script>
+<script src="scope-tabs.js"></script>
 <script>
 (function () {
   var $ = SEL.$, esc = SEL.esc;
@@ -153,6 +157,27 @@
     page: 1,
     size: 10
   };
+
+  /* ===== 范围页签：我的申请 / 待处理 / 全部记录 ===== */
+  var tabs = ScopeTabs.create({
+    el: "#scopeTabs",
+    data: function(){ return SEL.loadData(); },
+    isVisible: function(a){ return canSee(a); },
+    isMine: function(a){ return SEL.isApplicant(a, user); },
+    isPending: function(a){
+      if (SEL.canApprove(a, user)) return true;
+      /* 专家打分：审核通过且我为专家，且我尚未对该申请任何明细打分 */
+      if (a.status === "approved" && user.role === "expert") {
+        var scored = false;
+        Object.keys(a.scores || {}).forEach(function (idx) {
+          if (a.scores[idx] && a.scores[idx][user.id]) scored = true;
+        });
+        return !scored;
+      }
+      return false;
+    },
+    onChange: function(){ renderTable(); }
+  });
 
   /* 数据可见范围：村室发起人只看本机构发起的申请；成员机构 / 中心药房 / 专家看全部 */
   function canSee(a) {
@@ -202,7 +227,7 @@
   }
 
   function renderTable() {
-    var rows = filtered();
+    var rows = tabs.apply(filtered());
     var total = rows.length;
     var pages = Math.max(1, Math.ceil(total / state.size));
     if (state.page > pages) state.page = pages;

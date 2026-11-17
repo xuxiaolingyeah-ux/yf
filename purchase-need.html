@@ -50,6 +50,9 @@
         </div>
 
         <div class="sel-card">
+          <!-- 范围页签：我的申请 / 待处理 / 全部记录 -->
+          <div id="scopeTabs" class="page-tabs"></div>
+
           <!-- 筛选 -->
           <div class="filter-bar">
             <div class="filter-item">
@@ -127,6 +130,7 @@
 <script src="mock.js"></script>
 <script src="selection-common.js"></script>
 <script src="purchase-mgmt-common.js"></script>
+<script src="scope-tabs.js"></script>
 <script>
 (function () {
   var $ = SEL.$, esc = SEL.esc;
@@ -141,6 +145,16 @@
     code: "", status: "", creator: "", dateFrom: "", dateTo: "",
     page: 1, size: 10
   };
+
+  /* ===== 范围页签：我的申请 / 待处理 / 全部记录 ===== */
+  var tabs = ScopeTabs.create({
+    el: "#scopeTabs",
+    data: function(){ return PC.load("need"); },
+    isVisible: function(r){ return PC.inScope(r, user); },
+    isMine: function(r){ return PC.isCreator(r, user); },
+    isPending: function(r){ return PC.canAudit(r, user); },
+    onChange: function(){ renderTable(); }
+  });
 
   /* ---------------- 列表（全部单据合并展示，不再分页签） ---------------- */
   function statusLabel(r) {
@@ -191,7 +205,7 @@
   }
 
   function renderTable() {
-    var rows = filtered();
+    var rows = tabs.apply(filtered());
     var total = rows.length;
     var pages = Math.max(1, Math.ceil(total / state.size));
     if (state.page > pages) state.page = pages;

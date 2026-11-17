@@ -139,6 +139,9 @@
           <button class="btn btn-primary" id="btnAdd">新增增损</button>
         </div>
 
+        <!-- 范围页签：我的申请 / 待处理 / 全部记录 -->
+        <div id="scopeTabs" class="page-tabs"></div>
+
         <!-- 筛选栏 -->
         <div class="sa-filter collapsed" id="filterBar">
           <div class="sa-fields">
@@ -215,6 +218,7 @@
 
 <script src="identity.js"></script>
   <script src="stock-adjust-common.js"></script>
+  <script src="scope-tabs.js"></script>
 <script>
 (function(){
   "use strict";
@@ -231,6 +235,15 @@
     page: 1, pageSize: 20, filtered: [],
     sortBy: "submitTime", sortDir: "desc"
   };
+
+  /* ===== 范围页签：我的申请 / 待处理 / 全部记录 ===== */
+  var tabs = ScopeTabs.create({
+    el: "#scopeTabs",
+    data: function(){ return list; },
+    isMine: function(b){ return b.creatorId === user.id; },
+    isPending: function(b){ return SA.canAudit(b, user); },
+    onChange: function(){ applyFilter(); }
+  });
 
   /* ===== 顶栏角色切换 ===== */
   function renderUser(){
@@ -291,6 +304,7 @@
       if(cr && b.creatorId!==cr) return false;
       return true;
     });
+    ST.filtered = tabs.apply(ST.filtered);
     sortList();
     ST.page = 1;
     renderTable();

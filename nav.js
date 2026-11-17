@@ -28,6 +28,7 @@
     { name: "首页", icon: "home", href: "home.html", files: ["home.html"], roles: C3 },
     { name: "药品管理", icon: "drug", items: [
       { name: "药品目录管理", href: "drug-catalog.html", files: ["drug-catalog.html", "drug-create.html"], roles: ["center"] },
+      { name: "药品目录管理（新）", href: "drug-catalog-new.html", files: ["drug-catalog-new.html", "drug-edit.html"], roles: ["center"] },
       /* 机构药品目录：业务确认暂时隐藏入口（页面文件 org-drug-catalog.html 保留，恢复时放开本行即可） */
       // { name: "机构药品目录", href: "org-drug-catalog.html", files: ["org-drug-catalog.html", "org-drug-select.html"], roles: C3 },
       { name: "药品目录遴选", href: "drug-selection.html", files: ["drug-selection.html", "drug-selection-create.html", "drug-selection-detail.html"], roles: ["center", "member", "village", "expert"] },

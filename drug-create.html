@@ -216,7 +216,7 @@
     { key: "toxic",      name: "毒性药品" },
     { key: "narcotic",   name: "麻醉药品" },
     { key: "antibiotic", name: "抗菌药物",   lv: ["非限制使用级", "限制使用级", "特殊使用级"], ph: "选择级别" },
-    { key: "antitumor",  name: "抗肿瘤药物", lv: ["非限制级", "限制级"], ph: "选择级别" },
+    { key: "antitumor",  name: "抗肿瘤药物", lv: ["非限制使用级", "限制使用级"], ph: "选择级别" },
     { key: "highAlert",  name: "高警示药品", lv: ["A 级", "B 级", "C 级"], ph: "选择级别" },
     { key: "allergy",    name: "过敏药物",   lv: ["青霉素类抗生素", "磺胺类抗生素", "头孢类抗生素", "含碘药品", "酒精", "镇静麻醉剂", "其他药物过敏源"], ph: "选择过敏源" },
     { key: "skinTest",   name: "是否皮试" },
@@ -831,7 +831,12 @@
     sessionStorage.setItem("pendingDrugsIns", JSON.stringify({ id: id, leaf: ST.base.ins, path: $("fIns").getAttribute("title") || "" }));
 
     toast("药品「" + drug.name + "」已保存，正在返回目录");
-    setTimeout(function () { location.href = "drug-catalog.html"; }, 700);
+    setTimeout(function () { location.href = backTarget(); }, 700);
+  }
+
+  /* 返回来源页：从「药品目录管理（新）」进入时返回新列表页 */
+  function backTarget() {
+    return /([?&])from=new/.test(location.search) ? "drug-catalog-new.html" : "drug-catalog.html";
   }
 
   /* ================= 事件绑定 ================= */
@@ -1034,7 +1039,7 @@
   }
 
   function backToCatalog() {
-    location.href = "drug-catalog.html";
+    location.href = backTarget();
   }
 
   /* ================= 启动 ================= */

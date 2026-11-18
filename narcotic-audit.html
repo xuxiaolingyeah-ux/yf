@@ -748,8 +748,7 @@
         ["体温/呼吸", p.temp], ["脉搏", p.pulse], ["血压", p.bp],
         ["过敏药物", p.allergic], ["联系电话", p.phone], ["协定处方", p.agreement],
         ["身高", p.height], ["体重", p.weight],
-        ["审核结果", p.auditStatus === "pending" ? "待审核" : (p.auditStatus === "approved" ? "审核通过" : "审核拒绝")],
-        ["审核人", p.auditUser], ["审核时间", p.auditTime], ["审核意见", p.auditOpinion]
+        ["审核人", p.auditUser], ["审核时间", p.auditTime]
       ];
       if (p.rxType === "中药饮片处方"){
         rows.push(["剂数", p.doses]);
@@ -760,7 +759,7 @@
       ["姓名","性别","年龄","处方号","门诊号","医疗号","医保号","科室","医师","划价药房",
        "收费种类","应收金额","诊断","处方时间","收费时间","体温/呼吸","脉搏","血压",
        "过敏药物","联系电话","协定处方","身高","体重",
-       "审核结果","审核人","审核时间","审核意见"].forEach(function(k){ rows.push([k, "—"]); });
+       "审核人","审核时间"].forEach(function(k){ rows.push([k, "—"]); });
       rows.push(["备注", "—"]);
     }
 

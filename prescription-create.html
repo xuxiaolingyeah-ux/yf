@@ -133,7 +133,6 @@ select.pc-ipt{padding:0 4px}
 /* 查看详情 */
 .pv-head{display:flex;align-items:center;gap:10px;padding:0 0 12px;margin-bottom:12px;border-bottom:1px solid var(--border);flex-wrap:wrap}
 .pv-id{font-size:14px;font-weight:600;letter-spacing:.2px}
-.pv-sub{font-size:12px;color:var(--text-secondary)}
 .pv-amt{margin-left:auto;font-size:16px;font-weight:600;color:var(--danger);font-variant-numeric:tabular-nums}
 .pv-sec{border:1px solid var(--border);border-radius:6px;margin-bottom:12px}
 .pv-sec-hd{height:34px;display:flex;align-items:center;padding:0 12px;background:#FAFBFC;border-bottom:1px solid var(--border);border-radius:6px 6px 0 0;font-size:12px;font-weight:500;color:var(--text-primary)}
@@ -858,25 +857,19 @@ function openView(rx){
 
   var head='<div class="pv-head">'+statusTag(rx.status)+
     '<span class="pv-id">'+rx.id+'</span>'+
-    '<span class="pv-sub">'+TYPE_TEXT[rx.type]+' · '+kindTxt+'</span>'+
     '<span class="pv-amt">'+money(rx.fee)+'</span></div>';
 
-  var info='<div class="pv-sec"><div class="pv-sec-hd">处方信息</div><div class="pv-grid">'+
-    pvItem('处方类型',TYPE_TEXT[rx.type])+pvItem('处方类别',kindTxt)+pvItem('开方日期',esc(rx.created))+
-    pvItem('开方机构',esc(org))+pvItem('开方科室',esc(dept))+pvItem('开方医生',esc(doctor))+
-    '</div></div>';
+  var addrVal='—';
+  if(rx.addr)addrVal=esc(rx.addr.region+' '+rx.addr.detail)+'<br><span style="color:var(--text-tertiary)">'+esc(rx.addr.name)+' · '+esc(rx.addr.phone)+'</span>';
 
-  var clinic='<div class="pv-sec"><div class="pv-sec-hd">诊疗信息</div><div class="pv-grid">'+
-    pvItem('临床诊断',esc(rx.diag),true);
-  if(isWest){
-    clinic+=pvItem('药房',esc(pharm))+pvItem('有效天数',(rx.days||3)+' 天')+pvItem('含毒麻精',isNarcRx(rx)?'是':'否')+
-      pvItem('长处方',rx.longRx?'是':'否')+pvItem('外配',rx.external?'是':'否')+pvItem('费用',money(rx.fee));
-  }else{
-    clinic+=pvItem('药房',esc(pharm))+pvItem('剂数',(rx.doses||1)+' 剂')+pvItem('有效天数',(rx.days||3)+' 天')+
-      pvItem('长处方',rx.longRx?'是':'否')+pvItem('外配',rx.external?'是':'否')+pvItem('费用',money(rx.fee))+
-      pvItem('中草药用法',herbUsageHtml(rx.herbUsage),true);
-  }
-  clinic+=pvItem('备注',esc(rx.note||''),true)+'</div></div>';
+  var base='<div class="pv-sec"><div class="pv-sec-hd">基础信息</div><div class="pv-grid">'+
+    pvItem('处方类型',TYPE_TEXT[rx.type])+pvItem('处方类别',kindTxt)+pvItem('临床诊断',esc(rx.diag))+
+    pvItem('有效天数',(rx.days||3)+' 天')+pvItem('长处方',rx.longRx?'是':'否')+pvItem('外配',rx.external?'是':'否')+
+    pvItem('配送地址',addrVal)+pvItem('药房',esc(pharm))+
+    (isWest?pvItem('备注',esc(rx.note||'')):pvItem('剂数',(rx.doses||1)+' 剂'))+
+    pvItem('开方医生',esc(doctor))+pvItem('开方科室',esc(dept))+pvItem('开方机构',esc(org))+
+    (isWest?'':pvItem('备注',esc(rx.note||''),true)+pvItem('中草药用法',herbUsageHtml(rx.herbUsage),true))+
+    '</div></div>';
 
   var rows,th,total;
   if(isWest){
@@ -906,17 +899,7 @@ function openView(rx){
     '<div class="pv-tblwrap pv-tbl"><table class="pc-table"><thead><tr>'+th+'</tr></thead><tbody>'+rows+'</tbody></table></div>'+
     '<div class="pv-total">'+total+'</div></div>';
 
-  var addr='';
-  if(rx.external){
-    if(rx.addr){
-      addr='<div class="pv-sec"><div class="pv-sec-hd">外送信息</div>'+
-        '<div class="pv-addr"><div class="ln">收件人 '+esc(rx.addr.name)+' · '+esc(rx.addr.phone)+'</div>'+
-        esc(rx.addr.region)+' '+esc(rx.addr.detail)+'</div></div>';
-    }else{
-      addr='<div class="pv-sec"><div class="pv-sec-hd">外送信息</div><div class="pv-addr" style="color:var(--danger)">未填写外送地址</div></div>';
-    }
-  }
-  $('viewBody').innerHTML=head+info+clinic+items+addr;
+  $('viewBody').innerHTML=head+base+items;
   openDlg('viewDialog');
 }
 

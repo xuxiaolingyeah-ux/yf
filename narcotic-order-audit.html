@@ -15,6 +15,28 @@
   padding: 12px;
 }
 
+/* ---------- 页内 Tab（未审核 / 全部记录） ---------- */
+.nao-tabbar {
+  flex: none; height: 44px;
+  display: flex; align-items: center; gap: 4px;
+  padding: 0 16px;
+  background: var(--bg-white);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 1px 2px rgba(0,0,0,.04);
+}
+.nao-tab {
+  height: 44px; padding: 0 14px;
+  border: none; background: transparent;
+  color: var(--text-secondary); font-size: 14px; cursor: pointer;
+  position: relative; white-space: nowrap;
+}
+.nao-tab:hover { color: var(--primary); }
+.nao-tab.active { color: var(--primary); font-weight: 500; }
+.nao-tab.active::after {
+  content: ""; position: absolute; left: 10px; right: 10px; bottom: 0;
+  height: 2px; border-radius: 1px; background: var(--primary);
+}
+
 /* ---------- 筛选卡片 ---------- */
 .nao-filter {
   flex: none;
@@ -32,7 +54,6 @@
 .nao-dept { width: 140px; }
 .nao-dt { width: 172px; height: 30px; padding: 0 4px; font-size: 11px; }
 .nao-dash { flex: none; font-size: 12px; color: var(--text-tertiary); }
-.nao-status { width: 110px; }
 .nao-facts { margin-left: auto; display: flex; gap: 8px; }
 .nao-facts .btn { height: 30px; padding: 0 16px; font-size: 12px; }
 
@@ -234,6 +255,12 @@
 
     <div class="nao-body">
 
+      <!-- ========== 页内 Tab：未审核 / 全部记录 ========== -->
+      <div class="nao-tabbar" id="naoTabs">
+        <button type="button" class="nao-tab active" data-tab="pending">未审核</button>
+        <button type="button" class="nao-tab" data-tab="all">全部记录</button>
+      </div>
+
       <!-- ========== 筛选区 ========== -->
       <div class="nao-filter">
         <div class="nao-fitem">
@@ -256,15 +283,6 @@
           <span class="nao-dash">-</span>
           <input class="nao-dt" id="fEnd" type="datetime-local">
         </div>
-        <div class="nao-fitem">
-          <span class="nao-flbl">医嘱状态：</span>
-          <select class="select nao-status" id="fStatus">
-            <option value="all">全部状态</option>
-            <option value="pending" selected>待审核</option>
-            <option value="approved">审核通过</option>
-            <option value="rejected">审核拒绝</option>
-          </select>
-        </div>
         <div class="nao-facts">
           <button class="btn" id="btnReset">重置</button>
           <button class="btn btn-primary" id="btnQuery">查询</button>
@@ -275,7 +293,7 @@
       <div class="nao-card">
         <div class="nao-toolbar">
           <span class="nao-toolbar-title">毒麻精医嘱列表</span>
-          <span class="nao-hint">仅展示含毒麻精药品的医嘱，审核通过后方可进入发送 / 发药流程</span>
+          <span class="nao-hint">仅展示含毒麻精药品的医嘱；「全部记录」页签可查看审核结果，审核通过后方可进入发送 / 发药流程</span>
           <div class="nao-toolbar-acts">
             <button class="btn btn-primary" id="btnBatchAudit" disabled>批量审核</button>
           </div>
@@ -400,8 +418,9 @@
 
   var ST = {
     data: loadData(),
+    tab: "pending", /* pending=未审核 / all=全部记录 */
     checked: {},
-    q: "", doctor: "", dept: "", start: "", end: "", status: "pending"
+    q: "", doctor: "", dept: "", start: "", end: ""
   };
 
   var STATUS = {
@@ -414,7 +433,8 @@
     var q = ST.q.trim().toLowerCase();
     var doctor = ST.doctor.trim().toLowerCase();
     return ST.data.filter(function(r){
-      if (ST.status !== "all" && r.status !== ST.status) return false;
+      /* 未审核页签仅展示待审核；全部记录页签不做状态过滤 */
+      if (ST.tab === "pending" && r.status !== "pending") return false;
       if (ST.dept && r.dept !== ST.dept) return false;
       if (doctor && String(r.doctor || "").toLowerCase().indexOf(doctor) < 0) return false;
       if (q){
@@ -566,7 +586,6 @@
     ST.dept = $("fDept").value;
     ST.start = $("fStart").value;
     ST.end = $("fEnd").value;
-    ST.status = $("fStatus").value;
   }
   function doQuery(){
     readFilters();
@@ -579,8 +598,7 @@
     $("fDept").value = "";
     $("fStart").value = "";
     $("fEnd").value = "";
-    $("fStatus").value = "pending";
-    ST.q = ""; ST.doctor = ""; ST.dept = ""; ST.start = ""; ST.end = ""; ST.status = "pending";
+    ST.q = ""; ST.doctor = ""; ST.dept = ""; ST.start = ""; ST.end = "";
     ST.checked = {};
     renderAll();
   }
@@ -603,6 +621,18 @@
 
   /* ---------------- 事件绑定 ---------------- */
   function bind(){
+    /* 页内 Tab：未审核 / 全部记录 */
+    $("naoTabs").addEventListener("click", function(e){
+      var btn = e.target.closest(".nao-tab");
+      if (!btn || btn.classList.contains("active")) return;
+      ST.tab = btn.getAttribute("data-tab");
+      Array.prototype.forEach.call(this.querySelectorAll(".nao-tab"), function(el){
+        el.classList.toggle("active", el === btn);
+      });
+      ST.checked = {};
+      renderAll();
+    });
+
     $("btnQuery").onclick = doQuery;
     $("btnReset").onclick = doReset;
     $("fPatient").addEventListener("keydown", function(e){ if (e.key === "Enter") doQuery(); });

@@ -84,7 +84,7 @@
 .disp-x:hover { background: rgba(0, 0, 0, .05); color: var(--text-secondary); }
 .disp-x svg { width: 12px; height: 12px; }
 
-/* 未审核 / 已审核 */
+/* 未审核 / 全部记录 */
 .disp-tabs { flex: none; display: flex; padding: 8px 12px 0; border-bottom: 1px solid var(--border); }
 .disp-tab {
   height: 30px; padding: 0 16px;
@@ -242,8 +242,11 @@
 .disp-link.is-mute { color: var(--text-tertiary); cursor: default; text-decoration: none; }
 .disp-link.is-reject { color: var(--danger); cursor: default; text-decoration: none; }
 .disp-link svg { width: 13px; height: 13px; }
-.disp-collapse {
+.disp-dacts {
   margin-left: auto;
+  display: flex; align-items: center; gap: 8px;
+}
+.disp-collapse {
   display: inline-flex; align-items: center; gap: 2px;
   font-size: 12px; color: var(--text-tertiary);
   cursor: pointer; white-space: nowrap;
@@ -423,9 +426,7 @@
           <span class="disp-page-title" id="sideTitle">毒麻精发药审核（中药房）</span>
         </div>
         <div style="display:flex;gap:8px;">
-          <button class="dbtn" id="btn360">360视图</button>
           <button class="dbtn dbtn-primary" id="btnAudit">审核(<span class="k">S</span>)</button>
-          <button class="dbtn" id="btnDetail" style="display:none;">审核详情</button>
         </div>
       </div>
 
@@ -435,7 +436,7 @@
       <aside class="disp-side">
         <div class="disp-tabs" id="dispTabs">
           <button class="disp-tab active" data-tab="pending">未审核</button>
-          <button class="disp-tab" data-tab="audited">已审核</button>
+          <button class="disp-tab" data-tab="all">全部记录</button>
         </div>
 
         <div class="disp-filter" id="dispFilter">
@@ -496,10 +497,14 @@
         <div class="disp-dhead">
           <span class="disp-dtitle">处方详情</span>
           <span class="disp-type" id="dispType">中成药处方</span>
-          <span class="disp-collapse" id="btnCollapse">
-            <span id="collapseText">收起</span>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 15l6-6 6 6"></path></svg>
-          </span>
+          <div class="disp-dacts">
+            <button class="dbtn" id="btn360">360视图</button>
+            <button class="dbtn" id="btnDetail" style="display:none;">审核详情</button>
+            <span class="disp-collapse" id="btnCollapse">
+              <span id="collapseText">收起</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 15l6-6 6 6"></path></svg>
+            </span>
+          </div>
         </div>
 
         <div class="disp-info" id="dispInfo">
@@ -640,7 +645,7 @@
     var idq = ST.idq.trim().toLowerCase();
     return ST.data.filter(function(p){
       if (ST.tab === "pending" && p.auditStatus !== "pending") return false;
-      if (ST.tab === "audited" && p.auditStatus === "pending") return false;
+      /* 全部记录：不做状态过滤，展示全部处方 */
       if (q){
         var hay = (p.rxNo + " " + p.name + " " + p.py + " " + p.outpatientNo).toLowerCase();
         if (hay.indexOf(q) < 0) return false;
@@ -661,7 +666,7 @@
   }
 
   /* ---------------- 左侧列表 ---------------- */
-  /* 列定义按 tab 区分：未审核仅基础列；已审核增加审核结果/审核人/审核时间 */
+  /* 列定义按 tab 区分：未审核仅基础列；全部记录增加审核结果/审核人/审核时间 */
   function listColumns(){
     var cols = [
       { cls: "c-chk", chk: true },
@@ -669,7 +674,7 @@
       { cls: "c-name", label: "姓名", key: "name" },
       { cls: "c-outp", label: "门诊号", key: "outpatientNo" }
     ];
-    if (ST.tab === "audited"){
+    if (ST.tab === "all"){
       cols.push({ cls: "c-result", label: "审核结果", key: "auditStatus" });
       cols.push({ cls: "c-user", label: "审核人", key: "auditUser" });
       cols.push({ cls: "c-time", label: "审核时间", key: "auditTime" });
@@ -704,7 +709,9 @@
               var val = p[c.key] || "—";
               var label;
               if (c.key === "name") label = esc(p.name) + narcoticTag;
-              else if (c.key === "auditStatus") label = p.auditStatus === "approved"
+              else if (c.key === "auditStatus") label = p.auditStatus === "pending"
+                ? '<span style="color:var(--text-tertiary);">待审核</span>'
+                : p.auditStatus === "approved"
                 ? '<span class="detail-status-pass">通过</span>'
                 : '<span class="detail-status-reject">拒绝</span>';
               else label = esc(val);
@@ -809,9 +816,12 @@
     var pending = ST.tab === "pending";
     $("btnAudit").style.display = pending ? "" : "none";
     $("btnDetail").style.display = pending ? "none" : "";
+    /* 审核 = 批量操作，按勾选数量启用 */
     var n = checkedCount();
     $("btnAudit").disabled = n === 0;
-    $("btnDetail").disabled = n === 0;
+    /* 360视图 / 审核详情 = 单处方操作，作用于当前查看的处方 */
+    var cur = current();
+    $("btnDetail").disabled = !(cur && cur.auditStatus !== "pending");
   }
 
   function renderAll(){

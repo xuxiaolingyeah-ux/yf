@@ -15,7 +15,7 @@
   padding: 12px;
 }
 
-/* ---------- 页内 Tab（标题栏下方）：待审核 / 已审核 ---------- */
+/* ---------- 页内 Tab（标题栏下方）：未审核 / 全部记录 ---------- */
 .ra-tabbar {
   flex: none; height: 44px;
   display: flex; align-items: center; gap: 4px;
@@ -76,7 +76,19 @@
   color: var(--text-primary);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
+.ra-list .ra-chk { width: 30px; text-align: center; padding: 0; }
+.ra-list input[type="checkbox"] { width: 13px; height: 13px; margin: 0; accent-color: var(--primary); vertical-align: middle; cursor: pointer; }
 .ra-empty { padding: 48px 0; text-align: center; color: var(--text-placeholder); font-size: 12px; }
+
+/* 选择统计条（与毒麻精发药审核一致） */
+.ra-selbar {
+  flex: none; height: 32px;
+  display: flex; align-items: center; gap: 6px;
+  padding: 0 10px;
+  border-top: 1px solid var(--border-light);
+  font-size: 12px; color: var(--text-secondary);
+}
+.ra-selbar svg { width: 13px; height: 13px; color: var(--primary); flex: none; }
 .ra-pager { flex: none; height: 42px; padding: 0 3px 0 10px; }
 
 /* ---------- 右侧：处方详情 ---------- */
@@ -111,15 +123,13 @@
 .ra-dwrap { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .ra-info {
   flex: none;
-  position: relative;
   display: flex; flex-direction: column; gap: 7px;
-  padding: 12px 92px 12px 16px;
+  padding: 12px 16px;
   border-bottom: 1px solid var(--border-light);
 }
 .ra-irow { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 6px 28px; }
-/* 处方详情收起 / 展开：按钮固定在详情信息区右上角，不占整行 */
+/* 处方详情收起 / 展开：按钮位于详情栏操作区 */
 .ra-coll-hide { display: none; }
-.ra-foldwrap { position: absolute; top: 12px; right: 16px; }
 .ra-fold {
   border: none; background: transparent;
   color: var(--primary); font-size: 12px;
@@ -331,8 +341,10 @@
       </div>
 
       <div class="ra-tabbar" id="raTabs">
-        <button type="button" class="ra-tab active" data-tab="todo">待审核</button>
-        <button type="button" class="ra-tab" data-tab="done">已审核</button>
+        <button type="button" class="ra-tab active" data-tab="todo">未审核</button>
+        <button type="button" class="ra-tab" data-tab="all">全部记录</button>
+        <!-- 审核 = 批量操作，按左侧勾选数量启用 -->
+        <button class="btn btn-primary" id="btnAudit" style="display:none;margin-left:auto;">审核</button>
       </div>
 
       <div class="ra-body">
@@ -364,7 +376,8 @@
             <table class="ra-list">
               <thead>
                 <tr>
-                  <th style="width:42%">处方号</th>
+                  <th class="ra-chk"><input type="checkbox" id="chkAllList" title="全选待审核"></th>
+                  <th style="width:40%">处方号</th>
                   <th style="width:16%">姓名</th>
                   <th>门诊号</th>
                 </tr>
@@ -372,6 +385,11 @@
               <tbody id="listBody"></tbody>
             </table>
             <div class="ra-empty" id="listEmpty" style="display:none;">暂无数据</div>
+          </div>
+
+          <div class="ra-selbar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v6M12 16v.5"></path></svg>
+            <span id="raSelText">共选择 0 张处方</span>
           </div>
 
           <div class="pager ra-pager">
@@ -389,18 +407,16 @@
           <div class="ra-dhead">
             <span class="ra-sec">处方详情</span>
             <div class="ra-dacts">
+              <button class="btn btn-sm" id="btn360">360视图</button>
               <button class="btn btn-sm" id="btnApplyInfo" style="display:none;" disabled>申请详情</button>
               <button class="btn btn-sm" id="btnAuditInfo" style="display:none;" disabled>审核详情</button>
-              <button class="btn btn-sm btn-primary" id="btnAudit" style="display:none;" disabled>审核</button>
+              <button type="button" class="ra-fold" id="btnFold" style="display:none;">展开全部 ▾</button>
             </div>
           </div>
 
           <div class="ra-dwrap" id="detailWrap" style="display:none;">
             <div class="ra-info">
               <div id="infoGrid"></div>
-              <div class="ra-foldwrap" id="foldWrap" style="display:none;">
-                <button type="button" class="ra-fold" id="btnFold">展开全部 ▾</button>
-              </div>
             </div>
             <div class="ra-drughead"><span class="ra-sec">药品信息</span></div>
             <div class="ra-tablewrap">
@@ -512,6 +528,7 @@
     page: 1,
     pageSize: 10,
     tab: "todo",
+    checked: {}, /* 勾选的待审核处方（批量审核用） */
     detailExpanded: false,
     filters: { from: "", to: "", rxNo: "", kw: "" }
   };
@@ -570,11 +587,9 @@
   function filtered(){
     var f = ST.filters;
     return ST.rows.filter(function(p){
-      /* 待审核 = 已申请未审；已审核 = 有审核结论（通过 / 拒绝，含已执行退药） */
+      /* 未审核 = 已申请未审；全部记录 = 不做状态过滤，展示全部退药申请 */
       if (ST.tab === "todo"){
         if (p.status !== "returnPending") return false;
-      } else {
-        if (!p.auditResult) return false;
       }
       var t = p.dispenseTime || "";
       if (f.from && t < f.from) return false;
@@ -608,6 +623,7 @@
     renderList(rows);
     renderPager();
     renderDetail();
+    renderButtons();
   }
 
   function renderList(rows){
@@ -615,13 +631,19 @@
     if (!rows.length){
       body.innerHTML = "";
       $("listEmpty").style.display = "block";
+      var ca = $("chkAllList");
+      ca.checked = false; ca.indeterminate = false;
       return;
     }
     $("listEmpty").style.display = "none";
     var html = "";
     rows.forEach(function(p){
       var badge = BADGE[p.status];
+      var pend = p.status === "returnPending";
       html += '<tr data-id="' + p.id + '"' + (p.id === ST.activeId ? ' class="active"' : "") + '>'
+        + '<td class="ra-chk">' + (pend
+          ? '<input type="checkbox" data-chk="' + p.id + '"' + (ST.checked[p.id] ? " checked" : "") + '>'
+          : "") + '</td>'
         + '<td title="' + esc(p.rxNo) + '">' + esc(p.rxNo)
         + (badge ? '<span class="ra-badge ' + badge[1] + '">' + badge[0] + '</span>' : "")
         + '</td>'
@@ -630,6 +652,14 @@
         + '</tr>';
     });
     body.innerHTML = html;
+
+    /* 全选框状态：针对全部筛选结果中的待审核处方 */
+    var pendRows = ST.list.filter(function(p){ return p.status === "returnPending"; });
+    var n = 0;
+    pendRows.forEach(function(p){ if (ST.checked[p.id]) n++; });
+    var chkAll = $("chkAllList");
+    chkAll.checked = pendRows.length > 0 && n === pendRows.length;
+    chkAll.indeterminate = n > 0 && n < pendRows.length;
   }
 
   function renderPager(){
@@ -647,9 +677,9 @@
     return '<div class="ra-irow">' + cells.join("") + '</div>';
   }
 
-  /* 处方详情收起 / 展开：收起时仅展示前两行 */
+  /* 处方详情收起 / 展开：按钮位于详情栏操作区 */
   function wrapCollapsible(rowsHtml){
-    $("foldWrap").style.display = rowsHtml.length > 2 ? "flex" : "none";
+    $("btnFold").style.display = rowsHtml.length > 2 ? "" : "none";
     $("btnFold").textContent = ST.detailExpanded ? "收起 ▴" : "展开全部 ▾";
     return rowsHtml.map(function(h, i){
       if (i < 2) return h;
@@ -663,8 +693,6 @@
     if (!p){
       $("detailWrap").style.display = "none";
       $("detailEmpty").style.display = "grid";
-      $("btnAudit").style.display = isTodo ? "" : "none";
-      $("btnAudit").disabled = true;
       $("btnApplyInfo").style.display = isTodo ? "" : "none";
       $("btnApplyInfo").disabled = true;
       $("btnAuditInfo").style.display = isTodo ? "none" : "";
@@ -685,11 +713,9 @@
       row([infoCell("过敏药物", p.allergic, true)])
     ]);
 
-    /* 待审核页签：审核 + 申请详情按钮；已审核页签：审核详情按钮 */
-    $("btnAudit").style.display = isTodo ? "" : "none";
+    /* 未审核页签：申请详情按钮；全部记录页签：审核详情按钮 */
     $("btnApplyInfo").style.display = isTodo ? "" : "none";
     $("btnAuditInfo").style.display = isTodo ? "none" : "";
-    $("btnAudit").disabled = !isTodo || p.status !== "returnPending";
     $("btnApplyInfo").disabled = false;
     $("btnAuditInfo").disabled = false;
 
@@ -797,12 +823,44 @@
   function closeModal(mask){ $(mask).classList.remove("show"); }
 
   /* ---------------- 交互：列表 ---------------- */
+  /* 待审核处方勾选列表（批量审核用），仅未审核行可勾选 */
+  function checkedList(){
+    return ST.rows.filter(function(p){ return ST.checked[p.id] && p.status === "returnPending"; });
+  }
+
+  /* 审核按钮（批量）：仅未审核页签显示，按勾选数量启用 */
+  function renderButtons(){
+    var isTodo = ST.tab === "todo";
+    $("btnAudit").style.display = isTodo ? "" : "none";
+    var n = checkedList().length;
+    $("raSelText").textContent = "共选择 " + n + " 张处方";
+    $("btnAudit").disabled = n === 0;
+  }
+
   $("listBody").addEventListener("click", function(e){
+    var ck = e.target.closest("input[data-chk]");
+    if (ck){
+      ST.checked[ck.getAttribute("data-chk")] = ck.checked;
+      renderList(pageRows());
+      renderButtons();
+      return;
+    }
     var tr = e.target.closest("tr[data-id]");
     if (!tr) return;
     ST.activeId = tr.getAttribute("data-id");
+    /* 与毒麻精发药审核一致：点选行即勾选（仅待审核行） */
+    var p = activeRow();
+    if (p && p.status === "returnPending") ST.checked[p.id] = true;
     renderList(pageRows());
     renderDetail();
+    renderButtons();
+  });
+
+  $("chkAllList").addEventListener("change", function(){
+    var val = this.checked;
+    ST.list.forEach(function(p){ if (p.status === "returnPending") ST.checked[p.id] = val; });
+    renderList(pageRows());
+    renderButtons();
   });
 
   $("pgPrev").addEventListener("click", function(){
@@ -850,7 +908,7 @@
   $("tvClose").addEventListener("click", function(){ closeModal("tvMask"); });
   $("tvMask").addEventListener("click", function(e){ if (e.target === this) closeModal("tvMask"); });
 
-  /* ---------------- 页内 Tab：待审核 / 已审核 ---------------- */
+  /* ---------------- 页内 Tab：未审核 / 全部记录 ---------------- */
   $("raTabs").addEventListener("click", function(e){
     var btn = e.target.closest(".ra-tab");
     if (!btn || btn.classList.contains("active")) return;
@@ -860,31 +918,54 @@
     });
     ST.page = 1;
     ST.activeId = null;
+    ST.checked = {};
     renderAll();
   });
 
-  /* ---------------- 退药审核（待审核页签） ---------------- */
+  /* ---------------- 批量审核（未审核页签） ---------------- */
   $("btnFold").addEventListener("click", function(){
     ST.detailExpanded = !ST.detailExpanded;
     renderDetail();
   });
 
+  $("btn360").addEventListener("click", function(){
+    var p = activeRow();
+    if (!p){ showToast("请从左侧选择一张处方"); return; }
+    showToast("正在打开患者 360 视图（演示）");
+  });
+
   var AUD = null;
 
-  $("btnAudit").addEventListener("click", function(){
-    var p = activeRow();
-    if (!p || p.status !== "returnPending"){ showToast("请选择待审核的退药申请"); return; }
+  function pickedOf(p){
     var picked = [];
     p.items.forEach(function(it){ if (it.sel && Number(it.returnQty) > 0) picked.push(it); });
+    return picked;
+  }
+  function pickedTotal(p){
     var total = 0;
-    picked.forEach(function(it){ total += Number(it.returnAmount) || 0; });
-    AUD = { p: p };
+    pickedOf(p).forEach(function(it){ total += Number(it.returnAmount) || 0; });
+    return total;
+  }
 
-    $("audBody").innerHTML = '处方号：<b>' + esc(p.rxNo) + '</b>（' + esc(p.rxCat) + '）<br>'
-      + '患者：' + esc(p.name) + '　退药药品：' + picked.length + ' 种<br>'
-      + '退药总金额：<b>' + money(total) + '</b> 元<br>'
-      + '申请人：' + esc(p.applyBy || "—") + '　申请时间：' + esc(p.applyTime || "—") + '<br>'
-      + '申请原因：' + esc(p.applyReason || "—");
+  /* 审核 = 批量操作：弹窗内选择 同意 / 拒绝（拒绝时意见必填），结果应用到全部勾选处方 */
+  $("btnAudit").addEventListener("click", function(){
+    if (ST.tab !== "todo"){ showToast("请切换到「未审核」页签后再审核"); return; }
+    var list = checkedList();
+    if (!list.length){ showToast("请先勾选需要审核的处方"); return; }
+    AUD = { list: list };
+
+    if (list.length === 1){
+      var p = list[0];
+      $("audBody").innerHTML = '处方号：<b>' + esc(p.rxNo) + '</b>（' + esc(p.rxCat) + '）<br>'
+        + '患者：' + esc(p.name) + '　退药药品：' + pickedOf(p).length + ' 种<br>'
+        + '退药总金额：<b>' + money(pickedTotal(p)) + '</b> 元<br>'
+        + '申请人：' + esc(p.applyBy || "—") + '　申请时间：' + esc(p.applyTime || "—") + '<br>'
+        + '申请原因：' + esc(p.applyReason || "—");
+    } else {
+      $("audBody").innerHTML = '已选择 <b>' + list.length + '</b> 张待审核退药申请<br>'
+        + '处方号：' + esc(list[0].rxNo) + ' 等 ' + list.length + ' 张<br>'
+        + '审核结果与意见将应用到全部已选处方。';
+    }
     document.getElementsByName("audRes")[0].checked = true;
     $("audOpinion").value = "";
     openModal("audMask");
@@ -903,20 +984,24 @@
     var op = $("audOpinion").value.trim();
     if (res === "rejected" && !op){ showToast("拒绝时必须填写审核意见"); return; }
 
-    var p = AUD.p;
+    var list = AUD.list;
     var now = nowStr();
-    p.auditResult = res;
-    p.auditBy = AUDITOR;
-    p.auditTime = now;
-    p.auditOpinion = op;
-    p.status = res === "approved" ? "approved" : "rejected";
+    list.forEach(function(p){
+      p.auditResult = res;
+      p.auditBy = AUDITOR;
+      p.auditTime = now;
+      p.auditOpinion = op;
+      p.status = res === "approved" ? "approved" : "rejected";
+    });
+    var n = list.length;
     AUD = null;
+    ST.checked = {};
     closeModal("audMask");
     persist();
     renderAll();
     showToast(res === "approved"
-      ? "审核通过，申请方可在「门诊处方退药」页面的执行退药页签执行退药"
-      : "已拒绝该退药申请");
+      ? "已通过 " + n + " 张退药申请，申请方可在「门诊处方退药」页面的执行退药页签执行退药"
+      : "已拒绝 " + n + " 张退药申请");
   });
 
   /* ---------------- 申请详情（待审核页签） ---------------- */
@@ -932,10 +1017,11 @@
     openModal("audInfoMask");
   });
 
-  /* ---------------- 审核详情（已审核页签） ---------------- */
+  /* ---------------- 审核详情（全部记录页签） ---------------- */
   $("btnAuditInfo").addEventListener("click", function(){
     var p = activeRow();
     if (!p || !p.applyBy){ showToast("该处方尚未发起退药申请"); return; }
+    if (!p.auditResult){ showToast("该处方尚未审核"); return; }
     $("audInfoTitle").textContent = "审核详情";
     $("audInfoBody").innerHTML = '处方号：<b>' + esc(p.rxNo) + '</b>（' + esc(p.rxCat) + '）<br>'
       + '患者：' + esc(p.name) + '<br><br>'

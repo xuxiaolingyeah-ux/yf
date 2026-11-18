@@ -867,8 +867,8 @@ function openView(rx){
     pvItem('有效天数',(rx.days||3)+' 天')+pvItem('长处方',rx.longRx?'是':'否')+pvItem('外配',rx.external?'是':'否')+
     pvItem('配送地址',addrVal)+pvItem('药房',esc(pharm))+
     (isWest?pvItem('备注',esc(rx.note||'')):pvItem('剂数',(rx.doses||1)+' 剂'))+
-    pvItem('开方医生',esc(doctor))+pvItem('开方科室',esc(dept))+pvItem('开方机构',esc(org))+
     (isWest?'':pvItem('备注',esc(rx.note||''),true)+pvItem('中草药用法',herbUsageHtml(rx.herbUsage),true))+
+    pvItem('开方医生',esc(doctor))+pvItem('开方科室',esc(dept))+pvItem('开方机构',esc(org))+
     '</div></div>';
 
   var rows,th,total;

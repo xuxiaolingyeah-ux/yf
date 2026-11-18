@@ -6,16 +6,24 @@
 <link rel="stylesheet" href="styles.css">
 <style>
 /* ===== 页面级样式（hc- 前缀） ===== */
-.hc-list-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-.hc-list-title { font-size: 15px; font-weight: 500; }
-.hc-org-tag { display: inline-block; font-size: 12px; padding: 1px 8px; border-radius: 10px; background: var(--bg-page); color: var(--text-secondary); margin-right: 4px; }
-.hc-org-more { font-size: 12px; color: var(--primary-dark); }
+.hc-mode { display: inline-block; font-size: 12px; padding: 2px 8px; border-radius: 10px; white-space: nowrap; }
+.hc-mode.page { background: var(--primary-lighter); color: var(--primary-dark); }
+.hc-mode.api { background: #eef4ff; color: #3b6fd4; }
 .hc-url { color: var(--text-secondary); font-size: 12px; }
+.hc-header { display: inline-block; max-width: 210px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: middle; color: var(--text-secondary); font-size: 12px; }
+.dw .eg-field textarea.input { width: 100%; min-height: 76px; line-height: 1.6; font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 12px; resize: vertical; }
+.hc-st-ok { color: var(--success); font-size: 12px; }
+.hc-st-fail { color: var(--danger); font-size: 12px; }
+.hc-time { color: var(--text-secondary); font-size: 12px; }
+.hc-detail-head { display: flex; align-items: center; gap: 10px; }
+.hc-page-config { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 16px; margin-bottom: 12px; background: var(--bg-white); border-radius: var(--radius-lg); box-shadow: 0 1px 2px rgba(0,0,0,.04); font-size: 12px; color: var(--text-secondary); line-height: 1.8; }
+.hc-page-config b { color: var(--text-primary); font-weight: 500; }
+.hc-tip { font-size: 12px; color: var(--text-tertiary); line-height: 1.7; background: var(--bg-page); border-radius: 6px; padding: 8px 10px; margin-top: 14px; }
 
 /* ===== 右侧抽屉（dw- 前缀） ===== */
 .dw-mask { position: fixed; inset: 0; background: rgba(0,0,0,.35); opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 90; }
 .dw-mask.show { opacity: 1; pointer-events: auto; }
-.dw { position: fixed; top: 0; right: -580px; width: 540px; max-width: 94vw; height: 100vh; background: #fff; z-index: 91; box-shadow: -8px 0 24px rgba(0,0,0,.12); transition: right .25s ease; display: flex; flex-direction: column; }
+.dw { position: fixed; top: 0; right: -580px; width: 560px; max-width: 94vw; height: 100vh; background: #fff; z-index: 91; box-shadow: -8px 0 24px rgba(0,0,0,.12); transition: right .25s ease; display: flex; flex-direction: column; }
 .dw.show { right: 0; }
 .dw-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
 .dw-title { font-size: 15px; font-weight: 500; }
@@ -24,35 +32,38 @@
 .dw .span-3 { grid-column: 1 / -1; }
 .dw .eg-field .input, .dw .eg-field .select { width: 100%; }
 .dw-foot { display: flex; justify-content: flex-end; gap: 10px; padding: 12px 20px; border-top: 1px solid var(--border); flex-shrink: 0; }
-/* ===== 下拉多选（msel- 前缀） ===== */
-.msel { position: relative; flex: 1; min-width: 0; }
-.msel-btn { display: flex; align-items: center; justify-content: space-between; gap: 8px; text-align: left; cursor: pointer; color: var(--text-primary); overflow: hidden; }
-.msel-btn .msel-arrow { flex: none; font-size: 10px; color: var(--text-tertiary); transition: transform .15s; }
-.msel.open .msel-arrow { transform: rotate(180deg); }
-.msel-btn.is-empty { color: var(--text-placeholder); }
-.msel-panel { display: none; position: absolute; top: 36px; left: 0; right: 0; background: #fff; border: 1px solid var(--border); border-radius: 6px; box-shadow: 0 6px 18px rgba(0,0,0,.12); padding: 4px; z-index: 5; max-height: 230px; overflow: auto; }
-.msel.open .msel-panel { display: block; }
-.msel-panel label { display: flex; align-items: center; gap: 8px; padding: 7px 8px; font-size: 13px; border-radius: 4px; cursor: pointer; white-space: nowrap; }
-.msel-panel label:hover { background: var(--primary-lighter); }
+.dw-sec-title { font-size: 13px; font-weight: 500; margin: 20px 0 10px; padding-left: 8px; border-left: 3px solid var(--primary); }
+.dw-sec-title:first-child { margin-top: 0; }
 
-.dw textarea.dw-token { min-height: 96px; font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 12px; word-break: break-all; }
-/* ===== 测试连接结果 ===== */
-.dw-test { border-radius: 6px; padding: 10px 12px; font-size: 12px; line-height: 1.8; display: flex; gap: 8px; align-items: flex-start; }
-.dw-test svg { flex: none; margin-top: 3px; }
+/* 对接方式卡片 */
+.mode-cards { display: flex; gap: 10px; }
+.mode-card { flex: 1; border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; cursor: pointer; transition: border-color .15s, background .15s; }
+.mode-card:hover { border-color: var(--primary); }
+.mode-card.active { border-color: var(--primary); background: var(--primary-lighter); }
+.mode-card .mc-title { font-size: 13px; font-weight: 500; margin-bottom: 4px; }
+.mode-card .mc-desc { font-size: 11px; color: var(--text-tertiary); line-height: 1.6; }
+
+/* 调用方向标签 */
+.dir-tag { display: inline-block; font-size: 11px; padding: 1px 7px; border-radius: 9px; margin-left: 4px; white-space: nowrap; }
+.dir-out { background: #eef4ff; color: #3b6fd4; }
+.dir-in { background: #f0f9eb; color: #4c8038; }
+
+/* 测试结果 */
+.dw-test { border-radius: 6px; padding: 8px 10px; font-size: 12px; line-height: 1.7; display: flex; gap: 8px; align-items: flex-start; }
+.dw-test svg { flex: none; margin-top: 2px; }
 .dw-test.is-ok { background: #f0f9eb; border: 1px solid #c2e7b0; color: #4c8038; }
 .dw-test.is-fail { background: #fef0f0; border: 1px solid #fbc4c4; color: #b23c3c; }
-.dw-test .t-title { font-weight: 500; }
 .dw-test .t-reason { color: inherit; opacity: .85; word-break: break-all; }
 .dw-test.is-testing { background: var(--bg-page); color: var(--text-secondary); }
 @keyframes dwspin { to { transform: rotate(360deg); } }
-/* ===== 查询区域 ===== */
-.hc-query { display: flex; align-items: center; gap: 8px; padding: 14px 16px; margin-bottom: 12px; background: var(--bg-white); border-radius: var(--radius-lg); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04); }
+
+/* 查询区域 */
+.hc-query { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 14px 16px; margin-bottom: 12px; background: var(--bg-white); border-radius: var(--radius-lg); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04); }
 .hc-flt-label { font-size: 13px; color: var(--text-secondary); white-space: nowrap; }
 .hc-flt-sep { font-size: 12px; color: var(--text-tertiary); }
+.hc-flt-org { width: 170px; }
 .hc-flt-item { width: 120px; }
-.hc-flt-date { width: 140px; height: 32px; padding: 4px 8px; font-size: 12px; }
-.hc-time { color: var(--text-secondary); font-size: 12px; }
-.hc-tip { font-size: 12px; color: var(--text-tertiary); line-height: 1.7; background: var(--bg-page); border-radius: 6px; padding: 8px 10px; margin-top: 14px; }
+.hc-flt-date { width: 138px; height: 32px; padding: 4px 8px; font-size: 12px; }
 </style>
 </head>
 <body>
@@ -93,27 +104,23 @@
       </div>
     </div>
 
-    <div class="page">
+    <!-- ========== 第一页：机构对接列表 ========== -->
+    <div class="page" id="viewList">
       <div class="page-head">
-        <div class="page-head-left">
-          <h1 class="page-title">HIS 对接配置</h1>
-        </div>
-        <div class="page-acts">
-          <button class="btn btn-primary" id="btnAdd">新增接口</button>
-        </div>
+        <div class="page-head-left"><h1 class="page-title">HIS 对接配置</h1></div>
+        <div class="page-acts"><button class="btn btn-primary" id="btnAddOrg">新增对接配置</button></div>
       </div>
 
-      <!-- 查询区域 -->
       <div class="hc-query">
-        <span class="hc-flt-label">接口</span>
-        <select class="select hc-flt-item" id="fltItem">
-          <option value="">全部</option>
-        </select>
-        <span class="hc-flt-label" style="margin-left:10px;">创建时间</span>
+        <span class="hc-flt-label">机构</span>
+        <select class="select hc-flt-org" id="fltOrg"><option value="">全部</option></select>
+        <span class="hc-flt-label" style="margin-left:6px;">对接方式</span>
+        <select class="select hc-flt-item" id="fltMode"><option value="">全部</option></select>
+        <span class="hc-flt-label" style="margin-left:6px;">创建时间</span>
         <input type="date" class="input hc-flt-date" id="fltFrom">
         <span class="hc-flt-sep">至</span>
         <input type="date" class="input hc-flt-date" id="fltTo">
-        <button class="btn btn-primary btn-sm" id="btnQuery" style="margin-left:14px;">查询</button>
+        <button class="btn btn-primary btn-sm" id="btnQuery" style="margin-left:10px;">查询</button>
         <button class="btn btn-sm" id="btnReset">重置</button>
       </div>
 
@@ -121,16 +128,44 @@
         <div class="mf-table-wrap" style="padding:14px 16px 16px;">
           <table class="data-table">
             <colgroup>
-              <col style="width:110px"><col style="width:120px"><col style="width:210px"><col>
-              <col style="width:80px"><col style="width:100px"><col style="width:110px"><col style="width:130px">
+              <col><col style="width:130px"><col style="width:140px"><col style="width:130px">
+            </colgroup>
+            <thead>
+              <tr><th>机构</th><th>对接方式</th><th>创建时间</th><th>操作</th></tr>
+            </thead>
+            <tbody id="orgBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== 第二页：某机构的接口列表 ========== -->
+    <div class="page" id="viewDetail" style="display:none;">
+      <div class="page-head">
+        <div class="page-head-left hc-detail-head">
+          <button class="btn btn-sm" id="btnBack">返回列表</button>
+          <h1 class="page-title" id="detailTitle" style="margin:0;"></h1>
+          <span class="hc-mode" id="detailMode"></span>
+        </div>
+        <div class="page-acts"><button class="btn btn-primary" id="btnAddIface">新增接口</button></div>
+      </div>
+
+      <div id="pageConfigBox"></div>
+
+      <div class="sel-card">
+        <div class="mf-table-wrap" style="padding:14px 16px 16px;">
+          <table class="data-table">
+            <colgroup>
+              <col style="width:160px"><col style="width:110px"><col><col style="width:200px">
+              <col style="width:80px"><col style="width:100px"><col style="width:110px"><col style="width:110px">
             </colgroup>
             <thead>
               <tr>
-                <th>接口</th><th>HIS 厂商</th><th>适用机构</th><th>接口地址</th>
-                <th>状态</th><th>最近同步</th><th>创建时间</th><th>操作</th>
+                <th>接口名称</th><th>调用方向</th><th>URL</th><th>Header</th><th>状态</th>
+                <th>最近同步</th><th>创建时间</th><th>操作</th>
               </tr>
             </thead>
-            <tbody id="listBody"></tbody>
+            <tbody id="ifaceBody"></tbody>
           </table>
         </div>
       </div>
@@ -138,7 +173,7 @@
   </main>
 </div>
 
-<!-- ========== 右侧抽屉：新增 / 编辑接口 ========== -->
+<!-- ========== 右侧抽屉 ========== -->
 <div class="dw-mask" id="dwMask"></div>
 <div class="dw" id="drawer"></div>
 
@@ -162,9 +197,10 @@
       .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
   }
+  function inlineText(s) { return esc(s).replace(/\r?\n/g, " ↵ "); }
+  function htmlLines(s) { return esc(s).replace(/\r?\n/g, "<br>"); }
 
-  /* ================= 访问控制：仅 HIS 对接人员（孙磊）可用 =================
-     菜单入口已按 roles:["his"] 过滤；此处拦截直接输入网址的访问 */
+  /* ================= 访问控制 ================= */
   var ME = {};
   try { ME = JSON.parse(sessionStorage.getItem("SEL_USER") || "{}"); } catch (e) { /* ignore */ }
   if (ME.role !== "his") {
@@ -184,58 +220,99 @@
     return;
   }
 
-  /* ================= 接口定义（全系统固定，均为我方调用 HIS） =================
-     入参/出参报文以我方《标准接口规范》为准；凭证交换统一采用 Token 方式。
-     每条配置 = 接口地址 + Token，并通过「适用机构」声明哪些机构使用这条配置 */
-  var ITEMS = [
-    { key: "rxCreate",     name: "处方生成" },
-    { key: "dispSync",     name: "发药同步" },
-    { key: "deliverySync", name: "配送状态" },
-    { key: "retSync",      name: "退药同步" }
-  ];
-  function itemOf(key) {
-    for (var i = 0; i < ITEMS.length; i++) if (ITEMS[i].key === key) return ITEMS[i];
-    return ITEMS[0];
+  /* ================= 对接方式与接口字典 =================
+     out = 我方调用 HIS；in = HIS 调用我方 */
+  var MODES = {
+    page: {
+      label: "页面对接",
+      desc: "中心药房处方开放页面完全嵌入 HIS，同时完成处方/发药数据同步",
+      ifaces: [
+        { key: "rxSync", name: "处方同步", direction: "out" },
+        { key: "rxStatusUpdate", name: "处方状态更新", direction: "out" },
+        { key: "dispenseSync", name: "发药记录同步", direction: "out" },
+        { key: "dispenseStatusUpdate", name: "发药记录状态更新", direction: "out" },
+        { key: "returnSync", name: "退药同步", direction: "out" },
+        { key: "paymentStatusUpdate", name: "缴费状态更新", direction: "in" },
+        { key: "visitInfoPush", name: "就诊信息传递", direction: "in" }
+      ]
+    },
+    api: {
+      label: "接口对接",
+      desc: "不做页面嵌入，仅在接口层面完成业务数据交互",
+      ifaces: [
+        { key: "drugStockQuery", name: "药品可用库存查询", direction: "out" }
+      ]
+    }
+  };
+  function dirName(dir) { return dir === "in" ? "HIS 调用我方" : "我方调用 HIS"; }
+  function defOf(mode, key) {
+    var list = MODES[mode].ifaces;
+    for (var i = 0; i < list.length; i++) if (list[i].key === key) return list[i];
+    return null;
   }
 
-  /* 机构清单（全量，供「适用机构」勾选） */
-  var ORG_TREE = [
-    { name: "区域中心药房", children: [
-      { name: "城东社区卫生服务中心", children: [
-        { name: "城东第一村室" },
-        { name: "城东第二村室" }
-      ] },
-      { name: "城西卫生院", children: [
-        { name: "青河村卫生室" }
-      ] },
-      { name: "滨江卫生院" }
-    ] }
-  ];
-  function flatOrgs(list, out) {
-    (list || []).forEach(function (n) {
-      out.push(n.name);
-      flatOrgs(n.children, out);
-    });
+  var ALL_ORGS = (function () {
+    var out = [];
+    (function walk(list) {
+      (list || []).forEach(function (n) { out.push(n.name); walk(n.children); });
+    })([
+      { name: "区域中心药房", children: [
+        { name: "城东社区卫生服务中心", children: [{ name: "城东第一村室" }, { name: "城东第二村室" }] },
+        { name: "城西卫生院", children: [{ name: "青河村卫生室" }] },
+        { name: "滨江卫生院" }
+      ] }
+    ]);
     return out;
+  })();
+
+  /* ================= 数据 =================
+     机构记录：{ id, org, mode, pageUrl, pageHeader, ifaces:[], createdAt }
+     接口记录：{ id, key, name, direction, url, header, ok, lastSync, createdAt, custom } */
+  var DATA_KEY = "HIS_CFG_V10";
+  var HDR_WN = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ3bmlmeC0wMDEiLCJleHAiOjE3OTA3MzQ0MDB9.3Xk9pQ2vR7mZwA8sLc1eFjHb5nY0uT6dI4gOaKqVx2E";
+  var HDR_DH = "dh_tk_9f27c8a4b6e1d305882f4c0a7d93be56";
+  var HDR_KS = "ks_tk_88d2f1a9c407be65d2381f0e47a9c5b2";
+  var HDR_BASE = "base_tk_5c1e88f0a92d4b7ce6f30184a9d2570b3";
+
+  function mkIface(id, mode, key, url, header, ok, createdAt, lastSync) {
+    var def = defOf(mode, key) || { name: key, direction: "out" };
+    return {
+      id: id, key: key, name: def.name, direction: def.direction,
+      url: url, header: header, ok: ok !== false,
+      lastSync: lastSync, createdAt: createdAt, custom: false
+    };
   }
-  var ALL_ORGS = flatOrgs(ORG_TREE, []);
-
-  /* ================= 数据 ================= */
-  var DATA_KEY = "HIS_CFG_V6";
-
   function seed() {
     return [
-      { id: 1, item: "rxCreate", hisType: "卫宁", orgs: ["区域中心药房", "城东社区卫生服务中心"], url: "http://10.0.8.11:8080/his/rx/create", token: "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ3bmlmeC0wMDEiLCJleHAiOjE3OTA3MzQ0MDB9.3Xk9pQ2vR7mZwA8sLc1eFjHb5nY0uT6dI4gOaKqVx2E", ok: true, lastSync: "今天 18:02", createdAt: "2026-10-28 10:23" },
-      { id: 2, item: "dispSync", hisType: "卫宁", orgs: ["区域中心药房", "城东社区卫生服务中心"], url: "http://10.0.8.11:8080/his/dispense/sync", token: "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ3bmlmeC0wMDEiLCJleHAiOjE3OTA3MzQ0MDB9.3Xk9pQ2vR7mZwA8sLc1eFjHb5nY0uT6dI4gOaKqVx2E", ok: true, lastSync: "今天 17:45", createdAt: "2026-10-28 10:26" },
-      { id: 3, item: "deliverySync", hisType: "卫宁", orgs: ["区域中心药房"], url: "http://10.0.8.11:8080/his/delivery/status", token: "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ3bmlmeC0wMDEiLCJleHAiOjE3OTA3MzQ0MDB9.3Xk9pQ2vR7mZwA8sLc1eFjHb5nY0uT6dI4gOaKqVx2E", ok: true, lastSync: "今天 17:50", createdAt: "2026-11-02 15:47" },
-      { id: 4, item: "retSync", hisType: "卫宁", orgs: ["区域中心药房"], url: "http://10.0.8.11:8080/his/return/sync", token: "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ3bmlmeC0wMDEiLCJleHAiOjE3OTA3MzQ0MDB9.3Xk9pQ2vR7mZwA8sLc1eFjHb5nY0uT6dI4gOaKqVx2E", ok: true, lastSync: "今天 16:30", createdAt: "2026-11-02 15:49" },
-
-      { id: 5, item: "rxCreate", hisType: "东华", orgs: ["城西卫生院"], url: "http://10.2.6.18:9000/api/prescription/create", token: "dh_tk_9f27c8a4b6e1d305882f4c0a7d93be56", ok: true, lastSync: "今天 17:58", createdAt: "2026-11-05 09:12" },
-      { id: 6, item: "dispSync", hisType: "东华", orgs: ["城西卫生院"], url: "http://10.2.6.18:9000/api/dispense/sync", token: "dh_tk_9f27c8a4b6e1d305882f4c0a7d93be56", ok: true, lastSync: "今天 17:46", createdAt: "2026-11-05 09:15" },
-
-      { id: 7, item: "rxCreate", hisType: "基层版 HIS（自建）", orgs: ["青河村卫生室", "城东第一村室", "城东第二村室"], url: "http://10.2.6.19:8080/basehis/rx/create", token: "base_tk_5c1e88f0a92d4b7ce6f30184a9d2570b3", ok: true, lastSync: "今天 18:00", createdAt: "2026-11-09 14:31" },
-
-      { id: 8, item: "rxCreate", hisType: "金仕达", orgs: ["滨江卫生院"], url: "http://10.3.4.21:7001/ws/rx/create", token: "ks_tk_88d2f1a9c407be65d2381f0e47a9c5b2", ok: false, lastSync: "昨天 22:10", createdAt: "2026-11-10 11:05" }
+      { id: 1, org: "城东社区卫生服务中心", mode: "page",
+        pageUrl: "http://10.8.1.20:8080/rx/open?org=CD001", pageHeader: "page_tk_cd_7c21e5a9",
+        createdAt: "2026-10-28 10:23",
+        ifaces: [
+          mkIface(101, "page", "rxSync", "http://10.0.8.11:8080/his/rx/sync", HDR_WN, true, "2026-10-28 10:25", "今天 18:02"),
+          mkIface(102, "page", "rxStatusUpdate", "http://10.0.8.11:8080/his/rx/status", HDR_WN, true, "2026-10-28 10:28", "今天 18:02"),
+          mkIface(103, "page", "dispenseSync", "http://10.0.8.11:8080/his/dispense/sync", HDR_WN, true, "2026-10-28 10:31", "今天 17:45"),
+          mkIface(104, "page", "dispenseStatusUpdate", "http://10.0.8.11:8080/his/dispense/status", HDR_WN, true, "2026-10-28 10:33", "今天 17:45"),
+          mkIface(105, "page", "paymentStatusUpdate", "http://10.8.1.20:8080/callback/his/payment/status", "cb_tk_cd_pay_83a1", true, "2026-11-02 15:47", "今天 18:05"),
+          mkIface(106, "page", "visitInfoPush", "http://10.8.1.20:8080/callback/his/visit/info", "cb_tk_cd_visit_42f7", true, "2026-11-02 15:49", "今天 18:05")
+        ] },
+      { id: 2, org: "城西卫生院", mode: "api", pageUrl: "", pageHeader: "",
+        createdAt: "2026-11-05 09:12",
+        ifaces: [
+          mkIface(201, "api", "drugStockQuery", "http://10.2.6.18:9000/api/drug/stock", HDR_DH, true, "2026-11-05 09:15", "今天 17:46"),
+          { id: 202, key: "custom_purchase_plan", name: "药品采购计划查询", direction: "out", url: "http://10.2.6.18:9000/api/purchase/plan", header: HDR_DH, ok: true, lastSync: "今天 17:46", createdAt: "2026-11-12 11:08", custom: true }
+        ] },
+      { id: 3, org: "滨江卫生院", mode: "api", pageUrl: "", pageHeader: "",
+        createdAt: "2026-11-10 11:05",
+        ifaces: [
+          mkIface(301, "api", "drugStockQuery", "http://10.3.4.21:7001/ws/drug/stock", HDR_KS, false, "2026-11-10 11:08", "昨天 22:10")
+        ] },
+      { id: 4, org: "青河村卫生室", mode: "page",
+        pageUrl: "http://10.8.1.20:8080/rx/open?org=QH001", pageHeader: "page_tk_qh_19d0c3b2",
+        createdAt: "2026-11-09 14:31",
+        ifaces: [
+          mkIface(401, "page", "rxSync", "http://10.2.6.19:8080/basehis/rx/sync", HDR_BASE, true, "2026-11-09 14:33", "今天 18:00"),
+          mkIface(402, "page", "paymentStatusUpdate", "http://10.8.1.20:8080/callback/his/payment/status", "cb_tk_qh_pay_61bd", true, "2026-11-14 10:22", "今天 18:00")
+        ] }
     ];
   }
 
@@ -250,113 +327,105 @@
   function saveData() {
     try { sessionStorage.setItem(DATA_KEY, JSON.stringify(DATA)); } catch (e) { /* ignore */ }
   }
-  function recOf(id) {
-    return DATA.filter(function (r) { return r.id === id; })[0] || null;
-  }
+  function recOf(id) { return DATA.filter(function (r) { return r.id === id; })[0] || null; }
+  function recOfOrg(org) { return DATA.filter(function (r) { return r.org === org; })[0] || null; }
+  function currentOrg() { return recOf(ST.orgId); }
 
   /* ================= 状态 ================= */
-  var ST = { drawer: null };
-  var FLT = { item: "", from: "", to: "" };   /* 列表筛选条件 */
+  var ST = { view: "list", orgId: 0, drawer: null };
+  var FLT = { org: "", mode: "", from: "", to: "" };
 
-  /* ================= 列表 ================= */
-  function filteredData() {
+  function showView(v) {
+    ST.view = v;
+    $("viewList").style.display = v === "list" ? "" : "none";
+    $("viewDetail").style.display = v === "detail" ? "" : "none";
+    if (v === "detail") renderDetail();
+  }
+
+  /* ================= 第一页：机构列表 ================= */
+  function filteredOrgs() {
     return DATA.filter(function (r) {
-      if (FLT.item && r.item !== FLT.item) return false;
-      var day = String(r.createdAt || "").slice(0, 10);   /* yyyy-mm-dd */
+      if (FLT.org && r.org !== FLT.org) return false;
+      if (FLT.mode && r.mode !== FLT.mode) return false;
+      var day = String(r.createdAt || "").slice(0, 10);
       if (FLT.from && day < FLT.from) return false;
       if (FLT.to && day > FLT.to) return false;
       return true;
     });
   }
-
-  function renderList() {
-    var body = $("listBody");
-    var rows = filteredData();
+  function renderOrgList() {
+    var rows = filteredOrgs();
     if (!rows.length) {
-      var emptyMsg = (FLT.item || FLT.from || FLT.to)
-        ? "没有符合条件的接口配置，可调整查询条件后重新查询"
-        : "暂无接口配置，点击右上角「新增接口」开始配置";
-      body.innerHTML = '<tr><td colspan="8" class="table-empty">' + emptyMsg + "</td></tr>";
+      var msg = (FLT.org || FLT.mode || FLT.from || FLT.to)
+        ? "没有符合条件的对接配置，可调整查询条件后重新查询"
+        : "暂无对接配置，点击右上角「新增对接配置」开始配置";
+      $("orgBody").innerHTML = '<tr><td colspan="4" class="table-empty">' + msg + "</td></tr>";
       return;
     }
-    body.innerHTML = rows.map(function (r) {
-      var it = itemOf(r.item);
-      var stHtml = r.ok
-        ? '<span style="color:var(--success);font-size:12px;">● 正常</span>'
-        : '<span style="color:var(--danger);font-size:12px;">● 异常</span>';
-      var shown = r.orgs.slice(0, 2);
-      var more = r.orgs.length - shown.length;
-      var orgsHtml = shown.map(function (o) { return '<span class="hc-org-tag">' + esc(o) + "</span>"; }).join("")
-        + (more > 0 ? '<span class="hc-org-more" title="' + esc(r.orgs.join("、")) + '">+' + more + "</span>" : "");
+    $("orgBody").innerHTML = rows.map(function (r) {
       var acts = '<button class="link-btn" data-act="edit" data-id="' + r.id + '">编辑</button>'
         + '<button class="link-btn is-danger" data-act="del" data-id="' + r.id + '">删除</button>';
       return "<tr>"
-        + "<td>" + esc(it.name) + "</td>"
-        + "<td>" + esc(r.hisType) + "</td>"
-        + "<td>" + orgsHtml + "</td>"
-        + '<td><span class="hc-url" title="' + esc(r.url) + '">' + esc(r.url) + "</span></td>"
-        + "<td>" + stHtml + "</td>"
-        + "<td>" + esc(r.lastSync || "—") + "</td>"
+        + "<td>" + esc(r.org) + "</td>"
+        + '<td><span class="hc-mode ' + (r.mode === "page" ? "page" : "api") + '">' + MODES[r.mode].label + "</span></td>"
         + '<td><span class="hc-time">' + esc(r.createdAt || "—") + "</span></td>"
         + '<td><div class="mf-acts">' + acts + "</div></td>"
         + "</tr>";
     }).join("");
   }
 
-  /* ================= 抽屉：新增 / 编辑 ================= */
-  function blankDraft() {
-    return {
-      id: 0, item: "rxCreate", hisType: "", orgs: [], url: "", token: ""
-    };
+  /* ================= 第二页：接口列表 ================= */
+  function renderPageConfig(rec) {
+    if (rec.mode !== "page") {
+      $("pageConfigBox").innerHTML = '<div class="hc-page-config"><div>当前机构为<b>接口对接</b>，不做页面嵌入，仅配置接口层 URL 与 Header。</div></div>';
+      return;
+    }
+    $("pageConfigBox").innerHTML = '<div class="hc-page-config">'
+      + '<div>页面 URL：<b>' + esc(rec.pageUrl || "未配置") + "</b><br>"
+      + "页面 Header：<b>" + htmlLines(rec.pageHeader || "未配置") + "</b></div>"
+      + '<button class="btn btn-sm" data-page-edit="1">编辑页面配置</button>'
+      + "</div>";
+  }
+  function renderIfaceTable(rec) {
+    var rows = rec.ifaces || [];
+    if (!rows.length) {
+      $("ifaceBody").innerHTML = '<tr><td colspan="8" class="table-empty">暂无接口，点击右上角「新增接口」开始配置</td></tr>';
+      return;
+    }
+    $("ifaceBody").innerHTML = rows.map(function (it) {
+      var stHtml = it.ok === false
+        ? '<span class="hc-st-fail">● 异常</span>'
+        : '<span class="hc-st-ok">● 正常</span>';
+      var acts = '<button class="link-btn" data-act="edit" data-id="' + it.id + '">编辑</button>'
+        + '<button class="link-btn is-danger" data-act="del" data-id="' + it.id + '">删除</button>';
+      return "<tr>"
+        + "<td>" + esc(it.name) + "</td>"
+        + '<td><span class="dir-tag ' + (it.direction === "in" ? "dir-in" : "dir-out") + '">' + dirName(it.direction) + "</span></td>"
+        + '<td><span class="hc-url" title="' + esc(it.url) + '">' + esc(it.url) + "</span></td>"
+        + '<td><span class="hc-header" title="' + esc(it.header) + '">' + inlineText(it.header) + "</span></td>"
+        + "<td>" + stHtml + "</td>"
+        + "<td>" + esc(it.lastSync || "—") + "</td>"
+        + '<td><span class="hc-time">' + esc(it.createdAt || "—") + "</span></td>"
+        + '<td><div class="mf-acts">' + acts + "</div></td>"
+        + "</tr>";
+    }).join("");
+  }
+  function renderDetail() {
+    var rec = currentOrg();
+    if (!rec) { showView("list"); return; }
+    $("detailTitle").textContent = rec.org;
+    $("detailMode").className = "hc-mode " + (rec.mode === "page" ? "page" : "api");
+    $("detailMode").textContent = MODES[rec.mode].label;
+    renderPageConfig(rec);
+    renderIfaceTable(rec);
   }
 
+  /* ================= 抽屉 ================= */
   function field(label, inner, span) {
     return '<div class="eg-field' + (span ? " span-3" : "") + '"><span class="eg-label">' + label + "</span>" + inner + "</div>";
   }
-  function selHtml(options, cur, dataK) {
-    return '<select class="select" data-k="' + dataK + '">' + options.map(function (o) {
-      return '<option value="' + esc(o) + '"' + (cur === o ? " selected" : "") + ">" + esc(o) + "</option>";
-    }).join("") + "</select>";
-  }
-
-  function renderDrawer() {
-    var d = ST.drawer.draft;
-
-    var mselBtnText = d.orgs.length
-      ? esc(d.orgs.slice(0, 2).join("、")) + (d.orgs.length > 2 ? " 等 " + d.orgs.length + " 家" : "")
-      : "请选择适用机构";
-    var orgsHtml = '<div class="msel" data-msel>'
-      + '<button type="button" class="input msel-btn' + (d.orgs.length ? "" : " is-empty") + '" data-msel-btn>'
-      + '<span class="msel-text">' + mselBtnText + "</span>"
-      + '<span class="msel-arrow">▼</span></button>'
-      + '<div class="msel-panel">' + ALL_ORGS.map(function (o) {
-          var ck = d.orgs.indexOf(o) >= 0 ? " checked" : "";
-          return '<label><input type="checkbox" data-orgck="' + esc(o) + '"' + ck + ">" + esc(o) + "</label>";
-        }).join("") + "</div></div>";
-
-    $("drawer").innerHTML =
-      '<div class="dw-head"><span class="dw-title">' + (ST.drawer.mode === "create" ? "新增接口" : "编辑接口") + "</span>"
-      + '<button class="drawer-close" data-dw-close="1"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg></button></div>'
-      + '<div class="dw-body"><div class="eg-grid">'
-      + field('<span class="req">*</span>接口', selHtml(ITEMS.map(function (i) { return i.name; }), itemOf(d.item).name, "itemName"))
-      + field('<span class="req">*</span>HIS 厂商', '<input class="input" data-k="hisType" value="' + esc(d.hisType) + '" placeholder="如：卫宁、东华、金仕达……" autocomplete="off">')
-      + field('<span class="req">*</span>适用机构', orgsHtml, true)      + field('<span class="req">*</span>接口地址', '<input class="input" data-k="url" value="' + esc(d.url) + '" placeholder="如：http://10.1.12.30:8080/his/rx/create" autocomplete="off">', true)
-      + field('<span class="req">*</span>Token', '<textarea class="input dw-token" data-k="token" rows="3" placeholder="请输入 HIS 厂商分配的 Token 凭证">' + esc(d.token) + "</textarea>", true)
-      + '<div class="span-3"><div class="hc-tip">入参 / 出参报文以我方《标准接口规范》为准，全系统统一；双方凭证交换统一采用 Token 方式——Token 由 HIS 厂商分配提供，我方调用接口时按约定携带。同一厂商的多个机构可共用一条配置。</div></div>'
-      + '<div class="span-3" id="dwTestResult"></div>'
-      + "</div></div>"
-      + '<div class="dw-foot">'
-      + '<button class="btn" data-dw-close="1">取消</button>'
-      + '<button class="btn" data-dw-test="1" id="btnTest">测试连接</button>'
-      + '<button class="btn btn-primary" data-dw-save="1">保存</button>'
-      + "</div>";
-  }
-
-  function openDrawer(rec) {
-    var draft = rec ? JSON.parse(JSON.stringify(rec)) : blankDraft();
-    delete draft.logs; delete draft.ok; delete draft.lastSync;
-    ST.drawer = { mode: rec ? "edit" : "create", id: rec ? rec.id : 0, draft: draft };
-    renderDrawer();
+  function openDrawer(html) {
+    $("drawer").innerHTML = html;
     $("dwMask").classList.add("show");
     $("drawer").classList.add("show");
   }
@@ -365,81 +434,189 @@
     $("drawer").classList.remove("show");
     ST.drawer = null;
   }
+  function drawerShell(title, body, foot) {
+    return '<div class="dw-head"><span class="dw-title">' + title + "</span>"
+      + '<button class="drawer-close" data-dw-close="1"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg></button></div>'
+      + '<div class="dw-body">' + body + "</div>"
+      + '<div class="dw-foot">' + foot + "</div>";
+  }
+  var FOOT_DEFAULT = '<button class="btn" data-dw-close="1">取消</button><button class="btn btn-primary" data-dw-save="1">保存</button>';
 
-  function saveDrawer() {
+  /* --- 机构抽屉（第一页新增 / 页面配置编辑） --- */
+  function modeCards(cur) {
+    return '<div class="mode-cards">' + Object.keys(MODES).map(function (k) {
+      var m = MODES[k];
+      return '<div class="mode-card' + (cur === k ? " active" : "") + '" data-mode="' + k + '">'
+        + '<div class="mc-title">' + m.label + "</div>"
+        + '<div class="mc-desc">' + m.desc + "</div></div>";
+    }).join("") + "</div>";
+  }
+  function openOrgDrawer(rec) {
+    var d = rec ? JSON.parse(JSON.stringify(rec)) : { id: 0, org: "", mode: "page", pageUrl: "", pageHeader: "", createdAt: "", ifaces: [] };
+    ST.drawer = { kind: "org", mode: rec ? "edit" : "create", draft: d };
+    renderOrgDrawer();
+  }
+  function renderOrgDrawer() {
     var d = ST.drawer.draft;
-    if (!String(d.hisType || "").trim()) { toast("请填写 HIS 厂商"); return; }
-    if (!d.orgs.length) { toast("请至少勾选一个适用机构"); return; }
-    if (!String(d.url || "").trim()) { toast("请填写接口地址"); return; }
-    if (!String(d.token || "").trim()) { toast("请填写 Token"); return; }
-    var it = itemOf(d.item);
-    if (ST.drawer.mode === "edit") {
-      var rec = recOf(ST.drawer.id);
-      if (rec) {
-        rec.item = d.item; rec.hisType = d.hisType; rec.orgs = d.orgs;
-        rec.url = d.url; rec.token = d.token;
-      }
-      toast("已保存：" + it.name);
-    } else {
+    var pagePart = d.mode === "page"
+      ? '<div class="dw-sec-title">页面嵌入配置</div><div class="eg-grid">'
+        + field('<span class="req">*</span>URL', '<input class="input" data-k="pageUrl" value="' + esc(d.pageUrl) + '" placeholder="如：http://10.8.1.20:8080/rx/open?org=XXX" autocomplete="off">', true)
+        + field('<span class="req">*</span>Header', '<textarea class="input" data-k="pageHeader" rows="3" placeholder="可输入多行 Header">' + esc(d.pageHeader) + "</textarea>", true)
+        + "</div>"
+      : "";
+    openDrawer(drawerShell(
+      ST.drawer.mode === "create" ? "新增对接配置" : "编辑对接配置",
+      '<div class="dw-sec-title">基本信息</div><div class="eg-grid">'
+      + field('<span class="req">*</span>机构', '<select class="select" data-k="org">'
+        + ALL_ORGS.map(function (o) { return '<option value="' + esc(o) + '"' + (d.org === o ? " selected" : "") + ">" + esc(o) + "</option>"; }).join("")
+        + "</select>")
+      + field('<span class="req">*</span>对接方式', modeCards(d.mode), true)
+      + "</div>" + pagePart,
+      FOOT_DEFAULT
+    ));
+  }
+  function saveOrgDrawer() {
+    var d = ST.drawer.draft;
+    if (!d.org) { toast("请选择机构"); return; }
+    if (d.mode === "page") {
+      if (!String(d.pageUrl || "").trim()) { toast("请填写页面 URL"); return; }
+      if (!String(d.pageHeader || "").trim()) { toast("请填写 Header"); return; }
+    }
+    var now = new Date();
+    var pad = function (n) { return (n < 10 ? "0" : "") + n; };
+    var ts = now.getFullYear() + "-" + pad(now.getMonth() + 1) + "-" + pad(now.getDate()) + " " + pad(now.getHours()) + ":" + pad(now.getMinutes());
+
+    if (ST.drawer.mode === "create") {
+      if (recOfOrg(d.org)) { toast("该机构已存在对接配置，请直接编辑"); return; }
       var maxId = 0;
       DATA.forEach(function (r) { if (r.id > maxId) maxId = r.id; });
-      var now = new Date();
-      var pad = function (n) { return (n < 10 ? "0" : "") + n; };
-      var createdAt = now.getFullYear() + "-" + pad(now.getMonth() + 1) + "-" + pad(now.getDate()) + " " + pad(now.getHours()) + ":" + pad(now.getMinutes());
       DATA.push({
-        id: maxId + 1, item: d.item, hisType: d.hisType, orgs: d.orgs,
-        url: d.url, token: d.token, ok: true, lastSync: "—", createdAt: createdAt
+        id: maxId + 1, org: d.org, mode: d.mode,
+        pageUrl: d.mode === "page" ? String(d.pageUrl).trim() : "",
+        pageHeader: d.mode === "page" ? String(d.pageHeader).trim() : "",
+        ifaces: [], createdAt: ts
       });
-      toast("已新增：" + it.name);
+      toast("已新增：" + d.org);
+    } else {
+      var rec = recOf(d.id);
+      if (!rec) { closeDrawer(); return; }
+      if (d.org !== rec.org && recOfOrg(d.org)) { toast("该机构已存在对接配置，请直接编辑"); return; }
+      var modeChanged = rec.mode !== d.mode;
+      if (modeChanged && rec.ifaces.length && !confirm("切换对接方式将清空该机构下已配置的接口，确定继续吗？")) return;
+      rec.org = d.org;
+      rec.mode = d.mode;
+      rec.pageUrl = d.mode === "page" ? String(d.pageUrl).trim() : "";
+      rec.pageHeader = d.mode === "page" ? String(d.pageHeader).trim() : "";
+      if (modeChanged) rec.ifaces = [];
+      toast("已保存：" + d.org);
     }
     saveData();
     closeDrawer();
-    renderList();
+    renderOrgList();
+    if (ST.view === "detail") renderDetail();
+  }
+
+  /* --- 接口抽屉（第二页新增 / 编辑）：所有接口均为自定义，只填名称与方向 --- */
+  function openIfaceDrawer(rec) {
+    var d = rec
+      ? { id: rec.id, key: rec.key || "", name: rec.name, direction: rec.direction, url: rec.url, header: rec.header, custom: true }
+      : { id: 0, key: "", name: "", direction: "out", url: "", header: "", custom: true };
+    ST.drawer = { kind: "iface", mode: rec ? "edit" : "create", draft: d };
+    renderIfaceDrawer();
+  }
+  function renderIfaceDrawer() {
+    var d = ST.drawer.draft;
+    var isIn = d.direction === "in";
+    var urlLabel = '<span class="req">*</span>URL';
+    var headerLabel = '<span class="req">*</span>Header';
+    var nameDirPart = field('<span class="req">*</span>接口名称', '<input class="input" data-k="name" value="' + esc(d.name) + '" placeholder="如：处方同步、药品可用库存查询" autocomplete="off">')
+      + field("调用方向", '<select class="select" data-k="direction">'
+        + '<option value="out"' + (!isIn ? " selected" : "") + ">我方调用 HIS</option>"
+        + '<option value="in"' + (isIn ? " selected" : "") + ">HIS 调用我方</option></select>");
+    var testFoot = isIn
+      ? FOOT_DEFAULT
+      : '<button class="btn" data-iface-test="1" id="btnTest">测试连接</button>' + FOOT_DEFAULT;
+    openDrawer(drawerShell(
+      ST.drawer.mode === "create" ? "新增接口" : "编辑接口",
+      '<div class="dw-sec-title">接口信息</div><div class="eg-grid">'
+      + nameDirPart
+      + field(urlLabel, '<input class="input" data-k="url" value="' + esc(d.url) + '" placeholder="http://" autocomplete="off">', true)
+      + field(headerLabel, '<textarea class="input" data-k="header" rows="3" placeholder="可输入多行 Header">' + esc(d.header) + "</textarea>", true)
+      + '<div class="span-3"><div class="hc-tip" style="margin-top:0;">' + (isIn
+        ? "该接口由 HIS 侧发起调用，URL 与 Header 由我方提供，无需在此测试连通性。"
+        : "URL 与 Header 由 HIS 厂商提供，我方调用时按约定携带。入参 / 出参报文以我方《标准接口规范》为准。") + "</div></div>"
+      + '<div class="span-3" id="ifaceTest"></div>'
+      + "</div>",
+      testFoot
+    ));
+  }
+  function saveIfaceDrawer() {
+    var d = ST.drawer.draft;
+    var org = currentOrg();
+    if (!String(d.name || "").trim()) { toast("请填写接口名称"); return; }
+    if (!String(d.url || "").trim()) { toast("请填写 URL"); return; }
+    if (!String(d.header || "").trim()) { toast("请填写 Header"); return; }
+    var existing = org.ifaces.filter(function (x) { return x.id === ST.drawer.id; })[0];
+    var payload = {
+      key: existing && existing.key ? existing.key : "custom_" + Date.now(),
+      name: String(d.name).trim(), direction: d.direction,
+      url: String(d.url).trim(), header: String(d.header).trim(), custom: true
+    };
+    var now = new Date();
+    var pad = function (n) { return (n < 10 ? "0" : "") + n; };
+    var ts = now.getFullYear() + "-" + pad(now.getMonth() + 1) + "-" + pad(now.getDate()) + " " + pad(now.getHours()) + ":" + pad(now.getMinutes());
+
+    if (ST.drawer.mode === "edit") {
+      if (!existing) { closeDrawer(); return; }
+      existing.name = payload.name; existing.direction = payload.direction;
+      existing.url = payload.url; existing.header = payload.header; existing.custom = true;
+      toast("已保存：" + existing.name);
+    } else {
+      var maxId = 0;
+      org.ifaces.forEach(function (x) { if (x.id > maxId) maxId = x.id; });
+      org.ifaces.push({
+        id: maxId + 1, key: payload.key, name: payload.name, direction: payload.direction,
+        url: payload.url, header: payload.header,
+        ok: true, lastSync: "—", createdAt: ts, custom: payload.custom
+      });
+      toast("已新增：" + payload.name);
+    }
+    saveData();
+    closeDrawer();
+    renderIfaceTable(org);
   }
 
   /* ================= 测试连接 ================= */
   var ICON_OK = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>';
   var ICON_FAIL = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5"/><path d="M12 16.2v.1"/></svg>';
-
-  /* 模拟连通性测试：按配置内容返回可复现的结果（真实系统替换为后端探活接口） */
   function simulateTest(d) {
     var url = String(d.url || "").trim();
-    var token = String(d.token || "").trim();
-    if (!/^https?:\/\/.+/i.test(url)) {
-      return { ok: false, title: "测试失败", reason: "接口地址格式错误：需以 http:// 或 https:// 开头，并包含主机地址" };
-    }
-    if (url.indexOf(":7001") >= 0) {
-      return { ok: false, title: "测试失败", reason: "连接超时：10 秒内未收到 HIS 应答。可能原因：网络不通（防火墙/路由未开通）、HIS 服务未启动、IP 或端口填写错误" };
-    }
-    if (token.length < 8) {
-      return { ok: false, title: "测试失败", reason: "鉴权失败：HIS 返回 401，Token 无效或已过期，请联系 HIS 厂商重新获取" };
-    }
-    var ms = 120 + Math.floor(Math.random() * 380);
-    return { ok: true, title: "连接成功", reason: "HIS 应答正常，鉴权通过，耗时 " + ms + " ms" };
+    var header = String(d.header || "").trim();
+    if (!/^https?:\/\/.+/i.test(url)) return { ok: false, reason: "URL 格式错误：需以 http:// 或 https:// 开头，并包含主机地址" };
+    if (url.indexOf(":7001") >= 0) return { ok: false, reason: "连接超时：10 秒内未收到应答。请检查网络、IP 或端口是否正确" };
+    if (header.length < 8) return { ok: false, reason: "鉴权失败：对方返回 401，Header 无效或已过期" };
+    return { ok: true, reason: "应答正常，鉴权通过，耗时 " + (120 + Math.floor(Math.random() * 380)) + " ms" };
   }
-
-  function runTest() {
+  function runIfaceTest() {
     var d = ST.drawer.draft;
-    if (!String(d.url || "").trim()) { toast("请先填写接口地址"); return; }
-    if (!String(d.token || "").trim()) { toast("请先填写 Token"); return; }
-
-    var box = $("dwTestResult");
+    if (!String(d.url || "").trim()) { toast("请先填写 URL"); return; }
+    if (!String(d.header || "").trim()) { toast("请先填写 Header"); return; }
+    var box = $("ifaceTest");
     var btn = $("btnTest");
     btn.disabled = true;
-    box.innerHTML = '<div class="dw-test is-testing"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="animation:dwspin 1s linear infinite;"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg><span>正在连接 HIS，请稍候……</span></div>';
-
+    box.innerHTML = '<div class="dw-test is-testing"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="animation:dwspin 1s linear infinite;"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg><span>正在连接，请稍候……</span></div>';
     setTimeout(function () {
-      btn.disabled = false;
+      if (!ST.drawer || ST.drawer.kind !== "iface") return;
       var res = simulateTest(d);
+      d.testOk = res.ok;
+      btn.disabled = false;
       box.innerHTML = '<div class="dw-test ' + (res.ok ? "is-ok" : "is-fail") + '">'
         + (res.ok ? ICON_OK : ICON_FAIL)
-        + '<div><div class="t-title">' + esc(res.title) + "</div>"
+        + '<div><div class="t-title">' + (res.ok ? "连接成功" : "测试失败") + "</div>"
         + '<div class="t-reason">' + esc(res.reason) + "</div></div></div>";
-
-      /* 编辑模式下同步列表状态列 */
       if (ST.drawer.mode === "edit") {
-        var rec = recOf(ST.drawer.id);
-        if (rec) { rec.ok = res.ok; saveData(); renderList(); }
+        var it = currentOrg().ifaces.filter(function (x) { return x.id === ST.drawer.id; })[0];
+        if (it) { it.ok = res.ok; saveData(); renderIfaceTable(currentOrg()); }
       }
     }, 700);
   }
@@ -455,98 +632,118 @@
 
   /* ================= 事件 ================= */
   function bindEvents() {
-    $("btnAdd").addEventListener("click", function () { openDrawer(null); });
+    $("btnAddOrg").addEventListener("click", function () { openOrgDrawer(null); });
+    $("btnBack").addEventListener("click", function () { showView("list"); });
+    $("btnAddIface").addEventListener("click", function () { openIfaceDrawer(null); });
 
-    $("listBody").addEventListener("click", function (e) {
+    $("orgBody").addEventListener("click", function (e) {
       var btn = e.target.closest("button[data-act]");
       if (!btn) return;
       var id = Number(btn.getAttribute("data-id"));
       var r = recOf(id);
       if (!r) return;
-      var act = btn.getAttribute("data-act");
-      if (act === "edit") openDrawer(r);
-      else if (act === "del") {
-        if (confirm("确定删除「" + itemOf(r.item).name + "（" + r.hisType + "）」这条接口配置吗？删除后适用机构将无法继续调用该接口。")) {
+      if (btn.getAttribute("data-act") === "edit") {
+        ST.orgId = id;
+        showView("detail");
+      } else {
+        if (confirm("确定删除「" + r.org + "」的对接配置及其下所有接口吗？")) {
           DATA.splice(DATA.indexOf(r), 1);
           saveData();
-          renderList();
-          toast("已删除：" + itemOf(r.item).name);
+          renderOrgList();
+          toast("已删除：" + r.org);
         }
       }
     });
 
-    /* 抽屉事件 */
+    $("pageConfigBox").addEventListener("click", function (e) {
+      if (e.target.closest("[data-page-edit]")) openOrgDrawer(currentOrg());
+    });
+
+    $("ifaceBody").addEventListener("click", function (e) {
+      var btn = e.target.closest("button[data-act]");
+      if (!btn) return;
+      var id = Number(btn.getAttribute("data-id"));
+      var org = currentOrg();
+      if (!org) return;
+      var it = org.ifaces.filter(function (x) { return x.id === id; })[0];
+      if (!it) return;
+      if (btn.getAttribute("data-act") === "edit") openIfaceDrawer(it);
+      else {
+        if (confirm("确定删除接口「" + it.name + "」吗？")) {
+          org.ifaces.splice(org.ifaces.indexOf(it), 1);
+          saveData();
+          renderIfaceTable(org);
+          toast("已删除：" + it.name);
+        }
+      }
+    });
+
     $("drawer").addEventListener("click", function (e) {
       if (!ST.drawer) return;
       if (e.target.closest("[data-dw-close]")) { closeDrawer(); return; }
-      if (e.target.closest("[data-dw-save]")) { saveDrawer(); return; }
-      if (e.target.closest("[data-dw-test]")) { runTest(); return; }
-      /* 适用机构下拉多选：点按钮开合，点面板外收起 */
-      var msel = e.target.closest("[data-msel]");
-      document.querySelectorAll("#drawer .msel.open").forEach(function (m) {
-        if (m !== msel) m.classList.remove("open");
-      });
-      if (e.target.closest("[data-msel-btn]") && msel) msel.classList.toggle("open");
+      if (e.target.closest("[data-dw-save]")) {
+        if (ST.drawer.kind === "org") saveOrgDrawer(); else saveIfaceDrawer();
+        return;
+      }
+      if (ST.drawer.kind === "org") {
+        var modeCard = e.target.closest("[data-mode]");
+        if (modeCard && modeCard.getAttribute("data-mode") !== ST.drawer.draft.mode) {
+          ST.drawer.draft.mode = modeCard.getAttribute("data-mode");
+          renderOrgDrawer();
+        }
+        return;
+      }
+      if (e.target.closest("[data-iface-test]")) { runIfaceTest(); return; }
     });
+
     $("dwMask").addEventListener("click", closeDrawer);
+
     $("drawer").addEventListener("input", function (e) {
       if (!ST.drawer) return;
       var el = e.target;
-      if (el.hasAttribute("data-k")) ST.drawer.draft[el.getAttribute("data-k")] = el.value;
+      var k = el.getAttribute && el.getAttribute("data-k");
+      if (k) ST.drawer.draft[k] = el.value;
     });
     $("drawer").addEventListener("change", function (e) {
       if (!ST.drawer) return;
       var el = e.target;
-      if (el.hasAttribute("data-orgck")) {
-        var name = el.getAttribute("data-orgck");
-        var arr = ST.drawer.draft.orgs;
-        var idx = arr.indexOf(name);
-        if (el.checked && idx < 0) arr.push(name);
-        if (!el.checked && idx >= 0) arr.splice(idx, 1);
-        /* 更新下拉按钮文案（不重渲染，保持面板展开） */
-        var btn = el.closest(".msel").querySelector(".msel-btn");
-        btn.classList.toggle("is-empty", !arr.length);
-        btn.querySelector(".msel-text").textContent = arr.length
-          ? arr.slice(0, 2).join("、") + (arr.length > 2 ? " 等 " + arr.length + " 家" : "")
-          : "请选择适用机构";
-        return;
-      }
-      var k = el.getAttribute("data-k");
+      var k = el.getAttribute && el.getAttribute("data-k");
       if (!k) return;
-      if (k === "itemName") {
-        ST.drawer.draft.item = itemOf(el.value).key;
-        renderDrawer();
-        return;
+      var d = ST.drawer.draft;
+      d[k] = el.value;
+      if (ST.drawer.kind === "iface" && k === "direction") {
+        renderIfaceDrawer();
       }
-      ST.drawer.draft[k] = el.value;
     });
   }
 
   /* ================= 初始化 ================= */
   function initFilters() {
-    var sel = $("fltItem");
-    ITEMS.forEach(function (it) {
+    ALL_ORGS.forEach(function (o) {
       var opt = document.createElement("option");
-      opt.value = it.key;
-      opt.textContent = it.name;
-      sel.appendChild(opt);
+      opt.value = o; opt.textContent = o;
+      $("fltOrg").appendChild(opt);
     });
-    /* 查询：读取查询条件后刷新列表；重置：清空条件并恢复全量 */
+    Object.keys(MODES).forEach(function (k) {
+      var opt = document.createElement("option");
+      opt.value = k; opt.textContent = MODES[k].label;
+      $("fltMode").appendChild(opt);
+    });
     $("btnQuery").addEventListener("click", function () {
-      FLT = { item: $("fltItem").value, from: $("fltFrom").value, to: $("fltTo").value };
-      renderList();
+      FLT = { org: $("fltOrg").value, mode: $("fltMode").value, from: $("fltFrom").value, to: $("fltTo").value };
+      renderOrgList();
     });
     $("btnReset").addEventListener("click", function () {
-      $("fltItem").value = ""; $("fltFrom").value = ""; $("fltTo").value = "";
-      FLT = { item: "", from: "", to: "" };
-      renderList();
+      $("fltOrg").value = ""; $("fltMode").value = ""; $("fltFrom").value = ""; $("fltTo").value = "";
+      FLT = { org: "", mode: "", from: "", to: "" };
+      renderOrgList();
     });
   }
 
   loadData();
   bindEvents();
   initFilters();
-  renderList();
+  renderOrgList();
 })();
 </script>
 

@@ -8,57 +8,38 @@
 /* ===== 处方管理 · 处方查询（门诊处方查询 · 中药房） ===== */
 .pq-wrap {
   flex: 1; min-height: 0;
-  display: flex; gap: 12px; padding: 12px;
+  display: flex; flex-direction: column; gap: 12px;
+  padding: 12px;
   background: var(--bg-page);
 }
 
-/* 左侧卡片 */
-.pq-side {
-  flex: none; width: 400px; min-height: 0;
-  display: flex; flex-direction: column;
+/* 筛选栏卡片 */
+.pq-filterbar {
+  flex: none;
+  display: flex; flex-wrap: wrap; align-items: center;
+  gap: 10px 18px;
+  padding: 10px 14px;
   background: var(--bg-white);
   border-radius: var(--radius-lg);
   box-shadow: 0 1px 2px rgba(0, 0, 0, .04);
-  /* 下拉多选面板需要溢出到列表区上方，故不裁切 */
-  overflow: visible;
 }
-.pq-side-head {
-  flex: none; height: 44px;
-  display: flex; align-items: center;
-  padding: 0 12px;
-  border-bottom: 1px solid var(--border);
-}
-.pq-side-title { font-size: 14px; font-weight: 500; color: var(--text-primary); }
-
-/* 筛选区：两列栅格，仅处方时间/检索跨两列 */
-.pq-filter {
-  flex: none; padding: 10px 12px;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  column-gap: 10px; row-gap: 8px;
-  align-items: start;
-  border-bottom: 1px solid var(--border);
-}
-.pq-frow { display: flex; align-items: flex-start; gap: 6px; min-width: 0; }
-.pq-frow.span-2 { grid-column: 1 / -1; }
-.pq-flbl { flex: none; width: 62px; font-size: 12px; color: var(--text-secondary); white-space: nowrap; padding-top: 6px; text-align: right; }
-.pq-frow .input, .pq-frow .select { height: 30px; font-size: 12px; flex: 1; min-width: 0; }
-.pq-range { display: flex; align-items: center; gap: 4px; flex: 1; min-width: 0; }
-.pq-range-wrap { position: relative; flex: 1; min-width: 0; }
+.pq-frow { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.pq-flbl { flex: none; width: 62px; font-size: 12px; color: var(--text-secondary); white-space: nowrap; text-align: right; }
+.pq-frow .input, .pq-frow .select { height: 30px; font-size: 12px; }
+.pq-frow > .input { width: 230px; }
+.pq-range { display: flex; align-items: center; gap: 4px; }
+.pq-range-wrap { position: relative; }
+.pq-range-wrap .input { width: 150px; }
 .pq-range-wrap svg {
   position: absolute; right: 6px; top: 8px;
   width: 14px; height: 14px; color: var(--text-tertiary); pointer-events: none;
 }
 .pq-range-sep { font-size: 12px; color: var(--text-tertiary); flex: none; }
-.pq-facts {
-  grid-column: 2;
-  display: flex; justify-content: flex-end; align-items: center;
-  gap: 6px; height: 30px;
-}
+.pq-facts { margin-left: auto; display: flex; align-items: center; gap: 6px; height: 30px; }
 .pq-facts .btn { height: 30px; padding: 0 12px; font-size: 12px; }
 
 /* 下拉多选 */
-.pq-ms { position: relative; flex: 1; min-width: 0; }
+.pq-ms { position: relative; width: 150px; }
 .pq-ms-btn {
   height: 30px; width: 100%;
   display: flex; align-items: center;
@@ -102,10 +83,18 @@
 .pq-ms-item:hover { background: var(--primary-lighter); }
 .pq-ms-item input { margin: 0; accent-color: var(--primary); cursor: pointer; }
 
-/* 左侧列表 */
+/* 列表卡片 */
+.pq-listcard {
+  flex: 1; min-height: 0;
+  display: flex; flex-direction: column;
+  background: var(--bg-white);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .04);
+  overflow: hidden;
+}
 .pq-listwrap { flex: 1; min-height: 0; overflow: auto; }
 .pq-ltable {
-  width: 440px; min-width: 440px;
+  width: 100%; min-width: 1280px;
   border-collapse: separate; border-spacing: 0;
   table-layout: fixed; font-size: 12px;
 }
@@ -129,12 +118,31 @@
 .pq-ltable tbody tr { cursor: pointer; }
 .pq-ltable tbody tr:hover { background: var(--table-hover); }
 .pq-ltable tbody tr.is-current { background: #D6E9FF; }
-.pq-ltable .c-no { width: 136px; font-size: 10.5px; }
-.pq-ltable .c-name { width: 54px; }
-.pq-ltable .c-status { width: 86px; }
-.pq-ltable .c-gender { width: 32px; }
-.pq-ltable .c-dispenser { width: 48px; }
-.pq-ltable .c-time { width: 84px; font-size: 11px; }
+/* 处方号列固定左侧 */
+.pq-ltable th.c-no, .pq-ltable td.c-no { position: sticky; left: 0; }
+.pq-ltable th.c-no { z-index: 3; background: var(--table-head); }
+.pq-ltable td.c-no { z-index: 1; background: var(--bg-white); font-size: 10.5px; box-shadow: 2px 0 3px rgba(0, 0, 0, .04); }
+.pq-ltable tbody tr:hover td.c-no { background: var(--table-hover); }
+.pq-ltable tbody tr.is-current td.c-no { background: #D6E9FF; }
+.pq-ltable .c-no { width: 138px; }
+.pq-ltable .c-name { width: 64px; }
+.pq-ltable .c-gender { width: 44px; text-align: center; }
+.pq-ltable .c-age { width: 48px; text-align: center; font-variant-numeric: tabular-nums; }
+.pq-ltable .c-medno { width: 140px; font-size: 11px; }
+.pq-ltable .c-rxcat { width: 76px; }
+.pq-ltable .c-amt { width: 78px; text-align: right; font-variant-numeric: tabular-nums; }
+.pq-ltable .c-time { width: 148px; font-size: 11px; }
+.pq-ltable .c-doctor { width: 76px; }
+.pq-ltable .c-dept { width: 104px; }
+.pq-ltable .c-org { width: 170px; }
+.pq-ltable .c-status { width: 88px; }
+.pq-ltable .c-act { width: 60px; text-align: center; }
+.pq-view {
+  border: none; background: none; padding: 0;
+  font-size: 12px; color: var(--primary);
+  cursor: pointer;
+}
+.pq-view:hover { text-decoration: underline; }
 .pq-l-empty { padding: 40px 0; text-align: center; color: var(--text-placeholder); font-size: 12px; }
 
 /* 状态标签 */
@@ -158,15 +166,24 @@
 .pq-pagefoot .pager-ctrl { display: flex; align-items: center; gap: 4px; }
 .pq-pagefoot .select { height: 24px; width: 86px; font-size: 12px; }
 
-/* 右侧主区 */
-.pq-main {
-  flex: 1; min-width: 0; min-height: 0;
+/* ===== 右侧抽屉：处方详情 ===== */
+.pq-drawer-host {
+  position: fixed; inset: var(--h-header) 0 0 0;
+  z-index: 100; overflow: hidden;
+  pointer-events: none;
+}
+.pq-drawer {
+  position: absolute; top: 0; right: 0; bottom: 0;
+  width: 62vw; min-width: 840px; max-width: 1100px;
   display: flex; flex-direction: column;
   background: var(--bg-white);
-  border-radius: var(--radius-lg);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, .04);
-  overflow: hidden;
+  border-left: 1px solid var(--border);
+  box-shadow: -4px 0 16px rgba(0, 0, 0, .12);
+  transform: translateX(102%);
+  transition: transform .25s ease;
+  pointer-events: auto;
 }
+.pq-drawer.is-open { transform: translateX(0); }
 
 /* 标题栏 */
 .pq-toolbar {
@@ -187,6 +204,16 @@
 }
 .pq-rxtype.is-tcm { background: #EAF7EE; color: #2E8B57; }
 .pq-rxtype.is-western { background: #FFF0F0; color: #CF1322; }
+.pq-drawer-close {
+  margin-left: auto;
+  width: 26px; height: 26px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: none; border-radius: 4px;
+  background: none; color: var(--text-secondary);
+  cursor: pointer;
+}
+.pq-drawer-close:hover { background: var(--table-hover); color: var(--text-primary); }
+.pq-drawer-close svg { width: 14px; height: 14px; }
 
 /* 基本信息区 */
 .pq-info-wrap {
@@ -224,8 +251,8 @@
   max-height: 66px;
   overflow: hidden;
 }
-@media (min-width: 1600px) { .pq-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
-@media (min-width: 1840px) { .pq-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
+/* 列数随抽屉实际宽度自适应：窄屏 3 列，较宽视口（抽屉 ≥1050px 左右）4 列 */
+@media (min-width: 1700px) { .pq-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 .pq-field { display: flex; gap: 4px; min-width: 0; font-size: 12px; line-height: 18px; }
 .pq-field .k { flex: none; color: var(--text-tertiary); white-space: nowrap; }
 .pq-field .v {
@@ -233,8 +260,8 @@
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 
-/* 药品明细表 */
-.pq-dwrap { flex: 1; min-height: 0; overflow: auto; }
+/* 药品明细表（与抽屉边框留出间距） */
+.pq-dwrap { flex: 1; min-height: 0; overflow: auto; padding: 0 16px 16px; }
 .pq-dtable {
   width: 100%; min-width: 1620px;
   border-collapse: separate; border-spacing: 0;
@@ -317,125 +344,89 @@
 
     <div class="pq-wrap">
 
-      <!-- ========== 左侧：筛选 + 处方列表 ========== -->
-      <aside class="pq-side">
-        <div class="pq-side-head">
-          <span class="pq-side-title">门诊处方查询</span>
-        </div>
-
-        <!-- 筛选区 -->
-        <div class="pq-filter">
-          <!-- 处方时间（跨两列） -->
-          <div class="pq-frow span-2">
-            <span class="pq-flbl">处方时间：</span>
-            <div class="pq-range">
-              <div class="pq-range-wrap">
-                <input class="input" id="pqStartDate" readonly value="2026-10-01 00:00:00">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>
-              </div>
-              <span class="pq-range-sep">至</span>
-              <div class="pq-range-wrap">
-                <input class="input" id="pqEndDate" readonly value="2026-11-05 23:59:59">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>
-              </div>
+      <!-- ========== 筛选栏 ========== -->
+      <div class="pq-filterbar">
+        <!-- 处方时间 -->
+        <div class="pq-frow">
+          <span class="pq-flbl">处方时间：</span>
+          <div class="pq-range">
+            <div class="pq-range-wrap">
+              <input class="input" id="pqStartDate" readonly value="2026-10-01 00:00:00">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>
             </div>
-          </div>
-
-          <!-- 检索（跨两列，患者姓名/医疗卡号/处方号） -->
-          <div class="pq-frow span-2">
-            <span class="pq-flbl">检索：</span>
-            <input class="input" id="pqKeyword" placeholder="请输入患者姓名 / 医疗卡号 / 处方号">
-          </div>
-
-          <!-- 药房 下拉多选 -->
-          <div class="pq-frow">
-            <span class="pq-flbl">药房：</span>
-            <div class="pq-ms" id="pqPharmacyTags">
-              <div class="pq-ms-btn">
-                <span class="txt">中药房</span>
-                <svg class="arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"></path></svg>
-              </div>
-              <div class="pq-ms-panel">
-                <label class="pq-ms-item"><input type="checkbox" data-v="中药房" checked><span>中药房</span></label>
-                <label class="pq-ms-item"><input type="checkbox" data-v="西药房"><span>西药房</span></label>
-                <label class="pq-ms-item"><input type="checkbox" data-v="住院药房"><span>住院药房</span></label>
-              </div>
+            <span class="pq-range-sep">至</span>
+            <div class="pq-range-wrap">
+              <input class="input" id="pqEndDate" readonly value="2026-11-05 23:59:59">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>
             </div>
-          </div>
-
-          <!-- 发药人 -->
-          <div class="pq-frow">
-            <span class="pq-flbl">发药人：</span>
-            <input class="input" id="pqDispenser" placeholder="请输入发药人姓名">
-          </div>
-
-          <!-- 处方状态 下拉多选 -->
-          <div class="pq-frow">
-            <span class="pq-flbl">处方状态：</span>
-            <div class="pq-ms" id="pqStatusTags">
-              <div class="pq-ms-btn">
-                <span class="txt">全部</span>
-                <svg class="arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"></path></svg>
-              </div>
-              <div class="pq-ms-panel">
-                <label class="pq-ms-item"><input type="checkbox" data-v="未收费"><span>未收费</span></label>
-                <label class="pq-ms-item"><input type="checkbox" data-v="未发药"><span>未发药</span></label>
-                <label class="pq-ms-item"><input type="checkbox" data-v="已发药未收费"><span>已发药未收费</span></label>
-                <label class="pq-ms-item"><input type="checkbox" data-v="已退药未退费"><span>已退药未退费</span></label>
-                <label class="pq-ms-item"><input type="checkbox" data-v="已作废"><span>已作废</span></label>
-              </div>
-            </div>
-          </div>
-
-          <!-- 处方种类 下拉多选 -->
-          <div class="pq-frow">
-            <span class="pq-flbl">处方种类：</span>
-            <div class="pq-ms" id="pqCategoryTags">
-              <div class="pq-ms-btn">
-                <span class="txt">全部</span>
-                <svg class="arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"></path></svg>
-              </div>
-              <div class="pq-ms-panel">
-                <label class="pq-ms-item"><input type="checkbox" data-v="普通处方"><span>普通处方</span></label>
-                <label class="pq-ms-item"><input type="checkbox" data-v="急诊处方"><span>急诊处方</span></label>
-                <label class="pq-ms-item"><input type="checkbox" data-v="儿科处方"><span>儿科处方</span></label>
-              </div>
-            </div>
-          </div>
-
-          <!-- 药品种类 下拉多选 -->
-          <div class="pq-frow">
-            <span class="pq-flbl">药品种类：</span>
-            <div class="pq-ms" id="pqDrugTypeTags">
-              <div class="pq-ms-btn">
-                <span class="txt">全部</span>
-                <svg class="arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"></path></svg>
-              </div>
-              <div class="pq-ms-panel">
-                <label class="pq-ms-item"><input type="checkbox" data-v="中药饮片处方"><span>中药饮片</span></label>
-                <label class="pq-ms-item"><input type="checkbox" data-v="中成药处方"><span>中成药</span></label>
-                <label class="pq-ms-item"><input type="checkbox" data-v="西药处方"><span>西药</span></label>
-              </div>
-            </div>
-          </div>
-
-          <div class="pq-facts">
-            <button class="btn" id="pqReset">重置</button>
-            <button class="btn btn-primary" id="pqQuery">查询</button>
           </div>
         </div>
 
-        <!-- 列表 -->
+        <!-- 检索（患者姓名/医疗号/处方号） -->
+        <div class="pq-frow">
+          <span class="pq-flbl">检索：</span>
+          <input class="input" id="pqKeyword" placeholder="请输入患者姓名 / 医疗号 / 处方号">
+        </div>
+
+        <!-- 处方类型 下拉多选 -->
+        <div class="pq-frow">
+          <span class="pq-flbl">处方类型：</span>
+          <div class="pq-ms" id="pqCategoryTags">
+            <div class="pq-ms-btn">
+              <span class="txt">全部</span>
+              <svg class="arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"></path></svg>
+            </div>
+            <div class="pq-ms-panel">
+              <label class="pq-ms-item"><input type="checkbox" data-v="普通处方"><span>普通处方</span></label>
+              <label class="pq-ms-item"><input type="checkbox" data-v="急诊处方"><span>急诊处方</span></label>
+              <label class="pq-ms-item"><input type="checkbox" data-v="儿科处方"><span>儿科处方</span></label>
+            </div>
+          </div>
+        </div>
+
+        <!-- 处方状态 下拉多选 -->
+        <div class="pq-frow">
+          <span class="pq-flbl">处方状态：</span>
+          <div class="pq-ms" id="pqStatusTags">
+            <div class="pq-ms-btn">
+              <span class="txt">全部</span>
+              <svg class="arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"></path></svg>
+            </div>
+            <div class="pq-ms-panel">
+              <label class="pq-ms-item"><input type="checkbox" data-v="未收费"><span>未收费</span></label>
+              <label class="pq-ms-item"><input type="checkbox" data-v="未发药"><span>未发药</span></label>
+              <label class="pq-ms-item"><input type="checkbox" data-v="已发药未收费"><span>已发药未收费</span></label>
+              <label class="pq-ms-item"><input type="checkbox" data-v="已退药未退费"><span>已退药未退费</span></label>
+              <label class="pq-ms-item"><input type="checkbox" data-v="已作废"><span>已作废</span></label>
+            </div>
+          </div>
+        </div>
+
+        <div class="pq-facts">
+          <button class="btn" id="pqReset">重置</button>
+          <button class="btn btn-primary" id="pqQuery">查询</button>
+        </div>
+      </div>
+
+      <!-- ========== 处方列表（全宽） ========== -->
+      <div class="pq-listcard">
         <div class="pq-listwrap">
           <table class="pq-ltable">
             <thead>
               <tr>
                 <th class="c-no">处方号</th>
                 <th class="c-name">姓名</th>
-                <th class="c-status">处方状态</th>
                 <th class="c-gender">性别</th>
-                <th class="c-dispenser">发药人</th>
+                <th class="c-age">年龄</th>
+                <th class="c-medno">医疗号</th>
+                <th class="c-rxcat">处方类型</th>
+                <th class="c-amt">处方金额</th>
                 <th class="c-time">处方时间</th>
+                <th class="c-doctor">开方医生</th>
+                <th class="c-dept">开方科室</th>
+                <th class="c-org">开方机构</th>
+                <th class="c-status">处方状态</th>
+                <th class="c-act">操作</th>
               </tr>
             </thead>
             <tbody id="pqListBody"></tbody>
@@ -459,59 +450,64 @@
             </button>
           </div>
         </div>
-      </aside>
-
-      <!-- ========== 右侧：处方详情 ========== -->
-      <section class="pq-main">
-        <!-- 标题栏（极简） -->
-        <div class="pq-toolbar">
-          <span class="pq-toolbar-title">
-            当前处方
-            <span class="pq-rxtype" id="pqRxTypeTag">—</span>
-          </span>
-        </div>
-
-        <!-- 当前基本信息 -->
-        <div class="pq-info-wrap">
-          <div class="pq-info-head">
-            <span class="pq-info-title">基本信息</span>
-            <button class="pq-info-toggle" id="pqInfoToggle" type="button">
-              <span class="txt">展开</span>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"></path></svg>
-            </button>
-          </div>
-          <div class="pq-grid is-collapsed" id="pqInfoGrid"></div>
-        </div>
-
-        <!-- 当前药品信息 -->
-        <div class="pq-dwrap">
-          <table class="pq-dtable">
-            <thead>
-              <tr>
-                <th class="c-idx">序号</th>
-                <th class="c-code">药品编码</th>
-                <th class="c-name">药品名称</th>
-                <th class="c-spec">药品规格</th>
-                <th class="c-batch">批号</th>
-                <th class="c-price num">药品单价</th>
-                <th class="c-single">单次量</th>
-                <th class="c-times">用次</th>
-                <th class="c-days">天数</th>
-                <th class="c-qty">药品总量</th>
-                <th class="c-usage">药品用法</th>
-                <th class="c-amt num">金额</th>
-                <th class="c-mfr">生产企业</th>
-                <th class="c-dqty num">发药数量</th>
-                <th class="c-dunit">发药单位</th>
-                <th class="c-dconv num">发药换算系数</th>
-              </tr>
-            </thead>
-            <tbody id="pqDetailBody"></tbody>
-          </table>
-        </div>
-      </section>
+      </div>
     </div>
   </main>
+</div>
+
+<!-- ========== 右侧抽屉：处方详情 ========== -->
+<div class="pq-drawer-host">
+  <section class="pq-drawer" id="pqDrawer">
+    <!-- 标题栏 -->
+    <div class="pq-toolbar">
+      <span class="pq-toolbar-title">
+        处方详情
+        <span class="pq-rxtype" id="pqRxTypeTag">—</span>
+      </span>
+      <button class="pq-drawer-close" id="pqDrawerClose" type="button" title="关闭">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 5l14 14M19 5L5 19"></path></svg>
+      </button>
+    </div>
+
+    <!-- 基本信息 -->
+    <div class="pq-info-wrap">
+      <div class="pq-info-head">
+        <span class="pq-info-title">基本信息</span>
+        <button class="pq-info-toggle" id="pqInfoToggle" type="button">
+          <span class="txt">展开</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"></path></svg>
+        </button>
+      </div>
+      <div class="pq-grid is-collapsed" id="pqInfoGrid"></div>
+    </div>
+
+    <!-- 药品信息 -->
+    <div class="pq-dwrap">
+      <table class="pq-dtable">
+        <thead>
+          <tr>
+            <th class="c-idx">序号</th>
+            <th class="c-code">药品编码</th>
+            <th class="c-name">药品名称</th>
+            <th class="c-spec">药品规格</th>
+            <th class="c-batch">批号</th>
+            <th class="c-price num">药品单价</th>
+            <th class="c-single">单次量</th>
+            <th class="c-times">用次</th>
+            <th class="c-days">天数</th>
+            <th class="c-qty">药品总量</th>
+            <th class="c-usage">药品用法</th>
+            <th class="c-amt num">金额</th>
+            <th class="c-mfr">生产企业</th>
+            <th class="c-dqty num">发药数量</th>
+            <th class="c-dunit">发药单位</th>
+            <th class="c-dconv num">发药换算系数</th>
+          </tr>
+        </thead>
+        <tbody id="pqDetailBody"></tbody>
+      </table>
+    </div>
+  </section>
 </div>
 
 <script src="mock.js"></script>
@@ -559,11 +555,8 @@
       startDate: "2026-10-01 00:00:00",
       endDate: "2026-11-05 23:59:59",
       keyword: "",
-      pharmacies: ["中药房"],
-      statuses: [],
-      categories: [],
-      drugTypes: [],
-      dispenser: ""
+      rxCategories: [],
+      statuses: []
     },
     page: 1,
     pageSize: 10
@@ -573,34 +566,21 @@
     var f = ST.filters;
     var list = ST.data;
 
-    // 药房
-    if (f.pharmacies && f.pharmacies.length){
-      list = list.filter(function(p){ return f.pharmacies.indexOf(p.pharmacy) >= 0; });
-    }
     // 处方状态
     if (f.statuses && f.statuses.length){
       list = list.filter(function(p){ return f.statuses.indexOf(p.rxStatus) >= 0; });
     }
-    // 处方种类
-    if (f.categories && f.categories.length){
-      list = list.filter(function(p){ return f.categories.indexOf(p.rxCategory) >= 0; });
+    // 处方类型（普通/急诊/儿科）
+    if (f.rxCategories && f.rxCategories.length){
+      list = list.filter(function(p){ return f.rxCategories.indexOf(p.rxCategory) >= 0; });
     }
-    // 药品种类
-    if (f.drugTypes && f.drugTypes.length){
-      list = list.filter(function(p){ return f.drugTypes.indexOf(p.rxType) >= 0; });
-    }
-    // 发药人
-    if (f.dispenser){
-      list = list.filter(function(p){ return p.dispenser && p.dispenser.toLowerCase().indexOf(f.dispenser.toLowerCase()) >= 0; });
-    }
-    // 检索关键词（姓名/医疗号/处方号）
+    // 检索关键词（患者姓名/医疗号/处方号）
     if (f.keyword){
       var kw = f.keyword.toLowerCase();
       list = list.filter(function(p){
         return (p.name && p.name.toLowerCase().indexOf(kw) >= 0)
             || (p.medicalNo && p.medicalNo.toLowerCase().indexOf(kw) >= 0)
-            || (p.rxNo && p.rxNo.toLowerCase().indexOf(kw) >= 0)
-            || (p.outpatientNo && p.outpatientNo.toLowerCase().indexOf(kw) >= 0);
+            || (p.rxNo && p.rxNo.toLowerCase().indexOf(kw) >= 0);
       });
     }
     // 日期范围
@@ -630,22 +610,29 @@
     return null;
   }
 
-  /* ---------------- 左侧列表 ---------------- */
+  /* ---------------- 列表 ---------------- */
   function renderList(){
     var r = paged();
     var body = $("pqListBody");
     if (!r.list.length){
-      body.innerHTML = '<tr><td colspan="6" class="pq-l-empty">暂无处方</td></tr>';
+      body.innerHTML = '<tr><td colspan="12" class="pq-l-empty">暂无处方</td></tr>';
     } else {
       body.innerHTML = r.list.map(function(p){
         var cls = p.id === ST.currentId ? " is-current" : "";
         return '<tr data-id="' + p.id + '" class="' + cls + '">'
-          + '<td title="' + esc(p.rxNo) + '">' + esc(p.rxNo) + '</td>'
+          + '<td class="c-no" title="' + esc(p.rxNo) + '">' + esc(p.rxNo) + '</td>'
           + '<td title="' + esc(p.name) + '">' + esc(p.name) + '</td>'
+          + '<td class="c-gender" title="' + esc(p.gender) + '">' + esc(String(p.gender || "").replace("性", "")) + '</td>'
+          + '<td class="c-age" title="' + esc(p.age) + '">' + esc(p.age) + '</td>'
+          + '<td class="c-medno" title="' + esc(p.medicalNo) + '">' + esc(p.medicalNo) + '</td>'
+          + '<td title="' + esc(p.rxCategory) + '">' + esc(p.rxCategory) + '</td>'
+          + '<td class="c-amt" title="' + money(p.rxAmount !== undefined ? p.rxAmount : p.amount) + '">' + money(p.rxAmount !== undefined ? p.rxAmount : p.amount) + '</td>'
+          + '<td class="c-time" title="' + esc(p.rxTime) + '">' + esc(p.rxTime) + '</td>'
+          + '<td title="' + esc(p.doctor) + '">' + esc(p.doctor) + '</td>'
+          + '<td title="' + esc(p.dept) + '">' + esc(p.dept) + '</td>'
+          + '<td title="' + esc(p.org) + '">' + esc(p.org) + '</td>'
           + '<td>' + statusTag(p.rxStatus) + '</td>'
-          + '<td title="' + esc(p.gender) + '">' + esc(String(p.gender || "").replace("性", "")) + '</td>'
-          + '<td title="' + esc(p.dispenser) + '">' + esc(p.dispenser) + '</td>'
-          + '<td title="' + esc(p.rxTime) + '">' + esc(shortTime(p.rxTime)) + '</td>'
+          + '<td class="c-act"><button class="pq-view" type="button">查看</button></td>'
           + '</tr>';
       }).join("");
     }
@@ -653,13 +640,6 @@
     $("pqCurPage").textContent = ST.page;
     $("pqPrev").disabled = ST.page <= 1;
     $("pqNext").disabled = ST.page >= r.totalPages;
-  }
-
-  /* 列表时间紧凑显示：2026-10-28 14:46:53 → 10-28 14:46 */
-  function shortTime(s){
-    if (!s) return "—";
-    var m = String(s).match(/\d{4}-(\d{2}-\d{2})\s+(\d{2}:\d{2})/);
-    return m ? m[1] + " " + m[2] : s;
   }
 
   function statusTag(status){
@@ -672,7 +652,35 @@
     return '<span class="' + cls + '">' + raw(status) + '</span>';
   }
 
-  /* ---------------- 右侧标题栏 ---------------- */
+  /* ---------------- 抽屉 ---------------- */
+  function drawerOpen(){
+    return $("pqDrawer").classList.contains("is-open");
+  }
+
+  /* 仅更新行高亮，不重建表格（避免在点击事件的冒泡过程中替换 DOM） */
+  function updateHighlight(){
+    var rows = $("pqListBody").querySelectorAll("tr[data-id]");
+    for (var i = 0; i < rows.length; i++){
+      rows[i].classList.toggle("is-current", rows[i].getAttribute("data-id") === ST.currentId);
+    }
+  }
+
+  function openDrawer(id){
+    ST.currentId = id;
+    updateHighlight();
+    renderTypeTag();
+    renderInfo();
+    renderDetail();
+    $("pqDrawer").classList.add("is-open");
+  }
+
+  function closeDrawer(){
+    $("pqDrawer").classList.remove("is-open");
+    ST.currentId = null;
+    updateHighlight();
+  }
+
+  /* ---------------- 抽屉标题栏：药品类型标签 ---------------- */
   function renderTypeTag(){
     var p = current();
     var el = $("pqRxTypeTag");
@@ -683,7 +691,7 @@
     else if (p.rxType === "西药处方") el.classList.add("is-western");
   }
 
-  /* ---------------- 基本信息（按用户新排序） ---------------- */
+  /* ---------------- 基本信息（术语统一：处方类型=普通/急诊/儿科，药品类型=中药饮片/中成药/西药） ---------------- */
   function renderInfo(){
     var p = current();
     var rows = [];
@@ -692,7 +700,7 @@
         ["姓名", p.name], ["性别", p.gender], ["年龄", p.age], ["联系电话", p.phone],
         ["处方号", p.rxNo], ["门诊号", p.outpatientNo], ["医疗号", p.medicalNo],
         ["开单科室", p.dept], ["药房", p.pharmacy], ["医师", p.doctor],
-        ["处方状态", p.rxStatus], ["处方类型", p.rxType], ["处方种类", p.rxCategory || "—"],
+        ["处方状态", p.rxStatus], ["药品类型", p.rxType], ["处方类型", p.rxCategory || "—"],
         ["收费种类", p.feeType], ["处方金额", money(p.rxAmount !== undefined ? p.rxAmount : p.amount)],
         ["处方时间", p.rxTime], ["收费时间", p.chargeTime || "—"],
         ["审核时间", p.auditTime || "—"], ["审核人", p.auditBy || "—"],
@@ -708,7 +716,7 @@
       rows.push(["协定处方", p.agreementRx || "—"]);
     } else {
       ["姓名","性别","年龄","联系电话","处方号","门诊号","医疗号",
-       "开单科室","药房","医师","处方状态","处方类型","处方种类",
+       "开单科室","药房","医师","处方状态","药品类型","处方类型",
        "收费种类","处方金额","处方时间","收费时间",
        "审核时间","审核人","调配时间","调配人","发药时间","发药人",
        "诊断","过敏药物"].forEach(function(k){ rows.push([k, "—"]); });
@@ -722,12 +730,12 @@
     }).join("");
   }
 
-  /* ---------------- 药品明细（隐藏商品名称，规格改药品规格，数量改药品总量，加药品用法，去单位，最后加生产企业、发药数量/发药单位/发药换算系数） ---------------- */
+  /* ---------------- 药品明细 ---------------- */
   function renderDetail(){
     var p = current();
     var body = $("pqDetailBody");
     if (!p || !p.items.length){
-      body.innerHTML = '<tr class="pq-d-empty"><td colspan="16">' + (p ? "该处方暂无药品明细" : "请从左侧选择一张处方") + '</td></tr>';
+      body.innerHTML = '<tr class="pq-d-empty"><td colspan="16">' + (p ? "该处方暂无药品明细" : "请从列表选择一张处方") + '</td></tr>';
       return;
     }
     body.innerHTML = p.items.map(function(it, i){
@@ -759,25 +767,8 @@
     return String(it.single) + unit;
   }
 
-  function renderAll(){
-    renderList();
-    renderTypeTag();
-    renderInfo();
-    renderDetail();
-  }
-
-  function setCurrent(id){
-    ST.currentId = id;
-    renderAll();
-  }
-
-  function firstVisibleId(){
-    var list = filtered();
-    return list.length ? list[0].id : null;
-  }
-
   /* ---------------- 事件绑定 ---------------- */
-  var MS_IDS = ["pqPharmacyTags", "pqStatusTags", "pqCategoryTags", "pqDrugTypeTags"];
+  var MS_IDS = ["pqCategoryTags", "pqStatusTags"];
 
   function closeAllMs(exceptId){
     MS_IDS.forEach(function(id){
@@ -786,7 +777,7 @@
   }
 
   function bind(){
-    // 下拉多选（药房/处方状态/处方种类/药品种类）
+    // 下拉多选（处方类型/处方状态）
     MS_IDS.forEach(function(id){
       var box = $(id);
       box.querySelector(".pq-ms-btn").addEventListener("click", function(e){
@@ -817,58 +808,68 @@
     $("pqQuery").addEventListener("click", doQuery);
     $("pqReset").addEventListener("click", doReset);
 
-    // 列表点击
+    // 列表点击：整行或"查看"按钮均可打开/切换抽屉
     $("pqListBody").addEventListener("click", function(e){
       var tr = e.target.closest("tr");
       if (!tr) return;
       var id = tr.getAttribute("data-id");
-      if (id) setCurrent(id);
+      if (id) openDrawer(id);
+    });
+
+    // 抽屉关闭：× 按钮
+    $("pqDrawerClose").addEventListener("click", closeDrawer);
+
+    // 点击抽屉外部：点列表行视为切换（由行点击处理），其余区域关闭抽屉
+    document.addEventListener("click", function(e){
+      if (!drawerOpen()) return;
+      if (e.target.closest("#pqDrawer")) return;
+      if (e.target.closest("#pqListBody")) return;
+      closeDrawer();
+    });
+
+    // ESC 关闭抽屉
+    document.addEventListener("keydown", function(e){
+      if (e.key === "Escape" && drawerOpen()) closeDrawer();
     });
 
     // 分页
     $("pqPageSize").addEventListener("change", function(){
       ST.pageSize = parseInt(this.value, 10) || 10;
-      ST.page = 1; renderList();
+      ST.page = 1; closeDrawer(); renderList();
     });
     $("pqPrev").addEventListener("click", function(){
-      if (ST.page > 1){ ST.page--; renderList(); }
+      if (ST.page > 1){ ST.page--; closeDrawer(); renderList(); }
     });
     $("pqNext").addEventListener("click", function(){
       var r = paged();
-      if (ST.page < r.totalPages){ ST.page++; renderList(); }
+      if (ST.page < r.totalPages){ ST.page++; closeDrawer(); renderList(); }
     });
 
     // 回车
-    ["pqKeyword", "pqDispenser"].forEach(function(id){
-      $(id).addEventListener("keydown", function(e){ if (e.key === "Enter") doQuery(); });
-    });
+    $("pqKeyword").addEventListener("keydown", function(e){ if (e.key === "Enter") doQuery(); });
   }
 
   function doQuery(){
     ST.filters.startDate = $("pqStartDate").value;
     ST.filters.endDate = $("pqEndDate").value;
     ST.filters.keyword = $("pqKeyword").value.trim();
-    ST.filters.dispenser = $("pqDispenser").value.trim();
-    ST.filters.pharmacies = readMultiSelect("pqPharmacyTags");
+    ST.filters.rxCategories = readMultiSelect("pqCategoryTags");
     ST.filters.statuses = readMultiSelect("pqStatusTags");
-    ST.filters.categories = readMultiSelect("pqCategoryTags");
-    ST.filters.drugTypes = readMultiSelect("pqDrugTypeTags");
     closeAllMs(null);
     ST.page = 1;
-    ST.currentId = firstVisibleId();
-    renderAll();
+    closeDrawer();
+    renderList();
   }
 
   function doReset(){
     $("pqKeyword").value = "";
-    $("pqDispenser").value = "";
     $("pqStartDate").value = "2026-10-01 00:00:00";
     $("pqEndDate").value = "2026-11-05 23:59:59";
 
-    // 重置下拉：药房恢复中药房，其余清空
+    // 重置下拉：清空全部多选
     MS_IDS.forEach(function(id){
       $(id).querySelectorAll(".pq-ms-item input").forEach(function(input){
-        input.checked = id === "pqPharmacyTags" && input.getAttribute("data-v") === "中药房";
+        input.checked = false;
       });
       syncMsText(id);
     });
@@ -876,17 +877,16 @@
     ST.filters = {
       startDate: "2026-10-01 00:00:00",
       endDate: "2026-11-05 23:59:59",
-      keyword: "", pharmacies: ["中药房"], statuses: [], categories: [], drugTypes: [], dispenser: ""
+      keyword: "", rxCategories: [], statuses: []
     };
     ST.page = 1;
-    ST.currentId = firstVisibleId();
-    renderAll();
+    closeDrawer();
+    renderList();
   }
 
   /* 初始化 */
-  ST.currentId = firstVisibleId();
   bind();
-  renderAll();
+  renderList();
 
   document.title = "prescription-query";
 })();

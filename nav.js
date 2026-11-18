@@ -22,7 +22,8 @@
      ["narcotics"] 仅毒麻精审药医生可见；
      ["narcoticAuditor"] 仅毒麻精药房审核专员可见。
      subRole = "narcotics"（毒麻精审药医生，HIS 角色下的子角色）：仅可见「门诊处方管理 → 毒麻精药品审核」，无门诊医嘱开具权限。
-     hideFor = 账号例外名单：命中账号（如 zhaomin/chenjing）即使角色匹配也隐藏该项。 */
+     hideFor = 账号例外名单：命中账号（如 zhaomin/chenjing）即使角色匹配也隐藏该项。
+     showFor = 账号白名单：配置后仅名单内账号可见，优先级高于 roles（如门诊处方开具仅 sunlei 可见）。 */
   var C3 = ["center", "member", "village"];
   var NAV = [
     { name: "首页", icon: "home", href: "home.html", files: ["home.html"], roles: C3 },
@@ -66,8 +67,12 @@
       { name: "缺药登记", href: "shortage.html", files: ["shortage.html", "shortage-create.html", "shortage-detail.html"], roles: C3 }
     ], roles: C3 },
     { name: "门诊处方管理", icon: "rx", items: [
+      /* 门诊处方开具：账号白名单，仅 sunlei（孙磊）可见 */
+      { name: "门诊处方开具", href: "prescription-create.html", files: ["prescription-create.html"], roles: ["his"], showFor: ["sunlei"] },
+      /* 暂时隐藏：中药医嘱开具 / 门诊医嘱开具（恢复时取消注释即可）
       { name: "中药医嘱开具", href: "prescription-tcm.html", files: ["prescription-tcm.html"], roles: ["his"] },
       { name: "门诊医嘱开具", href: "prescription-western.html", files: ["prescription-western.html"], roles: ["his"] },
+      */
       /* 毒麻精药品审核：仅毒麻精审药医生（subRole=narcotics）可见，在下方 isNarc 过滤中放行 */
       { name: "毒麻精药品审核", href: "narcotic-order-audit.html", files: ["narcotic-order-audit.html"], roles: ["narcotics"] },
       { name: "门诊处方发药", href: "prescription-dispensing.html", files: ["prescription-dispensing.html"], roles: ["his"] },
@@ -127,6 +132,12 @@
     return !!(item.hideFor && me && item.hideFor.indexOf(me.account) >= 0);
   }
 
+  /* 账号白名单：配置了 showFor 时，仅名单内账号可见 */
+  function shownFor(item, me) {
+    if (!item.showFor) return true;
+    return !!(me && item.showFor.indexOf(me.account) >= 0);
+  }
+
   function render() {
     var side = document.getElementById("appSide") || document.querySelector(".app-side");
     if (!side) return;
@@ -152,7 +163,7 @@
       /* 过滤二级子项。毒麻精审药医生：仅可见毒麻精药品审核 */
       var visibleItems = (group.items || []).filter(function (item) {
         if (isNarc) return item.name === "毒麻精药品审核";
-        return hasRole(item.roles, role) && !hiddenFor(item, me);
+        return hasRole(item.roles, role) && !hiddenFor(item, me) && shownFor(item, me);
       });
       if (!visibleItems.length) return;
 

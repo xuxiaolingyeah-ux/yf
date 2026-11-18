@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html data-page-node-id="hBlALc4IqCp2muPDGJnYS1" lang="zh-CN"><head data-page-node-id="4YhU3KP94xnrFm4MTxyU8d">
+<meta data-page-node-id="IPADz96o52uX40A8G0paBj" charset="UTF-8">
+<meta data-page-node-id="gNRQ47E6AHq4MXUCCCgiZE" name="viewport" content="width=device-width, initial-scale=1.0">
+<title data-page-node-id="mr3skX1ni3mwHk3eBC1x4w" data-pnid-children="6zcEhYDxUNePGA8UbMi3Fs">门诊处方开具 · 中心药房</title>
+<link data-page-node-id="kL4NEmipi69RvWEHeXMUzd" rel="stylesheet" href="styles.css">
+<style data-page-node-id="27UihKjo9yCUctpG9w0W0s" data-pnid-children="KwQ5g77Bg6eGcZSLONRxMy">
+/* ===== 门诊处方开具 · 局部样式 ===== */
+.pc-page{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden}
+.pc-scroll{flex:1;min-height:0;overflow:auto}
+.pc-btn{height:30px;padding:0 12px;border:1px solid var(--border-btn);border-radius:var(--radius);background:#fff;color:var(--text-primary);font-size:12px;display:inline-flex;align-items:center;justify-content:center;gap:4px;cursor:pointer;white-space:nowrap}
+.pc-btn:hover{background:var(--primary-lighter);border-color:var(--border-light)}
+.pc-btn.primary{background:var(--primary-dark);border-color:var(--primary-dark);color:#fff}
+.pc-btn.primary:hover{background:var(--primary)}
+.pc-btn.danger{color:var(--danger)}
+.pc-btn.sm{height:26px;padding:0 8px;font-size:12px}
+.pc-btn:disabled{opacity:.45;cursor:not-allowed}
+.pc-ipt{height:30px;border:1px solid var(--border-input);border-radius:var(--radius);padding:0 8px;font-size:12px;background:#fff;color:var(--text-primary);min-width:0}
+.pc-ipt:focus{outline:none;border-color:var(--primary)}
+.pc-ipt.ro{background:var(--bg-disabled);color:var(--text-secondary)}
+.pc-ipt.sm{height:26px;font-size:12px}
+select.pc-ipt{padding:0 4px}
+.pc-link{color:var(--primary-dark);cursor:pointer;margin-right:10px;white-space:nowrap}
+.pc-link:hover{text-decoration:underline}
+.pc-link.danger{color:var(--danger)}
+.pc-filter{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-secondary)}
+.pc-tag{display:inline-block;font-size:11px;line-height:18px;padding:0 8px;border-radius:9px;white-space:nowrap}
+.pc-tag.warn{color:var(--warning);background:var(--warning-bg)}
+.pc-tag.danger{color:var(--danger);background:var(--danger-bg)}
+.pc-tag.blue{color:var(--primary-dark);background:var(--primary-lighter)}
+.pc-tag.ok{color:var(--success);background:var(--success-bg)}
+.pc-tag.mute{color:var(--text-secondary);background:var(--bg-disabled)}
+.pc-table{width:100%;border-collapse:collapse;font-size:12px}
+.pc-table th{background:var(--table-head);color:var(--text-secondary);font-weight:500;text-align:left;padding:8px;border-bottom:1px solid var(--border);white-space:nowrap}
+.pc-table td{padding:8px;border-bottom:1px solid var(--border);vertical-align:middle}
+.pc-table tr:hover td{background:var(--table-hover)}
+/* 列表横向滚动 + 操作列固定右侧 */
+.pc-tablewrap{overflow-x:auto}
+.pc-tablewrap .pc-table{min-width:100%}
+.pc-tablewrap .pc-table th,.pc-tablewrap .pc-table td{white-space:nowrap}
+.pc-tablewrap .pc-table th:last-child,.pc-tablewrap .pc-table td:last-child{position:sticky;right:0;z-index:2;background:#fff;border-left:1px solid var(--border);box-shadow:-6px 0 8px -6px rgba(0,0,0,.16)}
+.pc-tablewrap .pc-table th:last-child{background:var(--table-head)}
+.pc-tablewrap .pc-table tr:hover td:last-child{background:var(--table-hover)}
+.pc-ops{position:relative;display:flex;align-items:center;gap:2px}
+.pc-more-menu{position:absolute;right:0;top:26px;z-index:20;background:#fff;border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-1);min-width:84px;padding:4px;display:none}
+.pc-more-menu.show{display:block}
+.pc-more-menu div{padding:5px 8px;cursor:pointer;white-space:nowrap;font-size:12px}
+.pc-more-menu div:hover{background:var(--primary-lighter)}
+.pc-more-menu div.danger{color:var(--danger)}
+/* 区域划分：浅灰页底 + 白色区块卡片 */
+.tabbar{padding:0 12px;}
+.pc-page{flex:1;min-height:0;background:var(--bg-page);padding:8px 12px 12px;box-sizing:border-box}
+.pc-sec{background:#fff;border-radius:8px;padding:12px 14px;box-shadow:0 1px 3px rgba(16,24,40,.06);margin-bottom:8px}
+.pc-sec:last-child{margin-bottom:0}
+.pc-block + .pc-block{border-top:1px solid #F0F2F5;margin-top:14px;padding-top:14px}
+/* 必填标记 */
+.pc-field>label.req::before{content:"*";color:var(--danger);margin-right:3px}
+.pc-req{color:var(--danger);font-style:normal;margin-right:2px}
+/* 患者卡（常驻，两行） */
+.pc-patient{display:flex;align-items:center;gap:14px;padding:2px 0}
+.pc-avatar{width:46px;height:46px;flex:none}
+.pc-pinfo-main{flex:1;min-width:0}
+.pc-pline1{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+.pc-name{font-size:15px;font-weight:600;color:var(--text-primary)}
+.pc-pline2{display:flex;align-items:center;gap:26px;font-size:12px;color:var(--text-secondary);flex-wrap:wrap}
+.pc-pline2 b{font-weight:400;margin-right:6px;color:var(--text-tertiary)}
+.pc-sex{font-size:17px;line-height:1;vertical-align:-2px;font-weight:600}
+.pc-sex.male{color:var(--primary-dark)}
+.pc-sex.female{color:#e0527f}
+.pc-pactions{margin-left:auto;display:flex;gap:8px}
+/* 表单顶部栏 */
+.pc-form-hd{display:flex;align-items:center;gap:12px;padding:0 0 10px;margin-bottom:12px;border-bottom:1px solid var(--border)}
+.pc-back{cursor:pointer;color:var(--primary-dark);font-size:13px;white-space:nowrap}
+.pc-back:hover{text-decoration:underline}
+.pc-form-title{font-size:15px;font-weight:500}
+/* 表单：label 与内容左右排版 */
+.pc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px 14px}
+.pc-field{display:flex;align-items:center;gap:8px;min-width:0}
+.pc-field>label{flex:0 0 92px;text-align:right;font-size:12px;color:var(--text-secondary);margin:0;line-height:1.4}
+.pc-field>*:not(label){flex:1;min-width:0}
+.pc-field.full{grid-column:1/-1}
+.pc-field.half{grid-column:span 2}
+.pc-field.grow3{grid-column:span 3}
+.pc-checks{display:flex;align-items:center;gap:16px;font-size:12px;flex-wrap:wrap}
+.pc-checks label{display:inline-flex;align-items:center;gap:5px;cursor:pointer;white-space:nowrap}
+.pc-entry{background:#fafbfc;border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-top:4px}
+.pc-entry-ft{margin-top:10px;display:flex;gap:8px;align-items:center}
+.pc-hint{font-size:11px;color:var(--text-tertiary);margin-left:8px}
+/* 药品内联下拉 */
+.pc-drugwrap{position:relative}
+.pc-drugdrop{position:absolute;left:100px;top:34px;z-index:90;background:#fff;border:1px solid var(--border-btn);border-radius:var(--radius);box-shadow:var(--shadow-2);width:560px;max-height:280px;overflow:auto;display:none;flex:none}
+.pc-drugdrop.show{display:block}
+.pc-drugdrop .pc-table{font-size:11px}
+.pc-drugdrop .pc-table th{padding:5px 6px;position:sticky;top:0}
+.pc-drugdrop .pc-table td{padding:5px 6px;cursor:pointer}
+.pc-drugdrop .pc-table tr:hover td{background:var(--table-hover)}
+.pc-chips{display:flex;flex-wrap:wrap;align-content:flex-start;gap:8px;margin-top:12px;min-height:78px}
+.pc-chips:empty{border:1px dashed #D6E4FF;border-radius:4px;background:#FAFCFF;align-items:center;justify-content:center}
+.pc-chips:empty::after{content:"尚未添加中药饮片";color:var(--text-tertiary);font-size:12px}
+.pc-chip{display:inline-flex;align-items:center;gap:6px;border:1px solid #D6E4FF;background:#F5F9FF;border-radius:4px;padding:5px 8px;font-size:12px}
+.pc-chip .nm{color:var(--text-primary)}
+.pc-chip .pc-ipt{width:54px;height:26px;font-size:12px;padding:0 6px}
+.pc-chip select.pc-ipt{width:80px}
+.pc-chip .x{color:var(--text-tertiary);cursor:pointer;font-size:14px;line-height:1}
+.pc-chip .x:hover{color:var(--danger)}
+.pc-sum{display:flex;justify-content:flex-end;align-items:center;gap:28px;background:#F5F9FF;border:1px solid #D6E4FF;border-radius:4px;padding:8px 12px;font-size:12px;color:var(--text-secondary);margin-top:12px}
+.pc-sum b{color:var(--text-primary);font-weight:500}
+.pc-unit{color:var(--text-secondary);font-size:12px;white-space:nowrap}
+.pc-inline{display:flex;align-items:center;gap:8px}
+.pc-herbwrap{position:relative;flex:1;min-width:0}
+.pc-herbtext{position:relative;display:flex;align-items:center}
+.pc-herbtext input{flex:1;width:100%;min-width:0;cursor:pointer;padding-right:26px}
+.pc-herbtext .caret{position:absolute;right:9px;top:50%;transform:translateY(-50%);color:var(--text-tertiary);font-size:10px;pointer-events:none}
+.pc-herbdrop{position:absolute;left:0;top:34px;z-index:80;background:#fff;border:1px solid var(--border-btn);border-radius:6px;box-shadow:0 6px 18px rgba(0,0,0,.12);padding:8px;display:none;white-space:nowrap}
+.pc-herbdrop.show{display:flex;gap:6px}
+.pc-herbdrop select{min-width:76px;width:auto;height:26px;font-size:12px;padding:0 4px}
+/* 弹窗 */
+.pc-mask{position:fixed;inset:0;background:rgba(0,0,0,.38);z-index:50;display:none}
+.pc-mask.show{display:block}
+.pc-dialog{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.98);background:#fff;border-radius:var(--radius-lg);box-shadow:var(--shadow-2);z-index:70;width:760px;max-width:92vw;max-height:86vh;display:none;flex-direction:column}
+.pc-dialog.show{display:flex;transform:translate(-50%,-50%) scale(1)}
+.pc-dialog.wide{width:1000px}
+.pc-dialog-hd{height:46px;flex:none;padding:0 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;font-size:14px;font-weight:500}
+.pc-dialog-hd .x{margin-left:auto;cursor:pointer;color:var(--text-tertiary);font-size:18px}
+.pc-dialog-bd{flex:1;min-height:0;overflow:auto;padding:14px 16px}
+.pc-dialog-ft{flex:none;height:52px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:flex-end;gap:8px;padding:0 16px;background:#fafbfc}
+/* 处方笺 */
+.rx-sheet{max-width:760px;margin:0 auto 16px;border:1px solid #cfd6de;background:#fff;padding:20px 26px;position:relative;font-size:12px;color:#222}
+.rx-sheet.emergency{background:#fffdf0}
+.rx-sheet.pediatric{background:#f2fbf5}
+.rx-sheet.narc{background:#fff2f2}
+.rx-kind{position:absolute;right:20px;top:16px;border:1px solid #888;border-radius:10px;padding:1px 10px;font-size:12px;color:#333}
+.rx-sheet-title{text-align:center;font-size:18px;letter-spacing:3px;margin-bottom:12px}
+.rx-meta{display:grid;grid-template-columns:repeat(4,1fr);gap:6px 12px;margin-bottom:8px}
+.rx-meta .it{border-bottom:1px solid #cfd6de;min-height:20px}
+.rx-diag{display:flex;gap:8px;align-items:center;margin-bottom:10px}
+.rx-diag .box{flex:1;border:1px solid #cfd6de;border-radius:3px;padding:4px 8px;min-height:24px}
+.rx-rp{border-top:1px solid #ddd;border-bottom:1px solid #ddd;padding:8px 0;min-height:100px;line-height:1.9}
+.rx-rp .rp{font-size:16px;font-weight:500}
+.rx-rp .line{display:flex;justify-content:space-between;padding-left:16px}
+.rx-rp .sig{padding-left:28px;color:#555}
+.rx-blank{text-align:center;letter-spacing:10px;color:#888;padding:10px 0 12px;border-bottom:1px solid #ddd}
+.rx-sign{margin-top:10px;line-height:2}
+.rx-sign .row{display:flex;justify-content:space-between}
+.rx-sign .amt{font-weight:500}
+.pc-toast{position:fixed;top:64px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.78);color:#fff;padding:8px 16px;border-radius:4px;z-index:100;font-size:12px;display:none}
+.pc-toast.show{display:block}
+@media print{
+  body>*:not(#printArea){display:none!important}
+  #printArea{display:block!important;position:static}
+  .pc-dialog{box-shadow:none;border:none}
+  .pc-dialog-hd,.pc-dialog-ft{display:none!important}
+  .pc-dialog-bd{overflow:visible;padding:0}
+  .pc-dialog{position:static;transform:none;width:100%;max-width:none;max-height:none;display:block}
+  .rx-sheet{break-after:page;page-break-after:always}
+}
+</style>
+</head>
+<body data-page-node-id="8daz9FRlgTbbJAIFBZ9ln1">
+
+<header data-page-node-id="t6qB734AkGzN868PCLmAP8" class="app-header">
+  <div data-page-node-id="0MZ6Nnu2gLgIE4kubiamLa" class="header-left">
+    <div data-page-node-id="bAIwFa86S5PBcTlDHiPflx" class="header-logo"><svg data-page-node-id="JIm3McZDMaSDmGMul9IZAr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path data-page-node-id="gzHFlMzzPICNUyTQHB3T4k" d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z"></path></svg></div>
+    <div data-page-node-id="H5cSG8B1QA09wk7iSoV7qx" class="header-title">区域药房协同管理系统</div>
+  </div>
+  <div data-page-node-id="NKjGH3ONeWEv3QfWX7JvXy" class="header-right"><div data-page-node-id="DDyDM6YGV35FrRFGCARWBh" class="header-user"><div data-page-node-id="NalBpyWWoFn2CcuxEkYxp9" class="header-avatar">孙</div><div data-page-node-id="tE94uO2Zj6EpgZRQvw7nGe" class="header-user-name">孙磊 · HIS 对接</div></div></div>
+</header>
+
+<div data-page-node-id="YL81o2lOAOlBLpyPxpOYDM" class="app-body">
+  <aside data-page-node-id="aPsAQXOMRYcxbUHmM2k4l1" class="app-side" id="appSide"></aside>
+  <main data-page-node-id="vVyD0LpYAOqjeR0JMO7xlX" class="app-main">
+    <div data-page-node-id="s9zcG5ABpMeJcfnGjDzLme" class="tabbar">
+      <div data-page-node-id="bPi8rO34LUsYAHG06Hg0ui" class="tab" onclick="location.href='home.html'">首页</div>
+      <div data-page-node-id="VoEMtyA6oQRV6NSVY0Nv6D" class="tab active">门诊处方开具</div>
+    </div>
+
+    <div data-page-node-id="VxbG4ScdFKV235yKPnXLI4" class="pc-page">
+      <div data-page-node-id="gO6S8kJ7owVIb76S0eLd0S" class="pc-scroll">
+        <!-- 患者卡：常驻，新建/编辑时不变 -->
+        <section data-page-node-id="8lkgnGFmjpcvzvxXki3xiL" class="pc-sec">
+          <div data-page-node-id="Vcsy5MpITwuMoH9XDJzMdQ" class="pc-patient">
+            <div data-page-node-id="fTrHdLrZaFW0fshkaaiq0H" class="pc-avatar" id="pAvatar"></div>
+            <div data-page-node-id="ZITfpaUsrc7EqTZuK3Mltw" class="pc-pinfo-main">
+              <div data-page-node-id="A0qKPuOXQEaLk042zyzK2b" class="pc-pline1">
+                <b data-page-node-id="2Mc4hLBDJR9YaAgAKM6QNB" class="pc-name" id="pName"></b>
+                <span data-page-node-id="yFZ6PazPOwX4tE0beKWVfC" id="pAge"></span>
+                <span data-page-node-id="UaQtwtR2fCWCEAzPx5GHwy" class="pc-sex male" id="pSexIcon"></span>
+              </div>
+              <div data-page-node-id="AjRd5834i1wG2rQ8YNv312" class="pc-pline2">
+                <span data-page-node-id="IE32Msi4HaKMANnbVS0UzG"><b data-page-node-id="IgqGihrcvHHyJwxsHEPdaX">门诊号</b><span data-page-node-id="VpfITSMGMYEObtL6tlhqAt" id="pMzh"></span></span>
+                <span data-page-node-id="Nwts8JSrnNSl8Me7MH9DDU"><b data-page-node-id="OfBC8gOWkzpVZViYzaIKZZ">过敏信息</b><span data-page-node-id="Bt1MS7ZviX6Di2jezg7KE0" id="pAllergy"></span></span>
+              </div>
+            </div>
+            <div data-page-node-id="XGREgzEqOtFMGSmcq9DP7A" class="pc-pactions">
+              <button data-page-node-id="Syd39WYtdaNTmc25TvIL2r" class="pc-btn" id="btnPatient360">患者360</button>
+              <button data-page-node-id="vlIOtqjak3wnz0D4b1w2Ni" class="pc-btn" id="btnRecord">病历浏览</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- 列表视图：仅下方列表区域切换 -->
+        <div data-page-node-id="AgczabF8ExZ0kFiN4XZZ8k" id="listView">
+          <section data-page-node-id="XXIinHWfG6bucNafpVK5pS" class="pc-sec">
+            <div data-page-node-id="fdBc4sHjGNG885ZnBv1Oz2" style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+              <select data-page-node-id="KiEKVYCDbJUlZEb5FvfK8O" class="pc-ipt" id="fStatus" style="width:130px">
+                <option data-page-node-id="n20v99bIPOqjYNbmoYtPIt" value="">全部状态</option>
+                <option data-page-node-id="uQJGE17V9pfLrxIsHuLdew">待推送</option><option data-page-node-id="bgfceTuznvhAMZVpU5YpHI">待毒麻精审核</option><option data-page-node-id="TiX58qGKKQpnrf528TTLZN">待合理用药审核</option>
+                <option data-page-node-id="J6xYXnBQUa7ywtMkqGAGBE">待收费</option><option data-page-node-id="Viw5tqJhqAEgwcXML33UKc">收费成功</option><option data-page-node-id="HaSSvgZUYEWQfXzpGNT43U">作废</option>
+              </select>
+              <span data-page-node-id="rbxQkElSeVdGzTtcC9rUuZ" style="flex:1"></span>
+              <button data-page-node-id="zTn3Bp3MAhbC7OFumKB1Cm" class="pc-btn" id="btnPrintSelected">打印</button>
+              <button data-page-node-id="Hnhmihuf8KgtuGjGAbpDb9" class="pc-btn primary" id="btnNewWest">+ 新建西药处方</button>
+              <button data-page-node-id="ahoLACOkF3FhYiaJYmsQTI" class="pc-btn primary" id="btnNewTcm">+ 新建中药处方</button>
+            </div>
+            <div class="pc-tablewrap">
+              <table data-page-node-id="B0puIwosYTvcylzqf1rKhF" class="pc-table">
+                <thead data-page-node-id="UKOOAz0hlcADFtDTVEA8hC"><tr data-page-node-id="Fb1mqrBDZCrJS0TJhgQtKA">
+                  <th data-page-node-id="qXOAYQ4Y8fP0KEa4XydBVJ" style="width:32px"><input data-page-node-id="E5ujT0Fw3IGVyARCGAzAn6" type="checkbox" id="selAll"></th>
+                  <th data-page-node-id="QuXUaEnWBWjCII8ql9rnaM">处方编号</th><th data-page-node-id="YxjpueEdMPncmmscmuWJzA">处方类型</th><th data-page-node-id="Z7uv7OZXWqzwO3eWwE1Af2">处方类别</th><th data-page-node-id="W1bZO1lE6LNslGBfNcehfs">诊断</th><th data-page-node-id="1ruGg3zB6t3zCieu0xaIvH">费用</th>
+                  <th data-page-node-id="sWF4yR1kLpyu1cW2MsNgqy">状态</th><th data-page-node-id="yzmfAHGaHRNw7KPBSH5lhw">长处方</th><th data-page-node-id="ZMdbkzDDgyCEnrde4Oy5se">外配</th><th data-page-node-id="jwLSHMUDKV1Y5LyL430Dyf">创建时间</th><th data-page-node-id="74He7FJxktGfteJTMTevDr">操作</th>
+                </tr></thead>
+                <tbody data-page-node-id="juruYDB42ZeejlFisz3Sh9" id="rxList"></tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+
+        <!-- 表单视图：替换下方列表区域，患者卡仍在上方 -->
+        <div data-page-node-id="QEet4LAcWGEq9Q8z3CjrIK" id="formView" style="display:none">
+          <section data-page-node-id="WkEATt5wugVot2tQTJ1fMj" class="pc-sec">
+            <div data-page-node-id="lBR6KYEivZ2ZUHHlBpDJhM" class="pc-form-hd">
+              <span data-page-node-id="aEALd0lxF3jW56GPE16Gkn" class="pc-back" id="formBack">← 返回处方列表</span>
+              <span data-page-node-id="wNVHw00M2QmLEpXNqwIZjq" class="pc-form-title" id="formTitle">新建处方</span>
+              <span data-page-node-id="h0cKGTALO0Rlzpo69NCnDY" style="flex:1"></span>
+              <button data-page-node-id="NPBFjJUzmqYEtFhQmHLsXi" class="pc-btn" id="formCancel">取消</button>
+              <button data-page-node-id="nzOaqYh3eI3Z7hhSN2UCVM" class="pc-btn primary" id="formSubmit">生成处方</button>
+            </div>
+            <div data-page-node-id="ebHFfYFniDTDFiPOHfIAaL" id="formBody"></div>
+          </section>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div data-page-node-id="kg2L7zCcmXaKJLihgpWzrb" class="pc-mask" id="mask"></div>
+
+<!-- 外送地址弹窗 -->
+<div data-page-node-id="UnAoaUuG3GAqWYsyHcHACK" class="pc-dialog" id="addrDialog" style="width:640px">
+  <div data-page-node-id="iIpImCQDrMqf8ZdRwWzgkm" class="pc-dialog-hd">外送地址<span data-page-node-id="j3Iv5ra0k1SWFB4y9jOr8c" class="x" data-close="addrDialog">×</span></div>
+  <div data-page-node-id="6VnCqHAZC8iVolzkQ3MCg3" class="pc-dialog-bd">
+    <div data-page-node-id="CXDpS7qmlkXi3BPHD1O6ZJ" class="pc-grid">
+      <div data-page-node-id="xMi3NJVHQGKqvjEtUF1hSX" class="pc-field half"><label data-page-node-id="BHsb44WVEqEvPCIpo7Adyz">收件人</label><input data-page-node-id="NegAEeL077bPzjZOzZPEUy" class="pc-ipt" id="aName"></div>
+      <div data-page-node-id="yZ9B6JyJKLhuYh0FeTWjPn" class="pc-field half"><label data-page-node-id="nC97SjEzBitFx3riv8YXI7">联系电话</label><input data-page-node-id="ICCNaPmouHYAcb1etE2qT0" class="pc-ipt" id="aPhone"></div>
+      <div data-page-node-id="6PVnhqyC7qCEJzy7aBTWQL" class="pc-field half"><label data-page-node-id="WqH8QsQ3LvC90q3YsfxZ8V">所在地区</label><input data-page-node-id="Iw1dGIQ74SbQiPZDwaiBVm" class="pc-ipt" id="aRegion"></div>
+      <div data-page-node-id="30fFA3nnyoFAG8ETJ0Q0ei" class="pc-field half"><label data-page-node-id="pPru6lYdU3eExqI6UkolWW">详细地址</label><input data-page-node-id="Cov6S2k3TDA249OVtDEbMW" class="pc-ipt" id="aDetail"></div>
+    </div>
+  </div>
+  <div data-page-node-id="UO5Lw0T42rpUOAN78xUU8a" class="pc-dialog-ft"><button data-page-node-id="GCYY2U8OEBGjbVFkpvGnbT" class="pc-btn" data-close="addrDialog">取消</button><button data-page-node-id="s07dtfdTNyI4AUYCvqVmge" class="pc-btn primary" id="addrSave">保存</button></div>
+</div>
+
+<!-- 查看弹窗 -->
+<div data-page-node-id="iJfcKrSQOMQ66yhQBwPJdu" class="pc-dialog" id="viewDialog">
+  <div data-page-node-id="Rgayf5RoKLkS8YGTWzZreI" class="pc-dialog-hd">处方详情<span data-page-node-id="JlsfAD0uFTG0LslqyhUjSB" class="x" data-close="viewDialog">×</span></div>
+  <div data-page-node-id="I2U7z0mBVJGt7ET1ocfi4G" class="pc-dialog-bd" id="viewBody"></div>
+  <div data-page-node-id="JaV0Q8bdbdJjFQyRordO7N" class="pc-dialog-ft"><button data-page-node-id="ggrFEBpRPFvVyZhFDPbzfX" class="pc-btn" data-close="viewDialog">关闭</button></div>
+</div>
+
+<!-- 处方笺预览弹窗 -->
+<div data-page-node-id="SCYnjyH2FDmBmfW34FOF1Y" class="pc-dialog wide" id="rxDialog">
+  <div data-page-node-id="jqL8t3OGpqR7cqM1pLzn6D" class="pc-dialog-hd">处方笺预览<span data-page-node-id="AnJGVovTuSsgFGbGGI57vw" class="x" data-close="rxDialog">×</span></div>
+  <div data-page-node-id="P1GBekZsoGlWKjNKWnR3zC" class="pc-dialog-bd" id="printArea"><div data-page-node-id="A5h98ro3vtcWCfNf3Jt9Nl" id="rxPaper"></div></div>
+  <div data-page-node-id="SVxucId5fGlFnUndQ9yR5g" class="pc-dialog-ft" id="rxFoot">
+    <button data-page-node-id="h738fDYxIDGOfEYC2KTbWN" class="pc-btn primary" id="rxSendConfirm" style="display:none">确认发送</button>
+    <button data-page-node-id="ua5agEegmeQgmKhi7aJlT7" class="pc-btn" id="rxPrint">打印</button>
+    <button data-page-node-id="3hmwGChiE5iSUGoGopCzhj" class="pc-btn" data-close="rxDialog">关闭</button>
+  </div>
+</div>
+
+<div data-page-node-id="NQ17g33kjb3kM1xIovV17y" class="pc-toast" id="toast"></div>
+
+<script data-page-node-id="HIK2sIcXzw6h17GYPfMLk1" src="mock.js"></script>
+<script data-page-node-id="JffEMmJvnsxzOalJcGYdjZ" data-pnid-children="OfiYJR6GJFW69rk37A8GMW">
+(function(){
+'use strict';
+try{
+  var me=JSON.parse(sessionStorage.getItem('SEL_USER')||'null');
+  if(!me||me.account!=='sunlei'){
+    sessionStorage.setItem('SEL_USER',JSON.stringify({id:'u5',account:'sunlei',name:'孙磊',org:'信息中心 · HIS 对接',role:'his',roleName:'HIS 对接人员'}));
+  }
+}catch(e){}
+var KEY='RX_CREATE_DATA_V1';
+var $=function(id){return document.getElementById(id)};
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function money(n){return '¥'+Number(n||0).toFixed(2)}
+function now(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')}
+function toast(msg){var t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(function(){t.classList.remove('show')},1800)}
+
+/* ---------- 药品字典（含拼音与毒麻精标识） ---------- */
+var WEST_DRUGS=[
+ {id:'W01',name:'阿莫西林胶囊',py:'amxlnjn',spec:'0.25g×24粒',form:'胶囊剂',split:'否',stock:120,price:18.60,unit:'盒',doseUnit:'粒',toxic:false,narc:false,psych:'否'},
+ {id:'W02',name:'布洛芬缓释胶囊',py:'blfhsjn',spec:'0.3g×20粒',form:'缓释胶囊',split:'否',stock:86,price:22.30,unit:'盒',doseUnit:'粒',toxic:false,narc:false,psych:'否'},
+ {id:'W03',name:'盐酸曲马多片',py:'ysqmtp',spec:'50mg×20片',form:'片剂',split:'是',stock:8,price:36.80,unit:'盒',doseUnit:'片',toxic:false,narc:false,psych:'第二类精神药品'},
+ {id:'W04',name:'吗啡片',py:'mp',spec:'5mg×20片',form:'片剂',split:'是',stock:5,price:48.00,unit:'盒',doseUnit:'片',toxic:false,narc:true,psych:'否'},
+ {id:'W05',name:'注射用青霉素钠',py:'zsyqmsn',spec:'80万IU×1支',form:'注射剂',split:'否',stock:40,price:6.50,unit:'支',doseUnit:'支',toxic:false,narc:false,psych:'否'},
+ {id:'W06',name:'地西泮片',py:'dxp',spec:'2.5mg×20片',form:'片剂',split:'是',stock:12,price:12.40,unit:'盒',doseUnit:'片',toxic:false,narc:false,psych:'第二类精神药品'},
+ {id:'W07',name:'阿托品注射液',py:'atzsy',spec:'0.5mg×1ml',form:'注射剂',split:'是',stock:30,price:3.20,unit:'支',doseUnit:'支',toxic:true,narc:false,psych:'否'},
+ {id:'W08',name:'氯胺酮注射液',py:'latkzsy',spec:'50mg×1ml',form:'注射剂',split:'是',stock:6,price:52.00,unit:'支',doseUnit:'支',toxic:false,narc:false,psych:'第一类精神药品'}
+];
+var TCM_DRUGS=[
+ {id:'T01',name:'板蓝根',py:'blg',spec:'统片 / g',stock:3000,price:0.12,toxic:false,narc:false,psych:'否'},
+ {id:'T02',name:'丁香',py:'dx',spec:'统片 / g',stock:800,price:0.35,toxic:false,narc:false,psych:'否'},
+ {id:'T03',name:'葛花',py:'gh',spec:'统片 / g',stock:600,price:0.20,toxic:false,narc:false,psych:'否'},
+ {id:'T04',name:'金银花',py:'jyh',spec:'统片 / g',stock:1200,price:0.60,toxic:false,narc:false,psych:'否'},
+ {id:'T05',name:'甘草',py:'gc',spec:'统片 / g',stock:2000,price:0.10,toxic:false,narc:false,psych:'否'},
+ {id:'T06',name:'薄荷',py:'bh',spec:'统片 / g',stock:900,price:0.18,toxic:false,narc:false,psych:'否'},
+ {id:'T07',name:'制川乌',py:'zcw',spec:'统片 / g',stock:200,price:0.28,toxic:true,narc:false,psych:'否'}
+];
+var TCM_USAGE=['后下','先煎','包煎','另煎','烊化','炒焦','炙','冲服','暂无'];
+var TYPE_TEXT={'01':'01 普通处方','02':'02 急诊处方','03':'03 儿科处方'};
+var PHARMS=['西药房','中药房','急诊药房','儿科药房'];
+
+function seed(){
+  return {
+    patient:{name:'张伟',sex:'男',age:'45岁',mzh:'MZ202611170023',allergy:'青霉素过敏',receiver:'张伟',phone:'13800136621',region:'北京市 朝阳区',detail:'XX 路 XX 号 XX 小区 3 号楼'},
+    visitId:'CMJZH202611170023',
+    list:[
+      {id:'CF202611170001',type:'01',kind:'west',diag:'J06.900 急性上呼吸道感染',fee:41.90,status:'待推送',longRx:false,external:true,created:'2026-11-17 16:20',note:'',days:3,addr:{name:'张伟',phone:'13800136621',region:'北京市 朝阳区',detail:'XX 路 XX 号 XX 小区 3 号楼'},
+       items:[{drugId:'W01',name:'阿莫西林胶囊',spec:'0.25g×24粒',pharm:'西药房',doseNum:'2',doseUnit:'粒',freq:'每日三次',route:'口服',days:3,drip:'',total:1,totalUnit:'盒',skin:false,price:18.60,amount:18.60},
+              {drugId:'W02',name:'布洛芬缓释胶囊',spec:'0.3g×20粒',pharm:'西药房',doseNum:'1',doseUnit:'粒',freq:'每日两次',route:'口服',days:3,drip:'',total:1,totalUnit:'盒',skin:false,price:22.30,amount:22.30}]},
+      {id:'CF202611170002',type:'01',kind:'tcm',diag:'中风 / 气虚血瘀证',fee:6.53,status:'待毒麻精审核',longRx:true,external:false,created:'2026-11-17 16:32',note:'',days:3,addr:null,pharm:'中药房',doses:5,herbUsage:['每三日','1剂','冲服','100','ml','1次','空腹','温服'],
+       items:[{drugId:'T01',name:'板蓝根',spec:'统片 / g',pharm:'中药房',qty:3,usage:'暂无',price:0.12,amount:0.36},
+              {drugId:'T02',name:'丁香',spec:'统片 / g',pharm:'中药房',qty:3,usage:'炒焦',price:0.35,amount:1.05},
+              {drugId:'T04',name:'金银花',spec:'统片 / g',pharm:'中药房',qty:2,usage:'后下',price:0.60,amount:1.20}]},
+      {id:'CF202611170003',type:'02',kind:'west',diag:'J18.900 肺炎',fee:36.80,status:'待合理用药审核',longRx:false,external:false,created:'2026-11-17 16:38',note:'',days:3,addr:null,
+       items:[{drugId:'W03',name:'盐酸曲马多片',spec:'50mg×20片',pharm:'西药房',doseNum:'1',doseUnit:'片',freq:'每日两次',route:'口服',days:2,drip:'',total:1,totalUnit:'盒',skin:false,price:36.80,amount:36.80}]},
+      {id:'CF202611170004',type:'01',kind:'west',diag:'E11.900 2型糖尿病',fee:52.40,status:'收费成功',longRx:true,external:false,created:'2026-11-17 16:45',note:'',days:3,addr:null,
+       items:[{drugId:'W05',name:'注射用青霉素钠',spec:'80万IU×1支',pharm:'急诊药房',doseNum:'1',doseUnit:'支',freq:'每日两次',route:'静脉输液',days:3,drip:'40 滴/分',total:6,totalUnit:'支',skin:true,price:6.50,amount:39.00}]}
+    ]
+  };
+}
+var state;
+try{state=JSON.parse(sessionStorage.getItem(KEY))||null}catch(e){state=null}
+if(!state||!state.list){state=seed();try{sessionStorage.setItem(KEY,JSON.stringify(state))}catch(e){}}
+function save(){try{sessionStorage.setItem(KEY,JSON.stringify(state))}catch(e){}}
+function genId(){return 'CF'+new Date().toISOString().slice(0,10).replace(/-/g,'')+String(Math.floor(Math.random()*9000)+1000)}
+function findRx(id){return state.list.filter(function(r){return r.id===id})[0]}
+function isNarcRx(rx){return rx.items.some(function(it){var d=(rx.kind==='west'?WEST_DRUGS:TCM_DRUGS).filter(function(x){return x.id===it.drugId})[0];return d&&(d.toxic||d.narc||d.psych!=='否')})}
+
+/* ---------- 卡通头像 ---------- */
+function cartoonAvatar(sex){
+  var female=sex==='女';
+  var bg=female?'#FDEBF2':'#E6F1FB', body=female?'#F08FB4':'#5B9BF0';
+  var hair=female
+    ? '<path d="M13 20 Q12 8 23 8 Q34 8 33 20 L34 30 Q30 24 30 18 Q23 13 16 18 Q16 24 12 30 Z" fill="#4A3528"/>'
+    : '<path d="M14 18 Q13 9 23 9 Q33 9 32 18 Q23 13 14 18 Z" fill="#3A2E26"/>';
+  return '<svg viewBox="0 0 46 46" width="46" height="46">'+
+    '<circle cx="23" cy="23" r="22" fill="'+bg+'"/>'+
+    '<path d="M6 46 Q6 33 23 33 Q40 33 40 46 Z" fill="'+body+'"/>'+
+    '<circle cx="23" cy="19" r="9" fill="#F6D6BC"/>'+hair+
+    '<circle cx="19.6" cy="19.5" r="1.1" fill="#3A2E26"/><circle cx="26.4" cy="19.5" r="1.1" fill="#3A2E26"/>'+
+    '<path d="M19.5 23 Q23 26.5 26.5 23" stroke="#C07360" stroke-width="1.2" fill="none" stroke-linecap="round"/>'+
+    '</svg>';
+}
+
+/* ---------- 列表 ---------- */
+function statusTag(s){var cls=s==='待推送'?'warn':(s==='待毒麻精审核'?'danger':(s==='待合理用药审核'?'blue':(s==='收费成功'?'ok':'mute')));return '<span class="pc-tag '+cls+'">'+esc(s)+'</span>'}
+function opHtml(rx){
+  var s=rx.status;var html='';
+  if(s==='待推送'){
+    html='<span class="pc-link" data-op="preview" data-id="'+rx.id+'">预览</span>'+
+         '<span class="pc-link" data-op="view" data-id="'+rx.id+'">查看</span>'+
+         '<span class="pc-link" data-op="send" data-id="'+rx.id+'">发送</span>'+
+         '<span class="pc-link" data-op="more" data-id="'+rx.id+'">更多 ▾</span>'+
+         '<div class="pc-more-menu" id="more-'+rx.id+'">'+
+           '<div data-op="edit" data-id="'+rx.id+'">编辑</div>'+
+           '<div class="danger" data-op="abolish" data-id="'+rx.id+'">作废</div>'+
+         '</div>';
+  }else if(s==='待毒麻精审核'||s==='待合理用药审核'){
+    html='<span class="pc-link" data-op="preview" data-id="'+rx.id+'">预览</span>'+
+         '<span class="pc-link" data-op="view" data-id="'+rx.id+'">查看</span>'+
+         '<span class="pc-link" data-op="recall" data-id="'+rx.id+'">撤回</span>';
+  }else{
+    html='<span class="pc-link" data-op="preview" data-id="'+rx.id+'">预览</span>'+
+         '<span class="pc-link" data-op="view" data-id="'+rx.id+'">查看</span>';
+  }
+  return html;
+}
+function renderList(){
+  var f=$('fStatus').value;
+  var rows=state.list.filter(function(r){return !f||r.status===f});
+  $('rxList').innerHTML=rows.map(function(r){
+    return '<tr>'+
+      '<td><input type="checkbox" class="rx-sel" value="'+r.id+'"></td>'+
+      '<td><span class="pc-link" data-op="view" data-id="'+r.id+'">'+r.id+'</span></td>'+
+      '<td>'+TYPE_TEXT[r.type]+'</td><td>'+(r.kind==='west'?'西药处方':'中药饮片处方')+'</td>'+
+      '<td>'+esc(r.diag)+'</td><td>'+money(r.fee)+'</td><td>'+statusTag(r.status)+'</td>'+
+      '<td>'+(r.longRx?'是':'否')+'</td><td>'+(r.external?'是':'否')+'</td><td>'+r.created+'</td>'+
+      '<td><div class="pc-ops">'+opHtml(r)+'</div></td></tr>';
+  }).join('')||'<tr><td colspan="11" style="text-align:center;color:#999">暂无处方</td></tr>';
+  var p=state.patient;
+  $('pAvatar').innerHTML=cartoonAvatar(p.sex);
+  $('pName').textContent=p.name;
+  $('pSexIcon').textContent=(p.sex==='女'?'♀':'♂');
+  $('pSexIcon').className='pc-sex '+(p.sex==='女'?'female':'male');
+  $('pAge').textContent=p.age;
+  $('pMzh').textContent=p.mzh;
+  $('pAllergy').textContent=p.allergy;
+}
+
+/* ---------- 弹窗基础 ---------- */
+function showMask(on){$('mask').classList.toggle('show',on)}
+function openDlg(id){showMask(true);$(id).classList.add('show')}
+function closeDlg(id){$(id).classList.remove('show');showMask(false)}
+function closeAllDlg(){['addrDialog','viewDialog','rxDialog'].forEach(function(i){$(i).classList.remove('show')});showMask(false)}
+
+/* ---------- 视图切换：只切下方区域，患者卡常驻 ---------- */
+function showListView(){$('formView').style.display='none';$('listView').style.display='';renderList()}
+function showFormView(){$('listView').style.display='none';$('formView').style.display='';$('formBody').scrollTop=0}
+
+/* ---------- 药品内联下拉 ---------- */
+function drugDropHead(kind){
+  return kind==='west'
+    ? '<tr><th>药品名称</th><th>规格</th><th>剂型</th><th>拆零</th><th>可用库存</th><th>零售价</th><th>毒性</th><th>麻醉</th><th>精神药品</th></tr>'
+    : '<tr><th>药品名称</th><th>规格</th><th>可用库存</th><th>零售价</th><th>毒性</th><th>麻醉</th><th>精神药品</th></tr>';
+}
+function bindDrugDrop(inputId,dropId,kind,onSelect){
+  var input=$(inputId),drop=$(dropId);if(!input||!drop)return;
+  function render(q){
+    q=(q||'').toLowerCase();
+    var list=(kind==='west'?WEST_DRUGS:TCM_DRUGS).filter(function(d){return !q||d.name.indexOf(q)>=0||d.py.indexOf(q)>=0});
+    drop.innerHTML='<table class="pc-table"><thead>'+drugDropHead(kind)+'</thead><tbody>'+list.map(function(d){
+      return '<tr data-id="'+d.id+'"><td>'+d.name+'</td><td>'+d.spec+'</td>'+
+        (kind==='west'?'<td>'+d.form+'</td><td>'+d.split+'</td>':'')+
+        '<td>'+d.stock+(kind==='west'?'':' g')+'</td><td>'+money(d.price)+(kind==='tcm'?'/g':'')+'</td>'+
+        '<td>'+(d.toxic?'是':'否')+'</td><td>'+(d.narc?'是':'否')+'</td><td>'+d.psych+'</td></tr>';
+    }).join('')+'</tbody></table>'||'<div style="padding:10px;color:#999">无匹配药品</div>';
+    drop.querySelectorAll('tr[data-id]').forEach(function(tr){
+      tr.onclick=function(){
+        var d=(kind==='west'?WEST_DRUGS:TCM_DRUGS).filter(function(x){return x.id===tr.getAttribute('data-id')})[0];
+        input.value=d.name;input._drug=d;drop.classList.remove('show');
+        if(onSelect)onSelect(d);
+      };
+    });
+  }
+  input.addEventListener('focus',function(){render('');drop.classList.add('show')});
+  input.addEventListener('input',function(){render(this.value.trim());drop.classList.add('show')});
+  input.addEventListener('blur',function(){setTimeout(function(){drop.classList.remove('show')},180)});
+  drop.addEventListener('mousedown',function(e){e.preventDefault()});
+}
+
+/* ---------- 表单 ---------- */
+var draft=null,editingId=null,draftKind='west',editIdx=null;
+function openForm(kind,rx){
+  draftKind=kind;editingId=rx?rx.id:null;editIdx=null;
+  draft=rx?JSON.parse(JSON.stringify(rx)):{id:genId(),type:'01',kind:kind,diag:'',fee:0,status:'待推送',longRx:false,external:false,created:now(),note:'',days:3,items:[],addr:null};
+  if(kind==='tcm'){
+    if(!draft.doses)draft.doses=1;
+    if(!draft.herbUsage)draft.herbUsage=['每日','1剂','煎服','300','ml','1次','饭后','温服'];
+    if(!draft.pharm)draft.pharm=(rx&&rx.items[0]&&rx.items[0].pharm)||'中药房';
+  }
+  $('formTitle').textContent=(rx?'编辑':'新建')+(kind==='west'?'西药':'中药')+'处方';
+  $('formSubmit').textContent=rx?'保存修改':'生成处方';
+  renderForm();
+  showFormView();
+}
+function renderForm(){
+  var d=draft,kind=draftKind,isTcm=kind==='tcm';
+  var diagLabel=isTcm?'中医诊断':'西医诊断';
+  var diagOpts=isTcm?['中风 / 气虚血瘀证','感冒 / 风寒束表证','消渴 / 气阴两虚证']:['J06.900 急性上呼吸道感染','J18.900 肺炎','E11.900 2型糖尿病'];
+  var addrText=d.external&&d.addr?('外送地址：'+d.addr.region+d.addr.detail+'（点击修改）'):'请填写外送地址（必填）';
+  var addrTitle=d.addr?(d.addr.name+' '+d.addr.phone+' '+d.addr.region+d.addr.detail):'';
+  var flags='<label><input type="checkbox" id="fLong"'+(d.longRx?' checked':'')+'> 长处方</label>'+
+    '<label><input type="checkbox" id="fExternal"'+(d.external?' checked':'')+'> 外配</label>'+
+    '<span class="pc-link" id="addrLink" title="'+esc(addrTitle)+'" style="margin:0;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'+(d.external?'':'display:none')+'">'+esc(addrText)+'</span>';
+  var html='<div class="pc-block"><div class="pc-grid">';
+  // 第一行：处方类型 / 有效天数 / 诊断（占两格）
+  html+='<div class="pc-field"><label class="req">处方类型</label><select class="pc-ipt" id="fType">'+
+      Object.keys(TYPE_TEXT).map(function(k){return '<option value="'+k+'"'+(d.type===k?' selected':'')+'>'+TYPE_TEXT[k]+'</option>'}).join('')+'</select></div>'+
+    '<div class="pc-field"><label class="req">有效天数</label><input class="pc-ipt" id="fDays" type="number" min="1" max="3" value="'+(d.days||3)+'"></div>'+
+    '<div class="pc-field half"><label class="req" style="flex-basis:76px">'+diagLabel+'</label><select class="pc-ipt" id="fDiag">'+diagOpts.map(function(x){return '<option'+(d.diag===x?' selected':'')+'>'+x+'</option>'}).join('')+'</select></div>';
+  if(!isTcm){
+    // 西药：第二行 备注 + 长处方/外配
+    html+='<div class="pc-field half"><label>备注</label><input class="pc-ipt" id="fNote" value="'+esc(d.note||'')+'"></div>'+
+      '<div class="pc-field half"><div class="pc-checks" style="flex-wrap:nowrap">'+flags+'</div></div>';
+  }else{
+    // 中药：第二行 药房 + 长处方/外配（备注在明细下方）
+    html+='<div class="pc-field"><label class="req">药房</label><select class="pc-ipt" id="fMainPharm">'+PHARMS.map(function(p){return '<option'+(d.pharm===p?' selected':'')+'>'+p+'</option>'}).join('')+'</select></div>'+
+      '<div class="pc-field grow3"><div class="pc-checks" style="flex-wrap:nowrap">'+flags+'</div></div>';
+  }
+  html+='</div></div>';
+
+  if(!isTcm){
+    // 西药：明细列表常驻，录入字段按需展开
+    html+='<div class="pc-block"><table class="pc-table"><thead><tr><th>药房</th><th>药品名称</th><th>规格</th><th>单次用量</th><th>频次</th><th>用法</th><th>用药天数</th><th>滴速</th><th>总数</th><th>皮试</th><th>金额</th><th>操作</th></tr></thead><tbody id="westItems"></tbody></table>'+
+      '<div style="margin-top:10px"><button class="pc-btn primary" id="westToggleEntry">+ 添加药品</button><span class="pc-hint">最多 5 个药品 · 库存不足禁止添加</span></div>';
+    html+='<div class="pc-entry" id="westEntry" style="display:none;margin-top:10px"><div class="pc-grid">'+
+      '<div class="pc-field"><label class="req">药房</label><select class="pc-ipt" id="fPharm">'+PHARMS.map(function(p){return '<option>'+p+'</option>'}).join('')+'</select></div>'+
+      '<div class="pc-field half pc-drugwrap"><label class="req">药品名称</label><input class="pc-ipt" id="westDrugName" placeholder="输入药品名称 / 拼音码，或点击选择药品" autocomplete="off"><div class="pc-drugdrop" id="westDrugDrop"></div></div>'+
+      '<div class="pc-field"><label>规格</label><input class="pc-ipt ro" id="westSpec" readonly></div>'+
+      '<div class="pc-field"><label class="req">单次用量</label><div class="pc-inline">'+
+        '<select class="pc-ipt" id="doseNum">'+['1','2','3','0.5','1.5'].map(function(x){return '<option>'+x+'</option>'}).join('')+'</select>'+
+        '<span class="pc-unit" id="doseUnit">片</span></div></div>'+
+      '<div class="pc-field"><label class="req">频次</label><select class="pc-ipt" id="dFreq">'+['每日一次','每日两次','每日三次','每日四次','必要时'].map(function(x){return '<option>'+x+'</option>'}).join('')+'</select></div>'+
+      '<div class="pc-field"><label class="req">用法</label><select class="pc-ipt" id="dRoute">'+['口服','外用','静脉输液','肌肉注射','皮下注射','雾化吸入'].map(function(x){return '<option>'+x+'</option>'}).join('')+'</select></div>'+
+      '<div class="pc-field"><label class="req">用药天数</label><input class="pc-ipt" id="dDays" type="number" value="3"></div>'+
+      '<div class="pc-field"><label>滴速</label><div class="pc-inline">'+
+        '<input class="pc-ipt" id="dDrip" type="number" placeholder="静脉输液时填写" disabled style="width:56px">'+
+        '<select class="pc-ipt" id="dDripUnit" disabled style="width:64px"><option>滴/分</option><option>ml/h</option></select></div></div>'+
+      '<div class="pc-field"><label class="req">总数</label><div class="pc-inline">'+
+        '<input class="pc-ipt" id="dTotal" type="number" value="1" style="width:64px">'+
+        '<span class="pc-unit" id="dTotalUnit">盒</span></div></div>'+
+      '<div class="pc-field"><label>皮试</label><div class="pc-checks"><label><input type="checkbox" id="dSkin"> 皮试</label></div></div>'+
+    '</div><div class="pc-entry-ft">'+
+      '<button class="pc-btn primary" id="westAdd">添加</button>'+
+      '<button class="pc-btn" id="westCancelEdit">取消</button></div></div></div>';
+  }else{
+    // 中药：药房在主处方信息区；药品名称→数量→用法→添加 同一行
+    html+='<div class="pc-block">'+
+      '<div class="pc-inline" style="flex-wrap:wrap;gap:8px">'+
+        '<span class="pc-unit"><i class="pc-req">*</i>药品名称：</span>'+
+        '<div class="pc-drugwrap" style="flex:1;min-width:260px"><input class="pc-ipt" id="tcmDrugName" placeholder="输入药品名称 / 拼音码，或点击选择药品" autocomplete="off" style="width:100%"><div class="pc-drugdrop" id="tcmDrugDrop" style="width:520px;left:0;top:32px"></div></div>'+
+        '<span class="pc-unit"><i class="pc-req">*</i>数量：</span><input class="pc-ipt" id="tcmQty" type="number" value="0" style="width:64px"><span class="pc-unit">g</span>'+
+        '<span class="pc-unit">用法：</span><select class="pc-ipt" id="tcmUsage" style="width:130px"><option value="">请选择</option>'+TCM_USAGE.map(function(u){return '<option>'+u+'</option>'}).join('')+'</select>'+
+        '<button class="pc-btn primary" id="tcmAdd">添加</button>'+
+      '</div>'+
+      '<div class="pc-chips" id="tcmChips"></div>'+
+      '<div class="pc-sum" id="tcmSummary"></div>'+
+      '<div style="margin-top:14px;border-top:1px solid #F0F2F5;padding-top:14px"><div class="pc-grid">'+
+        '<div class="pc-field"><label class="req">剂数</label><input class="pc-ipt" id="fDoses" type="number" value="'+(d.doses||1)+'"></div>'+
+        '<div class="pc-field grow3"><label class="req">中草药用法</label>'+
+          '<div class="pc-herbwrap">'+
+            '<div class="pc-herbtext"><input class="pc-ipt" id="herbUsageText" value="'+esc((d.herbUsage||[]).join(''))+'" readonly><span class="caret">▼</span></div>'+
+            '<div class="pc-herbdrop" id="herbUsageDrop">'+
+              ['每三日','1剂','冲服','100','ml','1次','空腹','温服'].map(function(v,i){return '<select class="pc-ipt" data-hu'+i+'>'+[v,'每日','每日两次','煎服','300','500','200','饭前','饭后','暂无'].map(function(o){return '<option'+(o===d.herbUsage[i]?' selected':'')+'>'+o+'</option>'}).join('')+'</select>'}).join('')+
+            '</div>'+
+          '</div>'+
+        '</div>'+
+        '<div class="pc-field full"><label>备注</label><input class="pc-ipt" id="fNote" value="'+esc(d.note||'')+'"></div>'+
+      '</div></div>'+
+    '</div>';
+  }
+  $('formBody').innerHTML=html;
+  bindForm();
+  if(isTcm)renderTcmChips();else renderWestItems();
+}
+function bindForm(){
+  $('fType').onchange=function(){draft.type=this.value};
+  $('fExternal').onchange=function(){
+    draft.external=this.checked;
+    $('addrLink').style.display=this.checked?'':'none';
+    if(this.checked&&!draft.addr)openAddr();
+  };
+  $('addrLink').onclick=function(){openAddr()};
+  if(draftKind==='tcm'){
+    bindDrugDrop('tcmDrugName','tcmDrugDrop','tcm',function(){$('tcmQty').value=1});
+    $('tcmAdd').onclick=function(){
+      var d=$('tcmDrugName')._drug,qty=Number($('tcmQty').value);
+      if(!d){toast('请先选择药味');return}
+      if(!(qty>0)){toast('数量须大于 0');return}
+      if(qty>d.stock){toast('库存不足，禁止添加');return}
+      if(draft.items.some(function(x){return x.drugId===d.id})){toast('该药味已在处方中');return}
+      var pharm=$('fMainPharm').value;
+      draft.items.push({drugId:d.id,name:d.name,spec:d.spec,pharm:pharm,qty:qty,usage:$('tcmUsage').value,price:d.price,amount:+(qty*d.price).toFixed(2)});
+      $('tcmDrugName').value='';$('tcmDrugName')._drug=null;$('tcmQty').value=0;$('tcmUsage').value='';
+      recalc();renderTcmChips();
+    };
+    // 中草药用法：点击输入框展开下拉，下拉变化同步到组合文本
+    $('herbUsageText').onclick=function(e){
+      e.stopPropagation();
+      $('herbUsageDrop').classList.toggle('show');
+    };
+    window._huDocClick&&document.removeEventListener('click',window._huDocClick);
+    window._huDocClick=function(e){
+      var box=$('herbUsageDrop'),inp=$('herbUsageText');
+      if(box&&box.classList.contains('show')&&!box.contains(e.target)&&e.target!==inp)box.classList.remove('show');
+    };
+    document.addEventListener('click',window._huDocClick);
+    Array.prototype.slice.call($('herbUsageDrop').querySelectorAll('select[data-hu]')).forEach(function(sel){
+      sel.onchange=function(){
+        var vals=Array.prototype.slice.call($('herbUsageDrop').querySelectorAll('select[data-hu]')).map(function(s){return s.value});
+        $('herbUsageText').value=vals.join('');
+        draft.herbUsage=vals;
+      };
+    });
+  }else{
+    bindDrugDrop('westDrugName','westDrugDrop','west',function(d){
+      $('westSpec').value=d.spec;
+      $('doseUnit').textContent=d.doseUnit||'片';
+      $('dTotalUnit').textContent=d.unit||'盒';
+    });
+    $('dRoute').onchange=function(){
+      var iv=this.value==='静脉输液';
+      $('dDrip').disabled=!iv;$('dDripUnit').disabled=!iv;
+      if(!iv){$('dDrip').value=''}
+    };
+    $('westToggleEntry').onclick=function(){resetWestEntry();showWestEntry(true);$('fPharm').focus()};
+    $('westAdd').onclick=function(){saveWestItem()};
+    $('westCancelEdit').onclick=function(){resetWestEntry()};
+  }
+}
+function showWestEntry(on){var e=$('westEntry');if(e)e.style.display=on?'':'none'}
+function recalc(){draft.fee=+draft.items.reduce(function(s,i){return s+(i.amount||((i.qty||0)*(i.price||0)))},0).toFixed(2)}
+function collectWestItem(){
+  var d=$('westDrugName')._drug;
+  if(!$('fPharm').value){toast('请选择药房');return null}
+  if(!d){toast('请选择药品');return null}
+  if(!editIdx&&draft.items.length>=5){toast('每张西药处方最多 5 个药品');return null}
+  var total=Number($('dTotal').value)||0;
+  if(total<=0){toast('总数须大于 0');return null}
+  if(total>d.stock){toast('库存不足（可用 '+d.stock+'），禁止添加');return null}
+  var route=$('dRoute').value;
+  var drip=route==='静脉输液'&&$('dDrip').value?($('dDrip').value+' '+$('dDripUnit').value):'';
+  return {drugId:d.id,name:d.name,spec:d.spec,pharm:$('fPharm').value,doseNum:$('doseNum').value,doseUnit:$('doseUnit').textContent,freq:$('dFreq').value,route:route,days:Number($('dDays').value)||1,drip:drip,total:total,totalUnit:$('dTotalUnit').textContent,skin:$('dSkin').checked,price:d.price,amount:+(d.price*total).toFixed(2)};
+}
+function saveWestItem(){
+  var item=collectWestItem();if(!item)return;
+  if(editIdx!==null){draft.items[editIdx]=item;toast('已保存修改')}else{draft.items.push(item);toast('已添加')}
+  resetWestEntry();recalc();renderWestItems();
+}
+function resetWestEntry(){
+  editIdx=null;
+  $('westDrugName').value='';$('westDrugName')._drug=null;$('westSpec').value='';
+  $('dTotal').value=1;$('dSkin').checked=false;
+  $('doseNum').value='1';$('doseUnit').textContent='片';
+  $('dDrip').value='';$('dDrip').disabled=true;$('dDripUnit').disabled=true;$('dDripUnit').value='滴/分';
+  $('dRoute').value='口服';$('dDays').value=3;$('dTotalUnit').textContent='盒';
+  $('westAdd').textContent='添加';
+  showWestEntry(false);
+}
+function renderWestItems(){
+  var tb=$('westItems');if(!tb)return;
+  tb.innerHTML=draft.items.map(function(it,i){
+    return '<tr><td>'+it.pharm+'</td><td>'+esc(it.name)+'</td><td>'+it.spec+'</td><td>'+it.doseNum+' '+it.doseUnit+'</td>'+
+      '<td>'+it.freq+'</td><td>'+it.route+'</td><td>'+it.days+' 天</td><td>'+(it.drip||'—')+'</td>'+
+      '<td>'+it.total+' '+it.totalUnit+'</td><td>'+(it.skin?'是':'否')+'</td><td>'+money(it.amount)+'</td>'+
+      '<td><span class="pc-link" data-wedit="'+i+'">编辑</span><span class="pc-link danger" data-wdel="'+i+'">移除</span></td></tr>';
+  }).join('')||'<tr><td colspan="12" style="text-align:center;color:#999">暂无明细，请点击「+ 添加药品」</td></tr>';
+  tb.querySelectorAll('[data-wdel]').forEach(function(el){el.onclick=function(){
+    if(editIdx===+el.getAttribute('data-wdel'))resetWestEntry();
+    draft.items.splice(+el.getAttribute('data-wdel'),1);recalc();renderWestItems();
+  }});
+  tb.querySelectorAll('[data-wedit]').forEach(function(el){el.onclick=function(){
+    editIdx=+el.getAttribute('data-wedit');var it=draft.items[editIdx];
+    $('fPharm').value=it.pharm;
+    $('westDrugName')._drug=WEST_DRUGS.filter(function(x){return x.id===it.drugId})[0];
+    $('westDrugName').value=it.name;$('westSpec').value=it.spec;
+    $('doseNum').value=it.doseNum;$('doseUnit').textContent=it.doseUnit;$('dFreq').value=it.freq;$('dRoute').value=it.route;
+    $('dDays').value=it.days;
+    var iv=it.route==='静脉输液';$('dDrip').disabled=!iv;$('dDripUnit').disabled=!iv;
+    var dp=(it.drip||'').split(' ');$('dDrip').value=dp[0]||'';$('dDripUnit').value=dp[1]||'滴/分';
+    $('dTotal').value=it.total;$('dTotalUnit').textContent=it.totalUnit||'盒';$('dSkin').checked=it.skin;
+    $('westAdd').textContent='保存修改';
+    showWestEntry(true);$('westDrugName').focus();
+  }});
+}
+function renderTcmChips(){
+  var box=$('tcmChips');if(!box)return;
+  box.innerHTML=draft.items.map(function(it,i){
+    return '<span class="pc-chip"><span class="nm">'+esc(it.name)+'</span>'+
+      '<input class="pc-ipt" type="number" value="'+it.qty+'" data-qty="'+i+'"><span class="pc-unit">g</span>'+
+      '<select class="pc-ipt" data-us="'+i+'">'+['请选择'].concat(TCM_USAGE).map(function(u){return '<option value="'+u+'"'+(u===it.usage?' selected':'')+'>'+u+'</option>'}).join('')+'</select>'+
+      '<span class="x" data-tdel="'+i+'">×</span></span>';
+  }).join('');
+  var sum=$('tcmSummary');
+  if(sum){
+    var w=draft.items.reduce(function(s,i){return s+(Number(i.qty)||0)},0);
+    var amt=draft.items.reduce(function(s,i){return s+(i.amount||0)},0);
+    sum.innerHTML='<span>共 <b>'+draft.items.length+'</b> 种药</span><span>药品重量：<b>'+w+' g</b></span><span>总金额：<b>'+money(amt)+'</b></span>';
+  }
+  box.querySelectorAll('[data-tdel]').forEach(function(el){el.onclick=function(){draft.items.splice(+el.getAttribute('data-tdel'),1);recalc();renderTcmChips()}});
+  box.querySelectorAll('[data-qty]').forEach(function(el){el.onchange=function(){var i=+el.getAttribute('data-qty');var q=Number(el.value);var d=TCM_DRUGS.filter(function(x){return x.id===draft.items[i].drugId})[0];if(q>d.stock){toast('库存不足');el.value=draft.items[i].qty;return}draft.items[i].qty=q;draft.items[i].amount=+(q*draft.items[i].price).toFixed(2);recalc();renderTcmChips()}});
+  box.querySelectorAll('[data-us]').forEach(function(el){el.onchange=function(){draft.items[+el.getAttribute('data-us')].usage=el.value}});
+}
+
+/* ---------- 外送地址 ---------- */
+function openAddr(){
+  var a=draft.addr||state.patient;
+  $('aName').value=a.name||'';$('aPhone').value=a.phone||'';$('aRegion').value=a.region||'';$('aDetail').value=a.detail||'';
+  openDlg('addrDialog');
+}
+
+/* ---------- 提交表单 ---------- */
+$('formSubmit').onclick=function(){
+  draft.type=$('fType').value;draft.days=Number($('fDays').value)||3;draft.diag=$('fDiag').value;
+  draft.longRx=$('fLong').checked;draft.external=$('fExternal').checked;
+  draft.note=$('fNote')?$('fNote').value:'';
+  if(draft.external&&!draft.addr){toast('请填写外送地址');openAddr();return}
+  if(!draft.items.length){toast('请至少添加一条明细');return}
+  if(draft.days>3){toast('有效天数最长 3 天');return}
+  if(draftKind==='tcm'){
+    draft.doses=Number($('fDoses').value)||0;
+    if(!(draft.doses>0)){toast('请填写剂数');return}
+    draft.pharm=$('fMainPharm').value;
+    draft.herbUsage=Array.prototype.slice.call($('formBody').querySelectorAll('[data-hu]')).map(function(s){return s.value});
+    if(!draft.herbUsage.join('').trim()){toast('请填写中草药用法');return}
+  }
+  recalc();
+  if(editingId){
+    var idx=state.list.map(function(r){return r.id}).indexOf(editingId);
+    var old=findRx(editingId);draft.id=editingId;draft.created=old.created;draft.status=old.status;
+    state.list[idx]=JSON.parse(JSON.stringify(draft));
+  }else{
+    state.list.unshift(JSON.parse(JSON.stringify(draft)));
+  }
+  save();showListView();toast(editingId?'已保存':'已生成处方（待推送）');
+};
+
+/* ---------- 操作 ---------- */
+$('rxList').addEventListener('click',function(e){
+  var el=e.target.closest('[data-op]');if(!el)return;
+  var op=el.getAttribute('data-op'),id=el.getAttribute('data-id'),rx=findRx(id);
+  if(!rx)return;
+  if(op==='more'){
+    var m=$('more-'+id);
+    document.querySelectorAll('.pc-more-menu').forEach(function(x){if(x!==m)x.classList.remove('show')});
+    m.classList.toggle('show');return;
+  }
+  document.querySelectorAll('.pc-more-menu').forEach(function(x){x.classList.remove('show')});
+  if(op==='preview'){openRxPreview(rx,false)}
+  else if(op==='view'){openView(rx)}
+  else if(op==='send'){openRxPreview(rx,true)}
+  else if(op==='edit'){openForm(rx.kind,rx)}
+  else if(op==='recall'){rx.status='待推送';save();renderList();toast('已撤回至待推送')}
+  else if(op==='abolish'){
+    if(confirm('确认作废处方 '+rx.id+'？')){rx.status='作废';save();renderList();toast('已作废')}
+  }
+});
+$('selAll').onchange=function(){var on=this.checked;document.querySelectorAll('.rx-sel').forEach(function(c){c.checked=on})};
+$('btnPrintSelected').onclick=function(){
+  var ids=Array.prototype.slice.call(document.querySelectorAll('.rx-sel:checked')).map(function(c){return c.value});
+  if(!ids.length){toast('请先勾选要打印的处方');return}
+  previewSendId=null;$('rxSendConfirm').style.display='none';
+  $('rxPaper').innerHTML=ids.map(function(id){var rx=findRx(id);return rx?buildRxSheet(rx):''}).join('');
+  openDlg('rxDialog');
+};
+
+/* ---------- 查看 ---------- */
+function openView(rx){
+  var head='<div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:10px">'+
+    '<span><b>处方编号</b> '+rx.id+'</span><span><b>类型</b> '+TYPE_TEXT[rx.type]+'</span>'+
+    '<span><b>类别</b> '+(rx.kind==='west'?'西药处方':'中药饮片处方')+'</span><span><b>状态</b> '+statusTag(rx.status)+'</span>'+
+    '<span><b>诊断</b> '+esc(rx.diag)+'</span><span><b>有效天数</b> '+rx.days+' 天</span>'+
+    '<span><b>长处方</b> '+(rx.longRx?'是':'否')+'</span><span><b>外配</b> '+(rx.external?'是':'否')+'</span>'+
+    '<span><b>费用</b> '+money(rx.fee)+'</span></div>';
+  var rows=rx.items.map(function(it){
+    if(rx.kind==='west')return '<tr><td>'+it.pharm+'</td><td>'+it.name+'</td><td>'+it.spec+'</td><td>'+it.doseNum+' '+it.doseUnit+'</td><td>'+it.freq+'</td><td>'+it.route+'</td><td>'+it.days+'天</td><td>'+it.total+' '+it.totalUnit+'</td><td>'+money(it.amount)+'</td></tr>';
+    return '<tr><td>'+it.pharm+'</td><td>'+it.name+'</td><td>'+it.spec+'</td><td>'+it.qty+' g</td><td>'+it.usage+'</td><td>—</td><td>—</td><td>'+(rx.doses||1)+'剂</td><td>'+money(it.amount*(rx.doses||1))+'</td></tr>';
+  }).join('');
+  var th=rx.kind==='west'?'<th>药房</th><th>药品名称</th><th>规格</th><th>单次用量</th><th>频次</th><th>用法</th><th>天数</th><th>总数</th><th>金额</th>':'<th>药房</th><th>药味</th><th>规格</th><th>数量</th><th>用法煎法</th><th></th><th></th><th>剂数</th><th>金额</th>';
+  var addr=rx.addr?'<div style="margin-top:10px"><b>外送地址：</b>'+esc(rx.addr.region+rx.addr.detail)+'（'+esc(rx.addr.name)+' '+esc(rx.addr.phone)+'）</div>':'';
+  $('viewBody').innerHTML=head+'<table class="pc-table"><thead><tr>'+th+'</tr></thead><tbody>'+rows+'</tbody></table>'+addr+
+    (rx.note?'<div style="margin-top:10px"><b>备注：</b>'+esc(rx.note)+'</div>':'');
+  openDlg('viewDialog');
+}
+
+/* ---------- 处方笺 ---------- */
+var previewSendId=null;
+function buildRxSheet(rx){
+  var narc=isNarcRx(rx);
+  var cls=rx.type==='02'?'emergency':(rx.type==='03'?'pediatric':(narc?'narc':''));
+  var kind=narc?'麻、精一':(rx.type==='02'?'急诊':(rx.type==='03'?'儿科':'普通'));
+  var p=state.patient;
+  var lines='';
+  if(rx.kind==='west'){
+    lines=rx.items.map(function(it){
+      return '<div class="line"><span>'+esc(it.name)+' '+esc(it.spec)+'</span><span>×'+it.total+' '+it.totalUnit+'</span></div>'+
+        '<div class="sig">Sig: '+it.doseNum+' '+it.doseUnit+'　'+it.route+'　'+it.freq+'</div>';
+    }).join('');
+  }else{
+    lines=rx.items.map(function(it){return '<div class="line"><span>'+esc(it.name)+(it.usage&&it.usage!=='暂无'?'（'+it.usage+'）':'')+'</span><span>'+it.qty+' g</span></div>'}).join('')+
+      '<div class="sig">'+esc((rx.herbUsage||[]).join(''))+'　共 '+(rx.doses||1)+' 剂</div>';
+  }
+  return '<div class="rx-sheet '+cls+'">'+
+    '<span class="rx-kind">'+kind+'</span><div class="rx-sheet-title">医疗机构名称　门诊处方笺</div>'+
+    '<div class="rx-meta">'+
+      '<div class="it">姓名：<span>'+esc(p.name)+'</span></div><div class="it">性别：<span>'+esc(p.sex)+'</span></div>'+
+      '<div class="it">年龄：<span>'+esc(p.age)+'</span></div><div class="it">科别：<span>内科门诊</span></div>'+
+      '<div class="it">收费种类：<span>自费</span></div><div class="it">处方日期：<span>'+rx.created.slice(0,10)+'</span></div>'+
+      '<div class="it">门诊号：<span>'+esc(p.mzh)+'</span></div><div class="it">处方号：<span>'+rx.id+'</span></div>'+
+    '</div>'+
+    '<div class="rx-diag">临床诊断：<span class="box">'+esc(rx.diag)+'</span></div>'+
+    '<div class="rx-rp"><div class="rp">Rp.</div>'+lines+'</div>'+
+    '<div class="rx-blank">以　下　空　白</div>'+
+    '<div class="rx-sign"><div class="row"><span>医师：孙磊</span><span>医师(签名)：____________</span></div>'+
+    '<div class="row"><span>药师(审核、校对、发药)：____________</span><span>药师/士(调配)：____________</span></div>'+
+    '<div class="row amt"><span>金额：'+money(rx.fee)+'</span></div></div></div>';
+}
+function openRxPreview(rx,fromSend){
+  previewSendId=fromSend?rx.id:null;
+  $('rxPaper').innerHTML=buildRxSheet(rx);
+  $('rxSendConfirm').style.display=fromSend?'':'none';
+  openDlg('rxDialog');
+}
+$('rxSendConfirm').onclick=function(){
+  var rx=findRx(previewSendId);if(!rx)return;
+  rx.status=isNarcRx(rx)?'待毒麻精审核':'待合理用药审核';
+  save();closeAllDlg();renderList();toast('已发送 → '+rx.status);
+};
+$('rxPrint').onclick=function(){window.print()};
+
+/* ---------- 全局 ---------- */
+$('mask').onclick=function(){closeAllDlg()};
+document.querySelectorAll('[data-close]').forEach(function(el){el.onclick=function(){closeDlg(el.getAttribute('data-close'))}});
+document.addEventListener('click',function(e){if(!e.target.closest('.pc-ops'))document.querySelectorAll('.pc-more-menu').forEach(function(x){x.classList.remove('show')})});
+$('fStatus').onchange=renderList;
+$('btnNewWest').onclick=function(){openForm('west')};
+$('btnNewTcm').onclick=function(){openForm('tcm')};
+$('formBack').onclick=function(){showListView()};
+$('formCancel').onclick=function(){showListView()};
+$('addrSave').onclick=function(){
+  draft.addr={name:$('aName').value,phone:$('aPhone').value,region:$('aRegion').value,detail:$('aDetail').value};
+  var link=$('addrLink');
+  link.textContent='外送地址：'+draft.addr.region+draft.addr.detail+'（点击修改）';
+  link.title=draft.addr.name+' '+draft.addr.phone+' '+draft.addr.region+draft.addr.detail;
+  closeDlg('addrDialog');toast('外送地址已保存');
+};
+$('btnPatient360').onclick=function(){toast('跳转患者360（原型不实现页面）')};
+$('btnRecord').onclick=function(){toast('跳转病历浏览（原型不实现页面）')};
+
+renderList();
+})();
+</script>
+<script data-page-node-id="abE0y2wNfJeyhVHX8cvhRi" src="nav.js?v=20261117"></script>
+
+</body></html>

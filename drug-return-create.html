@@ -221,7 +221,8 @@
                   <col style="width:160px"><col style="width:92px"><col style="width:88px">
                   <col style="width:82px"><col style="width:82px"><col style="width:78px">
                   <col style="width:78px"><col style="width:100px"><col style="width:100px">
-                  <col style="width:130px"><col style="width:130px"><col style="width:88px">
+                  <col style="width:130px"><col style="width:130px"><col style="width:150px">
+                  <col style="width:88px">
                   <col style="width:126px">
                 </colgroup>
                 <thead>
@@ -237,6 +238,7 @@
                     <th class="num">零售价</th>
                     <th class="num">进货价金额合计</th>
                     <th class="num">零售价金额合计</th>
+                    <th>供应商</th>
                     <th>批准文号</th>
                     <th>发票号</th>
                     <th class="w-trace">追溯码进度</th>
@@ -311,12 +313,20 @@
       </button>
     </div>
     <div class="modal-body">
+      <div class="dr-pick-search">
+        <div class="fi"><span class="lbl">入库单号：</span><input class="input" id="inKey" autocomplete="off"></div>
+        <div class="fi"><span class="lbl">入库时间：</span><input class="input" id="inDateFrom" type="date" style="width:140px"><span class="lbl">至</span><input class="input" id="inDateTo" type="date" style="width:140px"></div>
+        <div class="fi"><span class="lbl">供应商：</span><input class="input" id="inSupplier" autocomplete="off"></div>
+        <button class="btn btn-sm" id="inReset">重置</button>
+        <button class="btn btn-sm btn-primary" id="inSearch">查询</button>
+      </div>
       <table class="dr-pick-table">
         <thead>
           <tr>
             <th style="width:36px"></th>
             <th>入库单号</th><th>入库时间</th><th>供应商</th>
-            <th>入库方式</th><th class="num">药品笔数</th><th>发票号</th>
+            <th>入库方式</th>
+            <th class="num">进货价金额合计</th><th class="num">零售价金额合计</th>
           </tr>
         </thead>
         <tbody id="inBody"></tbody>
@@ -324,7 +334,7 @@
       <div class="dr-pick-empty" id="inEmpty" style="display:none">本机构暂无已审核通过的入库单</div>
     </div>
     <div class="modal-foot">
-      <span style="margin-right:auto;font-size:12px;color:var(--text-tertiary);">勾选后将以入库单药品明细替换当前明细，并带入其追溯码</span>
+      <span style="margin-right:auto;font-size:12px;color:var(--text-tertiary);">勾选后将以入库单药品明细替换当前明细，并带入其追溯码；提交审核时校验同一退货单的药品须来自同一供应商</span>
       <button class="btn" id="inCancel">取消</button>
       <button class="btn btn-primary" id="inOk" disabled>确定</button>
     </div>
@@ -511,7 +521,7 @@
 
   function renderItems() {
     if (!doc.items.length) {
-      $("#itemsBody").innerHTML = '<tr class="dr-empty-row"><td colspan="15">暂未添加药品，请点击上方「+ 添加药品」或「+ 关联入库单代入」</td></tr>';
+      $("#itemsBody").innerHTML = '<tr class="dr-empty-row"><td colspan="16">暂未添加药品，请点击上方「+ 添加药品」或「+ 关联入库单代入」</td></tr>';
     } else {
       $("#itemsBody").innerHTML = doc.items.map(function (it, i) {
         var tp = (it.traces || []).length;
@@ -528,6 +538,7 @@
         h += '<td class="num">' + DR.num2(it.retail) + '</td>';
         h += '<td class="num" data-c="pamt">' + DR.num2(DR.purchaseAmt(it)) + '</td>';
         h += '<td class="num" data-c="ramt">' + DR.num2(DR.retailAmt(it)) + '</td>';
+        h += '<td class="cell-ellipsis" title="' + esc(it.supplier || "—") + '">' + esc(it.supplier || "—") + '</td>';
         h += '<td class="cell-ellipsis" title="' + esc(it.approvalNo) + '">' + esc(it.approvalNo) + '</td>';
         h += '<td class="cell-ellipsis" title="' + esc(it.invoiceNo) + '">' + esc(it.invoiceNo) + '</td>';
         h += '<td class="w-trace"><span class="tr-code-progress" title="已录入 ' + tp + ' 条追溯码">' + tp + '/' + it.qty + '</span></td>';
@@ -682,6 +693,7 @@
       doc.items.push({
         key: r.key, drugCode: r.drugCode, drugName: r.drugName, spec: r.spec, vendor: r.vendor,
         batch: r.batch, approvalNo: r.approvalNo, unit: r.unit,
+        supplier: r.supplier || "",
         stock: r.stock, qty: 1, purchase: r.purchase, retail: r.retail,
         invoiceNo: r.invoiceNo, traces: []
       });
@@ -695,18 +707,37 @@
   var inRows = [];
   function inAlreadyLinked(id) { return (doc.inIds || []).indexOf(id) >= 0; }
   function renderIn() {
-    inRows = DR.inboundBills(user.role);
+    var all = DR.inboundBills(user.role);
+    /* 筛选：入库单号 / 入库时间区间 / 供应商 */
+    var k = $("#inKey").value.trim().toLowerCase();
+    var df = $("#inDateFrom").value;   /* yyyy-mm-dd */
+    var dt = $("#inDateTo").value;
+    var sp = $("#inSupplier").value.trim().toLowerCase();
+    inRows = all.filter(function (b) {
+      if (k && b.code.toLowerCase().indexOf(k) < 0) return false;
+      var d = String(b.submitTime || "").slice(0, 10);
+      if (df && (!d || d < df)) return false;
+      if (dt && (!d || d > dt)) return false;
+      if (sp && String(b.supplier || "").toLowerCase().indexOf(sp) < 0) return false;
+      return true;
+    });
     $("#inEmpty").style.display = inRows.length ? "none" : "block";
     $("#inBody").innerHTML = inRows.map(function (b, i) {
       var linked = inAlreadyLinked(b.id);
+      /* 金额合计：Σ 明细数量 × 进货价 / 零售价 */
+      var pa = 0, ra = 0;
+      (b.items || []).forEach(function (it) {
+        pa += Number(it.qty || 0) * Number(it.purchase || 0);
+        ra += Number(it.qty || 0) * Number(it.retail || 0);
+      });
       var h = '<tr data-i="' + i + '"' + (linked ? ' class="is-disabled"' : '') + '>';
       h += '<td><input type="checkbox" data-in="' + i + '"' + (linked ? ' disabled' : '') + '></td>';
       h += '<td>' + esc(b.code) + '</td>';
       h += '<td>' + esc(b.submitTime || "—") + '</td>';
       h += '<td class="cell-ellipsis" title="' + esc(b.supplier || "—") + '">' + esc(b.supplier || "—") + '</td>';
       h += '<td>' + esc(b.method || "—") + '</td>';
-      h += '<td class="num">' + ((b.items || []).length) + '</td>';
-      h += '<td>' + esc(b.invoiceNo || "—") + '</td>';
+      h += '<td class="num">' + esc(DR.fmtMoney(pa)) + '</td>';
+      h += '<td class="num">' + esc(DR.fmtMoney(ra)) + '</td>';
       h += '</tr>';
       return h;
     }).join("");
@@ -732,6 +763,14 @@
   $("#btnInBill").addEventListener("click", openIn);
   $("#inClose").addEventListener("click", closeIn);
   $("#inCancel").addEventListener("click", closeIn);
+  $("#inSearch").addEventListener("click", renderIn);
+  $("#inReset").addEventListener("click", function () {
+    $("#inKey").value = ""; $("#inDateFrom").value = ""; $("#inDateTo").value = ""; $("#inSupplier").value = "";
+    renderIn();
+  });
+  $$("#inKey, #inDateFrom, #inDateTo, #inSupplier").forEach(function (el) {
+    el.addEventListener("keydown", function (e) { if (e.key === "Enter") renderIn(); });
+  });
   $("#inOk").addEventListener("click", function () {
     var sel = $$('#inBody input[type="checkbox"]:checked').map(function (cb) {
       return inRows[parseInt(cb.getAttribute("data-in"), 10)];
@@ -752,6 +791,7 @@
           doc.items.push({
             key: key, drugCode: src.code, drugName: src.name, spec: src.spec, vendor: src.vendor,
             batch: src.batch, approvalNo: src.approval || "", unit: src.packUnit || "",
+            supplier: b.supplier || "",
             stock: stockRow ? stockRow.stock : Number(src.qty || 0),
             qty: 1,
             purchase: src.purchase, retail: src.retail,
@@ -1115,6 +1155,12 @@
     if (!doc.supplier) errs.push("供应商");
     if (!doc.outLocation) errs.push("出库库位");
     if (!doc.items.length) errs.push("药品明细（至少 1 条）");
+    /* 一个退货单只能同一个供应商：明细供应商须一致且与退货单供应商一致 */
+    var sups = [];
+    doc.items.forEach(function (it) {
+      var s = String(it.supplier || "").trim();
+      if (s && sups.indexOf(s) < 0) sups.push(s);
+    });
     doc.items.forEach(function (it, i) {
       var n = "第" + (i + 1) + "行";
       var av = stockOf(it);
@@ -1122,6 +1168,15 @@
       if (!/^\d+$/.test(q) || Number(q) <= 0) errs.push(n + "退货量");
       else if (Number(q) > av) errs.push(n + "退货量超过库存量（" + av + " " + (it.unit || "") + "）");
     });
+    if (doc.items.length && doc.supplier) {
+      if (sups.length > 1) {
+        errs.push("同一退货单的药品必须来自同一供应商（当前含 " + sups.join("、") + "）");
+      } else if (sups.length === 1 && sups[0] !== doc.supplier) {
+        errs.push("明细供应商（" + sups[0] + "）与退货单供应商（" + doc.supplier + "）不一致");
+      } else if (!sups.length) {
+        errs.push("药品明细缺少供应商信息，无法退货给供应商");
+      }
+    }
     return errs;
   }
 
@@ -1130,6 +1185,7 @@
       return {
         key: it.key, drugCode: it.drugCode, drugName: it.drugName, spec: it.spec, vendor: it.vendor,
         batch: it.batch, approvalNo: it.approvalNo, unit: it.unit, stock: it.stock,
+        supplier: it.supplier || "",
         qty: Number(it.qty || 0), purchase: it.purchase, retail: it.retail,
         invoiceNo: it.invoiceNo, traces: (it.traces || []).slice(),
         traceResolved: it.traceResolved || {}

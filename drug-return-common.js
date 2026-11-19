@@ -223,8 +223,10 @@
             key: k, drugCode: it.code, drugName: it.name, spec: it.spec, vendor: it.vendor,
             batch: it.batch, approvalNo: it.approval || "", unit: it.packUnit || "",
             purchase: it.purchase, retail: it.retail,
+            supplier: b.supplier || "",
             invoiceNo: it.invoiceNo || b.invoiceNo || "", stock: 0
           };
+          if (!m[k].supplier && b.supplier) m[k].supplier = b.supplier;
         }
         row.stock += Number(it.qty || 0);
         if (!row.invoiceNo) row.invoiceNo = it.invoiceNo || b.invoiceNo || "";

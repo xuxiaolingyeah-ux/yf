@@ -119,6 +119,7 @@
                         <th style="width:70px;" class="num">零售价</th>
                         <th style="width:110px;" class="num">进货价金额合计</th>
                         <th style="width:110px;" class="num">零售价金额合计</th>
+                        <th style="width:150px;">供应商</th>
                         <th style="width:130px;">批准文号</th>
                         <th style="width:130px;">发票号</th>
                         <th style="width:80px;" class="num">追溯码</th>
@@ -235,11 +236,12 @@
         '<td class="num">' + DR.num2(it.retail) + "</td>" +
         '<td class="num">' + DR.num2(DR.purchaseAmt(it)) + "</td>" +
         '<td class="num">' + DR.num2(DR.retailAmt(it)) + "</td>" +
+        '<td><div class="cell-ellipsis" title="' + esc(it.supplier || "—") + '">' + esc(it.supplier || "—") + "</div></td>" +
         "<td>" + esc(it.approvalNo) + "</td>" +
         "<td>" + esc(it.invoiceNo || "—") + "</td>" +
         '<td class="num">' + ((it.traces || []).length) + " 条</td>" +
       "</tr>";
-    }).join("") : '<tr class="pa-empty-row"><td colspan="14">暂无药品明细</td></tr>';
+    }).join("") : '<tr class="pa-empty-row"><td colspan="15">暂无药品明细</td></tr>';
 
     var s = DR.sums(doc);
     $("sumPurchase").textContent = DR.num2(s.purchase);

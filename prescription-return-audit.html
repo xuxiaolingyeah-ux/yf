@@ -6,45 +6,49 @@
 <link rel="stylesheet" href="styles.css">
 <style>
 /* ===== 处方管理 · 处方退药审核 局部样式（与门诊处方退药页共用规范） ===== */
-.ra-page { background: var(--bg-page); }
-.ra-page > .page-head { background: var(--bg-white); }
+/* ===== 水槽布局：目录右侧、标签页下方四周留白；标题栏/列表/详情贴合为整体面板 ===== */
+.ra-page {
+  background: var(--bg-white);
+  margin: 12px;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 1px 2px rgba(0,0,0,.04);
+  overflow: hidden;
+}
 
 .ra-body {
   flex: 1; min-height: 0;
-  display: flex; gap: 12px;
-  padding: 12px;
+  display: flex;
 }
 
-/* ---------- 页内 Tab（标题栏下方）：未审核 / 全部记录 ---------- */
-.ra-tabbar {
-  flex: none; height: 44px;
-  display: flex; align-items: center; gap: 4px;
-  padding: 0 16px;
-  margin: 8px 12px 0;
-  background: var(--bg-white);
-  border-radius: var(--radius-lg);
-  box-shadow: 0 1px 2px rgba(0,0,0,.04);
+/* ---------- 页内 Tab（筛选区顶部）：未审核 / 全部记录（参考门诊处方配送） ---------- */
+.ra-tabs {
+  flex: none; display: flex; align-items: flex-end; gap: 4px;
+  height: 40px; padding: 0 12px;
+  border-bottom: 1px solid var(--border);
 }
 .ra-tab {
-  height: 44px; padding: 0 14px;
-  border: none; background: transparent;
-  color: var(--text-secondary); font-size: 14px; cursor: pointer;
-  position: relative; white-space: nowrap;
+  position: relative; top: 1px; height: 32px; padding: 0 14px;
+  border: 1px solid transparent; border-bottom: none;
+  display: flex; align-items: center; cursor: pointer;
+  font-family: inherit;
+  font-size: 13px; color: var(--text-secondary);
+  background: var(--primary-lighter);
+  border-radius: 4px 4px 0 0;
+  transition: background .15s, color .15s;
+  white-space: nowrap;
 }
-.ra-tab:hover { color: var(--primary); }
-.ra-tab.active { color: var(--primary); font-weight: 500; }
-.ra-tab.active::after {
-  content: ""; position: absolute; left: 10px; right: 10px; bottom: 0;
-  height: 2px; border-radius: 1px; background: var(--primary);
+.ra-tab:hover { color: var(--primary-dark); }
+.ra-tab.active {
+  background: var(--bg-white); color: var(--primary-dark); font-weight: 500;
+  border-color: var(--border); box-shadow: 0 -2px 0 var(--primary-dark) inset;
 }
 
-/* ---------- 左侧：筛选 + 处方列表 ---------- */
+/* ---------- 左侧：Tab + 筛选 + 处方列表（面板内贴左，右侧分隔线） ---------- */
 .ra-left {
   flex: none; width: 324px; min-height: 0;
   display: flex; flex-direction: column;
   background: var(--bg-white);
-  border-radius: var(--radius-lg);
-  box-shadow: 0 1px 2px rgba(0,0,0,.04);
+  border-right: 1px solid var(--border);
   overflow: hidden;
 }
 .ra-filter { flex: none; padding: 10px 12px 12px; border-bottom: 1px solid var(--border); }
@@ -91,13 +95,11 @@
 .ra-selbar svg { width: 13px; height: 13px; color: var(--primary); flex: none; }
 .ra-pager { flex: none; height: 42px; padding: 0 3px 0 10px; }
 
-/* ---------- 右侧：处方详情 ---------- */
+/* ---------- 右侧：处方详情（面板内贴合，无独立圆角） ---------- */
 .ra-right {
   flex: 1; min-width: 0; min-height: 0;
   display: flex; flex-direction: column;
   background: var(--bg-white);
-  border-radius: var(--radius-lg);
-  box-shadow: 0 1px 2px rgba(0,0,0,.04);
   overflow: hidden;
 }
 .ra-dhead {
@@ -338,19 +340,20 @@
             <option>西药房</option>
           </select>
         </div>
-      </div>
-
-      <div class="ra-tabbar" id="raTabs">
-        <button type="button" class="ra-tab active" data-tab="todo">未审核</button>
-        <button type="button" class="ra-tab" data-tab="all">全部记录</button>
         <!-- 审核 = 批量操作，按左侧勾选数量启用 -->
-        <button class="btn btn-primary" id="btnAudit" style="display:none;margin-left:auto;">审核</button>
+        <div class="page-acts">
+          <button class="btn btn-primary" id="btnAudit" style="display:none;">审核</button>
+        </div>
       </div>
 
       <div class="ra-body">
 
-        <!-- ========== 左侧：筛选 + 处方列表 ========== -->
+        <!-- ========== 左侧：Tab + 筛选 + 处方列表 ========== -->
         <aside class="ra-left">
+          <div class="ra-tabs" id="raTabs">
+            <button type="button" class="ra-tab active" data-tab="todo">未审核</button>
+            <button type="button" class="ra-tab" data-tab="all">全部记录</button>
+          </div>
           <div class="ra-filter">
             <div class="ra-frow">
               <span class="ra-flbl">发药时间</span>

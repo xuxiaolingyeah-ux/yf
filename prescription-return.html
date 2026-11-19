@@ -6,22 +6,26 @@
 <link rel="stylesheet" href="styles.css">
 <style>
 /* ===== 处方管理 · 处方退药 局部样式 ===== */
-.rt-page { background: var(--bg-page); }
-.rt-page > .page-head { background: var(--bg-white); }
+/* ===== 水槽布局：目录右侧、标签页下方四周留白；标题栏/列表/详情贴合为整体面板 ===== */
+.rt-page {
+  background: var(--bg-white);
+  margin: 12px;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 1px 2px rgba(0,0,0,.04);
+  overflow: hidden;
+}
 
 .rt-body {
   flex: 1; min-height: 0;
-  display: flex; gap: 12px;
-  padding: 12px;
+  display: flex;
 }
 
-/* ---------- 左侧：筛选 + 处方列表 ---------- */
+/* ---------- 左侧：Tab + 筛选 + 处方列表（面板内贴左，右侧分隔线） ---------- */
 .rt-left {
   flex: none; width: 324px; min-height: 0;
   display: flex; flex-direction: column;
   background: var(--bg-white);
-  border-radius: var(--radius-lg);
-  box-shadow: 0 1px 2px rgba(0,0,0,.04);
+  border-right: 1px solid var(--border);
   overflow: hidden;
 }
 
@@ -68,13 +72,11 @@
 .rt-empty { padding: 48px 0; text-align: center; color: var(--text-placeholder); font-size: 12px; }
 .rt-pager { flex: none; height: 42px; padding: 0 3px 0 10px; }
 
-/* ---------- 右侧：处方详情 ---------- */
+/* ---------- 右侧：处方详情（面板内贴合，无独立圆角） ---------- */
 .rt-right {
   flex: 1; min-width: 0; min-height: 0;
   display: flex; flex-direction: column;
   background: var(--bg-white);
-  border-radius: var(--radius-lg);
-  box-shadow: 0 1px 2px rgba(0,0,0,.04);
   overflow: hidden;
 }
 .rt-dhead {
@@ -219,27 +221,27 @@
 }
 .rt-dlg-reason:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 2px rgba(43,127,255,.12); }
 
-/* ---------- 页内 Tab（标题栏下方）：退药申请 / 执行退药 ---------- */
-.rt-tabbar {
-  flex: none; height: 44px;
-  display: flex; align-items: center; gap: 4px;
-  padding: 0 16px;
-  margin: 8px 12px 0;
-  background: var(--bg-white);
-  border-radius: var(--radius-lg);
-  box-shadow: 0 1px 2px rgba(0,0,0,.04);
+/* ---------- 页内 Tab（筛选区顶部）：退药申请 / 执行退药（参考门诊处方配送） ---------- */
+.rt-tabs {
+  flex: none; display: flex; align-items: flex-end; gap: 4px;
+  height: 40px; padding: 0 12px;
+  border-bottom: 1px solid var(--border);
 }
 .rt-tab {
-  height: 44px; padding: 0 14px;
-  border: none; background: transparent;
-  color: var(--text-secondary); font-size: 14px; cursor: pointer;
-  position: relative; white-space: nowrap;
+  position: relative; top: 1px; height: 32px; padding: 0 14px;
+  border: 1px solid transparent; border-bottom: none;
+  display: flex; align-items: center; cursor: pointer;
+  font-family: inherit;
+  font-size: 13px; color: var(--text-secondary);
+  background: var(--primary-lighter);
+  border-radius: 4px 4px 0 0;
+  transition: background .15s, color .15s;
+  white-space: nowrap;
 }
-.rt-tab:hover { color: var(--primary); }
-.rt-tab.active { color: var(--primary); font-weight: 500; }
-.rt-tab.active::after {
-  content: ""; position: absolute; left: 10px; right: 10px; bottom: 0;
-  height: 2px; border-radius: 1px; background: var(--primary);
+.rt-tab:hover { color: var(--primary-dark); }
+.rt-tab.active {
+  background: var(--bg-white); color: var(--primary-dark); font-weight: 500;
+  border-color: var(--border); box-shadow: 0 -2px 0 var(--primary-dark) inset;
 }
 
 /* ---------- 处方退药状态角标 ---------- */
@@ -508,15 +510,14 @@
         </div>
       </div>
 
-      <div class="rt-tabbar" id="rtTabs">
-        <button type="button" class="rt-tab active" data-tab="apply">退药申请</button>
-        <button type="button" class="rt-tab" data-tab="exec">执行退药</button>
-      </div>
-
       <div class="rt-body">
 
-        <!-- ========== 左侧：筛选 + 处方列表 ========== -->
+        <!-- ========== 左侧：Tab + 筛选 + 处方列表 ========== -->
         <aside class="rt-left">
+          <div class="rt-tabs" id="rtTabs">
+            <button type="button" class="rt-tab active" data-tab="apply">退药申请</button>
+            <button type="button" class="rt-tab" data-tab="exec">执行退药</button>
+          </div>
           <div class="rt-filter">
             <div class="rt-frow">
               <span class="rt-flbl">发药时间</span>

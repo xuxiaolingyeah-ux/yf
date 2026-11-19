@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>门诊处方送药 · 中心药房</title>
+<title>门诊处方配送 · 中心药房</title>
 <link rel="stylesheet" href="styles.css">
 <style>
-/* ===== 门诊处方管理 · 门诊处方送药 ===== */
+/* ===== 门诊处方管理 · 门诊处方配送 ===== */
 .dl-page { background: var(--bg-page); }
 .dl-card {
   flex: 1; min-height: 0; display: flex; flex-direction: column;
@@ -253,7 +253,7 @@
     <div class="tabbar">
       <div class="tab" onclick="location.href='home.html'">首页</div>
       <div class="tab active">
-        门诊处方送药
+        门诊处方配送
         <button class="tab-close" title="关闭" onclick="location.href='home.html'">
           <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
         </button>
@@ -266,7 +266,7 @@
         <!-- ---------- 标题栏 ---------- -->
         <div class="dl-head">
           <div class="dl-head-left">
-            <span class="page-title">门诊处方送药</span>
+            <span class="page-title">门诊处方配送</span>
             <button class="dl-help" title="勾选未登记的处方后点击「配送登记」，录入收件人、电话与地址生成配送单" style="display:none">?</button>
             <span class="dl-loc-lbl">药房：</span>
             <select class="select dl-loc" id="dlLoc">
@@ -282,11 +282,11 @@
 
         <!-- ---------- 二级标签 ---------- -->
         <div class="dl-tabs">
-          <div class="dl-tab active" data-view="reg">送药登记</div>
+          <div class="dl-tab active" data-view="reg">配送登记</div>
           <div class="dl-tab" data-view="deliver">快递揽件</div>
         </div>
 
-        <!-- ================= 视图一：送药登记 ================= -->
+        <!-- ================= 视图一：配送登记 ================= -->
         <div id="viewReg" style="flex:1;min-height:0;display:flex;flex-direction:column">
 
           <!-- 筛选区 -->
@@ -407,7 +407,7 @@
           </div>
         </div>
 
-        <!-- ================= 视图二：送药 ================= -->
+        <!-- ================= 视图二：快递揽件 ================= -->
         <div id="viewDeliver" style="flex:1;min-height:0;display:none;flex-direction:column">
 
           <!-- 筛选区 -->
@@ -576,7 +576,7 @@
   <div class="drawer-foot">
     <button class="btn" id="viewCancel">关闭</button>
     <button class="btn" id="viewRevoke">撤销登记</button>
-    <button class="btn btn-primary" id="viewSend">送货</button>
+    <button class="btn btn-primary" id="viewSend">揽件</button>
   </div>
 </div>
 
@@ -597,11 +597,11 @@
   </div>
 </div>
 
-<!-- ========== 弹窗：送药 ========== -->
+<!-- ========== 弹窗：揽件 ========== -->
 <div class="modal-mask" id="sendMask">
   <div class="modal" style="width:420px">
     <div class="modal-head">
-      <div class="modal-title">送药</div>
+      <div class="modal-title">揽件</div>
       <button class="drawer-close" id="sendClose" title="关闭">
         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
       </button>
@@ -638,7 +638,7 @@
     </div>
     <div class="modal-foot">
       <button class="btn" id="sendCancel">取消</button>
-      <button class="btn btn-primary" id="sendOk">确认送药</button>
+      <button class="btn btn-primary" id="sendOk">确认揽件</button>
     </div>
   </div>
 </div>
@@ -662,7 +662,7 @@
       p(d.getHours()) + ":" + p(d.getMinutes()) + ":" + p(d.getSeconds());
   }
 
-  /* ---------- 数据：门诊处方（送药登记维度） ---------- */
+  /* ---------- 数据：门诊处方（配送登记维度） ---------- */
   var RX = [
     { clinic: "202611040001", rx: "M2026110000020", name: "测试7...", sex: "男", dept: "内科门诊", time: "2026-11-04 10:17:54", dispense: "已收费未发药", reg: 1, receiver: "测试7268", phone: "13579881234", addr: "山西省长治市潞城区府西街12号", express: "物流速递", expressNo: "SF1388451200671", pkgCount: 1, courier: "王强", courierPhone: "13903451122", note: "", ins: "260920000000005", sn: "2118638177380651" },
     { clinic: "202611040002", rx: "M2026110000021", name: "冯小容", sex: "女", dept: "内科门诊", time: "2026-11-04 19:59:57", dispense: "已发药", reg: 1, receiver: "冯小容", phone: "13309088589", addr: "山西省长治市潞城区潞华街58号", express: "物流速递", expressNo: "SF1388451200682", pkgCount: 2, note: "", ins: "260430000000001", sn: "2118643365447235" },
@@ -716,9 +716,9 @@
   };
 
   var SEND = {};        /* 配送状态：流水号 -> 未配送 / 已配送 */
-  var SENDTIME = {};    /* 送药时间：流水号 -> 时间字符串 */
-  var sel = {};         /* 勾选（送药登记）：处方号 -> true */
-  var dSel = {};        /* 勾选（送药）：流水号 -> true */
+  var SENDTIME = {};    /* 揽件时间：流水号 -> 时间字符串 */
+  var sel = {};         /* 勾选（配送登记）：处方号 -> true */
+  var dSel = {};        /* 勾选（揽件）：流水号 -> true */
   var modalRows = [];   /* 本次登记涉及的处方行 */
   var viewSn = null;    /* 查看抽屉当前配送单 */
 
@@ -882,7 +882,7 @@
         '<td class="stk">' +
           '<button class="dl-op" data-act="view" data-sn="' + d.sn + '">查看</button>' +
           '<button class="dl-op" data-act="revoke" data-sn="' + d.sn + '"' + (done ? " disabled" : "") + '>撤销登记</button>' +
-          '<button class="dl-op" data-act="send" data-sn="' + d.sn + '"' + (done ? " disabled" : "") + '>送货</button>' +
+          '<button class="dl-op" data-act="send" data-sn="' + d.sn + '"' + (done ? " disabled" : "") + '>揽件</button>' +
         '</td>' +
         '</tr>';
     }).join("");
@@ -936,7 +936,7 @@
     renderDeliver();
   });
 
-  /* 送药（快递揽件）：选择承运商、包裹数量等，确认后 -> 已配送 */
+  /* 揽件（快递揽件）：选择承运商、包裹数量等，确认后 -> 已配送 */
   var sendSns = [];
   function openSendModal(sns) {
     sendSns = sns.filter(function (sn) { return sendState(sn) !== "已配送"; });
@@ -980,7 +980,7 @@
     renderList();
     renderDeliver();
     if (refreshView) openViewDrawer(viewSn);
-    toast(n > 1 ? "已送药 " + n + " 单，配送状态更新为已配送" : "送药成功，配送状态更新为已配送");
+    toast(n > 1 ? "已揽件 " + n + " 单，配送状态更新为已配送" : "揽件成功，配送状态更新为已配送");
   }
 
   /* 撤销登记：回到未登记 */
@@ -1197,13 +1197,13 @@
   $("#confirmClose").addEventListener("click", function () { closeModal("confirmMask"); });
   $("#confirmCancel").addEventListener("click", function () { closeModal("confirmMask"); });
 
-  /* 送药弹窗 */
+  /* 揽件弹窗 */
   $("#sendClose").addEventListener("click", function () { closeModal("sendMask"); });
   $("#sendCancel").addEventListener("click", function () { closeModal("sendMask"); });
   $("#sendOk").addEventListener("click", submitSend);
   $("#sendExpressNo").addEventListener("keydown", function (e) { if (e.key === "Enter") submitSend(); });
 
-  /* 标题栏批量操作：仅支持批量撤销登记（送药仅支持单条操作） */
+  /* 标题栏批量操作：仅支持批量撤销登记（揽件仅支持单条操作） */
   $("#btnRevoke").addEventListener("click", function () {
     var sns = checkedSns();
     if (!sns.length) { toast("请先勾选配送单"); return; }

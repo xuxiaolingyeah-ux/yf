@@ -77,7 +77,7 @@
       { name: "毒麻精药品审核", href: "narcotic-order-audit.html", files: ["narcotic-order-audit.html"], roles: ["narcotics"] },
       { name: "门诊处方发药", href: "prescription-dispensing.html", files: ["prescription-dispensing.html"], roles: ["his"] },
       { name: "毒麻精发药审核", href: "narcotic-audit.html", files: ["narcotic-audit.html"], roles: ["narcoticAuditor"] },
-      { name: "门诊处方送药", href: "prescription-delivery.html", files: ["prescription-delivery.html"], roles: ["his"] },
+      { name: "门诊处方配送", href: "prescription-delivery.html", files: ["prescription-delivery.html"], roles: ["his"] },
       { name: "门诊处方退药", href: "prescription-return.html", files: ["prescription-return.html"], roles: ["his"] },
       { name: "门诊处方退药审核", href: "prescription-return-audit.html", files: ["prescription-return-audit.html"], roles: ["his"] },
       { name: "预减管理", href: "pre-deduction.html", files: ["pre-deduction.html"], roles: ["his"] }

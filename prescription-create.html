@@ -70,6 +70,10 @@ select.pc-ipt{padding:0 4px}
 .pc-sex{font-size:17px;line-height:1;vertical-align:-2px;font-weight:600}
 .pc-sex.male{color:var(--primary-dark)}
 .pc-sex.female{color:#e0527f}
+/* 慢性病标签（高血压 / 糖尿病等） */
+.pc-chronics{display:inline-flex;align-items:center;gap:6px}
+.pc-chronic{display:inline-flex;align-items:center;gap:4px;font-size:11px;line-height:18px;padding:0 8px;border-radius:9px;background:#FFF4E6;border:1px solid #FFD591;color:#D46B08;white-space:nowrap}
+.pc-chronic svg{width:12px;height:12px;flex:none}
 .pc-pactions{margin-left:auto;display:flex;gap:8px}
 /* 表单顶部栏 */
 .pc-form-hd{display:flex;align-items:center;gap:12px;padding:0 0 10px;margin-bottom:12px;border-bottom:1px solid var(--border)}
@@ -153,7 +157,7 @@ select.pc-ipt{padding:0 4px}
 .pv-total{display:flex;justify-content:flex-end;align-items:center;gap:22px;padding:10px 12px;font-size:12px;color:var(--text-secondary)}
 .pv-total b{color:var(--text-primary);font-weight:600}
 .pv-total .amt{color:var(--danger);font-size:13px}
-.pv-addr{margin:0 12px 12px;background:#FAFBFC;border:1px solid var(--border);border-radius:4px;padding:8px 10px;font-size:12px;line-height:1.8;color:var(--text-primary)}
+.pv-addr{margin:0 12px 12px;padding:4px 2px;font-size:12px;line-height:1.8;color:var(--text-primary)}
 .pv-addr .ln{color:var(--text-secondary);font-size:11px;margin-bottom:2px}
 /* 处方笺 */
 .rx-sheet{max-width:760px;margin:0 auto 16px;border:1px solid #cfd6de;background:#fff;padding:20px 26px;position:relative;font-size:12px;color:#222}
@@ -216,9 +220,12 @@ select.pc-ipt{padding:0 4px}
                 <b data-page-node-id="2Mc4hLBDJR9YaAgAKM6QNB" class="pc-name" id="pName"></b>
                 <span data-page-node-id="yFZ6PazPOwX4tE0beKWVfC" id="pAge"></span>
                 <span data-page-node-id="UaQtwtR2fCWCEAzPx5GHwy" class="pc-sex male" id="pSexIcon"></span>
+                <span class="pc-chronics" id="pChronics"></span>
               </div>
               <div data-page-node-id="AjRd5834i1wG2rQ8YNv312" class="pc-pline2">
                 <span data-page-node-id="IE32Msi4HaKMANnbVS0UzG"><b data-page-node-id="IgqGihrcvHHyJwxsHEPdaX">门诊号</b><span data-page-node-id="VpfITSMGMYEObtL6tlhqAt" id="pMzh"></span></span>
+                <span><b>挂号科室</b><span id="pRegDept"></span></span>
+                <span><b>诊断</b><span id="pDiag"></span></span>
                 <span data-page-node-id="Nwts8JSrnNSl8Me7MH9DDU"><b data-page-node-id="OfBC8gOWkzpVZViYzaIKZZ">过敏信息</b><span data-page-node-id="Bt1MS7ZviX6Di2jezg7KE0" id="pAllergy"></span></span>
               </div>
             </div>
@@ -362,7 +369,7 @@ function seed(){
     org:'北京市朝阳区中心医院',
     dept:'内科门诊',
     doctor:'孙磊',
-    patient:{name:'张伟',sex:'男',age:'45岁',mzh:'MZ202611170023',allergy:'青霉素过敏',receiver:'张伟',phone:'13800136621',region:'北京市 朝阳区',detail:'XX 路 XX 号 XX 小区 3 号楼'},
+    patient:{name:'张伟',sex:'男',age:'45岁',mzh:'MZ202611170023',allergy:'青霉素过敏',chronics:['高血压','糖尿病'],regDept:'内科门诊',diag:'E11.900 2型糖尿病',receiver:'张伟',phone:'13800136621',region:'北京市 朝阳区',detail:'XX 路 XX 号 XX 小区 3 号楼'},
     visitId:'CMJZH202611170023',
     list:[
       {id:'CF202611170001',type:'01',kind:'west',diag:'J06.900 急性上呼吸道感染',fee:41.90,status:'待推送',longRx:false,external:true,created:'2026-11-17 16:20',note:'',days:3,addr:{name:'张伟',phone:'13800136621',region:'北京市 朝阳区',detail:'XX 路 XX 号 XX 小区 3 号楼'},
@@ -382,6 +389,8 @@ function seed(){
 var state;
 try{state=JSON.parse(sessionStorage.getItem(KEY))||null}catch(e){state=null}
 if(!state||!state.list){state=seed();try{sessionStorage.setItem(KEY,JSON.stringify(state))}catch(e){}}
+/* 兼容旧缓存：补齐患者慢性病/挂号科室/诊断字段 */
+(function(){var p=state.patient;if(p){if(!p.chronics)p.chronics=['高血压','糖尿病'];if(!p.regDept)p.regDept=state.dept||'内科门诊';if(!p.diag)p.diag='E11.900 2型糖尿病';save()}})();
 function save(){try{sessionStorage.setItem(KEY,JSON.stringify(state))}catch(e){}}
 function genId(){return 'CF'+new Date().toISOString().slice(0,10).replace(/-/g,'')+String(Math.floor(Math.random()*9000)+1000)}
 function findRx(id){return state.list.filter(function(r){return r.id===id})[0]}
@@ -405,6 +414,13 @@ function cartoonAvatar(sex){
 
 /* ---------- 列表 ---------- */
 function statusTag(s){var cls=s==='待推送'?'warn':(s==='待毒麻精审核'?'danger':(s==='待合理用药审核'?'blue':(s==='收费成功'?'ok':'mute')));return '<span class="pc-tag '+cls+'">'+esc(s)+'</span>'}
+/* 慢性病图标（高血压 / 糖尿病等） */
+var CHRONIC_ICONS={
+  '高血压':'<svg viewBox="0 0 16 16"><path d="M8 13.6S2.8 10 2.8 6.5A3 3 0 0 1 8 4.7a3 3 0 0 1 5.2 1.8c0 3.5-5.2 7.1-5.2 7.1Z" fill="currentColor"/><path d="M4.6 7.2h1.8l.9-1.4 1.1 2.6.9-1.2h2.1" stroke="#fff" stroke-width=".9" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  '糖尿病':'<svg viewBox="0 0 16 16"><path d="M8 1.8S3.6 6.9 3.6 9.9a4.4 4.4 0 0 0 8.8 0C12.4 6.9 8 1.8 8 1.8Z" fill="currentColor"/><circle cx="6.6" cy="10" r="1.1" fill="#fff"/></svg>'
+};
+var CHRONIC_ICONS_DEFAULT='<svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="7" fill="currentColor"/><path d="M8 4.5v7M4.5 8h7" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/></svg>';
+function chronicTag(n){var ic=CHRONIC_ICONS[n]||CHRONIC_ICONS_DEFAULT;return '<span class="pc-chronic" title="慢性病">'+ic+esc(n)+'</span>'}
 function opHtml(rx){
   var s=rx.status;var html='';
   if(s==='待推送'){
@@ -441,7 +457,10 @@ function renderList(){
   $('pSexIcon').textContent=(p.sex==='女'?'♀':'♂');
   $('pSexIcon').className='pc-sex '+(p.sex==='女'?'female':'male');
   $('pAge').textContent=p.age;
+  $('pChronics').innerHTML=(p.chronics||[]).map(chronicTag).join('');
   $('pMzh').textContent=p.mzh;
+  $('pRegDept').textContent=p.regDept||state.dept||'—';
+  $('pDiag').textContent=p.diag||'—';
   $('pAllergy').textContent=p.allergy;
 }
 
@@ -855,17 +874,13 @@ function openView(rx){
   var pharm=rx.pharm||(rx.items[0]&&rx.items[0].pharm)||'—';
   var kindTxt=isWest?'西药处方':'中药饮片处方';
 
-  var head='<div class="pv-head">'+statusTag(rx.status)+
-    '<span class="pv-id">'+rx.id+'</span>'+
+  var head='<div class="pv-head"><span class="pv-id">'+rx.id+'</span>'+statusTag(rx.status)+
     '<span class="pv-amt">'+money(rx.fee)+'</span></div>';
-
-  var addrVal='—';
-  if(rx.addr)addrVal=esc(rx.addr.region+' '+rx.addr.detail)+'<br><span style="color:var(--text-tertiary)">'+esc(rx.addr.name)+' · '+esc(rx.addr.phone)+'</span>';
 
   var base='<div class="pv-sec"><div class="pv-sec-hd">基础信息</div><div class="pv-grid">'+
     pvItem('处方类型',TYPE_TEXT[rx.type])+pvItem('处方类别',kindTxt)+pvItem('临床诊断',esc(rx.diag))+
     pvItem('有效天数',(rx.days||3)+' 天')+pvItem('长处方',rx.longRx?'是':'否')+pvItem('外配',rx.external?'是':'否')+
-    pvItem('配送地址',addrVal)+pvItem('药房',esc(pharm))+
+    pvItem('药房',esc(pharm))+
     (isWest?pvItem('备注',esc(rx.note||'')):pvItem('剂数',(rx.doses||1)+' 剂'))+
     (isWest?'':pvItem('备注',esc(rx.note||''),true)+pvItem('中草药用法',herbUsageHtml(rx.herbUsage),true))+
     pvItem('开方医生',esc(doctor))+pvItem('开方科室',esc(dept))+pvItem('开方机构',esc(org))+
@@ -899,7 +914,15 @@ function openView(rx){
     '<div class="pv-tblwrap pv-tbl"><table class="pc-table"><thead><tr>'+th+'</tr></thead><tbody>'+rows+'</tbody></table></div>'+
     '<div class="pv-total">'+total+'</div></div>';
 
-  $('viewBody').innerHTML=head+base+items;
+  /* 配送地址：独立区块（无底色框），位于药品明细下方 */
+  var addrSec='';
+  if(rx.addr){
+    addrSec='<div class="pv-sec"><div class="pv-sec-hd">配送地址</div>'+
+      '<div class="pv-addr">'+esc(rx.addr.region+' '+rx.addr.detail)+'<br>'+
+      '<span style="color:var(--text-tertiary)">收件人：'+esc(rx.addr.name)+' · '+esc(rx.addr.phone)+'</span></div></div>';
+  }
+
+  $('viewBody').innerHTML=head+base+items+addrSec;
   openDlg('viewDialog');
 }
 

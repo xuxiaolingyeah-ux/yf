@@ -6,10 +6,15 @@
 <link rel="stylesheet" href="styles.css">
 <style>
 /* ===== 处方管理 · 毒麻精发药审核 ===== */
+/* ===== 水槽布局：目录右侧、标签页下方四周留白；标题栏/列表/详情贴合为整体面板 ===== */
 .disp-wrap {
   flex: 1; min-height: 0;
   display: flex; flex-direction: column; gap: 0;
-  background: var(--bg-page);
+  background: var(--bg-white);
+  margin: 12px;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .04);
+  overflow: hidden;
 }
 
 /* ===== 顶部页面标题行 ===== */
@@ -24,10 +29,10 @@
 .disp-page-hlbl { font-size: 13px; color: var(--text-tertiary); }
 .disp-page-sel { width: 180px; }
 
-/* ===== 主体容器（左侧列表 + 右侧详情） ===== */
+/* ===== 主体容器（左侧列表 + 右侧详情，贴合面板内部） ===== */
 .disp-body {
   flex: 1; min-height: 0;
-  display: flex; gap: 12px; padding: 12px;
+  display: flex;
 }
 
 /* 顶部系统栏：药房切换 */
@@ -59,13 +64,12 @@
 .header-pharm-item.active { color: var(--primary-dark); font-weight: 500; }
 .header-pharm-item .chk { margin-left: auto; font-size: 12px; }
 
-/* 左侧处方列表卡片 */
+/* 左侧处方列表（面板内贴左，右侧分隔线） */
 .disp-side {
   flex: none; width: 316px; min-height: 0;
   display: flex; flex-direction: column;
   background: var(--bg-white);
-  border-radius: var(--radius-lg);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, .04);
+  border-right: 1px solid var(--border);
   overflow: hidden;
 }
 .disp-side-head {
@@ -195,8 +199,6 @@
   flex: 1; min-width: 0; min-height: 0;
   display: flex; flex-direction: column;
   background: var(--bg-white);
-  border-radius: var(--radius-lg);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, .04);
   overflow: hidden;
 }
 .disp-toolbar {
@@ -420,10 +422,15 @@
 
     <div class="disp-wrap">
 
-      <!-- ========== 顶部标题行：标题 + 操作按钮（按 tab 切换） ========== -->
+      <!-- ========== 顶部标题行：标题 + 药房筛选 + 操作按钮（按 tab 切换） ========== -->
       <div class="disp-page-head">
-        <div style="display:flex;align-items:center;gap:14px;">
-          <span class="disp-page-title" id="sideTitle">毒麻精发药审核（中药房）</span>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <span class="disp-page-title">毒麻精发药审核</span>
+          <span class="disp-page-hlbl">药房：</span>
+          <select class="select disp-page-sel" id="selPharmacy" style="width:120px;">
+            <option>中药房</option>
+            <option>西药房</option>
+          </select>
         </div>
         <div style="display:flex;gap:8px;">
           <button class="dbtn dbtn-primary" id="btnAudit">审核(<span class="k">S</span>)</button>
@@ -1049,7 +1056,7 @@
       var ph = item.getAttribute("data-ph");
       ST.pharmacy = ph;
       $("curPharmacy").textContent = ph;
-      $("sideTitle").textContent = "毒麻精发药审核（" + ph + "）";
+      $("selPharmacy").value = ph;
       Array.prototype.forEach.call(this.children, function(el){
         el.classList.toggle("active", el === item);
         var chk = el.querySelector(".chk");
@@ -1059,6 +1066,13 @@
       toast("已切换至 " + ph);
     });
     document.addEventListener("click", function(){ $("pharmMenu").classList.remove("show"); });
+
+    // 标题栏药房筛选
+    $("selPharmacy").addEventListener("change", function(){
+      ST.pharmacy = this.value;
+      $("curPharmacy").textContent = this.value;
+      toast("已切换至 " + this.value + "（演示原型，数据仍为中药房示例）");
+    });
 
     $("dispDlgCancel").onclick = closeDialog;
     $("dispDlgOk").onclick = function(){

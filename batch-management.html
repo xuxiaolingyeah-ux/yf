@@ -127,6 +127,30 @@
 .bm-table .status-tag .dot { width: 6px; height: 6px; border-radius: 50%; }
 .bm-table .status-tag.on .dot { background: var(--success); }
 .bm-table .status-tag.off .dot { background: var(--text-placeholder); }
+/* 批次状态开关：状态即操作，与操作列的「停用/启用」分离 */
+.bm-switch {
+  display: inline-block;
+  position: relative; flex: none;
+  width: 34px; height: 18px;
+  vertical-align: middle;
+  cursor: pointer; user-select: none;
+}
+.bm-switch input { display: none; }
+.bm-switch .track {
+  position: absolute; top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: var(--border-input); border-radius: 9px;
+  transition: background .18s;
+}
+.bm-switch .thumb {
+  position: absolute; top: 2px; left: 2px;
+  width: 14px; height: 14px; border-radius: 50%;
+  background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, .25);
+  transition: left .18s;
+}
+.bm-switch.is-on .track { background: var(--primary); }
+.bm-switch.is-on .thumb { left: 18px; }
+.bm-switch:hover .track { filter: brightness(.94); }
 .bm-table .link-btn + .link-btn { margin-left: 10px; }
 
 /* 分页 */
@@ -161,7 +185,7 @@
 
 /* 通用抽屉（新增/编辑批次、批量拆零、批量优先出库） */
 .bm-drawer-mask {
-  display: none; position: fixed; inset: 0;
+  display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
   background: rgba(0,0,0,.45); z-index: 800;
 }
 .bm-drawer-mask.show { display: block; }
@@ -315,7 +339,7 @@
                 <select class="select" id="fStatus">
                   <option value="">全部</option>
                   <option value="on">正常</option>
-                  <option value="off">封存</option>
+                  <option value="off">禁用</option>
                 </select>
               </div>
             </div>
@@ -701,7 +725,8 @@
         var canStart = (r.stopQty||0)>0;     // 停用数量大于零 → 可启用
         return '<tr>'+
           '<td class="col-check"><input type="checkbox" class="row-check" data-idx="'+idx+'"'+(listSel.has(r)?" checked":"")+'></td>'+
-          '<td class="col-status"><span class="status-tag '+(r.status==="on"?"on":"off")+'"><span class="dot"></span>'+(r.status==="on"?"正常":"封存")+'</span></td>'+
+          '<td class="col-status"><span class="bm-switch '+(r.status==="on"?"is-on":"")+'" data-act="status" data-idx="'+idx+'" title="'+(r.status==="on"?"当前状态：正常，点击禁用该批次":"当前状态：禁用，点击启用该批次")+'">'
+            +'<input type="checkbox" tabindex="-1"'+(r.status==="on"?" checked":"")+'><span class="track"></span><span class="thumb"></span></span></td>'+
           '<td class="col-name name-cell" title="'+esc(r.name)+'">'+esc(r.name)+'</td>'+
           '<td>'+esc(r.code)+'</td>'+
           '<td>'+esc(r.kind)+'</td>'+
@@ -958,14 +983,28 @@
       $("#btnToggle").textContent = collapsed?"展开 ▾":"收起 ▴";
     });
 
-    // 行操作
+    // 行操作（操作列按钮 / 状态开关）
     $("#listBody").addEventListener("click", function(e){
-      var btn=e.target.closest(".link-btn"); if(!btn) return;
+      var btn=e.target.closest("[data-act]"); if(!btn) return;
       var act=btn.getAttribute("data-act"), idx=parseInt(btn.getAttribute("data-idx"),10);
       if(act==="edit"){openBatchDrawer(idx);}
       else if(act==="stop"){openQtyDialog("stop",idx);}
       else if(act==="start"){openQtyDialog("start",idx);}
-      /* 批次不可删除，仅支持数量维度停用/启用（状态随之正常/封存） */
+      else if(act==="status"){
+        /* 批次状态开关：状态即操作，与数量维度的停用/启用相互独立 */
+        var r=ST.filtered[idx]; if(!r) return;
+        if(r.status==="on"){
+          r.status="off";
+          toast("已禁用批次 "+r.batchNo+"（"+r.name+"），禁用期间不可出库");
+        }else{
+          r.status="on";
+          toast("已启用批次 "+r.batchNo+"（"+r.name+"）"+((r.stopQty||0)>0
+            ? "，仍有停用数量 "+r.stopQty+" "+(r.minPkgUnit||"盒")+"，可通过「启用数量」恢复"
+            : ""));
+        }
+        renderTable();
+      }
+      /* 批次不可删除，仅支持数量维度停用/启用（状态随之正常/禁用） */
     });
 
     // 列表勾选
@@ -1083,7 +1122,7 @@
         r.stopQty = (r.stopQty||0) + qty;
         r.stockQty = Math.max(0, (r.stockQty||0) - qty);
         r.availQty = Math.max(0, (r.availQty||0) - qty);
-        r.status = r.availQty<=0 ? "off" : "on";   // 可用数量为 0 才算封存
+        r.status = r.availQty<=0 ? "off" : "on";   // 可用数量为 0 才算禁用
         toast("已停用 "+qty+" "+(r.minPkgUnit||"盒")+(splitQty!=null?"、拆零 "+splitQty+" "+(r.prepUnit||"片"):""));
       }else{
         r.stopQty = Math.max(0, (r.stopQty||0) - qty);

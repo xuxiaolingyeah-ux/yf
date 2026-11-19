@@ -43,11 +43,6 @@
 .mode-card .mc-title { font-size: 13px; font-weight: 500; margin-bottom: 4px; }
 .mode-card .mc-desc { font-size: 11px; color: var(--text-tertiary); line-height: 1.6; }
 
-/* 调用方向标签 */
-.dir-tag { display: inline-block; font-size: 11px; padding: 1px 7px; border-radius: 9px; margin-left: 4px; white-space: nowrap; }
-.dir-out { background: #eef4ff; color: #3b6fd4; }
-.dir-in { background: #f0f9eb; color: #4c8038; }
-
 /* 测试结果 */
 .dw-test { border-radius: 6px; padding: 8px 10px; font-size: 12px; line-height: 1.7; display: flex; gap: 8px; align-items: flex-start; }
 .dw-test svg { flex: none; margin-top: 2px; }
@@ -156,12 +151,12 @@
         <div class="mf-table-wrap" style="padding:14px 16px 16px;">
           <table class="data-table">
             <colgroup>
-              <col style="width:160px"><col style="width:110px"><col><col style="width:200px">
+              <col style="width:160px"><col><col style="width:200px">
               <col style="width:80px"><col style="width:100px"><col style="width:110px"><col style="width:110px">
             </colgroup>
             <thead>
               <tr>
-                <th>接口名称</th><th>调用方向</th><th>URL</th><th>Header</th><th>状态</th>
+                <th>接口名称</th><th>URL</th><th>Header</th><th>状态</th>
                 <th>最近同步</th><th>创建时间</th><th>操作</th>
               </tr>
             </thead>
@@ -198,7 +193,6 @@
       .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
   }
   function inlineText(s) { return esc(s).replace(/\r?\n/g, " ↵ "); }
-  function htmlLines(s) { return esc(s).replace(/\r?\n/g, "<br>"); }
 
   /* ================= 访问控制 ================= */
   var ME = {};
@@ -244,7 +238,6 @@
       ]
     }
   };
-  function dirName(dir) { return dir === "in" ? "HIS 调用我方" : "我方调用 HIS"; }
   function defOf(mode, key) {
     var list = MODES[mode].ifaces;
     for (var i = 0; i < list.length; i++) if (list[i].key === key) return list[i];
@@ -266,7 +259,7 @@
   })();
 
   /* ================= 数据 =================
-     机构记录：{ id, org, mode, pageUrl, pageHeader, ifaces:[], createdAt }
+     机构记录：{ id, org, mode, ifaces:[], createdAt }（页面对接的嵌入页面地址由医共体统一固定，不再维护）
      接口记录：{ id, key, name, direction, url, header, ok, lastSync, createdAt, custom } */
   var DATA_KEY = "HIS_CFG_V10";
   var HDR_WN = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ3bmlmeC0wMDEiLCJleHAiOjE3OTA3MzQ0MDB9.3Xk9pQ2vR7mZwA8sLc1eFjHb5nY0uT6dI4gOaKqVx2E";
@@ -285,7 +278,6 @@
   function seed() {
     return [
       { id: 1, org: "城东社区卫生服务中心", mode: "page",
-        pageUrl: "http://10.8.1.20:8080/rx/open?org=CD001", pageHeader: "page_tk_cd_7c21e5a9",
         createdAt: "2026-10-28 10:23",
         ifaces: [
           mkIface(101, "page", "rxSync", "http://10.0.8.11:8080/his/rx/sync", HDR_WN, true, "2026-10-28 10:25", "今天 18:02"),
@@ -295,19 +287,18 @@
           mkIface(105, "page", "paymentStatusUpdate", "http://10.8.1.20:8080/callback/his/payment/status", "cb_tk_cd_pay_83a1", true, "2026-11-02 15:47", "今天 18:05"),
           mkIface(106, "page", "visitInfoPush", "http://10.8.1.20:8080/callback/his/visit/info", "cb_tk_cd_visit_42f7", true, "2026-11-02 15:49", "今天 18:05")
         ] },
-      { id: 2, org: "城西卫生院", mode: "api", pageUrl: "", pageHeader: "",
+      { id: 2, org: "城西卫生院", mode: "api",
         createdAt: "2026-11-05 09:12",
         ifaces: [
           mkIface(201, "api", "drugStockQuery", "http://10.2.6.18:9000/api/drug/stock", HDR_DH, true, "2026-11-05 09:15", "今天 17:46"),
           { id: 202, key: "custom_purchase_plan", name: "药品采购计划查询", direction: "out", url: "http://10.2.6.18:9000/api/purchase/plan", header: HDR_DH, ok: true, lastSync: "今天 17:46", createdAt: "2026-11-12 11:08", custom: true }
         ] },
-      { id: 3, org: "滨江卫生院", mode: "api", pageUrl: "", pageHeader: "",
+      { id: 3, org: "滨江卫生院", mode: "api",
         createdAt: "2026-11-10 11:05",
         ifaces: [
           mkIface(301, "api", "drugStockQuery", "http://10.3.4.21:7001/ws/drug/stock", HDR_KS, false, "2026-11-10 11:08", "昨天 22:10")
         ] },
       { id: 4, org: "青河村卫生室", mode: "page",
-        pageUrl: "http://10.8.1.20:8080/rx/open?org=QH001", pageHeader: "page_tk_qh_19d0c3b2",
         createdAt: "2026-11-09 14:31",
         ifaces: [
           mkIface(401, "page", "rxSync", "http://10.2.6.19:8080/basehis/rx/sync", HDR_BASE, true, "2026-11-09 14:33", "今天 18:00"),
@@ -377,19 +368,18 @@
   /* ================= 第二页：接口列表 ================= */
   function renderPageConfig(rec) {
     if (rec.mode !== "page") {
-      $("pageConfigBox").innerHTML = '<div class="hc-page-config"><div>当前机构为<b>接口对接</b>，不做页面嵌入，仅配置接口层 URL 与 Header。</div></div>';
+      $("pageConfigBox").innerHTML = '<div class="hc-page-config"><div>当前机构为<b>接口对接</b>，不做页面嵌入，仅配置接口层 URL 与 Header。</div>'
+        + '<button class="btn btn-sm" data-page-edit="1">编辑对接信息</button></div>';
       return;
     }
-    $("pageConfigBox").innerHTML = '<div class="hc-page-config">'
-      + '<div>页面 URL：<b>' + esc(rec.pageUrl || "未配置") + "</b><br>"
-      + "页面 Header：<b>" + htmlLines(rec.pageHeader || "未配置") + "</b></div>"
-      + '<button class="btn btn-sm" data-page-edit="1">编辑页面配置</button>'
-      + "</div>";
+    /* 页面对接：嵌入页面地址由医共体统一提供（各机构一致），无需维护 */
+    $("pageConfigBox").innerHTML = '<div class="hc-page-config"><div>当前机构为<b>页面对接</b>。同一医共体内嵌入页面地址统一固定，由平台侧维护，机构无需在此配置页面 URL 与 Header。</div>'
+      + '<button class="btn btn-sm" data-page-edit="1">编辑对接信息</button></div>';
   }
   function renderIfaceTable(rec) {
     var rows = rec.ifaces || [];
     if (!rows.length) {
-      $("ifaceBody").innerHTML = '<tr><td colspan="8" class="table-empty">暂无接口，点击右上角「新增接口」开始配置</td></tr>';
+      $("ifaceBody").innerHTML = '<tr><td colspan="7" class="table-empty">暂无接口，点击右上角「新增接口」开始配置</td></tr>';
       return;
     }
     $("ifaceBody").innerHTML = rows.map(function (it) {
@@ -400,7 +390,6 @@
         + '<button class="link-btn is-danger" data-act="del" data-id="' + it.id + '">删除</button>';
       return "<tr>"
         + "<td>" + esc(it.name) + "</td>"
-        + '<td><span class="dir-tag ' + (it.direction === "in" ? "dir-in" : "dir-out") + '">' + dirName(it.direction) + "</span></td>"
         + '<td><span class="hc-url" title="' + esc(it.url) + '">' + esc(it.url) + "</span></td>"
         + '<td><span class="hc-header" title="' + esc(it.header) + '">' + inlineText(it.header) + "</span></td>"
         + "<td>" + stHtml + "</td>"
@@ -452,17 +441,15 @@
     }).join("") + "</div>";
   }
   function openOrgDrawer(rec) {
-    var d = rec ? JSON.parse(JSON.stringify(rec)) : { id: 0, org: "", mode: "page", pageUrl: "", pageHeader: "", createdAt: "", ifaces: [] };
+    var d = rec ? JSON.parse(JSON.stringify(rec)) : { id: 0, org: "", mode: "page", createdAt: "", ifaces: [] };
     ST.drawer = { kind: "org", mode: rec ? "edit" : "create", draft: d };
     renderOrgDrawer();
   }
   function renderOrgDrawer() {
     var d = ST.drawer.draft;
+    /* 页面对接：嵌入页面地址由医共体统一固定，无需维护页面嵌入配置 */
     var pagePart = d.mode === "page"
-      ? '<div class="dw-sec-title">页面嵌入配置</div><div class="eg-grid">'
-        + field('<span class="req">*</span>URL', '<input class="input" data-k="pageUrl" value="' + esc(d.pageUrl) + '" placeholder="如：http://10.8.1.20:8080/rx/open?org=XXX" autocomplete="off">', true)
-        + field('<span class="req">*</span>Header', '<textarea class="input" data-k="pageHeader" rows="3" placeholder="可输入多行 Header">' + esc(d.pageHeader) + "</textarea>", true)
-        + "</div>"
+      ? '<div class="span-3"><div class="hc-tip" style="margin-top:0;">页面对接的嵌入页面地址由医共体统一提供（各机构一致），无需在此维护页面嵌入配置。</div></div>'
       : "";
     openDrawer(drawerShell(
       ST.drawer.mode === "create" ? "新增对接配置" : "编辑对接配置",
@@ -478,10 +465,6 @@
   function saveOrgDrawer() {
     var d = ST.drawer.draft;
     if (!d.org) { toast("请选择机构"); return; }
-    if (d.mode === "page") {
-      if (!String(d.pageUrl || "").trim()) { toast("请填写页面 URL"); return; }
-      if (!String(d.pageHeader || "").trim()) { toast("请填写 Header"); return; }
-    }
     var now = new Date();
     var pad = function (n) { return (n < 10 ? "0" : "") + n; };
     var ts = now.getFullYear() + "-" + pad(now.getMonth() + 1) + "-" + pad(now.getDate()) + " " + pad(now.getHours()) + ":" + pad(now.getMinutes());
@@ -492,8 +475,7 @@
       DATA.forEach(function (r) { if (r.id > maxId) maxId = r.id; });
       DATA.push({
         id: maxId + 1, org: d.org, mode: d.mode,
-        pageUrl: d.mode === "page" ? String(d.pageUrl).trim() : "",
-        pageHeader: d.mode === "page" ? String(d.pageHeader).trim() : "",
+        pageUrl: "", pageHeader: "",
         ifaces: [], createdAt: ts
       });
       toast("已新增：" + d.org);
@@ -505,8 +487,8 @@
       if (modeChanged && rec.ifaces.length && !confirm("切换对接方式将清空该机构下已配置的接口，确定继续吗？")) return;
       rec.org = d.org;
       rec.mode = d.mode;
-      rec.pageUrl = d.mode === "page" ? String(d.pageUrl).trim() : "";
-      rec.pageHeader = d.mode === "page" ? String(d.pageHeader).trim() : "";
+      rec.pageUrl = "";
+      rec.pageHeader = "";
       if (modeChanged) rec.ifaces = [];
       toast("已保存：" + d.org);
     }
@@ -516,7 +498,8 @@
     if (ST.view === "detail") renderDetail();
   }
 
-  /* --- 接口抽屉（第二页新增 / 编辑）：所有接口均为自定义，只填名称与方向 --- */
+  /* --- 接口抽屉（第二页新增 / 编辑）：所有接口均为自定义，只填名称 / URL / Header ---
+     调用方向不再由用户选择：新增接口固定为「我方调用 HIS」，已有接口保持原方向 */
   function openIfaceDrawer(rec) {
     var d = rec
       ? { id: rec.id, key: rec.key || "", name: rec.name, direction: rec.direction, url: rec.url, header: rec.header, custom: true }
@@ -527,21 +510,16 @@
   function renderIfaceDrawer() {
     var d = ST.drawer.draft;
     var isIn = d.direction === "in";
-    var urlLabel = '<span class="req">*</span>URL';
-    var headerLabel = '<span class="req">*</span>Header';
-    var nameDirPart = field('<span class="req">*</span>接口名称', '<input class="input" data-k="name" value="' + esc(d.name) + '" placeholder="如：处方同步、药品可用库存查询" autocomplete="off">')
-      + field("调用方向", '<select class="select" data-k="direction">'
-        + '<option value="out"' + (!isIn ? " selected" : "") + ">我方调用 HIS</option>"
-        + '<option value="in"' + (isIn ? " selected" : "") + ">HIS 调用我方</option></select>");
+    var namePart = field('<span class="req">*</span>接口名称', '<input class="input" data-k="name" value="' + esc(d.name) + '" placeholder="如：处方同步、药品可用库存查询" autocomplete="off">');
     var testFoot = isIn
       ? FOOT_DEFAULT
       : '<button class="btn" data-iface-test="1" id="btnTest">测试连接</button>' + FOOT_DEFAULT;
     openDrawer(drawerShell(
       ST.drawer.mode === "create" ? "新增接口" : "编辑接口",
       '<div class="dw-sec-title">接口信息</div><div class="eg-grid">'
-      + nameDirPart
-      + field(urlLabel, '<input class="input" data-k="url" value="' + esc(d.url) + '" placeholder="http://" autocomplete="off">', true)
-      + field(headerLabel, '<textarea class="input" data-k="header" rows="3" placeholder="可输入多行 Header">' + esc(d.header) + "</textarea>", true)
+      + namePart
+      + field('<span class="req">*</span>URL', '<input class="input" data-k="url" value="' + esc(d.url) + '" placeholder="http://" autocomplete="off">', true)
+      + field('<span class="req">*</span>Header', '<textarea class="input" data-k="header" rows="3" placeholder="可输入多行 Header">' + esc(d.header) + "</textarea>", true)
       + '<div class="span-3"><div class="hc-tip" style="margin-top:0;">' + (isIn
         ? "该接口由 HIS 侧发起调用，URL 与 Header 由我方提供，无需在此测试连通性。"
         : "URL 与 Header 由 HIS 厂商提供，我方调用时按约定携带。入参 / 出参报文以我方《标准接口规范》为准。") + "</div></div>"
@@ -709,11 +687,7 @@
       var el = e.target;
       var k = el.getAttribute && el.getAttribute("data-k");
       if (!k) return;
-      var d = ST.drawer.draft;
-      d[k] = el.value;
-      if (ST.drawer.kind === "iface" && k === "direction") {
-        renderIfaceDrawer();
-      }
+      ST.drawer.draft[k] = el.value;
     });
   }
 

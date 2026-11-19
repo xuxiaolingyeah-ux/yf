@@ -169,7 +169,6 @@ th.sticky-days,td.sticky-days{box-shadow:-1px 0 0 var(--table-line);}
 .status i{width:6px;height:6px;border-radius:50%;display:inline-block;flex:0 0 6px;}
 .status .dot-green{background:var(--green);}
 .status .dot-red{background:var(--red);}
-.status .dot-amber{background:var(--amber);}
 .empty{
   position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
   color:var(--text-3);gap:10px;pointer-events:none;background:#fff;
@@ -326,7 +325,6 @@ th.sticky-days,td.sticky-days{box-shadow:-1px 0 0 var(--table-line);}
               <select id="statusSelect">
                 <option value="all">全部</option>
                 <option value="expired">已过期</option>
-                <option value="soon">即将过期</option>
                 <option value="normal">未过期</option>
               </select>
               <span class="arrow"></span>
@@ -503,7 +501,7 @@ th.sticky-days,td.sticky-days{box-shadow:-1px 0 0 var(--table-line);}
 <script>
 (function(){
   var $ = function(id){ return document.getElementById(id); };
-  var RADIO_LABEL = { expired:'已过期', normal:'未过期', soon:'即将过期' };
+  var RADIO_LABEL = { expired:'已过期', normal:'未过期' };
 
   /* ============================================================
    *  机构 / 库位 数据（库位为全部库位的并集，去重）
@@ -619,7 +617,7 @@ th.sticky-days,td.sticky-days{box-shadow:-1px 0 0 var(--table-line);}
         supplier: t[3],
         inTime: fmtDT(inTime),
         days: days,
-        status: days < 0 ? 'expired' : (days <= 90 ? 'soon' : 'normal'),
+        status: days < 0 ? 'expired' : 'normal',
         locationId: LOC_IDS[i % LOC_IDS.length]
       });
     }
@@ -665,7 +663,7 @@ th.sticky-days,td.sticky-days{box-shadow:-1px 0 0 var(--table-line);}
   var setState = { kw:'', stock:'all', cat:'all', size:16, page:1 };
   var selected = {};  // 已勾选药品（key -> 1，跨页保留）
 
-  var STATUS_CLASS = { expired:'dot-red', normal:'dot-green', soon:'dot-amber' };
+  var STATUS_CLASS = { expired:'dot-red', normal:'dot-green' };
 
   function money(n){
     return Number(n).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });

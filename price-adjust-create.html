@@ -68,12 +68,6 @@
                     </select>
                   </div>
                   <div class="form-item">
-                    <label class="form-label"><span class="req">*</span>调价范围</label>
-                    <select class="select" id="fRange">
-                      <option value="全院">全院</option>
-                    </select>
-                  </div>
-                  <div class="form-item">
                     <label class="form-label"><span class="req">*</span>生效方式</label>
                     <div class="pa-radio-row">
                       <label class="radio"><input type="radio" name="effect" value="immediate" checked><span>立即生效</span></label>
@@ -218,7 +212,6 @@
 
   /* 编辑回填 */
   $("fReason").value = bill.reason;
-  $("fRange").value = bill.range;
   document.querySelectorAll('input[name="effect"]').forEach(function (r) {
     r.checked = r.value === bill.effectType;
   });
@@ -572,7 +565,6 @@
   /* ---------------- 保存 / 提交 ---------------- */
   function collect() {
     bill.reason = $("fReason").value;
-    bill.range = $("fRange").value;
     bill.effectType = effectValue();
     bill.planTime = bill.effectType === "scheduled" ? $("fPlanTime").value.replace("T", " ") : "";
   }
@@ -580,7 +572,6 @@
   function validate() {
     var missing = [];
     if (!bill.reason) missing.push("调价原因");
-    if (!bill.range) missing.push("调价范围");
     if (bill.effectType === "scheduled") {
       if (!bill.planTime) missing.push("计划生效时间");
       else if (bill.planTime <= SEL.fmtNow()) missing.push("计划生效时间须晚于当前时间");

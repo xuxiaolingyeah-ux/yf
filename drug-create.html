@@ -488,7 +488,7 @@
 
     if (!s.vendors.length) {
       return '<div class="vendor-sec">' + head +
-        '<div class="vi-none">尚未添加生产企业。点击「新增生产企业」选择企业后，药品编码、国家药品名称、国家药品ID、批准文号、本位码、进口标识将自动带出。</div>' +
+        '<div class="vi-none">尚未添加生产企业。点击「新增生产企业」选择企业后，药品编码、国家药品名称、国家药品ID、批准文号将自动带出。</div>' +
       '</div>';
     }
 
@@ -517,13 +517,36 @@
           '<button class="link-btn is-danger" data-act="del-vendor" data-si="' + si + '" data-vi="' + vi + '">删除</button>') +
     '</div>';
 
+    /* 待选企业态：第一个字段为可搜索企业下拉，其余字段占位/置灰 */
+    if (editing && v.picking) {
+      return '<div class="vendor-item is-editing">' + head + '<div class="vi-grid">' +
+        '<div class="vi-field is-full"><span class="vi-label"><span class="req">*</span>生产企业</span>' +
+          '<div class="vd-wrap"><input class="input" data-si="' + si + '" data-vi="' + vi + '" data-vk="companySearch" placeholder="输入企业名称搜索" autocomplete="off">' +
+          '<div class="vd-menu" data-si="' + si + '" data-vi="' + vi + '"></div></div></div>' +
+        viVal("药品编码", "—") +
+        viVal("国家药品名称", "—") +
+        viVal("国家药品ID", "—") +
+        viVal("批准文号", "—") +
+        viField("进药价格",
+          '<input class="input" data-si="' + si + '" data-vi="' + vi + '" data-vk="price" placeholder="元" disabled>') +
+        viField("进口标识",
+          '<label class="switch"><input type="checkbox" data-vk="imported" disabled><span class="track"></span></label>') +
+        viField("集采标识",
+          '<label class="switch"><input type="checkbox" disabled><span class="track"></span></label>') +
+        viField("集采类别", '<select class="select" disabled><option>请选择</option></select>') +
+        viField("采购类型", '<select class="select" disabled><option>请选择</option></select>') +
+        viField("国谈标识", '<label class="switch"><input type="checkbox" disabled><span class="track"></span></label>') +
+        viField("医保标识", '<label class="switch"><input type="checkbox" disabled><span class="track"></span></label>') +
+        viField("医保药品代码", '<input class="input" placeholder="非必填" disabled>') +
+      '</div></div>';
+    }
+
     if (!editing) {
       return '<div class="vendor-item">' + head + '<div class="vi-grid">' +
         viVal("药品编码", v.drugCode || "—") +
         viVal("国家药品名称", v.nationalName || "—") +
         viVal("国家药品ID", v.nationalId || "—") +
         viVal("批准文号", v.approval || "—") +
-        viVal("本位码", v.standardCode || "—") +
         viVal("进药价格", v.price ? v.price + " 元" : "—") +
         viVal("进口标识", v.imported || "—") +
         viVal("集采标识", v.collect ? "是" : "否") +
@@ -540,10 +563,10 @@
       viVal("国家药品名称", v.nationalName || "—") +
       viVal("国家药品ID", v.nationalId || "—") +
       viVal("批准文号", v.approval || "—") +
-      viVal("本位码", v.standardCode || "—") +
       viField("进药价格",
         '<input class="input" data-si="' + si + '" data-vi="' + vi + '" data-vk="price" value="' + esc(v.price) + '" placeholder="元">') +
-      viVal("进口标识", v.imported || "—") +
+      viField("进口标识",
+        '<label class="switch"><input type="checkbox" data-si="' + si + '" data-vi="' + vi + '" data-vk="imported"' + (v.imported === "是" ? " checked" : "") + '><span class="track"></span></label>') +
       viField("集采标识",
         '<label class="switch"><input type="checkbox" data-si="' + si + '" data-vi="' + vi + '" data-vk="collect"' + (v.collect ? " checked" : "") + '><span class="track"></span></label>') +
       viField("集采类别",
@@ -569,75 +592,52 @@
     '</div></div>';
   }
 
-  /* ---------- 企业选择弹窗 ---------- */
-  var pickTarget = null;
-
-  function openVendorPicker(si) {
-    pickTarget = si;
+  /* ---------- 内联企业搜索下拉 ---------- */
+  function renderCompanyMenu(si, vi, kw) {
     var s = ST.specs[si];
-    var chosen = s.vendors.map(function (v) { return v.name; });
-
-    $("modalMask").innerHTML =
-      '<div class="modal" style="width:520px">' +
-        '<div class="modal-head">' +
-          '<span class="modal-title">选择生产企业</span>' +
-          '<button class="drawer-close" data-close="1">' +
-            '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>' +
-          '</button>' +
-        '</div>' +
-        '<div class="modal-body">' +
-          '<div class="pick-search"><input class="input" id="pickKw" placeholder="搜索企业名称 / 批准文号" autocomplete="off"></div>' +
-          '<div class="pick-list" id="pickList"></div>' +
-        '</div>' +
-        '<div class="modal-foot">' +
-          '<button class="btn" data-close="1">取消</button>' +
-        '</div>' +
-      '</div>';
-    $("modalMask").classList.add("show");
-    renderPickList("");
-
-    $("pickKw").addEventListener("input", function () {
-      renderPickList(this.value.trim());
+    if (!s) return;
+    var menu = $("specList").querySelector('.vd-menu[data-si="' + si + '"][data-vi="' + vi + '"]');
+    if (!menu) return;
+    var chosen = s.vendors.filter(function (x) { return !x.picking && x.name; })
+                          .map(function (x) { return x.name; });
+    var list = MOCK.vendors.filter(function (m) {
+      return !kw || m.name.indexOf(kw) >= 0 || m.approval.indexOf(kw) >= 0;
     });
-
-    function renderPickList(kw) {
-      var list = MOCK.vendors.filter(function (v) {
-        if (!kw) return true;
-        return v.name.indexOf(kw) >= 0 || v.approval.indexOf(kw) >= 0;
-      });
-      if (!list.length) {
-        $("pickList").innerHTML = '<div class="pick-empty">没有匹配的企业</div>';
-        return;
-      }
-      $("pickList").innerHTML = list.map(function (v) {
-        var dup = chosen.indexOf(v.name) >= 0;
-        return '<div class="pick-opt' + (dup ? " is-disabled" : "") + '" data-vname="' + esc(v.name) + '" style="' + (dup ? "opacity:.45;cursor:not-allowed" : "") + '">' +
-          '<span>' + esc(v.name) + '</span>' +
-          '<span class="po-meta">' + esc(v.approval) + (dup ? " · 已添加" : "") + '</span>' +
-        '</div>';
-      }).join("");
-    }
+    menu.innerHTML = list.length
+      ? list.map(function (m) {
+          var dup = chosen.indexOf(m.name) >= 0;
+          return '<div class="vd-opt' + (dup ? " is-disabled" : "") + '" data-vname-opt="' + esc(m.name) + '"' + (dup ? ' style="opacity:.45;cursor:not-allowed"' : "") + '>' +
+            '<span>' + esc(m.name) + '</span>' +
+            '<span class="vd-sub">' + esc(m.approval) + (dup ? " · 已添加" : "") + '</span></div>';
+        }).join("")
+      : '<div class="vd-empty">没有匹配的企业</div>';
+    menu.classList.add("is-open");
   }
 
-  function addVendorFromPick(name) {
-    var src = MOCK.vendors.filter(function (v) { return v.name === name; })[0];
-    if (!src || pickTarget === null) return;
-    var s = ST.specs[pickTarget];
-    if (s.vendors.some(function (v) { return v.name === name; })) return;
-    s.vendors.push({
-      name: src.name,
-      drugCode: "",
-      approval: src.approval,
-      nationalId: src.nationalId,
-      nationalName: src.nationalName,
-      imported: src.imported,
-      standardCode: src.standardCode,
-      collect: false, collectType: "", purchase: "", talk: false, price: "",
-      ins: false, insCode: "", editing: true, isNew: true
+  function closeCompanyMenus() {
+    Array.prototype.forEach.call(document.querySelectorAll(".vd-menu"), function (m) {
+      m.classList.remove("is-open");
     });
-    closeModal();
+  }
+
+  function pickInlineCompany(si, vi, name) {
+    var src = MOCK.vendors.filter(function (v) { return v.name === name; })[0];
+    var s = ST.specs[si];
+    var v = s && s.vendors[vi];
+    if (!src || !v) return;
+    v.name = src.name;
+    v.drugCode = v.drugCode || "";
+    v.approval = src.approval;
+    v.nationalId = src.nationalId;
+    v.nationalName = src.nationalName;
+    v.imported = v.imported || "否";
+    v.standardCode = src.standardCode;
+    v.picking = false;
+    v.editing = true;
+    v.isNew = true;
+    closeCompanyMenus();
     renderSpecs();
-    toast("已添加生产企业：" + src.name);
+    toast("已选择企业：" + src.name + "，请补充录入其他信息");
   }
 
   /* ================= 弹窗 / Toast ================= */
@@ -752,6 +752,14 @@
     for (var i = 0; i < ST.specs.length; i++) {
       if (ST.specs[i].mode !== "collapsed") {
         toast("请先确定规格 " + (i + 1) + " 的信息");
+        return false;
+      }
+      if (ST.specs[i].vendors.some(function (v) { return v.picking; })) {
+        toast("规格 " + (i + 1) + " 存在未选择企业的生产企业，请选择或删除");
+        return false;
+      }
+      if (!ST.specs[i].vendors.length) {
+        toast("规格 " + (i + 1) + " 请至少添加 1 个生产企业");
         return false;
       }
       if (!validateSpec(i)) return false;
@@ -923,13 +931,29 @@
         else cs.mode = "collapsed";
         renderSpecs();
       } else if (act === "ok-spec") {
+        if (ST.specs[si].vendors.some(function (v) { return v.picking; })) {
+          toast("请先为待选生产企业选择企业，或删除该卡片");
+          return;
+        }
         if (!validateSpec(si)) return;
         ST.specs[si].mode = "collapsed";
         ST.specs[si].vendors.forEach(function (v) { v.editing = false; v.isNew = false; });
         renderSpecs();
         toast("规格已保存");
       } else if (act === "add-vendor") {
-        openVendorPicker(si);
+        ST.specs[si].vendors.push({
+          name: "", picking: true, editing: true, isNew: true,
+          drugCode: "", approval: "", nationalId: "", nationalName: "",
+          imported: "否", standardCode: "",
+          collect: false, collectType: "", purchase: "", talk: false, price: "",
+          ins: false, insCode: ""
+        });
+        renderSpecs();
+        var si2 = si;
+        setTimeout(function () {
+          var inp = $("specList").querySelector('[data-si="' + si2 + '"][data-vk="companySearch"]');
+          if (inp) inp.focus();
+        }, 0);
       } else if (act === "edit-vendor") {
         ST.specs[si].vendors[parseInt(b.getAttribute("data-vi"), 10)].editing = true;
         renderSpecs();
@@ -954,6 +978,19 @@
     $("specList").addEventListener("change", onSpecChange);
 
     // 企业选择弹窗
+    $("specList").addEventListener("mousedown", function (e) {
+      var opt = e.target.closest("[data-vname-opt]");
+      if (!opt) return;
+      if (opt.classList.contains("is-disabled")) return;
+      e.preventDefault();
+      var card = opt.closest(".vendor-item");
+      var inp = card && card.querySelector('[data-vk="companySearch"]');
+      if (!inp) return;
+      pickInlineCompany(parseInt(inp.getAttribute("data-si"), 10), parseInt(inp.getAttribute("data-vi"), 10), opt.getAttribute("data-vname-opt"));
+    });
+    document.addEventListener("click", function (e) {
+      if (!e.target.closest(".vd-wrap")) closeCompanyMenus();
+    });
     $("modalMask").addEventListener("click", function (e) {
       if (e.target === $("modalMask")) { closeModal(); return; }
       if (e.target.closest("[data-confirm]")) {
@@ -963,10 +1000,6 @@
         return;
       }
       if (e.target.closest("[data-close]")) { closeModal(); return; }
-      var opt = e.target.closest("[data-vname]");
-      if (opt && !opt.classList.contains("is-disabled")) {
-        addVendorFromPick(opt.getAttribute("data-vname"));
-      }
     });
 
     // 全局
@@ -1016,9 +1049,15 @@
     // 厂商字段
     var vi = parseInt(t.getAttribute("data-vi"), 10);
     var vk = t.getAttribute("data-vk");
+    if (!isNaN(vi) && vk === "companySearch") {
+      renderCompanyMenu(si, vi, t.value.trim());
+      return;
+    }
     if (!isNaN(vi) && vk) {
       var v = s.vendors[vi];
-      if (vk === "collect" || vk === "talk" || vk === "ins") {
+      if (vk === "imported") {
+        v.imported = t.checked ? "是" : "否";
+      } else if (vk === "collect" || vk === "talk" || vk === "ins") {
         v[vk] = t.checked;
         if (vk === "collect") {
           if (!t.checked) v.collectType = "";

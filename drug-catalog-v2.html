@@ -876,9 +876,8 @@
               egRead("国家药品名称", d.nationalName) +
               egRead("国家药品ID", d.nationalId, true) +
               egRead("批准文号", d.approval, true) +
-              egRead("本位码", d.standardCode, true) +
               egInput("进药价格", d.price, "如：12.50", at + 'price"') +
-              egRead("进口标识", d.imported) +
+              egSwitch("进口标识", d.imported === "是", at + 'imported"') +
               egSwitch("集采标识", d.centralized, at + 'centralized"') +
               egSelect("集采类别", d.centralType, ["国家集采", "省集采"], at + 'centralType"', !d.centralized) +
               egSelect("采购类型", d.purchaseType, ["国家集中采购", "省级集中采购", "阳光采购", "挂网采购"], at + 'purchaseType"') +
@@ -897,7 +896,6 @@
             egRead("国家药品名称", d.nationalName) +
             egRead("国家药品ID", d.nationalId, true) +
             egRead("批准文号", d.approval, true) +
-            egRead("本位码", d.standardCode, true) +
             egRead("进药价格", d.price ? d.price + " 元" : "—") +
             egRead("进口标识", d.imported) +
             egRead("集采标识", d.centralized ? "是" : "否") +
@@ -950,7 +948,7 @@
 
   function syncVendorDraft() {
     var es = editState;
-    if (!es || es.type !== "vendor") return;
+    if (!es || (es.type !== "vendor" && es.type !== "vendor-create")) return;
     var body = $("drawerBody");
     var d = es.draft;
 
@@ -958,6 +956,8 @@
       var el = body.querySelector('[data-vk="' + k + '"]');
       if (el) d[k] = el.value.trim();
     });
+    var imp = body.querySelector('[data-vk="imported"]');
+    if (imp) d.imported = imp.checked ? "是" : "否";
     ["centralized", "negotiated", "ins"].forEach(function (k) {
       var el = body.querySelector('[data-vk="' + k + '"]');
       if (el) d[k] = el.checked;
@@ -966,7 +966,7 @@
 
   function saveVendorEdit() {
     var es = editState;
-    if (!es || es.type !== "vendor") return;
+    if (!es || (es.type !== "vendor" && es.type !== "vendor-create")) return;
     syncVendorDraft();
     var d = es.draft;
     var drug = activeDrug();
@@ -975,6 +975,7 @@
     if (!v) return;
 
     v.price = d.price;
+    v.imported = d.imported || "否";
     v.centralized = d.centralized;
     v.centralType = d.centralType;
     v.purchase = d.purchaseType;
@@ -993,7 +994,7 @@
   function vendorCreateDraft() {
     return {
       name: "", drugCode: "", nationalName: "", nationalId: "", approval: "",
-      standardCode: "", imported: "", price: "",
+      standardCode: "", imported: "否", price: "",
       centralized: false, centralType: "国家集采", purchaseType: "阳光采购",
       negotiated: false, ins: false, insCode: ""
     };
@@ -1015,8 +1016,7 @@
           egRead("国家药品名称", picked ? d.nationalName : "—", false, "ck-nationalName") +
           egRead("国家药品ID", picked ? d.nationalId : "—", true, "ck-nationalId") +
           egRead("批准文号", picked ? d.approval : "—", true, "ck-approval") +
-          egRead("本位码", picked ? d.standardCode : "—", true, "ck-standardCode") +
-          egRead("进口标识", picked ? d.imported : "—", false, "ck-imported") +
+          egSwitch("进口标识", d.imported === "是", ' data-vk="imported"') +
           egInput("进药价格", d.price, "如：12.50", ' data-vk="price"', !picked) +
           egSwitch("集采标识", d.centralized, ' data-vk="centralized"' + (picked ? "" : " disabled")) +
           egSelect("集采类别", d.centralType, ["国家集采", "省集采"], ' data-vk="centralType"', !picked || !d.centralized) +
@@ -1056,7 +1056,6 @@
     d.nationalId = m.nationalId || "—";
     d.approval = m.approval || "—";
     d.standardCode = m.standardCode || "—";
-    d.imported = m.imported || "否";
     editState.picked = editState.options.indexOf(m);
 
     $("drawerBody").innerHTML = vendorCreateHtml();

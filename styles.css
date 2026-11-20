@@ -1281,6 +1281,20 @@ input, select { font-family: inherit; font-size: inherit; }
   margin-top: 4px;
 }
 .vi-field { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.vi-field.is-full { grid-column: 1 / -1; }
+/* 新增厂商：内联企业搜索下拉 */
+.vd-wrap { position: relative; flex: 1; min-width: 0; }
+.vd-menu {
+  position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 30;
+  max-height: 220px; overflow: auto; background: var(--bg-white);
+  border: 1px solid var(--border); border-radius: var(--radius);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, .12); display: none;
+}
+.vd-menu.is-open { display: block; }
+.vd-opt { padding: 8px 12px; font-size: 13px; color: var(--text-primary); cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.vd-opt:hover { background: var(--primary-lighter); }
+.vd-sub { font-size: 12px; color: var(--text-tertiary); white-space: nowrap; }
+.vd-empty { padding: 12px; font-size: 12px; color: var(--text-tertiary); text-align: center; }
 .vi-label {
   width: 104px; flex: none;
   text-align: right;

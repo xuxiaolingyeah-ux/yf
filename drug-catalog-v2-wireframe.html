@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>药品目录管理（V2）· 线稿</title>
+<style>
+  /* ============ 线稿基调：仅灰阶 ============ */
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: #eceae7; color: #4a4a4a;
+    font: 13px/1.5 -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+    padding: 20px;
+  }
+  .frame {
+    max-width: 1560px; margin: 0 auto; background: #fff;
+    border: 1px solid #bdbab5; box-shadow: 0 2px 10px rgba(0,0,0,.06);
+  }
+  .ph { color: #a9a9a9; }
+
+  /* 方案标签 */
+  .variant-label {
+    max-width: 1560px; margin: 26px auto 10px; display: flex; align-items: baseline; gap: 10px;
+  }
+  .variant-label:first-of-type { margin-top: 0; }
+  .variant-label .tag {
+    background: #55524d; color: #fff; font-size: 11px; padding: 3px 8px; border-radius: 2px; letter-spacing: .05em;
+  }
+  .variant-label .t { font-size: 13px; font-weight: 600; color: #3d3d3d; }
+  .variant-label .d { font-size: 12px; color: #8b8b8b; }
+
+  /* ============ 顶栏 ============ */
+  .wf-header {
+    height: 48px; display: flex; align-items: center; justify-content: space-between;
+    padding: 0 16px; border-bottom: 1px solid #c9c6c1; background: #f7f6f4;
+  }
+  .wf-header .l { display: flex; align-items: center; gap: 10px; }
+  .wf-logo { width: 22px; height: 22px; border: 1px solid #b0ada8; border-radius: 50%; }
+  .wf-header .r { display: flex; align-items: center; gap: 14px; }
+  .wf-icon { width: 20px; height: 20px; border: 1px dashed #c2bfba; border-radius: 4px; }
+  .wf-avatar { width: 24px; height: 24px; border: 1px solid #b0ada8; border-radius: 50%; }
+  .wf-line { height: 8px; background: #e2dfdb; border-radius: 2px; }
+
+  /* ============ 主体两栏 ============ */
+  .wf-body { display: flex; align-items: stretch; min-height: 620px; }
+  .wf-side { width: 188px; flex: none; padding: 14px 12px; border-right: 1px solid #dcd9d4; background: #faf9f8; }
+  .wf-navitem { height: 28px; display: flex; align-items: center; gap: 8px; padding: 0 8px; margin-bottom: 4px; border-radius: 3px; }
+  .wf-navitem.on { background: #e6e3df; }
+  .wf-navitem .sq { width: 12px; height: 12px; border: 1px solid #bfbcb7; border-radius: 2px; flex: none; }
+  .wf-navitem .t { height: 7px; background: #d8d5d0; border-radius: 2px; }
+  .wf-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+
+  /* ============ 页签 ============ */
+  .wf-tabs { height: 36px; display: flex; align-items: flex-end; gap: 2px; padding: 0 12px; border-bottom: 1px solid #dcd9d4; background: #f7f6f4; }
+  .wf-tab {
+    height: 28px; padding: 0 14px; display: flex; align-items: center; gap: 8px;
+    border: 1px solid #dcd9d4; border-bottom: none; border-radius: 3px 3px 0 0;
+    background: #efedea; font-size: 12px; color: #7d7d7d;
+  }
+  .wf-tab.on { background: #fff; color: #3d3d3d; margin-bottom: -1px; height: 29px; }
+  .wf-tab .x { color: #b3b0ab; font-size: 10px; }
+
+  /* ============ 页面标题 ============ */
+  .wf-page { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  .wf-page-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px 10px; }
+  .wf-page-head h1 { margin: 0; font-size: 15px; font-weight: 600; color: #3a3a3a; }
+  .wf-btn {
+    height: 28px; padding: 0 14px; border: 1px solid #b6b3ae; background: #f2f0ed;
+    border-radius: 3px; font-size: 12px; color: #6d6d6d;
+  }
+
+  /* ============ 内容 ============ */
+  .wf-content { flex: 1; min-height: 0; display: flex; border-top: 1px solid #e6e3df; }
+  .wf-listbar { width: 232px; flex: none; border-right: 1px solid #dcd9d4; display: flex; flex-direction: column; }
+  .wf-filter { padding: 10px; border-bottom: 1px dashed #dcd9d4; display: flex; flex-direction: column; gap: 8px; }
+  .wf-input { height: 28px; border: 1px solid #cdcac5; border-radius: 3px; background: #fcfcfb; display: flex; align-items: center; padding: 0 8px; font-size: 12px; color: #ababab; }
+  .wf-selects { display: flex; gap: 6px; }
+  .wf-select { flex: 1; height: 28px; border: 1px solid #cdcac5; border-radius: 3px; background: #fcfcfb; display: flex; align-items: center; padding: 0 8px; font-size: 12px; color: #ababab; justify-content: space-between; }
+  .wf-select::after { content: "▾"; font-size: 9px; color: #b8b5b0; }
+  .wf-filter-acts { display: flex; justify-content: flex-end; gap: 6px; }
+  .wf-filter-acts .wf-btn { height: 26px; padding: 0 12px; }
+  .wf-rows { flex: 1; padding: 6px 0; }
+  .wf-row { display: flex; align-items: center; gap: 8px; height: 38px; padding: 0 12px; border-bottom: 1px dashed #eeece9; }
+  .wf-row.on { background: #f0eeeb; }
+  .wf-row .dot { width: 6px; height: 6px; border-radius: 50%; background: #c4c1bc; flex: none; }
+  .wf-row .nm { flex: 1; height: 7px; background: #dddad5; border-radius: 2px; }
+  .wf-row .more { width: 10px; height: 10px; border: 1px dashed #cfccc7; border-radius: 2px; flex: none; }
+  .wf-pager { padding: 8px 12px; border-top: 1px solid #e6e3df; display: flex; align-items: center; justify-content: space-between; font-size: 11px; color: #9a9a9a; }
+  .wf-pager .ctrl { display: flex; align-items: center; gap: 6px; }
+  .wf-pager .pb { width: 18px; height: 18px; border: 1px solid #cfccc7; border-radius: 2px; }
+
+  .wf-detail { flex: 1; min-width: 0; padding: 4px 20px 20px; overflow: hidden; }
+  .wf-block { padding: 10px 0 14px; }
+  .wf-block + .wf-block { border-top: 1px dashed #dcd9d4; }
+  .wf-block-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+  .wf-block-title { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: #454545; }
+  .wf-block-title::before { content: ""; width: 3px; height: 13px; background: #c9c6c1; border-radius: 2px; }
+  .wf-block-acts { display: flex; gap: 6px; }
+  .wf-block-acts .wf-btn { height: 26px; padding: 0 10px; font-size: 12px; }
+
+  /* 基本信息 */
+  .wf-kv-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 7px 22px; }
+  .wf-kv { display: flex; gap: 4px; font-size: 12px; min-width: 0; line-height: 19px; }
+  .wf-kv .k { color: #8e8e8e; flex: none; }
+  .wf-kv .v { color: #5d5d5d; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .wf-kv .v.em { border-bottom: 1px dashed #cdcac5; }
+  .wf-kv-sub { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; margin: 6px 0 1px; font-size: 11px; color: #8b8b8b; }
+  .wf-kv-sub::before { content: ""; width: 2px; height: 10px; background: #d2cfca; }
+  .wf-kv-sub .hint { color: #b0b0b0; }
+
+  /* 规格区 */
+  .wf-spec { display: flex; gap: 14px; align-items: stretch; min-height: 216px; }
+  .wf-pane { display: flex; flex-direction: column; min-width: 0; border: 1px solid #dcd9d4; background: #fcfcfb; }
+  .wf-pane.left { flex: 1 1 62%; }
+  .wf-pane.right { flex: 1 1 38%; }
+  .wf-pane-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 7px 10px; border-bottom: 1px solid #dcd9d4; background: #f4f2ef; }
+  .wf-pane-title { font-size: 12px; font-weight: 600; color: #525252; white-space: nowrap; }
+  .wf-pane-tip { font-size: 11px; color: #a2a2a2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .wf-pane-body { flex: 1; overflow: auto; }
+
+  table.wf-t { border-collapse: separate; border-spacing: 0; width: 100%; font-size: 12px; }
+  table.wf-t th {
+    position: sticky; top: 0; z-index: 2; background: #efedea; color: #6f6f6f; font-weight: 500;
+    text-align: left; padding: 7px 7px; border-bottom: 1px solid #dcd9d4; white-space: nowrap;
+  }
+  table.wf-t td { padding: 8px 7px; border-bottom: 1px dashed #eceae7; color: #6a6a6a; white-space: nowrap; background: #fcfcfb; }
+  table.wf-t tr.sel td { background: #f0eeeb; }
+
+  /* 品规表（可冻结版） */
+  .wf-pane.left .wf-pane-body { overflow-x: auto; }
+  table.reg { min-width: 868px; table-layout: fixed; }
+  table.reg .frzn { position: sticky; background: #f7f5f2; border-left: 1px solid #dcd9d4; }
+  /* 冻结列左侧渐隐，遮盖被横向滚动截断的半列，避免看着像错位 */
+  table.reg .frzn.s1::before {
+    content: ""; position: absolute; left: -24px; top: 0; bottom: 0; width: 24px;
+    background: linear-gradient(90deg, rgba(247,245,242,0), rgba(247,245,242,.9));
+    pointer-events: none;
+  }
+  table.reg .frzn.s1 { right: 96px; }
+  table.reg .frzn.s2 { right: 0; box-shadow: 3px 0 6px -4px rgba(0,0,0,.14); }
+  table.reg tr.sel .frzn { background: #eae7e3; }
+  /* 品规表（全宽版） */
+  table.reg-wide { table-layout: fixed; }
+
+  .wf-switch { width: 30px; height: 16px; border-radius: 9px; border: 1px solid #c6c3be; background: #e6e3df; position: relative; display: inline-block; vertical-align: middle; }
+  .wf-switch::after { content: ""; position: absolute; top: 1px; left: 1px; width: 12px; height: 12px; border-radius: 50%; background: #fff; border: 1px solid #c6c3be; }
+  .wf-switch.on { background: #d6d3ce; }
+  .wf-switch.on::after { left: 15px; }
+  .wf-link { font-size: 12px; color: #6f6f6f; text-decoration: underline; text-decoration-color: #c9c6c1; }
+  .wf-link + .wf-link { margin-left: 7px; }
+
+  /* 厂商表：固定布局 + 企业名省略 */
+  table.vend { table-layout: fixed; }
+  table.vend td.nm { overflow: hidden; text-overflow: ellipsis; }
+
+  /* 省略块（方案 B 里复用的基本信息） */
+  .wf-collapsed {
+    border: 1px dashed #cfccc7; border-radius: 3px; background: #fbfaf9;
+    padding: 10px 12px; font-size: 12px; color: #a5a5a5;
+  }
+
+  /* 标注 */
+  .badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 15px; height: 15px; border-radius: 50%; background: #8f8d89; color: #fff;
+    font-size: 10px; font-weight: 600; vertical-align: middle; margin-left: 6px; line-height: 1; flex: none;
+  }
+  .legend { max-width: 1560px; margin: 22px auto 0; border: 1px solid #c9c6c1; background: #fbfaf9; padding: 16px 20px; }
+  .legend h3 { margin: 0 0 10px; font-size: 13px; color: #3f3f3f; }
+  .legend ol, .legend ul { margin: 0 0 12px; padding-left: 20px; }
+  .legend li { font-size: 12px; color: #616161; margin-bottom: 5px; line-height: 1.75; }
+  .legend .q { margin-top: 12px; padding-top: 12px; border-top: 1px dashed #dcd9d4; }
+  .legend h4 { margin: 0 0 8px; font-size: 12px; color: #4a4a4a; }
+  .legend b { color: #3d3d3d; }
+  .legend .cmp { width: 100%; border-collapse: collapse; margin: 4px 0 14px; font-size: 12px; }
+  .legend .cmp th, .legend .cmp td { border: 1px solid #dcd9d4; padding: 6px 9px; text-align: left; color: #616161; }
+  .legend .cmp th { background: #f4f2ef; font-weight: 500; color: #4a4a4a; }
+
+  /* 空态样张 */
+  .samples { max-width: 1560px; margin: 14px auto 0; }
+  .samples .cap { font-size: 11px; color: #8b8b8b; margin-bottom: 8px; }
+  .samples .row2 { display: flex; gap: 14px; }
+  .samples .wf-pane { flex: 1; background: #fff; }
+  .wf-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; min-height: 96px; color: #a5a5a5; font-size: 12px; }
+  .wf-empty .box { width: 32px; height: 24px; border: 1px dashed #cfccc7; border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- =========================================================
+     方案 A：左右并排
+     ========================================================= -->
+<div class="variant-label">
+  <span class="tag">方案 A</span>
+  <span class="t">左右并排</span>
+  <span class="d">左品规表横向滚动，状态/操作冻结在右侧；厂商表随行联动</span>
+</div>
+
+<div class="frame">
+  <header class="wf-header">
+    <div class="l"><div class="wf-logo"></div><div class="wf-line" style="width:130px"></div></div>
+    <div class="r"><div class="wf-icon"></div><div class="wf-avatar"></div><div class="wf-line" style="width:52px"></div></div>
+  </header>
+
+  <div class="wf-body">
+    <aside class="wf-side">
+      <div class="wf-navitem on"><span class="sq"></span><span class="t" style="width:64px"></span></div>
+      <div class="wf-navitem"><span class="sq"></span><span class="t" style="width:52px"></span></div>
+      <div class="wf-navitem"><span class="sq"></span><span class="t" style="width:70px"></span></div>
+      <div class="wf-navitem"><span class="sq"></span><span class="t" style="width:46px"></span></div>
+      <div class="wf-navitem"><span class="sq"></span><span class="t" style="width:60px"></span></div>
+      <div class="wf-navitem"><span class="sq"></span><span class="t" style="width:56px"></span></div>
+    </aside>
+
+    <main class="wf-main">
+      <div class="wf-tabs">
+        <div class="wf-tab">首页</div>
+        <div class="wf-tab on">药品目录管理（V2） <span class="x">✕</span></div>
+      </div>
+
+      <div class="wf-page">
+        <div class="wf-page-head">
+          <h1>药品目录管理（V2）</h1>
+          <button class="wf-btn">新增药品</button>
+        </div>
+
+        <div class="wf-content">
+          <section class="wf-listbar">
+            <div class="wf-filter">
+              <div class="wf-input">药品名称 / 编码 / 拼音码</div>
+              <div class="wf-selects"><div class="wf-select">全部种类</div><div class="wf-select">全部状态</div></div>
+              <div class="wf-filter-acts"><button class="wf-btn">重置</button><button class="wf-btn">查询</button></div>
+            </div>
+            <div class="wf-rows">
+              <div class="wf-row on"><span class="dot"></span><span class="nm"></span><span class="more"></span></div>
+              <div class="wf-row"><span class="dot"></span><span class="nm" style="width:70%"></span><span class="more"></span></div>
+              <div class="wf-row"><span class="dot"></span><span class="nm" style="width:85%"></span><span class="more"></span></div>
+              <div class="wf-row"><span class="dot"></span><span class="nm" style="width:62%"></span><span class="more"></span></div>
+              <div class="wf-row"><span class="dot"></span><span class="nm" style="width:78%"></span><span class="more"></span></div>
+              <div class="wf-row"><span class="dot"></span><span class="nm" style="width:66%"></span><span class="more"></span></div>
+            </div>
+            <div class="wf-pager"><span>共 0 条</span><span class="ctrl"><span class="pb"></span><span>1 / 1</span><span class="pb"></span></span></div>
+          </section>
+
+          <section class="wf-detail">
+            <!-- 基本信息 -->
+            <div class="wf-block">
+              <div class="wf-block-head">
+                <div class="wf-block-title">基本信息<span class="badge">1</span></div>
+                <div class="wf-block-acts"><button class="wf-btn">停用</button><button class="wf-btn">编辑</button><button class="wf-btn">删除</button></div>
+              </div>
+              <div class="wf-kv-grid">
+                <div class="wf-kv"><span class="k">品种编码：</span><span class="v em">1210500301</span></div>
+                <div class="wf-kv"><span class="k">药品名称：</span><span class="v">阿莫西林胶囊</span></div>
+                <div class="wf-kv"><span class="k">药品英文名：</span><span class="v">Amoxicillin Capsules</span></div>
+                <div class="wf-kv"><span class="k">药品拼音码：</span><span class="v em">AMXLJN</span></div>
+
+                <div class="wf-kv"><span class="k">药品种类：</span><span class="v">西药</span></div>
+                <div class="wf-kv"><span class="k">药品分类：</span><span class="v">化学药品 / 抗微生物药 / 青霉素类</span></div>
+                <div class="wf-kv"><span class="k">剂型：</span><span class="v">胶囊剂</span></div>
+                <div class="wf-kv"><span class="k">DDD：</span><span class="v">1.5 g</span></div>
+
+                <div class="wf-kv"><span class="k">医保药品分类：</span><span class="v">甲类</span></div>
+                <div class="wf-kv"><span class="k">品名编码：</span><span class="v em">1060300101</span></div>
+                <div class="wf-kv"><span class="k">医院编码：</span><span class="v">—</span></div>
+                <div class="wf-kv"><span class="k">省中名称：</span><span class="v">—</span></div>
+
+                <div class="wf-kv-sub">特殊药品标识 <span class="hint">（原独立区块并入，统一「是 / 否 / 级别」文本）</span></div>
+
+                <div class="wf-kv"><span class="k">精神标志：</span><span class="v">—</span></div>
+                <div class="wf-kv"><span class="k">麻醉标志：</span><span class="v">否</span></div>
+                <div class="wf-kv"><span class="k">毒性标志：</span><span class="v">否</span></div>
+                <div class="wf-kv"><span class="k">抗菌药物：</span><span class="v">限制使用级</span></div>
+
+                <div class="wf-kv"><span class="k">抗肿瘤药物：</span><span class="v">—</span></div>
+                <div class="wf-kv"><span class="k">高警示药品：</span><span class="v">—</span></div>
+                <div class="wf-kv"><span class="k">过敏药物：</span><span class="v">青霉素类</span></div>
+                <div class="wf-kv"><span class="k">是否皮试：</span><span class="v">是</span></div>
+
+                <div class="wf-kv"><span class="k">长处方：</span><span class="v">否</span></div>
+                <div class="wf-kv"><span class="k">OTC 标志：</span><span class="v">否</span></div>
+                <div class="wf-kv"><span class="k">基药标识：</span><span class="v">是</span></div>
+                <div class="wf-kv"><span class="k">状态：</span><span class="v">启用</span></div>
+              </div>
+            </div>
+
+            <!-- 药品规格 -->
+            <div class="wf-block">
+              <div class="wf-block-head">
+                <div class="wf-block-title">药品规格<span class="badge">2</span></div>
+                <div class="wf-block-acts"><button class="wf-btn">新增品规</button><button class="wf-btn">新增厂商</button></div>
+              </div>
+
+              <div class="wf-spec">
+                <div class="wf-pane left">
+                  <div class="wf-pane-head">
+                    <span class="wf-pane-title">品规列表 <span class="ph">（3）</span><span class="badge">3</span></span>
+                    <span class="wf-pane-tip">← 横向滚动 · 状态/操作右侧冻结（约折叠 3 列）→</span>
+                  </div>
+                  <div class="wf-pane-body">
+                    <table class="wf-t reg">
+                      <colgroup>
+                        <col style="width:96px"><col style="width:80px"><col style="width:86px">
+                        <col style="width:74px"><col style="width:68px"><col style="width:68px">
+                        <col style="width:68px"><col style="width:84px"><col style="width:68px">
+                        <col style="width:76px"><col style="width:96px">
+                      </colgroup>
+                      <thead>
+                        <tr>
+                          <th>品规编码</th><th>药品规格</th><th>包装规格</th><th>基本剂量</th><th>剂量单位</th>
+                          <th>制剂单位</th><th>最小系数</th><th>最小包装单位</th><th>包装系数</th>
+                          <th class="frzn s1">状态</th><th class="frzn s2">操作</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr class="sel">
+                          <td>1010400101</td><td>0.25 g</td><td>24 粒/盒</td><td>0.25</td><td>g</td><td>粒</td>
+                          <td>24</td><td>盒</td><td>24</td>
+                          <td class="frzn s1"><span class="wf-switch on"></span></td>
+                          <td class="frzn s2"><a class="wf-link">详情</a><a class="wf-link">编辑</a><a class="wf-link">删除</a></td>
+                        </tr>
+                        <tr>
+                          <td>1010400102</td><td>0.5 g</td><td>12 粒/盒</td><td>0.5</td><td>g</td><td>粒</td>
+                          <td>12</td><td>盒</td><td>12</td>
+                          <td class="frzn s1"><span class="wf-switch on"></span></td>
+                          <td class="frzn s2"><a class="wf-link">详情</a><a class="wf-link">编辑</a><a class="wf-link">删除</a></td>
+                        </tr>
+                        <tr>
+                          <td>1010400103</td><td>0.25 g</td><td>12 粒/盒</td><td>0.25</td><td>g</td><td>粒</td>
+                          <td>12</td><td>盒</td><td>12</td>
+                          <td class="frzn s1"><span class="wf-switch"></span></td>
+                          <td class="frzn s2"><a class="wf-link">详情</a><a class="wf-link">编辑</a><a class="wf-link">删除</a></td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <div class="wf-pane right">
+                  <div class="wf-pane-head">
+                    <span class="wf-pane-title">厂商列表 <span class="ph">（5）</span><span class="badge">4</span></span>
+                    <span class="wf-pane-tip">随选中品规联动</span>
+                  </div>
+                  <div class="wf-pane-body">
+                    <table class="wf-t vend">
+                      <colgroup>
+                        <col style="width:114px"><col><col style="width:56px"><col style="width:84px"><col style="width:86px">
+                      </colgroup>
+                      <thead>
+                        <tr><th>药品编码</th><th>生产企业</th><th>进口标识</th><th>批准文号</th><th>操作</th></tr>
+                      </thead>
+                      <tbody>
+                        <tr><td>86900010000123</td><td class="nm" title="华北制药股份有限公司">华北制药股份有限公司</td><td>否</td><td>H13023917</td><td><a class="wf-link">编辑</a><a class="wf-link">删除</a></td></tr>
+                        <tr><td>86900020000456</td><td class="nm" title="哈药集团制药总厂">哈药集团制药总厂</td><td>否</td><td>H23021568</td><td><a class="wf-link">编辑</a><a class="wf-link">删除</a></td></tr>
+                        <tr><td>86900030000789</td><td class="nm" title="石药集团中诺药业（石家庄）有限公司">石药集团中诺药业（石家庄）有限公司</td><td>否</td><td>H20033293</td><td><a class="wf-link">编辑</a><a class="wf-link">删除</a></td></tr>
+                        <tr><td>86900050000666</td><td class="nm" title="珠海联邦制药股份有限公司中山分公司">珠海联邦制药股份有限公司中山分公司</td><td>否</td><td>H20033458</td><td><a class="wf-link">编辑</a><a class="wf-link">删除</a></td></tr>
+                        <tr><td>86900040000221</td><td class="nm" title="山东鲁抗医药股份有限公司">山东鲁抗医药股份有限公司</td><td>否</td><td>H37021153</td><td><a class="wf-link">编辑</a><a class="wf-link">删除</a></td></tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- 空态样张 -->
+<div class="samples">
+  <div class="cap">空态示意（页面外样张，仅确认文案）</div>
+  <div class="row2">
+    <div class="wf-pane" style="flex:1 1 62%;">
+      <div class="wf-pane-head"><span class="wf-pane-title">品规列表 · 无数据</span></div>
+      <div class="wf-empty"><div class="box"></div><span>暂无品规，点击「新增品规」创建</span></div>
+    </div>
+    <div class="wf-pane" style="flex:1 1 38%;">
+      <div class="wf-pane-head"><span class="wf-pane-title">厂商列表 · 未选品规<span class="badge">5</span></span></div>
+      <div class="wf-empty"><div class="box"></div><span>请先在左侧选择一条品规</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- =========================================================
+     方案 B：上下堆叠
+     ========================================================= -->
+<div class="variant-label">
+  <span class="tag">方案 B</span>
+  <span class="t">上下堆叠</span>
+  <span class="d">品规表占满详情宽，11 列不滚动；厂商表在下方整行铺开</span>
+</div>
+
+<div class="frame">
+  <header class="wf-header">
+    <div class="l"><div class="wf-logo"></div><div class="wf-line" style="width:130px"></div></div>
+    <div class="r"><div class="wf-icon"></div><div class="wf-avatar"></div><div class="wf-line" style="width:52px"></div></div>
+  </header>
+
+  <div class="wf-body">
+    <aside class="wf-side">
+      <div class="wf-navitem on"><span class="sq"></span><span class="t" style="width:64px"></span></div>
+      <div class="wf-navitem"><span class="sq"></span><span class="t" style="width:52px"></span></div>
+      <div class="wf-navitem"><span class="sq"></span><span class="t" style="width:70px"></span></div>
+      <div class="wf-navitem"><span class="sq"></span><span class="t" style="width:46px"></span></div>
+      <div class="wf-navitem"><span class="sq"></span><span class="t" style="width:60px"></span></div>
+      <div class="wf-navitem"><span class="sq"></span><span class="t" style="width:56px"></span></div>
+    </aside>
+
+    <main class="wf-main">
+      <div class="wf-tabs">
+        <div class="wf-tab">首页</div>
+        <div class="wf-tab on">药品目录管理（V2） <span class="x">✕</span></div>
+      </div>
+
+      <div class="wf-page">
+        <div class="wf-page-head">
+          <h1>药品目录管理（V2）</h1>
+          <button class="wf-btn">新增药品</button>
+        </div>
+
+        <div class="wf-content">
+          <section class="wf-listbar">
+            <div class="wf-filter">
+              <div class="wf-input">药品名称 / 编码 / 拼音码</div>
+              <div class="wf-selects"><div class="wf-select">全部种类</div><div class="wf-select">全部状态</div></div>
+              <div class="wf-filter-acts"><button class="wf-btn">重置</button><button class="wf-btn">查询</button></div>
+            </div>
+            <div class="wf-rows">
+              <div class="wf-row on"><span class="dot"></span><span class="nm"></span><span class="more"></span></div>
+              <div class="wf-row"><span class="dot"></span><span class="nm" style="width:70%"></span><span class="more"></span></div>
+              <div class="wf-row"><span class="dot"></span><span class="nm" style="width:85%"></span><span class="more"></span></div>
+              <div class="wf-row"><span class="dot"></span><span class="nm" style="width:62%"></span><span class="more"></span></div>
+            </div>
+            <div class="wf-pager"><span>共 0 条</span><span class="ctrl"><span class="pb"></span><span>1 / 1</span><span class="pb"></span></span></div>
+          </section>
+
+          <section class="wf-detail">
+            <div class="wf-block">
+              <div class="wf-block-head">
+                <div class="wf-block-title">基本信息<span class="badge">1</span></div>
+                <div class="wf-block-acts"><button class="wf-btn">停用</button><button class="wf-btn">编辑</button><button class="wf-btn">删除</button></div>
+              </div>
+              <div class="wf-collapsed">基本信息 4 列键值栅格（基础属性 3 行 + 特殊药品标识 3 行）—— 与方案 A 相同，此处省略</div>
+            </div>
+
+            <div class="wf-block">
+              <div class="wf-block-head">
+                <div class="wf-block-title">药品规格<span class="badge">2</span></div>
+                <div class="wf-block-acts"><button class="wf-btn">新增品规</button><button class="wf-btn">新增厂商</button></div>
+              </div>
+
+              <!-- 品规：整行 -->
+              <div class="wf-pane" style="margin-bottom:12px;">
+                <div class="wf-pane-head">
+                  <span class="wf-pane-title">品规列表 <span class="ph">（3）</span><span class="badge">3</span></span>
+                  <span class="wf-pane-tip">整行铺开 · 11 列无需横向滚动</span>
+                </div>
+                <div class="wf-pane-body" style="overflow-x:auto;">
+                  <table class="wf-t reg-wide">
+                    <colgroup>
+                      <col style="width:106px"><col style="width:90px"><col style="width:96px">
+                      <col style="width:82px"><col style="width:76px"><col style="width:76px">
+                      <col style="width:76px"><col style="width:92px"><col style="width:76px">
+                      <col style="width:86px"><col style="width:132px">
+                    </colgroup>
+                    <thead>
+                      <tr>
+                        <th>品规编码</th><th>药品规格</th><th>包装规格</th><th>基本剂量</th><th>剂量单位</th>
+                        <th>制剂单位</th><th>最小系数</th><th>最小包装单位</th><th>包装系数</th>
+                        <th>状态</th><th>操作</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr class="sel">
+                        <td>1010400101</td><td>0.25 g</td><td>24 粒/盒</td><td>0.25</td><td>g</td><td>粒</td>
+                        <td>24</td><td>盒</td><td>24</td>
+                        <td><span class="wf-switch on"></span> 启用</td>
+                        <td><a class="wf-link">详情</a><a class="wf-link">编辑</a><a class="wf-link">删除</a></td>
+                      </tr>
+                      <tr>
+                        <td>1010400102</td><td>0.5 g</td><td>12 粒/盒</td><td>0.5</td><td>g</td><td>粒</td>
+                        <td>12</td><td>盒</td><td>12</td>
+                        <td><span class="wf-switch on"></span> 启用</td>
+                        <td><a class="wf-link">详情</a><a class="wf-link">编辑</a><a class="wf-link">删除</a></td>
+                      </tr>
+                      <tr>
+                        <td>1010400103</td><td>0.25 g</td><td>12 粒/盒</td><td>0.25</td><td>g</td><td>粒</td>
+                        <td>12</td><td>盒</td><td>12</td>
+                        <td><span class="wf-switch"></span> 停用</td>
+                        <td><a class="wf-link">详情</a><a class="wf-link">编辑</a><a class="wf-link">删除</a></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- 厂商：下方整行 -->
+              <div class="wf-pane">
+                <div class="wf-pane-head">
+                  <span class="wf-pane-title">厂商列表 <span class="ph">（5）</span><span class="badge">4</span></span>
+                  <span class="wf-pane-tip">随上方选中品规联动 · 标题可回显品规编码 1010400101</span>
+                </div>
+                <div class="wf-pane-body">
+                  <table class="wf-t vend">
+                    <colgroup>
+                      <col style="width:150px"><col><col style="width:92px"><col style="width:124px"><col style="width:130px">
+                    </colgroup>
+                    <thead>
+                      <tr><th>药品编码</th><th>生产企业</th><th>进口标识</th><th>批准文号</th><th>操作</th></tr>
+                    </thead>
+                    <tbody>
+                      <tr><td>86900010000123</td><td class="nm" title="华北制药股份有限公司">华北制药股份有限公司</td><td>否</td><td>H13023917</td><td><a class="wf-link">编辑</a><a class="wf-link">删除</a></td></tr>
+                      <tr><td>86900020000456</td><td class="nm" title="哈药集团制药总厂">哈药集团制药总厂</td><td>否</td><td>H23021568</td><td><a class="wf-link">编辑</a><a class="wf-link">删除</a></td></tr>
+                      <tr><td>86900030000789</td><td class="nm" title="石药集团中诺药业（石家庄）有限公司">石药集团中诺药业（石家庄）有限公司</td><td>否</td><td>H20033293</td><td><a class="wf-link">编辑</a><a class="wf-link">删除</a></td></tr>
+                      <tr><td>86900050000666</td><td class="nm" title="珠海联邦制药股份有限公司中山分公司">珠海联邦制药股份有限公司中山分公司</td><td>否</td><td>H20033458</td><td><a class="wf-link">编辑</a><a class="wf-link">删除</a></td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- =========================================================
+     标注说明
+     ========================================================= -->
+<div class="legend">
+  <h3>线稿说明（V2 药品详情布局调整）</h3>
+  <ol>
+    <li><b>基本信息改为 4 列键值栅格</b>：基础属性 3 行 + 标识 3 行，一屏看完；值超长省略，hover 显示全文。</li>
+    <li><b>「特殊药品标识」并入基本信息</b>，用跨行小标题分组，不再单独占区块；标识统一「是 / 否 / 级别」文本（精神、麻醉、毒性、抗菌、抗肿瘤、高警示、过敏、皮试、长处方、OTC、基药）。</li>
+    <li><b>品规列表改为表格</b>（弃用原卡片式），按你给的 11 列排列，状态为开关、操作含 详情/编辑/删除；品规列表不加筛选。</li>
+    <li><b>厂商列表独立成表</b>：药品编码、生产企业（超长省略）、进口标识、批准文号、操作（编辑/删除），<b>归属品规并随之联动</b>。</li>
+    <li><b>双空态</b>：无品规提示新增；未选品规时右表提示先选择，避免"空表看不出原因"。</li>
+  </ol>
+
+  <div class="q">
+    <h4>两个方案的差别（宽度算得比较紧，这是本页唯一的结构性矛盾）</h4>
+    <table class="cmp">
+      <tr><th style="width:96px">维度</th><th>方案 A · 左右并排</th><th>方案 B · 上下堆叠</th></tr>
+      <tr><td>横向空间</td><td>1440 宽下左表约 640px，11 列需 878px → <b>必然横向滚动</b>，加上状态/操作冻结后一次只能看 8 列左右</td><td>品规表占满 ~1050px，11 列 <b>一屏看全</b>，不需要冻结列</td></tr>
+      <tr><td>厂商表可读性</td><td>右侧仅 ~400px，生产企业被压到 ~110px，名称基本靠省略号 + tooltip</td><td>整行铺开，生产企业有 300px+，全称可显示</td></tr>
+      <tr><td>品规↔厂商关联</td><td>左右并置，联动关系最直观（推荐在左表加选中行高亮）</td><td>需要靠选中行高亮 + 厂商表标题回显品规编码来建立关联</td></tr>
+      <tr><td>纵向滚动</td><td>两表各自独立滚动，页面基本不动</td><td>页面整体纵滚，品规多时厂商表需要往下翻</td></tr>
+      <tr><td>适用场景</td><td>1920 宽屏、品规数少（≤5）</td><td>1440 笔记本、品规字段多是常态</td></tr>
+    </table>
+    <p style="font-size:12px;color:#616161;margin:0 0 12px">我的建议：<b>主用方案 B</b>（字段真实、不牺牲列），若你更看重"左右对照"的操作感，就用方案 A 但接受横向滚动 + 企业名省略。</p>
+  </div>
+
+  <div class="q">
+    <h4>还需要你确认的 4 个点（线稿暂按以下默认处理）</h4>
+    <ul>
+      <li><b>① 冻结方向</b>：你写的是「固定在左侧」，截图里状态/操作在最右 —— 方案 A 按 <b>右侧冻结</b> 做；若确实要放左侧，列序变成「状态、操作、品规编码…」。</li>
+      <li><b>② 药品规格 vs 包装规格</b>：线稿把「药品规格」当制剂规格（0.25 g）、「包装规格」当 24 粒/盒；若「药品规格」要显示合体值（0.25g*24粒/盒）会与包装规格重复。</li>
+      <li><b>③ 状态展示</b>：品规状态用开关（可一键启停）；若启停需要校验（有库存/在途不可停用），要不要改成文字 + 二次确认？</li>
+      <li><b>④ 字段补充</b>：厂商表是否保留截图里的「可用标志」列？品规的「基药标识 / 集采标识」是否需要在品规列表也体现？</li>
+    </ul>
+  </div>
+</div>
+
+</body>
+</html>

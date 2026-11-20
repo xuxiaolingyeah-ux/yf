@@ -54,7 +54,7 @@
       <!-- 标题行 -->
       <div class="page-head">
         <div class="head-back">
-          <button class="back-btn" id="btnBack" title="返回药品目录">
+          <button class="back-btn" id="btnBack" title="返回药品目录管理（V2）">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M15 5l-7 7 7 7"/>
             </svg>
@@ -142,13 +142,8 @@
                   </div>
                 </div>
               </div>
-            </section>
 
-            <section class="block">
-              <div class="block-head">
-                <h2 class="block-title">特殊药品标识</h2>
-              </div>
-              <div class="flag-grid" id="flagGrid"></div>
+              <div class="flag-grid" id="flagGrid" style="margin-top:16px"></div>
             </section>
           </div>
 
@@ -834,9 +829,11 @@
     setTimeout(function () { location.href = backTarget(); }, 700);
   }
 
-  /* 返回来源页：从「药品目录管理（新）」进入时返回新列表页 */
+  /* 返回来源页：默认返回「药品目录管理（V2）」；兼容旧入口的 from=new / 默认列表页 */
   function backTarget() {
-    return /([?&])from=new/.test(location.search) ? "drug-catalog-new.html" : "drug-catalog.html";
+    if (/([?&])from=v2/.test(location.search)) return "drug-catalog-v2.html";
+    if (/([?&])from=new/.test(location.search)) return "drug-catalog-new.html";
+    return "drug-catalog-v2.html";
   }
 
   /* ================= 事件绑定 ================= */
@@ -985,7 +982,7 @@
     document.querySelectorAll("[data-nav]").forEach(function (el) {
       el.addEventListener("click", function () {
         var name = el.getAttribute("data-nav");
-        if (name === "药品目录管理") { location.href = "drug-catalog.html"; return; }
+        if (name === "药品目录管理" || name === "药品目录管理（V2）") { location.href = "drug-catalog-v2.html"; return; }
         toast("「" + name + "」页面待开发");
       });
     });

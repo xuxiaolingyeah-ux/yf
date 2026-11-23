@@ -448,7 +448,7 @@
                     <span class="hm-ico" tabindex="0" data-metric="variety" aria-label="药品品种数口径说明">
                       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="8" cy="8" r="6.4"></circle><path d="M8 7.2v4.2" stroke-linecap="round"></path><circle cx="8" cy="4.6" r=".8" fill="currentColor" stroke="none"></circle></svg>
                     </span>
-                    <span class="hm-tip"><b>药品品种数</b>已启用状态的药品品种数，按通用名 + 剂型统计；同一品种的多个规格合并为 1 个品种，不含停用品种。目录变更后更新，非实时轮询。</span>
+                    <span class="hm-tip"><b>药品品种数</b>统计口径：药品品种数量。</span>
                   </span>
                 </div>
                 <div class="hm-kpi-val">1,286<span class="unit">种</span></div>
@@ -460,7 +460,7 @@
                     <span class="hm-ico" tabindex="0" data-metric="stockValue" aria-label="库存零售总金额口径说明">
                       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="8" cy="8" r="6.4"></circle><path d="M8 7.2v4.2" stroke-linecap="round"></path><circle cx="8" cy="4.6" r=".8" fill="currentColor" stroke="none"></circle></svg>
                     </span>
-                    <span class="hm-tip"><b>库存零售总金额</b>Σ（在库可用库存 × 当前零售价），仅统计中心药房在库批次，不含在途、锁定与冻结批次；零售价随调价单生效后重算。实时，60 秒轮询。</span>
+                    <span class="hm-tip"><b>库存零售总金额</b>统计口径：Σ（批次库存 × 零售价金额），汇总全部在库批次，非仅可用库存。</span>
                   </span>
                 </div>
                 <div class="hm-kpi-val">¥342.9<span class="unit">万</span></div>
@@ -472,7 +472,7 @@
                     <span class="hm-ico" tabindex="0" data-metric="shortage" aria-label="缺货品规数口径说明">
                       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="8" cy="8" r="6.4"></circle><path d="M8 7.2v4.2" stroke-linecap="round"></path><circle cx="8" cy="4.6" r=".8" fill="currentColor" stroke="none"></circle></svg>
                     </span>
-                    <span class="hm-tip"><b>缺货品规数</b>可用库存 = 现有库存 − 锁定量 − 占用量（待发药），可用库存等于 0 的品规数；缺货品规同时计入低储预警，两个数字口径存在包含关系。实时，60 秒轮询。</span>
+                    <span class="hm-tip"><b>缺货品规数</b>统计口径：可用库存 = 0 的品规数。</span>
                   </span>
                 </div>
                 <div class="hm-kpi-val">12<span class="unit">个</span></div>

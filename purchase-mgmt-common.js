@@ -526,7 +526,7 @@
         planIds: ["p1"],
         items: [
           {
-            detailId: "PROV202611010001-01", drugName: "阿莫西林胶囊", spec: "0.25g * 24粒/盒",
+            detailId: "PROV202611010001-01", drugCode: "1210500301", drugName: "阿莫西林胶囊", spec: "0.25g * 24粒/盒",
             vendor: "华北制药股份有限公司", qty: 200, price: "6.80", state: 8, addressId: "ad1",
             responseTime: "2026-11-01 10:12", responseReason: "",
             shipments: [
@@ -543,7 +543,7 @@
             ]
           },
           {
-            detailId: "PROV202611010001-02", drugName: "布洛芬缓释胶囊", spec: "0.3g * 20粒/盒",
+            detailId: "PROV202611010001-02", drugCode: "1210500601", drugName: "布洛芬缓释胶囊", spec: "0.3g * 20粒/盒",
             vendor: "中美天津史克制药有限公司", qty: 100, price: "7.50", state: 8, addressId: "ad1",
             responseTime: "2026-11-01 10:30", responseReason: "",
             shipments: [
@@ -562,7 +562,7 @@
         planIds: [],
         items: [
           {
-            detailId: "PROV202611060002-01", drugName: "苯磺酸氨氯地平片", spec: "5mg * 28片/盒",
+            detailId: "PROV202611060002-01", drugCode: "1210501701", drugName: "苯磺酸氨氯地平片", spec: "5mg * 28片/盒",
             vendor: "辉瑞制药有限公司", qty: 120, price: "15.40", state: 8, addressId: "ad1",
             responseTime: "2026-11-06 11:00", responseReason: "",
             shipments: [
@@ -574,7 +574,7 @@
             ]
           },
           {
-            detailId: "PROV202611060002-02", drugName: "头孢呋辛酯片", spec: "0.25g * 12片/盒",
+            detailId: "PROV202611060002-02", drugCode: "1210501801", drugName: "头孢呋辛酯片", spec: "0.25g * 12片/盒",
             vendor: "国药集团致君（深圳）制药有限公司", qty: 50, price: "18.60", state: 7, addressId: "ad1",
             responseTime: "2026-11-06 11:20", responseReason: "",
             shipments: [
@@ -591,7 +591,7 @@
             ]
           },
           {
-            detailId: "PROV202611060002-03", drugName: "连花清瘟胶囊", spec: "0.35g * 24粒/盒",
+            detailId: "PROV202611060002-03", drugCode: "1210501901", drugName: "连花清瘟胶囊", spec: "0.35g * 24粒/盒",
             vendor: "石家庄以岭药业股份有限公司", qty: 80, price: "11.20", state: 4, addressId: "ad1",
             responseTime: "2026-11-07 09:00", responseReason: "",
             shipments: [
@@ -603,7 +603,7 @@
             ]
           },
           {
-            detailId: "PROV202611060002-04", drugName: "阿莫西林胶囊", spec: "0.25g * 24粒/盒",
+            detailId: "PROV202611060002-04", drugCode: "1210500301", drugName: "阿莫西林胶囊", spec: "0.25g * 24粒/盒",
             vendor: "华北制药股份有限公司", qty: 60, price: "6.95", state: 5, addressId: "ad1",
             responseTime: "2026-11-08 09:15",
             responseReason: "该规格厂家产能不足，无法按约定时间配送，建议改由其他厂家供货。",
@@ -617,12 +617,12 @@
         planIds: [],
         items: [
           {
-            detailId: "PROV202611080003-01", drugName: "奥美拉唑肠溶胶囊", spec: "20mg * 14粒/盒",
+            detailId: "PROV202611080003-01", drugCode: "1210500901", drugName: "奥美拉唑肠溶胶囊", spec: "20mg * 14粒/盒",
             vendor: "华北制药股份有限公司", qty: 60, price: "12.00", state: 1, addressId: "ad2",
             responseTime: "", responseReason: "", shipments: []
           },
           {
-            detailId: "PROV202611080003-02", drugName: "金银花颗粒", spec: "10g * 20袋/盒",
+            detailId: "PROV202611080003-02", drugCode: "1210502001", drugName: "金银花颗粒", spec: "10g * 20袋/盒",
             vendor: "诚辉医药有限公司", qty: 120, price: "9.80", state: 6, addressId: "ad2",
             responseTime: "2026-11-09 08:40",
             responseReason: "已响应但未在承诺时限内送达，平台自动置为未及时配送。",

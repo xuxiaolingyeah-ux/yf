@@ -101,6 +101,8 @@
 .si-foot { flex: none; height: 56px; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 0 20px; border-top: 1px solid var(--border); background: var(--bg-white); }
 /* 选药弹窗 */
 .si-pick .modal { width: 880px; max-width: 94vw; }
+/* 收货入库弹窗（列较多，放宽） */
+.si-rc .modal { width: 1120px; max-width: 96vw; }
 .si-pick-search { display: flex; gap: 12px; align-items: center; margin-bottom: 12px; }
 .si-pick-search .fi { display: flex; align-items: center; gap: 6px; }
 .si-pick-search .lbl { font-size: 12px; color: var(--text-tertiary); white-space: nowrap; }
@@ -261,6 +263,7 @@
               <span class="sec-acts">
                 <button class="si-add-row" id="btnAddRow">+ 新增药品</button>
                 <button class="si-add-row" id="btnFromNeed">+ 从采购需求添加</button>
+                <button class="si-add-row" id="btnFromShip">+ 收货入库</button>
               </span>
             </div>
             <div class="si-items-wrap">
@@ -366,6 +369,43 @@
     <div class="modal-foot">
       <button class="btn" id="pnCancel">取消</button>
       <button class="btn btn-primary" id="pnOk" disabled>批量添加</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== 弹窗：收货入库（选择采购订单配送明细生成入库明细） ========== -->
+<div class="modal-mask si-pick si-rc" id="rcMask">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">收货入库 · 选择配送明细</div>
+      <button class="drawer-close" id="rcClose" title="关闭">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="si-pick-search">
+        <div class="fi"><span class="lbl">药品检索（编号/名称/拼音）：</span><input class="input" id="rcKey" style="width:190px" autocomplete="off"></div>
+        <div class="fi"><span class="lbl">配送时间：</span><input class="input" type="date" id="rcTime" style="width:140px"></div>
+        <div class="fi"><span class="lbl">发票号：</span><input class="input" id="rcInv" autocomplete="off"></div>
+        <button class="btn btn-sm" id="rcReset">重置</button>
+        <button class="btn btn-sm btn-primary" id="rcSearch">查询</button>
+      </div>
+      <table class="si-pick-table">
+        <thead>
+          <tr>
+            <th style="width:40px"></th>
+            <th>订单明细编号</th><th>配送明细编号</th><th>药品编码</th><th>药品名称</th><th>药品规格</th>
+            <th>生产企业</th><th class="num">采购价格</th><th>批次号</th><th>有效期</th>
+            <th class="num">配送数量</th><th>配送时间</th><th>发票号</th>
+          </tr>
+        </thead>
+        <tbody id="rcBody"></tbody>
+      </table>
+      <div class="si-pick-empty" id="rcEmpty" style="display:none">未找到符合条件的配送明细</div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" id="rcCancel">取消</button>
+      <button class="btn btn-primary" id="rcOk" disabled>确定</button>
     </div>
   </div>
 </div>
@@ -1083,6 +1123,151 @@
     } else {
       apply();
     }
+  });
+
+  /* ===== 收货入库（选择采购订单配送明细，生成入库明细） ===== */
+  var rcRows = [];   /* 弹窗内过滤出的配送明细 */
+  var rcSel = {};    /* shipId -> true */
+
+  /* 配送明细药品 → 入库药品库（SI.DRUGS）匹配：
+     优先按配送明细携带的药品编码精确匹配，无编码时按名称（多候选再按规格首段剂量择优） */
+  function rcDrugOf(drugCode, name, spec){
+    var byCode = drugCode ? SI.DRUGS.filter(function(d){ return d.code === drugCode; })[0] : null;
+    if(byCode) return byCode;
+    var cands = SI.DRUGS.filter(function(d){ return d.name === name; });
+    if(!cands.length) return null;
+    if(cands.length===1) return cands[0];
+    var t = specFirstToken(spec);
+    return cands.filter(function(d){ return t && specFirstToken(d.spec)===t; })[0] || cands[0];
+  }
+
+  /* 拉平所有采购订单的配送明细（仅已发货且未收货完毕的：有配送时间、收货数量 < 配送数量） */
+  function rcSource(){
+    var rows = [];
+    PC.load("order").forEach(function(o){
+      (o.items||[]).forEach(function(oi){
+        (oi.shipments||[]).forEach(function(s){
+          if(!s.shipTime) return;
+          var q = Number(s.qty)||0, r = Number(s.recvQty)||0;
+          if(q > 0 && r >= q) return;   /* 已收货完毕，不再展示 */
+          var d = rcDrugOf(oi.drugCode, oi.drugName, oi.spec);
+          rows.push({
+            orderCode: o.code || "", detailId: oi.detailId || "", shipId: s.shipId || "",
+            drug: d, drugName: oi.drugName || "", spec: oi.spec || "", vendor: oi.vendor || "",
+            drugCode: d ? d.code : (oi.drugCode || ""),
+            price: s.price, batchNo: s.batchNo || "", expiry: s.expiry || "",
+            qty: q, recvQty: r,
+            shipTime: s.shipTime, invoiceNo: s.invoiceNo || ""
+          });
+        });
+      });
+    });
+    return rows;
+  }
+
+  function rcFiltered(){
+    var inv = $("#rcInv").value.trim().toLowerCase();
+    var kw  = $("#rcKey").value.trim().toLowerCase();
+    var day = $("#rcTime").value;
+    return rcSource().filter(function(r){
+      if(inv && String(r.invoiceNo).toLowerCase().indexOf(inv)<0) return false;
+      if(kw){
+        var hit = (r.drugCode && String(r.drugCode).toLowerCase().indexOf(kw)>=0)
+          || String(r.drugName).toLowerCase().indexOf(kw)>=0
+          || (r.drug && r.drug.py && String(r.drug.py).toLowerCase().indexOf(kw)>=0);
+        if(!hit) return false;
+      }
+      if(day && String(r.shipTime).indexOf(day)!==0) return false;
+      return true;
+    });
+  }
+
+  function renderRc(){
+    rcRows = rcFiltered();
+    $("#rcEmpty").style.display = rcRows.length ? "none" : "block";
+    $("#rcBody").innerHTML = rcRows.map(function(r, i){
+      var on = !!rcSel[r.shipId];
+      return '<tr data-i="'+i+'">'
+        +'<td><input type="checkbox" data-rc="'+i+'"'+(on?' checked':'')+'></td>'
+        +'<td>'+SI.esc(r.detailId)+'</td><td>'+SI.esc(r.shipId)+'</td>'
+        +'<td>'+(r.drugCode?SI.esc(r.drugCode):'—')+'</td>'
+        +'<td>'+SI.esc(r.drugName)+'</td>'
+        +'<td>'+SI.esc(r.spec)+'</td>'
+        +'<td class="cell-ellipsis" title="'+SI.esc(r.vendor)+'">'+SI.esc(r.vendor)+'</td>'
+        +'<td class="num">'+SI.esc(r.price)+'</td><td>'+SI.esc(r.batchNo)+'</td>'
+        +'<td>'+SI.esc(r.expiry)+'</td><td class="num">'+r.qty+'</td><td>'+SI.esc(r.shipTime)+'</td>'
+        +'<td>'+SI.esc(r.invoiceNo)+'</td>'
+        +'</tr>';
+    }).join("");
+    $$('#rcBody input[type="checkbox"]').forEach(function(cb){
+      cb.addEventListener("change", function(){
+        var r = rcRows[parseInt(cb.getAttribute("data-rc"),10)];
+        if(!r) return;
+        if(cb.checked) rcSel[r.shipId]=true; else delete rcSel[r.shipId];
+        syncRcOk();
+      });
+    });
+    $$('#rcBody tr').forEach(function(tr){
+      tr.addEventListener("click", function(e){
+        if(e.target.type==="checkbox") return;
+        var cb = tr.querySelector('input[type="checkbox"]');
+        if(!cb || cb.disabled) return;
+        cb.checked = !cb.checked;
+        cb.dispatchEvent(new Event("change"));
+      });
+    });
+    syncRcOk();
+  }
+  function syncRcOk(){
+    $("#rcOk").disabled = !$$('#rcBody input[type="checkbox"]:checked').length;
+  }
+
+  /* 按入库量生成等量小包装追溯码（演示数据，后续对接追溯平台仅替换此处） */
+  function rcGenTraces(n){
+    var arr = [];
+    for(var i=0;i<n;i++){
+      arr.push({ code: "81" + String(Date.now()).slice(-6) + String(Math.floor(Math.random()*1e12)).padStart(12,"0"), level: "small" });
+    }
+    return arr;
+  }
+
+  function openRc(){
+    rcSel = {};
+    $("#rcInv").value=""; $("#rcKey").value=""; $("#rcTime").value="";
+    renderRc();
+    $("#rcMask").classList.add("show");
+  }
+  function closeRc(){ $("#rcMask").classList.remove("show"); rcSel={}; rcRows=[]; }
+  $("#btnFromShip").addEventListener("click", openRc);
+  $("#rcClose").addEventListener("click", closeRc);
+  $("#rcCancel").addEventListener("click", closeRc);
+  $("#rcSearch").addEventListener("click", renderRc);
+  $("#rcReset").addEventListener("click", function(){ $("#rcInv").value=""; $("#rcKey").value=""; $("#rcTime").value=""; renderRc(); });
+  ["rcInv","rcKey"].forEach(function(id){ $("#"+id).addEventListener("keydown", function(e){ if(e.key==="Enter") renderRc(); }); });
+  $("#rcOk").addEventListener("click", function(){
+    var sel = rcRows.filter(function(r){ return rcSel[r.shipId]; });
+    if(!sel.length) return;
+    sel.forEach(function(r){
+      var it = r.drug ? itemFromPick(r.drug) : blankItem();
+      if(!r.drug){
+        /* 药品库无匹配：保留配送明细侧基础信息 */
+        it.name = r.drugName; it.code = r.drugCode || ""; it.spec = r.spec; it.vendor = r.vendor;
+      }
+      it.batch = r.batchNo; it.batchSource = "auto"; it.priceFrom = r.batchNo || "";
+      it.qty = Math.max(0, r.qty - r.recvQty);           /* 入库量默认配送数量（部分收货时取未收数量） */
+      it.purchase = r.price==="" ? "" : Number(r.price);  /* 进货价默认采购价格 */
+      it.expiry = r.expiry;
+      it.invoiceNo = r.invoiceNo;                         /* 发票号随明细 */
+      it.traces = rcGenTraces(Number(it.qty)||0);         /* 追溯码自动生成（小包装，等量） */
+      ST.items.push(it);
+    });
+    /* 发票录入方式默认按明细 */
+    ST.invoiceMode = "detail"; ST.invoiceNo = ""; $("#fInvNo").value = "";
+    $$('input[name="invMode"]').forEach(function(rd){ rd.checked = (rd.value==="detail"); });
+    $("#fInvNo").disabled = true;
+    renderItems();
+    closeRc();
+    toast("已按 "+sel.length+" 条配送明细生成药品明细");
   });
 
   /* ===== 追溯码右侧抽屉（录入 + 查看互斥，推开式） ===== */

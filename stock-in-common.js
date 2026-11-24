@@ -51,7 +51,11 @@
     { name: "硝苯地平控释片", py: "XBDPKSP", code: "1210501201", spec: "30mg×7片", packSpec: "7片/盒", vendor: "拜耳医药保健有限公司", approval: "国药准字J20180015", factor: 7, packUnit: "盒", insCode: "XC08CA0101010101032", insName: "硝苯地平" },
     { name: "盐酸二甲双胍片", py: "YSEJGP", code: "1210501301", spec: "0.5g×20片", packSpec: "20片/盒", vendor: "中美上海施贵宝制药有限公司", approval: "国药准字H31020246", factor: 20, packUnit: "盒", insCode: "XA10BA0101010101032", insName: "二甲双胍" },
     { name: "左氧氟沙星片", py: "ZYFSXP", code: "1210501401", spec: "0.5g×4片", packSpec: "4片/盒", vendor: "第一三共制药（北京）有限公司", approval: "国药准字H20000567", factor: 4, packUnit: "盒", insCode: "XJ01MA0101010101032", insName: "左氧氟沙星" },
-    { name: "阿托伐他汀钙片", py: "ATFTGP", code: "1210501601", spec: "20mg×7片", packSpec: "7片/盒", vendor: "辉瑞制药有限公司", approval: "国药准字H20051408", factor: 7, packUnit: "盒", insCode: "XC10AA0101010101032", insName: "阿托伐他汀" }
+    { name: "阿托伐他汀钙片", py: "ATFTGP", code: "1210501601", spec: "20mg×7片", packSpec: "7片/盒", vendor: "辉瑞制药有限公司", approval: "国药准字H20051408", factor: 7, packUnit: "盒", insCode: "XC10AA0101010101032", insName: "阿托伐他汀" },
+    { name: "苯磺酸氨氯地平片", py: "BHSALDP", code: "1210501701", spec: "5mg×28片", packSpec: "28片/盒", vendor: "辉瑞制药有限公司", approval: "国药准字H10950224", factor: 28, packUnit: "盒", insCode: "XC08CA0101010102032", insName: "氨氯地平" },
+    { name: "头孢呋辛酯片", py: "TBFXZP", code: "1210501801", spec: "0.25g×12片", packSpec: "12片/盒", vendor: "国药集团致君（深圳）制药有限公司", approval: "国药准字H10980024", factor: 12, packUnit: "盒", insCode: "XJ01DC0401010101032", insName: "头孢呋辛" },
+    { name: "连花清瘟胶囊", py: "LHQWJN", code: "1210501901", spec: "0.35g×24粒", packSpec: "24粒/盒", vendor: "石家庄以岭药业股份有限公司", approval: "国药准字Z20040063", factor: 24, packUnit: "盒", insCode: "ZJV02D0401010101032", insName: "连花清瘟" },
+    { name: "金银花颗粒", py: "JYHKL", code: "1210502001", spec: "10g×20袋", packSpec: "20袋/盒", vendor: "诚辉医药有限公司", approval: "国药准字Z41021201", factor: 20, packUnit: "盒", insCode: "ZC01BA0201010101032", insName: "金银花" }
   ];
 
   /* ---------- 批次库（按药品编码） ---------- */
@@ -86,6 +90,18 @@
     ],
     "1210501601": [
       { batch: "20260208A", expiry: "2028-02-07", purchase: 26.50, retail: 38.90 }
+    ],
+    "1210501701": [
+      { batch: "20260110A", expiry: "2028-06-30", purchase: 15.40, retail: 22.80 }
+    ],
+    "1210501801": [
+      { batch: "20260222A", expiry: "2027-09-30", purchase: 18.60, retail: 27.50 }
+    ],
+    "1210501901": [
+      { batch: "20260301B", expiry: "2028-01-15", purchase: 11.20, retail: 16.80 }
+    ],
+    "1210502001": [
+      { batch: "20260218A", expiry: "2027-11-30", purchase: 9.80, retail: 14.50 }
     ]
   };
 

@@ -4,6 +4,12 @@
 <meta charset="UTF-8">
 <title>登录 · 区域药房协同管理系统</title>
 <link rel="stylesheet" href="styles.css">
+<style>
+  .demo-card.extra { display: none; }
+  .demo-cards.expanded .demo-card.extra { display: flex; }
+  .demo-toggle { margin-top: 8px; text-align: center; font-size: 12px; color: var(--primary-dark); cursor: pointer; user-select: none; }
+  .demo-toggle:hover { text-decoration: underline; }
+</style>
 </head>
 <body class="login-body">
 
@@ -32,6 +38,7 @@
 
     <div class="login-tip">演示账号（点击卡片一键登录，密码统一 123456）</div>
     <div class="demo-cards" id="demoCards"></div>
+    <div class="demo-toggle" id="demoToggle"></div>
   </div>
 </div>
 
@@ -48,8 +55,9 @@
   var $ = SEL.$;
 
   function renderCards() {
-    $("demoCards").innerHTML = MOCK.users.map(function (u) {
-      return '<div class="demo-card" data-acc="' + u.account + '">' +
+    var DEFAULT_SHOW = 3;
+    $("demoCards").innerHTML = MOCK.users.map(function (u, i) {
+      return '<div class="demo-card' + (i >= DEFAULT_SHOW ? " extra" : "") + '" data-acc="' + u.account + '">' +
         '<span class="demo-avatar">' + u.name.charAt(0) + "</span>" +
         '<span class="demo-info">' +
           '<div class="demo-name">' + u.name + '<span style="color:var(--text-tertiary);font-size:12px;">（' + u.account + "）</span></div>" +
@@ -57,7 +65,13 @@
         "</span>" +
       "</div>";
     }).join("");
+    $("demoToggle").textContent = "展开全部账号（" + MOCK.users.length + "）▾";
   }
+
+  $("demoToggle").addEventListener("click", function () {
+    var open = $("demoCards").classList.toggle("expanded");
+    this.textContent = open ? "收起 ▴" : "展开全部账号（" + MOCK.users.length + "）▾";
+  });
 
   function doLogin(account, password) {
     var user = null;

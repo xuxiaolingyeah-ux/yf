@@ -326,7 +326,7 @@ select.pc-ipt{padding:0 4px}
 'use strict';
 try{
   var me=JSON.parse(sessionStorage.getItem('SEL_USER')||'null');
-  if(!me||me.account!=='sunlei'){
+  if(!me){
     sessionStorage.setItem('SEL_USER',JSON.stringify({id:'u5',account:'sunlei',name:'孙磊',org:'信息中心 · HIS 对接',role:'his',roleName:'HIS 对接人员'}));
   }
 }catch(e){}

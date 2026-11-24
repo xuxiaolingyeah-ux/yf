@@ -166,13 +166,13 @@
     isMine: function(a){ return SEL.isApplicant(a, user); },
     isPending: function(a){
       if (SEL.canApprove(a, user)) return true;
-      /* 专家打分：审核通过且我为专家，且我尚未对该申请任何明细打分 */
+      /* 专家打分：审核通过且我为专家，且申请中仍存在我尚未打分的明细 */
       if (a.status === "approved" && user.role === "expert") {
-        var scored = false;
-        Object.keys(a.scores || {}).forEach(function (idx) {
-          if (a.scores[idx] && a.scores[idx][user.id]) scored = true;
+        var items = a.items || [];
+        if (!items.length) return false;
+        return items.some(function (_, idx) {
+          return !(a.scores && a.scores[idx] && a.scores[idx][user.id]);
         });
-        return !scored;
       }
       return false;
     },

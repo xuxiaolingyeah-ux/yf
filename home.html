@@ -613,7 +613,7 @@
   var SEL_ME = null;
   try { SEL_ME = JSON.parse(sessionStorage.getItem("SEL_USER") || "null"); } catch (e) { SEL_ME = null; }
   var SEL_ROLE = (SEL_ME && SEL_ME.role) || "center";
-  if (SEL_ROLE === "his") { location.replace("prescription-tcm.html"); return; }
+  if (SEL_ROLE === "his") { location.replace("prescription-create.html"); return; }
   if (SEL_ROLE === "village" || SEL_ROLE === "member") { renderOrgHome(SEL_ROLE, SEL_ME); return; }
 
   /* ---------- 数据 ---------- */

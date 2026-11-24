@@ -94,7 +94,7 @@
       // 毒麻精审药医生（HIS 子角色）直达门诊医嘱开具执行审核；毒麻精药房审核专员直达毒麻精发药审核；专家直达药品目录遴选
       var isNarcUser = user.subRole === "narcotics" || user.role === "narcotics";
       location.href = isNarcUser ? "prescription-western.html"
-        : user.role === "his" ? "prescription-tcm.html"
+        : user.role === "his" ? "prescription-create.html"
         : user.role === "expert" ? "drug-selection.html"
         : user.role === "narcoticAuditor" ? "narcotic-audit.html"
         : "home.html";

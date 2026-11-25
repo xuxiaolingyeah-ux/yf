@@ -355,7 +355,7 @@
       code: "",
       mode: "edit",
       title: "", formSpec: "", basicDose: "", doseUnit: "", prepUnit: "", factor: "",
-      pkgSpec: "", minPkgUnit: "", pkgFactor: "", pkgUnit: "", material: "",
+      minPkgUnit: "",
       splitOn: false, splitUnit: "", splitFactor: "",
       marks: { precious: false, essential: false, emergency: false, monitor: false, rare: false },
       vendors: []
@@ -438,11 +438,7 @@
           selField(i, "doseUnit", "剂量单位", true, s.doseUnit, ["g", "mg", "ml", "μg", "IU"], !ro) +
           selField(i, "prepUnit", "制剂单位", true, s.prepUnit, ["片", "粒", "袋", "支", "瓶", "丸", "ml"], !ro) +
           field(i, "factor", "最小换算系数", true, s.factor, "正整数", "", !ro) +
-          field(i, "pkgSpec", "包装规格", true, s.pkgSpec, "如：7片/盒", "", !ro) +
           selField(i, "minPkgUnit", "最小包装单位", true, s.minPkgUnit, ["盒", "瓶", "袋", "支", "板"], !ro) +
-          field(i, "pkgFactor", "包装系数", true, s.pkgFactor, "如：7", "", !ro) +
-          selField(i, "pkgUnit", "包装单位", true, s.pkgUnit, ["片", "粒", "袋", "g", "ml"], !ro) +
-          field(i, "material", "包装材质", false, s.material, "如：铝塑", "", !ro) +
           '<div class="form-item"><label class="form-label">允许拆零</label>' +
             '<label class="switch"><input type="checkbox" data-si="' + i + '" data-mark="splitOn"' + (s.splitOn ? " checked" : "") + (ro ? " disabled" : "") + '><span class="track"></span></label>' +
           '</div>' +
@@ -527,6 +523,13 @@
         viVal("国家药品名称", "—") +
         viVal("国家药品ID", "—") +
         viVal("批准文号", "—") +
+        viField("包装系数",
+          '<input class="input" data-si="' + si + '" data-vi="' + vi + '" data-vk="pkgFactor" placeholder="如：1" disabled>') +
+        viField("包装单位",
+          '<input class="input" data-si="' + si + '" data-vi="' + vi + '" data-vk="pkgUnit" placeholder="如：盒" disabled>') +
+        viField("包装规格",
+          '<input class="input" data-si="' + si + '" data-vi="' + vi + '" data-vk="pkgSpec" placeholder="如：24粒/盒" disabled>') +
+        viVal("最小包装单位", ST.specs[si].minPkgUnit || "—") +
         viField("进药价格",
           '<input class="input" data-si="' + si + '" data-vi="' + vi + '" data-vk="price" placeholder="元" disabled>') +
         viField("进口标识",
@@ -547,6 +550,10 @@
         viVal("国家药品名称", v.nationalName || "—") +
         viVal("国家药品ID", v.nationalId || "—") +
         viVal("批准文号", v.approval || "—") +
+        viVal("包装系数", v.pkgFactor || "—") +
+        viVal("包装单位", v.pkgUnit || "—") +
+        viVal("包装规格", v.pkgSpec || "—") +
+        viVal("最小包装单位", v.minPkgUnit || ST.specs[si].minPkgUnit || "—") +
         viVal("进药价格", v.price ? v.price + " 元" : "—") +
         viVal("进口标识", v.imported || "—") +
         viVal("集采标识", v.collect ? "是" : "否") +
@@ -563,6 +570,13 @@
       viVal("国家药品名称", v.nationalName || "—") +
       viVal("国家药品ID", v.nationalId || "—") +
       viVal("批准文号", v.approval || "—") +
+      viField("包装系数",
+        '<input class="input" data-si="' + si + '" data-vi="' + vi + '" data-vk="pkgFactor" value="' + esc(v.pkgFactor) + '" placeholder="如：1">') +
+      viField("包装单位",
+        '<input class="input" data-si="' + si + '" data-vi="' + vi + '" data-vk="pkgUnit" value="' + esc(v.pkgUnit) + '" placeholder="如：盒">') +
+      viField("包装规格",
+        '<input class="input" data-si="' + si + '" data-vi="' + vi + '" data-vk="pkgSpec" value="' + esc(v.pkgSpec) + '" placeholder="如：24粒/盒">') +
+      viVal("最小包装单位", v.minPkgUnit || ST.specs[si].minPkgUnit || "—") +
       viField("进药价格",
         '<input class="input" data-si="' + si + '" data-vi="' + vi + '" data-vk="price" value="' + esc(v.price) + '" placeholder="元">') +
       viField("进口标识",
@@ -727,8 +741,8 @@
     var s = ST.specs[si];
     var need = [
       [s.title, "药品规格"], [s.basicDose, "基本剂量"], [s.doseUnit, "剂量单位"],
-      [s.prepUnit, "制剂单位"], [s.factor, "最小换算系数"], [s.pkgSpec, "包装规格"],
-      [s.minPkgUnit, "最小包装单位"], [s.pkgFactor, "包装系数"], [s.pkgUnit, "包装单位"]
+      [s.prepUnit, "制剂单位"], [s.factor, "最小换算系数"],
+      [s.minPkgUnit, "最小包装单位"]
     ];
     if (s.splitOn) {
       need.push([s.splitUnit, "拆零-发药单位"], [s.splitFactor, "拆零-发药系数"]);
@@ -788,10 +802,7 @@
         doseUnit: s.doseUnit,
         prepUnit: s.prepUnit,
         minFactor: s.factor,
-        pkgUnit: s.minPkgUnit,
-        pkgFactor: s.pkgFactor,
-        pkgSpec: s.pkgSpec,
-        pkgMaterial: s.material,
+        minPkgUnit: s.minPkgUnit,
         insCode: "",
         splitUnit: s.splitUnit || "—",
         splitFactor: s.splitFactor || "—",
@@ -802,6 +813,8 @@
           return {
             name: v.name, drugCode: v.drugCode || "—",
             approval: v.approval || "—", imported: v.imported || "否",
+            minPkgUnit: s.minPkgUnit || "—",
+            pkgFactor: v.pkgFactor || "—", pkgUnit: v.pkgUnit || "—", pkgSpec: v.pkgSpec || "—",
             purchase: v.purchase || "—", standardCode: v.standardCode || "—",
             nationalId: v.nationalId || "—", nationalName: v.nationalName || "—",
             collect: v.collect ? (v.collectType || "是") : "否", price: v.price || "—",

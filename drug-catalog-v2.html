@@ -449,14 +449,14 @@
       regHtml =
         '<table class="gt reg2">' +
           '<colgroup>' +
-            '<col style="width:88px"><col style="width:76px"><col style="width:80px">' +
+            '<col style="width:88px"><col style="width:80px">' +
             '<col style="width:64px"><col style="width:64px"><col style="width:64px">' +
-            '<col style="width:64px"><col style="width:88px"><col style="width:64px">' +
+            '<col style="width:64px"><col style="width:88px">' +
             '<col style="width:60px"><col style="width:108px">' +
           '</colgroup>' +
           '<thead><tr>' +
-            '<th>品规编码</th><th>药品规格</th><th>包装规格</th><th>基本剂量</th><th>剂量单位</th>' +
-            '<th>制剂单位</th><th>最小系数</th><th>最小包装单位</th><th>包装系数</th>' +
+            '<th>品规编码</th><th>药品规格</th><th>基本剂量</th><th>剂量单位</th>' +
+            '<th>制剂单位</th><th>最小系数</th><th>最小包装单位</th>' +
             '<th class="frzn s1">状态</th><th class="frzn s2">操作</th>' +
           '</tr></thead>' +
           '<tbody>' +
@@ -475,10 +475,12 @@
       vendHtml =
         '<table class="gt vend2">' +
           '<colgroup>' +
-            '<col style="width:108px"><col><col style="width:64px"><col style="width:88px"><col style="width:112px">' +
+            '<col style="width:108px"><col><col style="width:64px"><col style="width:112px">' +
+            '<col style="width:60px"><col style="width:60px"><col style="width:80px"><col style="width:76px"><col style="width:112px">' +
           '</colgroup>' +
           '<thead><tr>' +
             '<th>药品编码</th><th>生产企业</th><th>进口标识</th><th>批准文号</th>' +
+            '<th>包装系数</th><th>包装单位</th><th>包装规格</th><th>最小包装单位</th>' +
             '<th class="frzn s2">操作</th>' +
           '</tr></thead>' +
           '<tbody>' +
@@ -488,6 +490,10 @@
                 '<td class="nm" title="' + esc(v.name) + '">' + esc(v.name) + '</td>' +
                 '<td>' + esc(v.imported || "否") + '</td>' +
                 '<td title="' + esc(v.approval || "") + '">' + esc(v.approval || "—") + '</td>' +
+                '<td>' + esc(v.pkgFactor || selSpec.pkgFactor || "—") + '</td>' +
+                '<td>' + esc(v.pkgUnit || selSpec.pkgUnit || "—") + '</td>' +
+                '<td>' + esc(v.pkgSpec || selSpec.pkgSpec || "—") + '</td>' +
+                '<td>' + esc(v.minPkgUnit || selSpec.minPkgUnit || "—") + '</td>' +
                 '<td class="frzn s2">' +
                   '<button class="link-btn" data-act="vendor-detail" data-si="' + state.activeSpec + '" data-vi="' + vi + '">详情</button>' +
                   '<button class="link-btn" data-act="vendor-edit" data-si="' + state.activeSpec + '" data-vi="' + vi + '">编辑</button>' +
@@ -551,13 +557,11 @@
     return '<tr class="spec-row' + sel + '" data-si="' + si + '">' +
       '<td title="' + esc(spec.code) + '">' + esc(spec.code || "—") + '</td>' +
       '<td title="' + esc(spec.formSpec || spec.title) + '">' + esc(spec.formSpec || spec.title || "—") + '</td>' +
-      '<td title="' + esc(spec.pkgSpec) + '">' + esc(spec.pkgSpec || "—") + '</td>' +
       '<td>' + esc(spec.basicDose || "—") + '</td>' +
       '<td>' + esc(spec.doseUnit || "—") + '</td>' +
       '<td>' + esc(spec.prepUnit || "—") + '</td>' +
       '<td>' + esc(spec.minFactor || "—") + '</td>' +
       '<td>' + esc(spec.minPkgUnit || spec.pkgUnit || "—") + '</td>' +
-      '<td>' + esc(spec.pkgFactor || "—") + '</td>' +
       '<td class="frzn s1">' +
         '<label class="switch" title="' + (off ? "已停用，点击启用" : "启用中，点击停用") + '">' +
           '<input type="checkbox" data-specsw="' + si + '"' + (off ? "" : " checked") + '>' +
@@ -583,11 +587,7 @@
       doseUnit: spec.doseUnit || "",
       prepUnit: spec.prepUnit || "",
       minFactor: spec.minFactor || spec.factor || "",
-      pkgSpec: spec.pkgSpec || "",
       minPkgUnit: spec.minPkgUnit || "",
-      pkgFactor: spec.pkgFactor || "",
-      pkgUnit: spec.pkgUnit || "",
-      material: spec.pkgMaterial || spec.material || "",
       valuable: spec.valuable !== undefined ? !!spec.valuable : !!mk.valuable,
       essential: spec.essential !== undefined ? !!spec.essential : !!mk.essential,
       emergency: spec.emergency !== undefined ? !!spec.emergency : !!mk.emergency,
@@ -604,7 +604,7 @@
     return {
       code: "—",
       title: "", formSpec: "", basicDose: "", doseUnit: "g", prepUnit: "",
-      minFactor: "", pkgSpec: "", minPkgUnit: "", pkgFactor: "", pkgUnit: "", material: "",
+      minFactor: "", minPkgUnit: "",
       valuable: false,
       essential: !!mk.essential,
       emergency: false, keyMonitor: false, rare: false,
@@ -615,7 +615,7 @@
   function newSpecDirty(d) {
     if (!d) return false;
     return !!(d.title || d.formSpec || d.basicDose || d.prepUnit || d.minFactor ||
-      d.pkgSpec || d.minPkgUnit || d.pkgFactor || d.pkgUnit || d.material ||
+      d.minPkgUnit ||
       d.splitUnit || d.splitFactor ||
       d.valuable || d.emergency || d.keyMonitor || d.rare);
   }
@@ -645,11 +645,7 @@
         egSelect(R + "剂量单位", d.doseUnit || "g", DOSE_UNITS, ' data-sk="doseUnit"') +
         egInput(R + "制剂单位", d.prepUnit, "如：粒", ' data-sk="prepUnit"') +
         egInput(R + "最小换算系数", d.minFactor, "如：24", ' data-sk="minFactor"') +
-        egInput(R + "包装规格", d.pkgSpec, "如：24粒/盒", ' data-sk="pkgSpec"') +
         egInput(R + "最小包装单位", d.minPkgUnit, "如：盒", ' data-sk="minPkgUnit"') +
-        egInput(R + "包装系数", d.pkgFactor, "如：1", ' data-sk="pkgFactor"') +
-        egInput(R + "包装单位", d.pkgUnit, "如：盒", ' data-sk="pkgUnit"') +
-        egInput("包装材质", d.material, "如：铝塑泡罩", ' data-sk="material"') +
         egSwitch("允许拆零", d.splitOn, ' data-sk="splitOn"') +
         egSelect("拆零-发药单位", d.splitUnit, SPLIT_UNITS, ' data-sk="splitUnit"', !d.splitOn) +
         egInput("拆零-发药系数", d.splitFactor, "正整数", ' data-sk="splitFactor"', !d.splitOn);
@@ -663,11 +659,7 @@
         egRead("剂量单位", d.doseUnit) +
         egRead("制剂单位", d.prepUnit) +
         egRead("最小换算系数", d.minFactor) +
-        egRead("包装规格", d.pkgSpec) +
         egRead("最小包装单位", d.minPkgUnit) +
-        egRead("包装系数", d.pkgFactor) +
-        egRead("包装单位", d.pkgUnit) +
-        egRead("包装材质", d.material) +
         egSwitch("允许拆零", d.splitOn, ' data-sk="splitOn"') +
         egSelect("拆零-发药单位", d.splitUnit, SPLIT_UNITS, ' data-sk="splitUnit"', !d.splitOn) +
         egInput("拆零-发药系数", d.splitFactor, "正整数", ' data-sk="splitFactor"', !d.splitOn);
@@ -680,11 +672,7 @@
         egRead("剂量单位", d.doseUnit) +
         egRead("制剂单位", d.prepUnit) +
         egRead("最小换算系数", d.minFactor) +
-        egRead("包装规格", d.pkgSpec) +
         egRead("最小包装单位", d.minPkgUnit) +
-        egRead("包装系数", d.pkgFactor) +
-        egRead("包装单位", d.pkgUnit) +
-        egRead("包装材质", d.material) +
         egRead("允许拆零", d.splitOn ? "是" : "否") +
         egRead("拆零-发药单位", d.splitOn ? d.splitUnit : "—") +
         egRead("拆零-发药系数", d.splitOn ? d.splitFactor : "—");
@@ -759,7 +747,7 @@
     var d = es.draft;
 
     ["title", "formSpec", "basicDose", "doseUnit", "prepUnit", "minFactor",
-      "pkgSpec", "minPkgUnit", "pkgFactor", "pkgUnit", "material",
+      "minPkgUnit",
       "splitUnit", "splitFactor"].forEach(function (k) {
       var el = body.querySelector('[data-sk="' + k + '"]');
       if (el) d[k] = el.value.trim();
@@ -780,8 +768,8 @@
     var missing = [];
     if (es.type === "create-spec") {
       [["title", "药品规格"], ["basicDose", "基本剂量"], ["doseUnit", "剂量单位"],
-        ["prepUnit", "制剂单位"], ["minFactor", "最小换算系数"], ["pkgSpec", "包装规格"],
-        ["minPkgUnit", "最小包装单位"], ["pkgFactor", "包装系数"], ["pkgUnit", "包装单位"]]
+        ["prepUnit", "制剂单位"], ["minFactor", "最小换算系数"],
+        ["minPkgUnit", "最小包装单位"]]
         .forEach(function (r) {
           if (!String(d[r[0]] || "").trim()) missing.push(r[1]);
         });
@@ -807,11 +795,7 @@
         doseUnit: d.doseUnit,
         prepUnit: d.prepUnit,
         minFactor: d.minFactor,
-        pkgSpec: d.pkgSpec,
         minPkgUnit: d.minPkgUnit,
-        pkgFactor: d.pkgFactor,
-        pkgUnit: d.pkgUnit,
-        pkgMaterial: d.material,
         splitUnit: d.splitOn ? d.splitUnit : "—",
         splitFactor: d.splitOn ? d.splitFactor : "—",
         status: "on",
@@ -829,10 +813,9 @@
 
     var target = es.drug.specs[es.si];
     ["title", "formSpec", "basicDose", "doseUnit", "prepUnit", "minFactor",
-      "pkgSpec", "minPkgUnit", "pkgFactor", "pkgUnit"].forEach(function (k) {
+      "minPkgUnit"].forEach(function (k) {
       target[k] = d[k];
     });
-    target.pkgMaterial = d.material;
     target.splitUnit = d.splitOn ? d.splitUnit : "—";
     target.splitFactor = d.splitOn ? d.splitFactor : "—";
     flags(target);
@@ -843,7 +826,7 @@
   }
 
   /* ==================== 厂商草稿 ==================== */
-  function vendorDraft(v) {
+  function vendorDraft(v, spec) {
     var m = vendorOf(v.name) || {};
     var purchase = v.purchase || v.purchaseType || "";
     var centralType = v.centralType || (/集采/.test(purchase) ? (purchase.indexOf("国家") > -1 ? "国家集采" : "省集采") : "");
@@ -853,6 +836,10 @@
       nationalName: m.nationalName || "—",
       nationalId: m.nationalId || "—",
       approval: v.approval || "—",
+      minPkgUnit: v.minPkgUnit || (spec && spec.minPkgUnit) || "",
+      pkgFactor: v.pkgFactor || (spec && spec.pkgFactor) || "",
+      pkgUnit: v.pkgUnit || (spec && spec.pkgUnit) || "",
+      pkgSpec: v.pkgSpec || (spec && spec.pkgSpec) || "",
       standardCode: m.standardCode || "—",
       price: v.price || "",
       imported: v.imported || "否",
@@ -876,6 +863,10 @@
               egRead("国家药品名称", d.nationalName) +
               egRead("国家药品ID", d.nationalId, true) +
               egRead("批准文号", d.approval, true) +
+              egInput("包装系数", d.pkgFactor, "如：1", at + 'pkgFactor"') +
+              egInput("包装单位", d.pkgUnit, "如：盒", at + 'pkgUnit"') +
+              egInput("包装规格", d.pkgSpec, "如：24粒/盒", at + 'pkgSpec"') +
+              egRead("最小包装单位", d.minPkgUnit || "—") +
               egInput("进药价格", d.price, "如：12.50", at + 'price"') +
               egSwitch("进口标识", d.imported === "是", at + 'imported"') +
               egSwitch("集采标识", d.centralized, at + 'centralized"') +
@@ -896,6 +887,10 @@
             egRead("国家药品名称", d.nationalName) +
             egRead("国家药品ID", d.nationalId, true) +
             egRead("批准文号", d.approval, true) +
+            egRead("包装系数", d.pkgFactor) +
+            egRead("包装单位", d.pkgUnit) +
+            egRead("包装规格", d.pkgSpec) +
+            egRead("最小包装单位", d.minPkgUnit || "—") +
             egRead("进药价格", d.price ? d.price + " 元" : "—") +
             egRead("进口标识", d.imported) +
             egRead("集采标识", d.centralized ? "是" : "否") +
@@ -920,8 +915,8 @@
     $("drawer").className = "drawer is-wide";
     $("drawerBody").innerHTML =
       '<div class="spec-ctx">所属品规：' + esc(spec.code || "—") + ' · ' + esc(spec.formSpec || spec.title || "—") +
-      ' · ' + esc(spec.pkgSpec || "—") + '</div>' +
-      vendorSectionsHtml(vendorDraft(v), false);
+      '</div>' +
+      vendorSectionsHtml(vendorDraft(v, spec), false);
 
     $("drawerFoot").innerHTML =
       '<button class="btn" data-dact="close">关闭</button>' +
@@ -936,7 +931,7 @@
     if (!v) return;
     closeCascader();
 
-    editState = { type: "vendor", drug: drug, si: si, vi: vi, draft: vendorDraft(v) };
+    editState = { type: "vendor", drug: drug, si: si, vi: vi, draft: vendorDraft(v, spec) };
     $("drawerTitle").textContent = "编辑厂商";
     $("drawer").className = "drawer is-edit";
     $("drawerFoot").innerHTML =
@@ -952,7 +947,8 @@
     var body = $("drawerBody");
     var d = es.draft;
 
-    ["price", "centralType", "purchaseType", "insCode"].forEach(function (k) {
+    ["price", "centralType", "purchaseType", "insCode",
+      "pkgSpec", "pkgFactor", "pkgUnit"].forEach(function (k) {
       var el = body.querySelector('[data-vk="' + k + '"]');
       if (el) d[k] = el.value.trim();
     });
@@ -975,6 +971,10 @@
     if (!v) return;
 
     v.price = d.price;
+    v.minPkgUnit = d.minPkgUnit;
+    v.pkgFactor = d.pkgFactor;
+    v.pkgUnit = d.pkgUnit;
+    v.pkgSpec = d.pkgSpec;
     v.imported = d.imported || "否";
     v.centralized = d.centralized;
     v.centralType = d.centralType;
@@ -994,6 +994,7 @@
   function vendorCreateDraft() {
     return {
       name: "", drugCode: "", nationalName: "", nationalId: "", approval: "",
+      pkgSpec: "", pkgFactor: "", pkgUnit: "", minPkgUnit: "",
       standardCode: "", imported: "否", price: "",
       centralized: false, centralType: "国家集采", purchaseType: "阳光采购",
       negotiated: false, ins: false, insCode: ""
@@ -1016,6 +1017,10 @@
           egRead("国家药品名称", picked ? d.nationalName : "—", false, "ck-nationalName") +
           egRead("国家药品ID", picked ? d.nationalId : "—", true, "ck-nationalId") +
           egRead("批准文号", picked ? d.approval : "—", true, "ck-approval") +
+          egInput("包装系数", picked ? d.pkgFactor : "", "如：1", ' data-vk="pkgFactor"', !picked) +
+          egInput("包装单位", picked ? d.pkgUnit : "", "如：盒", ' data-vk="pkgUnit"', !picked) +
+          egInput("包装规格", picked ? d.pkgSpec : "", "如：24粒/盒", ' data-vk="pkgSpec"', !picked) +
+          egRead("最小包装单位", d.minPkgUnit || "—") +
           egSwitch("进口标识", d.imported === "是", ' data-vk="imported"') +
           egInput("进药价格", d.price, "如：12.50", ' data-vk="price"', !picked) +
           egSwitch("集采标识", d.centralized, ' data-vk="centralized"' + (picked ? "" : " disabled")) +
@@ -1075,6 +1080,11 @@
       draft: vendorCreateDraft(), picked: -1,
       options: (MOCK.vendors || []).slice()
     };
+    /* 包装字段默认取所选品规的值（品规侧已不再维护包装信息） */
+    editState.draft.minPkgUnit = spec.minPkgUnit || "";
+    editState.draft.pkgFactor = spec.pkgFactor || "";
+    editState.draft.pkgUnit = spec.pkgUnit || "";
+    editState.draft.pkgSpec = spec.pkgSpec || "";
 
     $("drawerTitle").textContent = "新增厂商";
     $("drawer").className = "drawer is-edit";
@@ -1112,6 +1122,10 @@
     spec.vendors.push({
       name: d.name,
       approval: d.approval,
+      minPkgUnit: d.minPkgUnit,
+      pkgFactor: d.pkgFactor,
+      pkgUnit: d.pkgUnit,
+      pkgSpec: d.pkgSpec,
       imported: d.imported,
       purchase: d.purchaseType,
       purchaseType: d.purchaseType,

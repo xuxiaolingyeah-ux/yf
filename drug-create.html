@@ -504,41 +504,17 @@
 
   function vendorItemHtml(v, si, vi, ro) {
     var editing = v.editing && !ro;
-    var head = '<div class="vi-head">' +
-      '<span class="vi-name" title="' + esc(v.name) + '">' + esc(v.name) + '</span>' +
-      /* 只读展开态（ro）不展示厂商操作；编辑态只保留删除 */
+    /* 厂商不做特殊标注：顶部仅保留操作按钮，企业名称作为普通字段呈现 */
+    var head = '<div class="vi-head"><span style="flex:1"></span>' +
       (ro ? "" : editing
         ? '<button class="link-btn is-danger" data-act="del-vendor" data-si="' + si + '" data-vi="' + vi + '">删除</button>'
         : '<button class="link-btn" data-act="edit-vendor" data-si="' + si + '" data-vi="' + vi + '">编辑</button>' +
           '<button class="link-btn is-danger" data-act="del-vendor" data-si="' + si + '" data-vi="' + vi + '">删除</button>') +
     '</div>';
 
-    /* 待选企业态：第一个字段为可搜索企业下拉，其余字段占位/置灰 */
-    if (editing && v.picking) {
-      return '<div class="vendor-item is-editing">' + head + '<div class="vi-grid">' +
-        '<div class="vi-field is-full"><span class="vi-label"><span class="req">*</span>生产企业</span>' +
-          '<div class="vd-wrap"><input class="input" data-si="' + si + '" data-vi="' + vi + '" data-vk="companySearch" placeholder="输入企业名称搜索" autocomplete="off">' +
-          '<div class="vd-menu" data-si="' + si + '" data-vi="' + vi + '"></div></div></div>' +
-        viVal("药品编码", "—") +
-        viVal("国家药品名称", "—") +
-        viVal("国家药品ID", "—") +
-        viVal("批准文号", "—") +
-        viField("进药价格",
-          '<input class="input" data-si="' + si + '" data-vi="' + vi + '" data-vk="price" placeholder="元" disabled>') +
-        viField("进口标识",
-          '<label class="switch"><input type="checkbox" data-vk="imported" disabled><span class="track"></span></label>') +
-        viField("集采标识",
-          '<label class="switch"><input type="checkbox" disabled><span class="track"></span></label>') +
-        viField("集采类别", '<select class="select" disabled><option>请选择</option></select>') +
-        viField("采购类型", '<select class="select" disabled><option>请选择</option></select>') +
-        viField("国谈标识", '<label class="switch"><input type="checkbox" disabled><span class="track"></span></label>') +
-        viField("医保标识", '<label class="switch"><input type="checkbox" disabled><span class="track"></span></label>') +
-        viField("医保药品代码", '<input class="input" placeholder="非必填" disabled>') +
-      '</div></div>';
-    }
-
     if (!editing) {
       return '<div class="vendor-item">' + head + '<div class="vi-grid">' +
+        viVal("生产企业", v.name || "—") +
         viVal("药品编码", v.drugCode || "—") +
         viVal("国家药品名称", v.nationalName || "—") +
         viVal("国家药品ID", v.nationalId || "—") +
@@ -554,7 +530,11 @@
       '</div></div>';
     }
 
+    /* 编辑态：生产企业为普通可搜索下拉，选中后仍可再次修改 */
     return '<div class="vendor-item is-editing">' + head + '<div class="vi-grid">' +
+      '<div class="vi-field is-full"><span class="vi-label"><span class="req">*</span>生产企业</span>' +
+        '<div class="vd-wrap"><input class="input" data-si="' + si + '" data-vi="' + vi + '" data-vk="companySearch" placeholder="输入企业名称搜索" autocomplete="off" value="' + esc(v.name) + '">' +
+        '<div class="vd-menu" data-si="' + si + '" data-vi="' + vi + '"></div></div></div>' +
       viVal("药品编码", v.drugCode || "—") +
       viVal("国家药品名称", v.nationalName || "—") +
       viVal("国家药品ID", v.nationalId || "—") +
@@ -594,7 +574,8 @@
     if (!s) return;
     var menu = $("specList").querySelector('.vd-menu[data-si="' + si + '"][data-vi="' + vi + '"]');
     if (!menu) return;
-    var chosen = s.vendors.filter(function (x) { return !x.picking && x.name; })
+    /* 排除其他厂商卡已选企业；当前卡自己的企业保持可选，便于改选 */
+    var chosen = s.vendors.filter(function (x, idx) { return idx !== vi && !x.picking && x.name; })
                           .map(function (x) { return x.name; });
     var list = MOCK.vendors.filter(function (m) {
       return !kw || m.name.indexOf(kw) >= 0 || m.approval.indexOf(kw) >= 0;
@@ -973,6 +954,11 @@
     $("specList").addEventListener("change", onSpecChange);
 
     // 企业选择弹窗
+    $("specList").addEventListener("focusin", function (e) {
+      var inp = e.target.closest('[data-vk="companySearch"]');
+      if (!inp) return;
+      renderCompanyMenu(parseInt(inp.getAttribute("data-si"), 10), parseInt(inp.getAttribute("data-vi"), 10), inp.value.trim());
+    });
     $("specList").addEventListener("mousedown", function (e) {
       var opt = e.target.closest("[data-vname-opt]");
       if (!opt) return;

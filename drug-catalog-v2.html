@@ -850,9 +850,8 @@
     var at = ' data-vk="';
     if (editable) {
       return '<div class="drawer-section">' +
-                    '<div class="vendor-item is-editing">' +
-            '<div class="vi-head"><span class="vi-name" title="' + esc(d.name) + '">' + esc(d.name) + '</span></div>' +
             '<div class="eg-grid">' +
+              egRead("生产企业", d.name) +
               egRead("药品编码", d.drugCode, true) +
               egRead("国家药品名称", d.nationalName) +
               egRead("国家药品ID", d.nationalId, true) +
@@ -866,13 +865,11 @@
               egSwitch("医保标识", d.ins, at + 'ins"') +
               egInput("医保药品代码", d.insCode, "如：XJ01CA0401010101032", at + 'insCode"', !d.ins) +
             '</div>' +
-          '</div>' +
         '</div>';
     }
     return '<div class="drawer-section">' +
-                '<div class="vendor-item">' +
-          '<div class="vi-head"><span class="vi-name" title="' + esc(d.name) + '">' + esc(d.name) + '</span></div>' +
           '<div class="eg-grid">' +
+            egRead("生产企业", d.name) +
             egRead("药品编码", d.drugCode, true) +
             egRead("国家药品名称", d.nationalName) +
             egRead("国家药品ID", d.nationalId, true) +
@@ -886,7 +883,6 @@
             egRead("医保标识", d.ins ? "是" : "否") +
             egRead("医保药品代码", d.ins ? d.insCode : "—") +
           '</div>' +
-        '</div>' +
       '</div>';
   }
 

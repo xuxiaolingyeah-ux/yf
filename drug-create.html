@@ -523,13 +523,6 @@
         viVal("国家药品名称", "—") +
         viVal("国家药品ID", "—") +
         viVal("批准文号", "—") +
-        viField("包装系数",
-          '<input class="input" data-si="' + si + '" data-vi="' + vi + '" data-vk="pkgFactor" placeholder="如：1" disabled>') +
-        viField("包装单位",
-          '<input class="input" data-si="' + si + '" data-vi="' + vi + '" data-vk="pkgUnit" placeholder="如：盒" disabled>') +
-        viField("包装规格",
-          '<input class="input" data-si="' + si + '" data-vi="' + vi + '" data-vk="pkgSpec" placeholder="如：24粒/盒" disabled>') +
-        viVal("最小包装单位", ST.specs[si].minPkgUnit || "—") +
         viField("进药价格",
           '<input class="input" data-si="' + si + '" data-vi="' + vi + '" data-vk="price" placeholder="元" disabled>') +
         viField("进口标识",
@@ -550,10 +543,6 @@
         viVal("国家药品名称", v.nationalName || "—") +
         viVal("国家药品ID", v.nationalId || "—") +
         viVal("批准文号", v.approval || "—") +
-        viVal("包装系数", v.pkgFactor || "—") +
-        viVal("包装单位", v.pkgUnit || "—") +
-        viVal("包装规格", v.pkgSpec || "—") +
-        viVal("最小包装单位", v.minPkgUnit || ST.specs[si].minPkgUnit || "—") +
         viVal("进药价格", v.price ? v.price + " 元" : "—") +
         viVal("进口标识", v.imported || "—") +
         viVal("集采标识", v.collect ? "是" : "否") +
@@ -570,13 +559,6 @@
       viVal("国家药品名称", v.nationalName || "—") +
       viVal("国家药品ID", v.nationalId || "—") +
       viVal("批准文号", v.approval || "—") +
-      viField("包装系数",
-        '<input class="input" data-si="' + si + '" data-vi="' + vi + '" data-vk="pkgFactor" value="' + esc(v.pkgFactor) + '" placeholder="如：1">') +
-      viField("包装单位",
-        '<input class="input" data-si="' + si + '" data-vi="' + vi + '" data-vk="pkgUnit" value="' + esc(v.pkgUnit) + '" placeholder="如：盒">') +
-      viField("包装规格",
-        '<input class="input" data-si="' + si + '" data-vi="' + vi + '" data-vk="pkgSpec" value="' + esc(v.pkgSpec) + '" placeholder="如：24粒/盒">') +
-      viVal("最小包装单位", v.minPkgUnit || ST.specs[si].minPkgUnit || "—") +
       viField("进药价格",
         '<input class="input" data-si="' + si + '" data-vi="' + vi + '" data-vk="price" value="' + esc(v.price) + '" placeholder="元">') +
       viField("进口标识",

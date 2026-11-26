@@ -475,12 +475,10 @@
       vendHtml =
         '<table class="gt vend2">' +
           '<colgroup>' +
-            '<col style="width:108px"><col><col style="width:64px"><col style="width:112px">' +
-            '<col style="width:60px"><col style="width:60px"><col style="width:80px"><col style="width:76px"><col style="width:112px">' +
+            '<col style="width:108px"><col><col style="width:64px"><col style="width:112px"><col style="width:112px">' +
           '</colgroup>' +
           '<thead><tr>' +
             '<th>药品编码</th><th>生产企业</th><th>进口标识</th><th>批准文号</th>' +
-            '<th>包装系数</th><th>包装单位</th><th>包装规格</th><th>最小包装单位</th>' +
             '<th class="frzn s2">操作</th>' +
           '</tr></thead>' +
           '<tbody>' +
@@ -490,10 +488,6 @@
                 '<td class="nm" title="' + esc(v.name) + '">' + esc(v.name) + '</td>' +
                 '<td>' + esc(v.imported || "否") + '</td>' +
                 '<td title="' + esc(v.approval || "") + '">' + esc(v.approval || "—") + '</td>' +
-                '<td>' + esc(v.pkgFactor || selSpec.pkgFactor || "—") + '</td>' +
-                '<td>' + esc(v.pkgUnit || selSpec.pkgUnit || "—") + '</td>' +
-                '<td>' + esc(v.pkgSpec || selSpec.pkgSpec || "—") + '</td>' +
-                '<td>' + esc(v.minPkgUnit || selSpec.minPkgUnit || "—") + '</td>' +
                 '<td class="frzn s2">' +
                   '<button class="link-btn" data-act="vendor-detail" data-si="' + state.activeSpec + '" data-vi="' + vi + '">详情</button>' +
                   '<button class="link-btn" data-act="vendor-edit" data-si="' + state.activeSpec + '" data-vi="' + vi + '">编辑</button>' +
@@ -863,10 +857,6 @@
               egRead("国家药品名称", d.nationalName) +
               egRead("国家药品ID", d.nationalId, true) +
               egRead("批准文号", d.approval, true) +
-              egInput("包装系数", d.pkgFactor, "如：1", at + 'pkgFactor"') +
-              egInput("包装单位", d.pkgUnit, "如：盒", at + 'pkgUnit"') +
-              egInput("包装规格", d.pkgSpec, "如：24粒/盒", at + 'pkgSpec"') +
-              egRead("最小包装单位", d.minPkgUnit || "—") +
               egInput("进药价格", d.price, "如：12.50", at + 'price"') +
               egSwitch("进口标识", d.imported === "是", at + 'imported"') +
               egSwitch("集采标识", d.centralized, at + 'centralized"') +
@@ -887,10 +877,6 @@
             egRead("国家药品名称", d.nationalName) +
             egRead("国家药品ID", d.nationalId, true) +
             egRead("批准文号", d.approval, true) +
-            egRead("包装系数", d.pkgFactor) +
-            egRead("包装单位", d.pkgUnit) +
-            egRead("包装规格", d.pkgSpec) +
-            egRead("最小包装单位", d.minPkgUnit || "—") +
             egRead("进药价格", d.price ? d.price + " 元" : "—") +
             egRead("进口标识", d.imported) +
             egRead("集采标识", d.centralized ? "是" : "否") +
@@ -1017,10 +1003,6 @@
           egRead("国家药品名称", picked ? d.nationalName : "—", false, "ck-nationalName") +
           egRead("国家药品ID", picked ? d.nationalId : "—", true, "ck-nationalId") +
           egRead("批准文号", picked ? d.approval : "—", true, "ck-approval") +
-          egInput("包装系数", picked ? d.pkgFactor : "", "如：1", ' data-vk="pkgFactor"', !picked) +
-          egInput("包装单位", picked ? d.pkgUnit : "", "如：盒", ' data-vk="pkgUnit"', !picked) +
-          egInput("包装规格", picked ? d.pkgSpec : "", "如：24粒/盒", ' data-vk="pkgSpec"', !picked) +
-          egRead("最小包装单位", d.minPkgUnit || "—") +
           egSwitch("进口标识", d.imported === "是", ' data-vk="imported"') +
           egInput("进药价格", d.price, "如：12.50", ' data-vk="price"', !picked) +
           egSwitch("集采标识", d.centralized, ' data-vk="centralized"' + (picked ? "" : " disabled")) +
